@@ -1,6 +1,6 @@
 "use client";
 
-import CandidateCard from "../../components/CandidateCard";
+import CandidateCard from "../../../components/CandidateCard";
 import { useState, useEffect } from "react";
 
 // simulated

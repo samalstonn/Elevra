@@ -1,8 +1,8 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import ZipCodeInput from "./components/ZipCodeInput";
-import ResultsSection from "./components/ResultsSection";
+import ZipCodeInput from "../components/ZipCodeInput";
+import ResultsSection from "../components/ResultsSection";
 
 // simulated
 const data_test = [
@@ -33,7 +33,7 @@ export default function Home() {
       const fetchElections = async () => {
         setLoading(true);
         try {
-          const response = await fetch(`/api/elections?zipCode=${zipCode}`);
+          // const response = await fetch(`/api/elections?zipCode=${zipCode}`);
           const data = data_test;
 
           setElections(data);
