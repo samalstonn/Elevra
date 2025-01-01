@@ -21,7 +21,8 @@ async function getCandidateData(id: string) {
 }
 
 export default async function CandidatePage({ params }: { params: { id: string } }) {
-  const candidate = await getCandidateData(params.id); 
+    const candidate = await getCandidateData(params.id);
+  
 
   return (
     <div className="bg-gray-100 flex justify-center items-center p-4">
