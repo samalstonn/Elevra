@@ -1,27 +1,13 @@
-"use client";
+'use client';
 
-import React, { useState, useEffect } from "react";
-import ZipCodeInput from "./components/ZipCodeInput";
-import ResultsSection from "./components/ResultsSection";
-
-// simulated
-const data_test = [
-  { position: "President", candidate_number: "3" },
-  { position: "Vice President", candidate_number: "5" },
-  { position: "Board of Education", candidate_number: "1" },
-  { position: "Mayor", candidate_number: "1" },
-];
-
-type election_data = {
-  position: string;
-  candidate_number:string;
-}
+import React, { useState, useEffect } from 'react';
+import ZipCodeInput from './components/ZipCodeInput';
+import ResultsSection from './components/ResultsSection';
+import { election_data } from './lib/models'; 
 
 export default function Home() {
-  const [zipCode, setZipCode] = useState("");
-  const [elections, setElections] = useState<
-  election_data[]
-  >([]);
+  const [zipCode, setZipCode] = useState('');
+  const [elections, setElections] = useState<election_data[]>([]);
   const [loading, setLoading] = useState(false);
 
   const handleSearch = (zip: string) => {
@@ -34,11 +20,10 @@ export default function Home() {
         setLoading(true);
         try {
           const response = await fetch(`/api/elections?zipCode=${zipCode}`);
-          const data = data_test;
-
+          const data = await response.json();
           setElections(data);
         } catch (error) {
-          console.error("Failed to fetch elections:", error);
+          console.error('Failed to fetch elections:', error);
         } finally {
           setLoading(false);
         }

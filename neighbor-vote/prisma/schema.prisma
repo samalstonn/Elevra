@@ -14,6 +14,7 @@ model Election {
   type          String    // e.g., "Presidential", "Local", "State"
   location      String    // e.g., "City", "State", or "National"
   candidates    Candidate[] // Relation to Candidate
+  zipcode       String
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 }
