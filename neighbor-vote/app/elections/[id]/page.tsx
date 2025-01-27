@@ -35,7 +35,7 @@ export default function MeetCandidates() {
     const fetchCandidates = async () => {
       setLoading(true);
       try {
-        // Uncomment this line when integrating with your API
+        // Uncomment this line when integrating with API
         // const res = await fetch("/api/candidates");
         // if (!res.ok) throw new Error("Failed to fetch candidates");
         // const data = await res.json();

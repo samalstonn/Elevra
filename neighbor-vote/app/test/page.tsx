@@ -1,39 +1,28 @@
-import React from "react";
+"use client";
+
+import { useState } from 'react';
+import { Button, Input } from '../components/ui';
+import SearchBar from '../components/SearchBar';
 
 export default function HomePage() {
+  const [query, setQuery] = useState('');
+
+  const handleQueryChange = (e) => setQuery(e.target.value);
+
   return (
-    <div className="bg-purple-300 flex flex-col items-center justify-center text-black">
+    <div className="min-h-screen flex flex-col items-center px-6 mx-auto">
 
-      {/* Main Content */}
-      <div className="text-center max-w-lg">
-        <h1 className="text-4xl font-bold mb-4">Discover local leaders near you.</h1>
-        <div className="bg-black text-black flex items-center rounded-full px-4 py-2 mt-4">
-            <input
-                type="text"
-                placeholder="Enter delivery address"
-                className="flex-grow outline-none px-2 text-sm bg-transparent text-white"
-            />
-            
-            <button
-                className="bg-purple-300 text-black px-4 py-2 rounded-full flex items-center justify-center hover:bg-orange-400 transition"
-            >
-                ➔
-            </button>
+      {/* Hero Section */}
+      <main className="flex flex-col items-center text-center py-16 space-y-6">
+        <h1 className="text-6xl font-extrabold tracking-tight text-gray-900 w-full">Engage with your community. <br /> Seamlessly contribute.</h1>
+
+        {/* Input Section */}
+        <div className="flex items-center w-[600px] h-[60px]">
+        <SearchBar onSearch={(zipCode: any) => console.log(zipCode)} />
         </div>
-        <button className="flex items-center justify-items-center gap-2 mt-4 text-sm text-black bg-transparent border border-white px-4 py-2 rounded-full hover:bg-black hover:text-orange-400 transition">
-          <span>📍</span> Sign in for saved addresses
-        </button>
-      </div>
+      </main>
 
-      {/* Sign In/Sign Up Buttons */}
-      <div className="absolute top-4 right-4 flex gap-2">
-        <button className="bg-transparent border border-black px-4 py-2 rounded-full hover:bg-black hover:text-red-500 transition">
-          Sign In
-        </button>
-        <button className="bg-black text-red-500 px-4 py-2 rounded-full hover:bg-red-500 hover:text-black transition">
-          Sign Up
-        </button>
-      </div>
+      
     </div>
   );
 }

@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import ZipCodeInput from './components/ZipCodeInput';
+import ZipCodeInput from './components/SearchBar';
 import ResultsSection from './components/ResultsSection';
 import { election_data } from './lib/models'; 
 
