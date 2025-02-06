@@ -1,21 +1,12 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { Button } from "./components/ui";
-import Link from "next/link";
+import { Inter } from 'next/font/google';
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
+const inter = Inter({ subsets: ['latin'] });
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
-
-export const metadata: Metadata = {
-  title: "NeighborVote",
+export const metadata : Metadata = {
+  title: 'Elevra',
 };
 
 export default function RootLayout({
@@ -25,7 +16,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-<body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
+<body className={inter.className}>
   <div className=" flex flex-col">
     {/* Header Section */}
     <header className="w-full flex items-center justify-between p-4">
