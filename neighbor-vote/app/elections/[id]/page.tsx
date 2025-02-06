@@ -41,8 +41,12 @@ export default function MeetCandidates() {
         // const data = await res.json();
         const data = candidates_test; // Use test data for now
         setCandidates(data);
-      } catch (err: any) {
-        setError(err.message || "Unknown error occurred");
+      } catch (err: unknown) {
+        if (err instanceof Error) {
+          setError(err.message);
+        } else {
+          setError("Unknown error occurred");
+        }
       } finally {
         setLoading(false);
       }

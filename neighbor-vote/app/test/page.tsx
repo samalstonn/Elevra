@@ -1,14 +1,10 @@
 "use client";
 
-import { useState } from 'react';
 import SearchBar from '../components/SearchBar';
 import FeatureCards from '../components/FeatureCards';
 import TrendingProjects from '../components/TrendingProjects';
 
 export default function HomePage() {
-  const [query, setQuery] = useState('');
-
-  const handleQueryChange = (e) => setQuery(e.target.value);
 
   return (
     <div className="min-h-screen flex flex-col items-center px-6 mx-auto">
@@ -19,7 +15,7 @@ export default function HomePage() {
 
         {/* Input Section */}
         <div className="flex items-center w-[600px] h-[60px] py-16">
-        <SearchBar onSearch={(zipCode: any) => console.log(zipCode)} />
+        <SearchBar onSearch={(zipCode: string) => console.log(zipCode)} />
         </div>
         <div className="flex items-center w-[65%] ">
         <TrendingProjects />

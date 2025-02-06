@@ -1,11 +1,15 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, SetStateAction, useMemo } from 'react';
 import { Input } from './ui';
 
-export default function SearchBar({ onSearch }) {
+interface SearchBarProps {
+  onSearch: (searchTerm: string) => void;
+}
+
+export default function SearchBar({ onSearch }: SearchBarProps) {
   const [searchTerm, setSearchTerm] = useState('');
   const [placeholder, setPlaceholder] = useState('');
 
-  const phrases = ['address...', 'neighborhood...', 'city...', 'ZIP code...'];
+  const phrases = useMemo(() => ['address...', 'neighborhood...', 'city...', 'ZIP code...'], []);
 
   useEffect(() => {
     let phraseIndex = 0;
@@ -31,7 +35,7 @@ export default function SearchBar({ onSearch }) {
     }, 100);
 
     return () => clearInterval(interval);
-  }, []);
+  }, [phrases]);
 
   const handleSearch = () => {
     if (onSearch) onSearch(searchTerm);
@@ -48,7 +52,7 @@ export default function SearchBar({ onSearch }) {
         type="text"
         placeholder={placeholder}
         value={searchTerm}
-        onChange={(e) => setSearchTerm(e.target.value)}
+        onChange={(e: { target: { value: SetStateAction<string>; }; }) => setSearchTerm(e.target.value)}
         className="flex-grow px-4 py-2 text-gray-700 border-none rounded-l-full focus:outline-none focus:ring-0"
       />
       <button

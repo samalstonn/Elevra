@@ -1,6 +1,7 @@
 import React from "react";
 import { Card, CardContent, CardTitle, CardDescription } from "./Card";
 import { Button } from "./ui";
+import Image from 'next/image';
 
 const TrendingProjects = () => {
   const homes = [
@@ -55,30 +56,32 @@ const TrendingProjects = () => {
       <h2 className="text-2xl font-bold">Trending Homes in Ithaca, NY</h2>
       <p className="text-gray-600">Viewed and saved the most in the area over the past 24 hours</p>
       <div className="flex space-x-4 overflow-x-auto">
-        {homes.map((home, index) => (
-          <Card key={index} className="min-w-[300px]">
-            {home.openHouse && (
-              <div className="bg-orange-500 text-white text-sm p-2">{home.openHouse}</div>
-            )}
-            {home.feature && (
-              <div className="bg-orange-500 text-white text-sm p-2">{home.feature}</div>
-            )}
-            <img
-              src="/download.jpeg" // Replace with real image paths
-              alt="Home Image"
-              className="w-full h-48 object-cover"
-            />
-            <CardContent>
-              <CardTitle>{home.price}</CardTitle>
-              <CardDescription>
-                {home.beds} bds • {home.baths} ba • {home.sqft}
-              </CardDescription>
-              <p className="text-sm text-gray-600 mt-2">{home.address}</p>
-              <p className="text-sm text-gray-500 mt-1">{home.mls}</p>
-              <p className="text-sm text-gray-500 mt-1">{home.listing}</p>
-            </CardContent>
-          </Card>
-        ))}
+      {homes.map((home, index) => (
+        <Card key={index} className="min-w-[300px]">
+          {home.openHouse && (
+            <div className="bg-orange-500 text-white text-sm p-2">{home.openHouse}</div>
+          )}
+          {home.feature && (
+            <div className="bg-orange-500 text-white text-sm p-2">{home.feature}</div>
+          )}
+          <Image
+            src="/download.jpeg" // Replace with real image paths
+            alt="Home Image"
+            width={300}
+            height={192}
+            className="w-full h-48 object-cover"
+          />
+          <CardContent>
+            <CardTitle>{home.price}</CardTitle>
+            <CardDescription>
+              {home.beds} bds • {home.baths} ba • {home.sqft}
+            </CardDescription>
+            <p className="text-sm text-gray-600 mt-2">{home.address}</p>
+            <p className="text-sm text-gray-500 mt-1">{home.mls}</p>
+            <p className="text-sm text-gray-500 mt-1">{home.listing}</p>
+          </CardContent>
+        </Card>
+      ))}
       </div>
       <div className="flex justify-between mt-4">
         <Button variant="outline" className="flex items-center space-x-2">

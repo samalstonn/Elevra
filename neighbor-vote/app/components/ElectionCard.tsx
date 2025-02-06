@@ -8,7 +8,7 @@ type ElectionCardProps = {
   onVisit: (key: number) => void; 
 };
 
-const ElectionCard: React.FC<ElectionCardProps> = ({ electionID, position, candidate_number, election_link, onVisit }) => {
+const ElectionCard: React.FC<ElectionCardProps> = ({ electionID, position, candidate_number, onVisit }) => {
   console.log(electionID)
   return (
     <div className="bg-white shadow-md rounded-lg p-5 w-full max-w-sm">

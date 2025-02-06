@@ -1,10 +1,12 @@
+import Image from 'next/image';
+
 const FeatureCards = () => {
   const cards = [
     {
       title: 'Contribute Smarter',
       description:
         'Evaluate trusted suggestions and give to the causes that matter to you.',
-      image: 'Illustration-of-light-bulb-icon-on-transparent-backgroundPNG.png',
+      image: '/Illustration-of-light-bulb-icon-on-transparent-background-PNG.png',
       customStyles: 'row-span-2 col-span-1 h-[400px] w-full',
     },
     {
@@ -18,7 +20,7 @@ const FeatureCards = () => {
       title: 'Spam Free Donations',
       description:
         'Control how organizations reach out to you after you donate, ensuring your inbox stays clutter-free.',
-      image: 'empty-inbox.png',
+      image: '/empty-inbox.png',
       customStyles: 'row-span-1 col-span-1 h-[400px] w-full',
     },
     {
@@ -51,10 +53,12 @@ const FeatureCards = () => {
           className={`relative border rounded-xl shadow-md bg-gray-100 overflow-auto ${card.customStyles}`}
         >
           {card.image && (
-            <img
+            <Image
               src={card.image}
               alt={card.title}
-              className="mb-4 w-[200px] h-[200px] object-cover mx-auto flex items-center justify-center"
+              width={200}
+              height={200}
+              className="mb-4 object-cover mx-auto flex items-center justify-center"
             />
           )}
           <div className="p-4">
