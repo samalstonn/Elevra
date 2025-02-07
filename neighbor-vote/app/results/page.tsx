@@ -1,5 +1,5 @@
-import { Card, CardContent } from "../components/Card";
-import { Button } from "../components/ui";
+import { Card, CardContent } from "../../components/Card";
+import { Button } from "../../components/ui";
 import { Search, Filter, Globe, Users, Handshake, HeartHandshake, BookHeart, HelpingHand } from "lucide-react";
 
 export default function NonprofitResults() {
