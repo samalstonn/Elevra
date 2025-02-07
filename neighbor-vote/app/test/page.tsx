@@ -1,8 +1,8 @@
 "use client";
 
-import SearchBar from '../components/SearchBar';
-import FeatureCards from '../components/FeatureCards';
-import TrendingProjects from '../components/TrendingProjects';
+import SearchBar from '../../components/SearchBar';
+import FeatureCards from '../../components/FeatureCards';
+import TrendingProjects from '../../components/TrendingProjects';
 
 export default function HomePage() {
 
