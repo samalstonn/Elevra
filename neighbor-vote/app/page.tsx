@@ -20,12 +20,12 @@ export default function HomePage() {
         </div>
 
         {/* Trending Projects */}
-        <div className="w-full max-w-4xl sm:max-w-6xl lg:max-w-7xl xl:max-w-[90%] px-2 sm:px-4">
+        <div className="w-full max-w-4xl sm:max-w-6xl lg:max-w-7xl xl:max-w-[80%] px-2 sm:px-4">
           <TrendingProjects />
         </div>
 
         {/* Feature Cards */}
-        <div className="w-full max-w-4xl sm:max-w-6xl lg:max-w-7xl xl:max-w-[90%] px-2 sm:px-4">
+        <div className="w-full max-w-4xl sm:max-w-6xl lg:max-w-7xl xl:max-w-[80%] px-2 sm:px-4">
           <FeatureCards />
         </div>
       </main>

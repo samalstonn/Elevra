@@ -51,6 +51,7 @@ const TrendingProjects = () => {
     },
   ];
 
+
   return (
     <div className="p-4 sm:p-6 space-y-4">
       <h2 className="text-xl sm:text-2xl font-bold">Trending Homes in Ithaca, NY</h2>
@@ -58,10 +59,10 @@ const TrendingProjects = () => {
         Viewed and saved the most in the area over the past 24 hours
       </p>
 
-      {/* Mobile: Show 1 at a time with scrolling | Large Screens: Grid with 3 max per row */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 overflow-x-auto sm:overflow-visible pb-4">
+      {/* Mobile: Vertical Scroll | Large Screens: Centered Scrollable Row */}
+      <div className="flex flex-col sm:flex-row sm:overflow-x-auto sm:space-x-4 sm:pb-4 lg:justify-center">
         {homes.map((home, index) => (
-          <Card key={index} className="w-full sm:w-auto flex-shrink-0">
+          <Card key={index} className="w-full sm:w-[300px] flex-shrink-0">
             {home.openHouse && (
               <div className="bg-orange-500 text-white text-sm p-2">{home.openHouse}</div>
             )}
@@ -71,13 +72,13 @@ const TrendingProjects = () => {
             <Image
               src="/download.jpeg" // Replace with real image paths
               alt="Home Image"
-              width={250} // Smaller images for mobile
-              height={160}
-              className="w-full h-32 sm:h-40 lg:h-48 object-cover"
+              width={300}
+              height={200}
+              className="w-full h-40 sm:h-48 object-cover"
             />
             <CardContent>
-              <CardTitle>{home.price}</CardTitle>
-              <CardDescription>
+              <CardTitle className="text-lg sm:text-xl">{home.price}</CardTitle>
+              <CardDescription className="text-sm sm:text-base">
                 {home.beds} bds • {home.baths} ba • {home.sqft}
               </CardDescription>
               <p className="text-xs sm:text-sm text-gray-600 mt-2">{home.address}</p>
