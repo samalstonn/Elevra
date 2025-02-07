@@ -1,0 +1,33 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Election {
+  id            Int       @id @default(autoincrement())
+  position      String
+  date          DateTime
+  type          String    // e.g., "Presidential", "Local", "State"
+  location      String    // e.g., "City", "State", or "National"
+  candidates    Candidate[] // Relation to Candidate
+  zipcode       String
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+}
+
+model Candidate {
+  id            Int       @id @default(autoincrement())
+  name          String
+  party         String    // e.g., "Democrat", "Republican", "Independent"
+  bio           String?
+  policies      String[]  // Array of policy statements
+  website       String?
+  electionId    Int
+  election      Election  @relation(fields: [electionId], references: [id])
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+}
