@@ -1,6 +1,7 @@
 import React from "react";
 import ElectionCard from "./ElectionCard";
-import { election_data } from "../lib/models";
+import { election_data}  from "../app/lib/models";
+
 
 interface ResultsSectionProps {
   zipCode: string;
@@ -20,7 +21,6 @@ const ResultsSection: React.FC<ResultsSectionProps> = ({ zipCode, elections }) =
       </h2>
       <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {elections.map((election, index) => (
-          console.log(election),
           <ElectionCard
             key = {index}
             electionID={Number(election.electionID)}
