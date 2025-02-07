@@ -77,8 +77,8 @@ const TrendingProjects = () => {
               className="w-full h-40 sm:h-48 object-cover"
             />
             <CardContent>
-              <CardTitle className="text-lg sm:text-xl">{home.price}</CardTitle>
-              <CardDescription className="text-sm sm:text-base">
+              <CardTitle>{home.price}</CardTitle>
+              <CardDescription>
                 {home.beds} bds • {home.baths} ba • {home.sqft}
               </CardDescription>
               <p className="text-xs sm:text-sm text-gray-600 mt-2">{home.address}</p>
