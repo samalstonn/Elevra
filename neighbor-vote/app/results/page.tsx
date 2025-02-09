@@ -18,16 +18,16 @@ export default function NonprofitResults() {
       {/* Filters */}
       <div className="flex flex-wrap gap-4 mb-6">
         <Button variant="outline" className="flex items-center gap-2">
-          <Filter size={16} /> Causes
+          <Filter size={16} /> Location
         </Button>
         <Button variant="outline" className="flex items-center gap-2">
-          <Filter size={16} /> Volunteer Needs
+          <Filter size={16} /> Volunteer Opportunities
         </Button>
         <Button variant="outline" className="flex items-center gap-2">
           <Filter size={16} /> Donations Needed
         </Button>
         <Button variant="outline" className="flex items-center gap-2">
-          <Filter size={16} /> Location
+          <Filter size={16} /> Clean Energy
         </Button>
         <Button variant="outline" className="flex items-center gap-2">
           <Filter size={16} /> Community Programs
@@ -50,7 +50,7 @@ export default function NonprofitResults() {
             <Users size={40} className="mb-3" />
             <h2 className="text-xl font-semibold">Local Community Outreach</h2>
             <p className="text-gray-600">Assisting underserved neighborhoods with essential services.</p>
-            <Button className="mt-3 bg-purple-600 text-white">Volunteer</Button>
+            <Button className="mt-3 bg-purple-600 text-white">Support</Button>
           </CardContent>
         </Card>
 
@@ -59,7 +59,7 @@ export default function NonprofitResults() {
             <Handshake size={40} className="mb-3" />
             <h2 className="text-xl font-semibold">Social Justice Advocacy</h2>
             <p className="text-gray-600">Promoting equality and human rights initiatives.</p>
-            <Button className="mt-3 bg-purple-600 text-white">Join Movement</Button>
+            <Button className="mt-3 bg-purple-600 text-white">Support</Button>
           </CardContent>
         </Card>
 
@@ -68,7 +68,7 @@ export default function NonprofitResults() {
             <HeartHandshake size={40} className="mb-3" />
             <h2 className="text-xl font-semibold">Disaster Relief Coalition</h2>
             <p className="text-gray-600">Providing emergency aid and support in crisis areas.</p>
-            <Button className="mt-3 bg-purple-600 text-white">Donate</Button>
+            <Button className="mt-3 bg-purple-600 text-white">Support</Button>
           </CardContent>
         </Card>
 
@@ -77,7 +77,7 @@ export default function NonprofitResults() {
             <BookHeart size={40} className="mb-3" />
             <h2 className="text-xl font-semibold">Education for All</h2>
             <p className="text-gray-600">Ensuring every child has access to quality education.</p>
-            <Button className="mt-3 bg-purple-600 text-white">Contribute</Button>
+            <Button className="mt-3 bg-purple-600 text-white">Support</Button>
           </CardContent>
         </Card>
 
@@ -86,7 +86,7 @@ export default function NonprofitResults() {
             <HelpingHand size={40} className="mb-3" />
             <h2 className="text-xl font-semibold">Mental Health Support Network</h2>
             <p className="text-gray-600">Providing mental health resources and counseling.</p>
-            <Button className="mt-3 bg-purple-600 text-white">Get Help</Button>
+            <Button className="mt-3 bg-purple-600 text-white">Support</Button>
           </CardContent>
         </Card>
       </div>
