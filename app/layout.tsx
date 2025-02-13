@@ -25,7 +25,9 @@ export default function RootLayout({
           Elevra
         </Link>
         <div>
+        <Link href="/login">
           <Button variant="ghost" className="mr-2">Login</Button>
+        </Link>
           <Link href="/dashboard">
             <Button>My Dashboard</Button>
           </Link>
