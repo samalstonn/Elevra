@@ -1,4 +1,4 @@
-import { useState, useEffect, SetStateAction, useMemo } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Input } from './ui';
 
 interface SearchBarProps {

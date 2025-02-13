@@ -27,8 +27,8 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="flex w-full items-center justify-center bg-gradient-to-r from-purple-600 to-pink-500 p-6">
-      <div className="w-[35%] max-w-2xl p-12 bg-white rounded-2xl shadow-2xl">
+    <div className="flex w-full items-center justify-center p-6">
+      <div className="w-[35%] max-w-2xl p-12 bg-white rounded-xl shadow-2xl">
         <h2 className="text-4xl font-bold text-center text-gray-800 mb-10">Welcome to Elevra!</h2>
 
         {error && <p className="mb-4 text-red-500 text-sm text-center">{error}</p>}
