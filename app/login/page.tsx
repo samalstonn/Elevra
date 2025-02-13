@@ -27,9 +27,9 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="flex w-full items-center justify-center p-6">
-      <div className="w-[35%] max-w-2xl p-12 bg-white rounded-xl shadow-2xl">
-        <h2 className="text-4xl font-bold text-center text-gray-800 mb-10">Welcome to Elevra!</h2>
+    <div className="flex min-h-screen items-center justify-center p-4">
+      <div className="w-full max-w-md p-8 bg-white rounded-xl shadow-2xl">
+        <h2 className="text-3xl md:text-4xl font-bold text-center text-gray-800 mb-8">Welcome to Elevra!</h2>
 
         {error && <p className="mb-4 text-red-500 text-sm text-center">{error}</p>}
 
@@ -73,21 +73,20 @@ export default function LoginPage() {
         </form>
 
         {/* Social Login */}
-        <div className="mt-8 text-center">
+        <div className="mt-6 text-center">
           <p className="text-gray-600 text-lg mb-4">Or Sign Up Using:</p>
-          <div className="flex justify-center space-x-6">
-            <a href="#" className="p-4 bg-blue-600 text-white rounded-full hover:opacity-80 transition">
-              <FaFacebook className="text-2xl" />
+          <div className="flex justify-center space-x-4">
+            <a href="#" className="p-3 bg-blue-600 text-white rounded-full hover:opacity-80 transition">
+              <FaFacebook className="text-xl" />
             </a>
-            <a href="#" className="p-4 bg-blue-400 text-white rounded-full hover:opacity-80 transition">
-              <FaTwitter className="text-2xl" />
+            <a href="#" className="p-3 bg-blue-400 text-white rounded-full hover:opacity-80 transition">
+              <FaTwitter className="text-xl" />
             </a>
-            <a href="#" className="p-4 bg-red-600 text-white rounded-full hover:opacity-80 transition">
-              <FaGoogle className="text-2xl" />
+            <a href="#" className="p-3 bg-red-600 text-white rounded-full hover:opacity-80 transition">
+              <FaGoogle className="text-xl" />
             </a>
           </div>
         </div>
-
       </div>
     </div>
   );
