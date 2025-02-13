@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 import { Button } from "../components/ui";
 import { Inter } from 'next/font/google';
+import Link from "next/link";
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -20,10 +21,16 @@ export default function RootLayout({
   <div className=" flex flex-col">
     {/* Header Section */}
     <header className="w-full flex items-center justify-between p-4">
-        <h1 className="text-3xl font-bold text-purple-900">Elevra</h1>
+        <Link href="/" className="text-3xl font-bold text-purple-900">
+          Elevra
+        </Link>
         <div>
+        <Link href="/login">
           <Button variant="ghost" className="mr-2">Login</Button>
-          <Button>Get started</Button>
+        </Link>
+          <Link href="/dashboard">
+            <Button>My Dashboard</Button>
+          </Link>
         </div>
       </header>
 

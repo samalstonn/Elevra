@@ -29,7 +29,7 @@ const TrendingProjects = () => {
 
   return (
     <div className="p-4 sm:p-6 space-y-4">
-      <h2 className="text-xl sm:text-2xl font-bold">Trending Non-Profit Organizations</h2>
+      <h2 className="text-xl sm:text-2xl font-bold">Local Non-Profit Organizations </h2>
       <p className="text-gray-600 text-sm sm:text-base">
         Support organizations making a difference in your community.
       </p>

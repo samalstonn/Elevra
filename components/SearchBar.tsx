@@ -1,4 +1,4 @@
-import { useState, useEffect, SetStateAction, useMemo } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Input } from './ui';
 
 interface SearchBarProps {
@@ -38,7 +38,9 @@ export default function SearchBar({ onSearch }: SearchBarProps) {
   }, [phrases]);
 
   const handleSearch = () => {
-    if (onSearch) onSearch(searchTerm);
+    if (searchTerm.trim() !== '') {
+      onSearch(searchTerm);
+    }
   };
 
   return (
@@ -52,7 +54,12 @@ export default function SearchBar({ onSearch }: SearchBarProps) {
         type="text"
         placeholder={placeholder}
         value={searchTerm}
-        onChange={(e: { target: { value: SetStateAction<string>; }; }) => setSearchTerm(e.target.value)}
+        onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchTerm(e.target.value)}
+        onKeyDown={(e: React.KeyboardEvent<HTMLInputElement>) => {
+          if (e.key === 'Enter') {
+            handleSearch();
+          }
+        }}
         className="flex-grow px-4 py-2 text-gray-700 border-none rounded-l-full focus:outline-none focus:ring-0"
       />
       <button

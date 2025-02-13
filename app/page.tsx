@@ -3,8 +3,14 @@
 import TrendingProjects from '../components/TrendingProjects';
 import SearchBar from '../components/SearchBar';
 import FeatureCards from '../components/FeatureCards';
+import { useRouter } from 'next/navigation';
 
 export default function HomePage() {
+  const router = useRouter();
+
+  const handleSearch = (zipCode: string) => {
+    router.push(`/results?zipCode=${zipCode}`);
+  };
   return (
     <div className="min-h-screen flex flex-col items-center px-4 sm:px-6 lg:px-8 mx-auto">
 
@@ -16,7 +22,7 @@ export default function HomePage() {
 
         {/* Input Section */}
         <div className="w-full max-w-xs sm:max-w-md md:max-w-lg lg:max-w-xl py-4 sm:py-6">
-          <SearchBar onSearch={(zipCode: string) => console.log(zipCode)} />
+          <SearchBar onSearch={(zipCode: string) => handleSearch(zipCode)} />
         </div>
 
         {/* Trending Projects */}
