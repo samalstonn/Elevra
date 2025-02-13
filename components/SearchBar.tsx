@@ -38,7 +38,9 @@ export default function SearchBar({ onSearch }: SearchBarProps) {
   }, [phrases]);
 
   const handleSearch = () => {
-    if (onSearch) onSearch(searchTerm);
+    if (searchTerm.trim() !== '') {
+      onSearch(searchTerm);
+    }
   };
 
   return (
