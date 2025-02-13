@@ -9,7 +9,7 @@ export default function HomePage() {
   const router = useRouter();
 
   const handleSearch = (zipCode: string) => {
-    router.push(`/dashboard?zipCode=${zipCode}`);
+    router.push(`/results?zipCode=${zipCode}`);
   };
   return (
     <div className="min-h-screen flex flex-col items-center px-4 sm:px-6 lg:px-8 mx-auto">
