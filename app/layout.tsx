@@ -3,6 +3,7 @@ import "./globals.css";
 import { Button } from "../components/ui";
 import { Inter } from 'next/font/google';
 import Link from "next/link";
+import Image from "next/image";
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -18,21 +19,29 @@ export default function RootLayout({
   return (
     <html lang="en">
 <body className={inter.className}>
-  <div className=" flex flex-col">
+  <div className="flex flex-col">
     {/* Header Section */}
-    <header className="w-full flex items-center justify-between p-4">
-        <Link href="/" className="text-3xl font-bold text-purple-900">
-          Elevra
-        </Link>
-        <div>
-        <Link href="/login">
-          <Button variant="ghost" className="mr-2">Login</Button>
-        </Link>
-          <Link href="/dashboard">
-            <Button>My Dashboard</Button>
-          </Link>
-        </div>
-      </header>
+    
+  <header className="w-full flex items-center justify-between pr-4">
+    <Link href="/">
+      <Image 
+        src="/elevra-logo.png" 
+        alt="Elevra Logo" 
+        width={200} 
+        height={100} 
+        className="h-32 w-auto cursor-pointer"
+        priority
+      />
+    </Link>
+    <div>
+      <Link href="/login">
+        <Button variant="ghost" className="mr-2">Login</Button>
+      </Link>
+      <Link href="/dashboard">
+        <Button>My Dashboard</Button>
+      </Link>
+    </div>
+  </header>
 
     <div className="flex-grow w-full flex items-center justify-center min-h-[75vh]">
         {children}
