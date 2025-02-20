@@ -1,86 +1,91 @@
-import Image from 'next/image';
+import { motion } from 'framer-motion';
 
 const FeatureCards = () => {
   const cards = [
     {
-      title: 'Contribute Smarter',
+      title: 'Strengthen Your Community',
       description:
-        'Evaluate trusted suggestions and give to the causes that matter to you.',
-      image: '/Illustration-of-light-bulb-icon-on-transparent-background-PNG.png',
-      customStyles: 'row-span-2 col-span-1 h-[400px] w-full',
+        'Donating locally directly enhances the quality of life for your neighbors by addressing specific needs in your area.',
+      emoji: '🏡',
     },
     {
-      title: 'Contribute Faster',
+      title: 'Boost the Local Economy',
       description:
-        "Search through nonprofits and projects near you tailored to your passions.",
-      image: '/public/editor-image.png',
-      customStyles: 'row-span-2 col-span-2 h-[400px] w-full',
+        'When you donate to local nonprofits, your dollars remain within the community, multiplying their impact through job creation and local services.',
+      emoji: '💰',
     },
     {
-      title: 'Spam Free Donations',
+      title: 'Maximize Impact with Flexibility',
       description:
-        'Control how organizations reach out to you after you donate, ensuring your inbox stays clutter-free.',
-      image: '/empty-inbox.png',
-      customStyles: 'row-span-1 col-span-1 h-[400px] w-full',
+        'Local nonprofits can quickly adapt to community needs without the bureaucracy that larger organizations face.',
+      emoji: '⚡',
     },
     {
-      title: 'Quantify Your Impact',
+      title: 'Ensure Efficient Use of Resources',
       description:
-        'Get all your performance data in one place, helping you refine your contributions and maximize results.',
-      image: '/path/to/insights-image.png',
-      customStyles: 'row-span-1 col-span-1 h-[400px] w-full',
-    },
-  ];
-
-  const highlightCards = [
-    {
-      title: '75+',
-      description: 'Trusted and Verified Organizations',
-      customStyles: 'h-[185px] w-full text-center flex items-center justify-center bg-gray-100',
+        'Local organizations often have lower operational costs, meaning a higher percentage of your donation goes directly to community services.',
+      emoji: '📊',
     },
     {
-      title: '10x',
-      description: 'Increase in Cause Engagement',
-      customStyles: 'h-[190px] w-full text-center flex items-center justify-center bg-purple-100',
+      title: 'Enjoy Personal and Tax Benefits',
+      description:
+        'Giving locally not only supports causes you care about but can also provide tax credits, maximizing the value of your donation.',
+      emoji: '📝',
+    },
+    {
+      title: 'Foster Civic Engagement',
+      description:
+        'Supporting local causes encourages active community participation and strengthens democracy.',
+      emoji: '🤝',
     },
   ];
 
   return (
-    <div className="grid grid-cols-3 grid-rows-[auto_auto_auto] gap-6 px-6 py-36">
-      {cards.map((card, index) => (
-        <div
-          key={index}
-          className={`relative border rounded-xl shadow-md bg-gray-100 overflow-auto ${card.customStyles}`}
-        >
-          {card.image && (
-            <Image
-              src={card.image}
-              alt={card.title}
-              width={200}
-              height={200}
-              className="mb-4 object-cover mx-auto flex items-center justify-center"
-            />
-          )}
-          <div className="p-4">
-            <h3 className="text-xl font-semibold mb-3">{card.title}</h3>
-            <p className="text-gray-600 text-sm overflow-hidden text-ellipsis">{card.description}</p>
-          </div>
-        </div>
-      ))}
-      <div className="col-span-1 row-span-2 flex flex-col gap-6">
-        {highlightCards.map((card, index) => (
-          <div
+    <section className="w-full bg-white py-32 px-6">
+      {/* Section Header */}
+      <motion.div
+        initial={{ opacity: 0, y: 30 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.8, ease: 'easeOut' }}
+        viewport={{ once: true }}
+        className="max-w-5xl mx-auto text-center"
+      >
+        <h2 className="text-3xl sm:text-4xl font-extrabold text-gray-900">
+          Why Donate Local
+        </h2>
+      </motion.div>
+
+      {/* Features Grid - 2x3 Layout with Animations */}
+      <div className="mt-12 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 max-w-5xl mx-auto">
+        {cards.map((card, index) => (
+          <motion.div
             key={index}
-            className={`relative border rounded-xl shadow-md ${card.customStyles}`}
+            initial={{ opacity: 0, y: 50, rotateX: -10 }}
+            whileInView={{ opacity: 1, y: 0, rotateX: 0 }}
+            transition={{
+              duration: 0.6,
+              delay: index * 0.15,
+              ease: 'easeOut',
+            }}
+            viewport={{ once: true }}
+            whileHover={{ scale: 1.05, rotateX: 5 }}
+            whileTap={{ scale: 0.98 }}
+            className="relative border rounded-xl shadow-md bg-gray-100 p-6 flex flex-col items-center text-center aspect-square transition-all"
           >
-            <div className="p-4">
-              <h3 className="text-2xl font-bold mb-2">{card.title}</h3>
-              <p className="text-gray-600 text-sm">{card.description}</p>
-            </div>
-          </div>
+            <motion.span
+              initial={{ scale: 0.8, opacity: 0 }}
+              whileInView={{ scale: 1, opacity: 1 }}
+              transition={{ duration: 0.4, delay: index * 0.15 + 0.2 }}
+              className="text-5xl"
+            >
+              {card.emoji}
+            </motion.span>
+            <h3 className="mt-4 text-xl font-semibold">{card.title}</h3>
+            <p className="mt-2 text-gray-600 text-sm">{card.description}</p>
+          </motion.div>
         ))}
       </div>
-    </div>
+    </section>
   );
 };
 
