@@ -1,7 +1,6 @@
 "use client";
 
 import { motion } from "framer-motion";
-import TrendingProjects from "../components/TrendingProjects";
 import SearchBar from "../components/SearchBar";
 import FeatureCards from "../components/FeatureCards";
 import { useRouter } from "next/navigation";
