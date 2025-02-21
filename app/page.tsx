@@ -23,7 +23,7 @@ export default function HomePage() {
         transition={{ duration: 0.8, ease: "easeOut" }}
         className="flex flex-col items-center text-center py-12 sm:py-20 space-y-4 sm:space-y-6 w-full"
       >
-        <div className="h-36"></div> 
+        <div className="h-24"></div> 
         
         {/* Big "Elevra" Header */}
         <motion.h1
