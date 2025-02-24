@@ -1,8 +1,8 @@
 const DashboardPage = () => {
     const stats = [
       { label: 'Total Contributions', value: '$12,450' },
-      { label: 'Projects Supported', value: '24' },
-      { label: 'Impact Score', value: '89%' },
+      { label: 'Candidates Supported', value: '24' },
+      { label: 'Local Impact Score', value: '89%' },
     ];
   
     const actions = [
@@ -50,21 +50,21 @@ const DashboardPage = () => {
   
         {/* Recent Contributions Section */}
         <section>
-          <h2 className="text-2xl font-semibold text-gray-900 mb-6">Recent Contributions</h2>
+          <h2 className="text-2xl font-semibold text-gray-900 mb-6">Your Recent Contributions</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             <div className="p-6 bg-gray-100 border rounded-xl shadow-md">
-              <h3 className="text-xl font-bold mb-2">Local Food Drive</h3>
-              <p className="text-gray-600 text-sm mb-4">Donated $250 to support community food distribution.</p>
+              <h3 className="text-xl font-bold mb-2">Jane Doe for City Council</h3>
+              <p className="text-gray-600 text-sm mb-4">Donated $250 to support Jane's campaign for better public transportation.</p>
               <button className="px-4 py-2 bg-purple-600 text-white rounded-full hover:bg-purple-700">View Details</button>
             </div>
             <div className="p-6 bg-gray-100 border rounded-xl shadow-md">
-              <h3 className="text-xl font-bold mb-2">Clean Water Initiative</h3>
-              <p className="text-gray-600 text-sm mb-4">Supported with $500 for clean water projects in rural areas.</p>
+              <h3 className="text-xl font-bold mb-2">John Smith for Mayor</h3>
+              <p className="text-gray-600 text-sm mb-4">Contributed $500 to help John's campaign focus on affordable housing initiatives.</p>
               <button className="px-4 py-2 bg-purple-600 text-white rounded-full hover:bg-purple-700">View Details</button>
             </div>
             <div className="p-6 bg-gray-100 border rounded-xl shadow-md">
-              <h3 className="text-xl font-bold mb-2">Education Fund</h3>
-              <p className="text-gray-600 text-sm mb-4">Contributed $1,200 to sponsor educational materials.</p>
+              <h3 className="text-xl font-bold mb-2">Emily Chen for School Board</h3>
+              <p className="text-gray-600 text-sm mb-4">Supported with $1,200 to promote Emily's efforts in improving local education policies.</p>
               <button className="px-4 py-2 bg-purple-600 text-white rounded-full hover:bg-purple-700">View Details</button>
             </div>
           </div>
