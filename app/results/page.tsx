@@ -7,6 +7,7 @@ import { Card, CardContent } from "../../components/Card";
 import { Button } from "../../components/ui";
 import { Search, Filter } from "lucide-react";
 import { candidates } from "../../data/test_data";
+import Image from "next/image";
 
 export default function ElectionResults() {
   const searchParams = useSearchParams();
@@ -96,11 +97,13 @@ export default function ElectionResults() {
             <Link href={`/candidate/${candidate.name.replace(/\s+/g, "-").toLowerCase()}`}>
               <Card className="group hover:shadow-2xl transition-all rounded-xl cursor-pointer h-[400px] flex flex-col shadow-lg">
                 <CardContent className="p-6 text-center flex flex-col items-center flex-grow">
-                  <img
-                    src={candidate.photo}
-                    alt={`${candidate.name}'s photo`}
-                    className="w-24 h-24 rounded-full mb-4 object-cover aspect-square shadow-xl"
-                  />
+                <Image
+                  src={candidate.photo}
+                  alt={`${candidate.name}'s photo`}
+                  width={96}  // Adjust width as needed
+                  height={96} // Adjust height as needed
+                  className="rounded-full mb-4 object-cover aspect-square shadow-xl"
+                />
                   <h2 className="text-xl font-semibold text-gray-900">
                     {candidate.name}
                   </h2>

@@ -43,7 +43,7 @@ export default function HomePage() {
           viewport={{ once: true }}
           className="text-1xl sm:text-3xl md:text-4xl tracking-tight text-gray-900 w-full leading-tight"
         >
-          Engage with your community. Seamlessly contribute.
+          Discover and Support Local Candidates in Seconds.
         </motion.h2>
 
         {/* Search Bar with Animation */}
@@ -59,7 +59,7 @@ export default function HomePage() {
       </motion.main>
 
       {/* Add Extra White Space */}
-      <div className="h-28"></div> 
+      <div className="h-32"></div> 
 
       {/* About Us Section */}
       <motion.div 

@@ -1,6 +1,7 @@
 "use client";
 
 import { useParams, notFound } from "next/navigation";
+import Image from "next/image";
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { FaGlobe, FaTwitter, FaLinkedin, FaDonate, FaTimes } from "react-icons/fa";
@@ -8,11 +9,14 @@ import { candidates } from "../../../data/test_data";
 
 export default function CandidatePage() {
   const { name } = useParams();
+  const [popupMessage, setPopupMessage] = useState<string | null>(null); 
+  
+  if (typeof name !== 'string') {
+    return notFound();
+  }
   const decodedName = decodeURIComponent(name).replace(/-/g, " "); // Convert URL format back to full name
 
   const candidate = candidates.find((c) => c.name.toLowerCase() === decodedName.toLowerCase());
-
-  const [popupMessage, setPopupMessage] = useState<string | null>(null);
 
   if (!candidate) {
     return notFound(); // Show 404 if candidate is not found
@@ -32,11 +36,13 @@ export default function CandidatePage() {
     >
       {/* Candidate Profile Header */}
       <div className="flex flex-col items-center text-center">
-        <img 
-            src={candidate.photo} 
-            alt={candidate.name} 
-            className="w-40 h-50 rounded-full shadow-lg object-cover aspect-square"
-          />
+        <Image
+          src={candidate.photo}
+          alt={candidate.name}
+          width={160} // Adjust as needed
+          height={200} // Adjust as needed
+          className="rounded-full shadow-lg object-cover aspect-square"
+        />
         <h1 className="text-3xl font-bold text-gray-900 mt-4">{candidate.name}</h1>
         <p className="text-lg text-gray-600">{candidate.position}</p>
         <p className="mt-2 text-gray-700 max-w-md">{candidate.bio}</p>

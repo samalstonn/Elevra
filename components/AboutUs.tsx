@@ -22,12 +22,10 @@ const AboutUs = () => {
           About Elevra
         </h2>
         <p className="mt-6 text-lg text-gray-600">
-          Founded by a group of students and faculty at Cornell University, 
-          Elevra’s purpose is to empower local democracy through connection, 
-          privacy, and impact. Elevra is a nonpartisan platform that helps 
-          citizens discover and support verified local campaigns 
-          by providing objective information and enabling quick donations so 
-          that you can build your community.
+        Elevra was founded by students and faculty at Cornell University to put 
+        power in the hands of local communities. We make it easy to discover and 
+        support verified local candidates with objective information and seamless 
+        donations—all in one place.
         </p>
       </motion.div>
 
@@ -41,16 +39,16 @@ const AboutUs = () => {
         viewport={{ once: true }}
         className="text-3xl sm:text-4xl font-extrabold text-gray-900 text-center"
       >
-        How You Can Build Your Community
+        Why Use Elevra?
       </motion.h2>
 
       {/* Features Grid */}
       <div className="mt-12 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 max-w-5xl mx-auto">
         {[
-          { emoji: "🧠", title: "Contribute Smarter", text: "Support verified candidates with confidence." },
-          { emoji: "⚡", title: "Contribute Faster", text: "Quickly support issues you care about." },
-          { emoji: "🚫", title: "Spam Free", text: "Choose personal information you share." },
-          { emoji: "📊", title: "Quantify", text: "Track impact on your community." }
+          { emoji: "🧠", title: "Contribute Smarter", text: "Make informed, data-driven decisions about which candidates to support." },
+          { emoji: "⚡", title: "Donate Faster", text: "Our streamlined platform gets your contribution to local campaigns in just a few clicks." },
+          { emoji: "🚫", title: "Stay Spam Free", text: "We never share your info with third parties, so you can give without the endless follow-up emails." },
+          { emoji: "📊", title: "Quantify Impact", text: "Track how your donations are being put to work in your community." }
         ].map((card, index) => (
           <motion.div
             key={index}
