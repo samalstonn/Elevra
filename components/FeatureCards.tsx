@@ -11,31 +11,31 @@ const FeatureCards = () => {
     {
       title: 'Boost the Local Economy',
       description:
-        'When you donate to local nonprofits, your dollars remain within the community, multiplying their impact through job creation and local services.',
+        'When you donate to local candidates, your dollars remain within the community, multiplying their impact through job creation and local services.',
       emoji: '💰',
     },
     {
       title: 'Maximize Impact with Flexibility',
       description:
-        'Local nonprofits can quickly adapt to community needs without the bureaucracy that larger organizations face.',
+        'Local candidates can quickly adapt to community needs without the bureaucracy that larger organizations face.',
       emoji: '⚡',
     },
     {
       title: 'Ensure Efficient Use of Resources',
       description:
-        'Local organizations often have lower operational costs, meaning a higher percentage of your donation goes directly to community services.',
+        'Local candidates often have lower operational costs, meaning a higher percentage of your donation makes an impact.',
       emoji: '📊',
     },
     {
-      title: 'Enjoy Personal and Tax Benefits',
+      title: 'Drive Change on Local Issues',
       description:
-        'Giving locally not only supports causes you care about but can also provide tax credits, maximizing the value of your donation.',
-      emoji: '📝',
+        'Your support helps elect candidates who prioritize key community concerns like better roads, affordable housing, and improved public services.',
+      emoji: '🚧',
     },
     {
       title: 'Foster Civic Engagement',
       description:
-        'Supporting local causes encourages active community participation and strengthens democracy.',
+        'Supporting local candidates encourages active community participation and strengthens democracy.',
       emoji: '🤝',
     },
   ];

@@ -25,7 +25,7 @@ const AboutUs = () => {
           Founded by a group of students and faculty at Cornell University, 
           Elevra’s purpose is to empower local democracy through connection, 
           privacy, and impact. Elevra is a nonpartisan platform that helps 
-          citizens discover and support verified local campaigns and nonprofits 
+          citizens discover and support verified local campaigns 
           by providing objective information and enabling quick donations so 
           that you can build your community.
         </p>
@@ -47,8 +47,8 @@ const AboutUs = () => {
       {/* Features Grid */}
       <div className="mt-12 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 max-w-5xl mx-auto">
         {[
-          { emoji: "🧠", title: "Contribute Smarter", text: "Support verified organizations with confidence." },
-          { emoji: "⚡", title: "Contribute Faster", text: "Quickly support causes you care about." },
+          { emoji: "🧠", title: "Contribute Smarter", text: "Support verified candidates with confidence." },
+          { emoji: "⚡", title: "Contribute Faster", text: "Quickly support issues you care about." },
           { emoji: "🚫", title: "Spam Free", text: "Choose personal information you share." },
           { emoji: "📊", title: "Quantify", text: "Track impact on your community." }
         ].map((card, index) => (
