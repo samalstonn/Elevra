@@ -1,6 +1,5 @@
 "use client";
 
-import { useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
 import Link from "next/link";
 import { Card, CardContent } from "../../components/Card";
@@ -10,8 +9,7 @@ import { candidates } from "../../data/test_data";
 import Image from "next/image";
 
 export default function ElectionResults() {
-  const searchParams = useSearchParams();
-  const zipCode = searchParams.get("zipcode") || "13053"; // Placeholder ZIP code
+  const zipCode =  "13053"; // Placeholder ZIP code
 
   return (
     <motion.div 

@@ -3,10 +3,9 @@ import { motion } from 'framer-motion';
 const FeatureCards = () => {
   const cards = [
     {
-      title: 'Take Control of Your Community',
-      description:
-        'Push back against big donors and outside interests—shape policies that matter to you and those in your life.',
-      emoji: '✊',
+      "title": "Take Control of Your Community",
+      "description": "Push back against big donors and outside interests - shape policies that matter to you and those in your life.",
+      "emoji": "🌍"
     },
     {
       title: 'Boost the Local Economy',
