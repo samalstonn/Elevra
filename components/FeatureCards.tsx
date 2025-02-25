@@ -3,39 +3,38 @@ import { motion } from 'framer-motion';
 const FeatureCards = () => {
   const cards = [
     {
-      title: 'Strengthen Your Community',
-      description:
-        'Donating locally directly enhances the quality of life for your neighbors by addressing specific needs in your area.',
-      emoji: '🏡',
+      "title": "Take Control of Your Community",
+      "description": "Push back against big donors and outside interests - shape policies that matter to you and those in your life.",
+      "emoji": "🌍"
     },
     {
       title: 'Boost the Local Economy',
       description:
-        'When you donate to local nonprofits, your dollars remain within the community, multiplying their impact through job creation and local services.',
+        'Keep money flowing back into your area, creating jobs and funding essential services.',
       emoji: '💰',
     },
     {
-      title: 'Maximize Impact with Flexibility',
+      title: 'Maximize Impact',
       description:
-        'Local nonprofits can quickly adapt to community needs without the bureaucracy that larger organizations face.',
+        'Local officials can adapt quickly without big-government red tape.',
       emoji: '⚡',
     },
     {
-      title: 'Ensure Efficient Use of Resources',
+      title: 'Your Help Goes Farther',
       description:
         'Local organizations often have lower operational costs, meaning a higher percentage of your donation goes directly to community services.',
       emoji: '📊',
     },
     {
-      title: 'Enjoy Personal and Tax Benefits',
+      title: 'Strengthen Neighborhood Ties',
       description:
-        'Giving locally not only supports causes you care about but can also provide tax credits, maximizing the value of your donation.',
-      emoji: '📝',
+        'Get to know politicians and community leaders personally. Foster collaboration and trust on issues that matter, creating a more vibrant, united neighborhood.',
+      emoji: '🏡',
     },
     {
       title: 'Foster Civic Engagement',
       description:
-        'Supporting local causes encourages active community participation and strengthens democracy.',
+        'Supporting local candidates encourages active community participation and strengthens democracy.',
       emoji: '🤝',
     },
   ];
@@ -51,7 +50,7 @@ const FeatureCards = () => {
         className="max-w-5xl mx-auto text-center"
       >
         <h2 className="text-3xl sm:text-4xl font-extrabold text-gray-900">
-          Why Donate Local
+        Why Get Involved With Local Elections 
         </h2>
       </motion.div>
 

@@ -23,7 +23,7 @@ export default function HomePage() {
         transition={{ duration: 0.8, ease: "easeOut" }}
         className="flex flex-col items-center text-center py-12 sm:py-20 space-y-4 sm:space-y-6 w-full"
       >
-        <div className="h-36"></div> 
+        <div className="h-24"></div> 
         
         {/* Big "Elevra" Header */}
         <motion.h1
@@ -43,7 +43,7 @@ export default function HomePage() {
           viewport={{ once: true }}
           className="text-1xl sm:text-3xl md:text-4xl tracking-tight text-gray-900 w-full leading-tight"
         >
-          Engage with your community. Seamlessly contribute.
+          Discover and Support Local Candidates in Seconds.
         </motion.h2>
 
         {/* Search Bar with Animation */}
@@ -59,7 +59,7 @@ export default function HomePage() {
       </motion.main>
 
       {/* Add Extra White Space */}
-      <div className="h-28"></div> 
+      <div className="h-32"></div> 
 
       {/* About Us Section */}
       <motion.div 
@@ -72,7 +72,7 @@ export default function HomePage() {
         <AboutUs />
       </motion.div>
 
-      {/* Feature Cards */}
+      {/* Feature Cards (Why Donate Local)*/}
       <motion.div 
         initial={{ opacity: 0, y: 50 }} 
         whileInView={{ opacity: 1, y: 0 }} 
