@@ -62,7 +62,7 @@ export default function HomePage() {
         {/* Animated "Elevra" Header */}
         <motion.h1
           variants={textVariants}
-          className="text-6xl sm:text-6xl md:text-7xl font-bold text-purple-900"
+          className="text-4xl sm:text-6xl md:text-7xl font-bold text-purple-900"
         >
           Elevra
         </motion.h1>
