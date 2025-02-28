@@ -37,9 +37,6 @@ export default function RootLayout({
     <div className="flex-grow w-full flex items-center justify-center min-h-[75vh]">
         {children}
     </div>
-    {/* <div className="bg-white flex-grow w-full flex items-center justify-center min-h-[25vh]">
-        <p> </p>
-    </div> */}
     
 {/* Footer Section */}
 <footer className="w-full py-6 text-center text-sm text-gray-500 border-t border-gray-200">

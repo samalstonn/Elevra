@@ -13,70 +13,100 @@ export default function HomePage() {
     router.push(`/results?zipCode=${zipCode}`);
   };
 
+  // Motion variants
+  const containerVariants = {
+    hidden: { opacity: 0, y: 30 },
+    visible: { 
+      opacity: 1, 
+      y: 0,
+      transition: { 
+        duration: 0.8, 
+        ease: "easeOut",
+        staggerChildren: 0.2, // Delays each child slightly
+      }
+    }
+  };
+
+  const textVariants = {
+    hidden: { opacity: 0, y: 20, rotate: -2 },
+    visible: { 
+      opacity: 1, 
+      y: 0, 
+      rotate: 0,
+      transition: { duration: 0.6, ease: "easeOut" }
+    }
+  };
+
+  const cardVariants = {
+    hidden: { opacity: 0, y: 30, scale: 0.9 },
+    visible: { 
+      opacity: 1, 
+      y: 0, 
+      scale: 1,
+      transition: { duration: 0.6, ease: "easeOut" }
+    }
+  };
+
   return (
-    <div className="min-h-screen flex flex-col items-center px-4 sm:px-6 lg:px-8 mx-auto">
+    <div className="min-h-screen flex flex-col items-center w-full overflow-x-hidden mx-auto">
       
       {/* Hero Section */}
       <motion.main 
-        initial={{ opacity: 0, y: 50 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.8, ease: "easeOut" }}
-        className="flex flex-col items-center text-center py-12 sm:py-20 space-y-4 sm:space-y-6 w-full"
+        initial="hidden"
+        animate="visible"
+        variants={containerVariants}
+        className="flex flex-col items-center text-center py-12 sm:py-20 space-y-4 sm:space-y-6 w-full max-w-screen"
       >
         <div className="h-24"></div> 
         
-        {/* Big "Elevra" Header */}
+        {/* Animated "Elevra" Header */}
         <motion.h1
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, ease: "easeOut" }}
-          viewport={{ once: true }}
-          className="text-4xl sm:text-6xl md:text-7xl font-bold text-purple-900"
+          variants={textVariants}
+          className="text-6xl sm:text-6xl md:text-7xl font-bold text-purple-900"
         >
           Elevra
         </motion.h1>
 
         <motion.h2
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.7, ease: "easeOut", delay: 0.2 }}
-          viewport={{ once: true }}
+          variants={textVariants}
           className="text-1xl sm:text-3xl md:text-4xl tracking-tight text-gray-900 w-full leading-tight"
         >
           Discover and Support Local Candidates in Seconds.
         </motion.h2>
 
-        {/* Search Bar with Animation */}
+        {/* Search Bar */}
         <motion.div
-          initial={{ opacity: 0, scale: 0.9 }}
-          whileInView={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.6, ease: "easeOut", delay: 0.3 }}
-          viewport={{ once: true }}
+          variants={cardVariants}
           className="w-full max-w-lg sm:max-w-xl md:max-w-2xl lg:max-w-3xl py-6"
         >
           <SearchBar onSearch={(zipCode: string) => handleSearch(zipCode)} />
         </motion.div>
       </motion.main>
 
-      {/* Add Extra White Space */}
-      <div className="h-32"></div> 
+      <div className="mt-8 sm:mt-16 lg:mt-24"></div>
 
       {/* About Us Section */}
       <motion.div 
-        initial={{ opacity: 0, y: 50 }} 
-        whileInView={{ opacity: 1, y: 0 }} 
-        transition={{ duration: 0.8, ease: "easeOut", delay: 0.3 }}
+        initial="hidden" 
+        whileInView="visible" 
+        variants={cardVariants}
         viewport={{ once: true }}
-        className="w-full"
+        className="w-full max-w-screen"
       >
         <AboutUs />
       </motion.div>
 
-      {/* Feature Cards (Why Donate Local)*/}
+      {/* Feature Cards Section with Staggered Animation */}
       <motion.div 
-        initial={{ opacity: 0, y: 50 }} 
-        whileInView={{ opacity: 1, y: 0 }} 
-        transition={{ duration: 0.7, ease: "easeOut", delay: 0.2 }}
+        initial="hidden"
+        whileInView="visible"
+        variants={{
+          hidden: { opacity: 0 },
+          visible: { 
+            opacity: 1, 
+            transition: { staggerChildren: 0.2 } // Stagger effect
+          }
+        }}
         viewport={{ once: true }}
         className="w-full max-w-4xl sm:max-w-6xl lg:max-w-7xl xl:max-w-[80%] px-2 sm:px-4"
       >
