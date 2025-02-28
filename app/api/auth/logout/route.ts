@@ -6,7 +6,8 @@ const prisma = new PrismaClient();
 
 export async function POST() {
   try {
-    const sessionToken = cookies().get("session_token")?.value;
+    const cookieStore = await cookies();
+    const sessionToken = cookieStore.get("session_token")?.value;
 
     if (sessionToken) {
       // Delete the session from the database
@@ -16,7 +17,7 @@ export async function POST() {
     }
 
     // Clear the session cookie
-    cookies().delete("session_token");
+    cookieStore.delete("session_token");
 
     return NextResponse.json(
       { message: "Logged out successfully" },

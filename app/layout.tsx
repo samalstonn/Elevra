@@ -22,7 +22,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
 function NavMenu() {
   const { user, loading, logout } = useAuth();
   const [showAuthModal, setShowAuthModal] = useState(false);
-  const [authMode, setAuthMode] = useState<"login" | "signup">("login");
+  const [authMode, _] = useState<"login" | "signup">("login");
 
   const capitalizeName = (name: string) => {
     return name

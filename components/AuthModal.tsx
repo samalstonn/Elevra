@@ -15,7 +15,6 @@ export default function AuthModal({ isOpen, onClose, initialMode = "login" }: Au
   const router = useRouter();
   const { login, signup } = useAuth();
 
-  // State declarations (always called in the same order)
   const [mode, setMode] = useState<"login" | "signup">(initialMode);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -37,13 +36,12 @@ export default function AuthModal({ isOpen, onClose, initialMode = "login" }: Au
   // Success message state
   const [success, setSuccess] = useState<string | null>(null);
 
-  // Effects (always executed)
+  // Effects
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
     const successMsg = urlParams.get("success");
     if (successMsg) {
       setSuccess(successMsg);
-      // Remove success param from URL
       urlParams.delete("success");
       const newUrl = window.location.pathname + (urlParams.toString() ? `?${urlParams.toString()}` : "");
       window.history.replaceState({}, "", newUrl);
@@ -54,10 +52,8 @@ export default function AuthModal({ isOpen, onClose, initialMode = "login" }: Au
     setSuccess(null);
   }, [mode]);
 
-  // Early return: all hooks have already been called
   if (!isOpen) return null;
 
-  // Event handlers
   const handleLoginSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
@@ -73,8 +69,12 @@ export default function AuthModal({ isOpen, onClose, initialMode = "login" }: Au
       await login(loginEmail, loginPassword);
       onClose();
       router.push("/dashboard");
-    } catch (err: any) {
-      setError(err.message || "An error occurred during login");
+    } catch (err) {
+      if (err instanceof Error) {
+        setError(err.message || "An error occurred during login");
+      } else {
+        setError("An error occurred during login");
+      }
     } finally {
       setLoading(false);
     }
@@ -110,13 +110,15 @@ export default function AuthModal({ isOpen, onClose, initialMode = "login" }: Au
         name: signupData.name,
         zipcode: signupData.zipcode
       });
-
-      // Switch to login mode with pre-filled email
       setMode("login");
       setError("");
       setLoginEmail(signupData.email);
-    } catch (err: any) {
-      setError(err.message || "An error occurred during signup");
+    } catch (err) {
+      if (err instanceof Error) {
+        setError(err.message || "An error occurred during signup");
+      } else {
+        setError("An error occurred during signup");
+      }
     } finally {
       setLoading(false);
     }

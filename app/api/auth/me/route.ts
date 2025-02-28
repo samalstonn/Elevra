@@ -6,7 +6,8 @@ const prisma = new PrismaClient();
 
 export async function GET() {
   try {
-    const sessionToken = cookies().get("session_token")?.value;
+    const cookieStore = await cookies();
+    const sessionToken = cookieStore.get("session_token")?.value;
 
     if (!sessionToken) {
       return NextResponse.json(
@@ -31,7 +32,7 @@ export async function GET() {
       }
       
       // Clear the cookie
-      cookies().delete("session_token");
+      (await cookies()).delete("session_token");
       
       return NextResponse.json(
         { message: "Session expired" },
@@ -40,7 +41,7 @@ export async function GET() {
     }
 
     // Return user data without password
-    const { password, ...userWithoutPassword } = session.user;
+    const { password: _password, ...userWithoutPassword } = session.user;
 
     return NextResponse.json({ user: userWithoutPassword }, { status: 200 });
   } catch (error) {
