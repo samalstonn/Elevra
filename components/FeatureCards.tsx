@@ -54,7 +54,7 @@ const FeatureCards = () => {
         whileInView={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.8, ease: 'easeInOut' }}
         viewport={{ once: true }}
-        className="max-w-5xl mx-auto text-center"
+        className="max-w-5xl mx-auto text-center mb-12"
       >
         <h2 className="text-2xl sm:text-3xl font-extrabold text-gray-900">
           Why Get Involved With Local Elections
@@ -73,8 +73,8 @@ const FeatureCards = () => {
           },
         }}
         viewport={{ once: true }}
-        className="mt-6 grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 
-                   gap-4 sm:gap-6 max-w-5xl mx-auto"
+        className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 
+                   gap-6 max-w-5xl mx-auto"
       >
         {cards.map((card, index) => (
           <motion.div
@@ -85,21 +85,21 @@ const FeatureCards = () => {
             }}
             whileHover={{ scale: 1.04, transition: { type: "spring", stiffness: 100 } }}
             whileTap={{ scale: 0.97, transition: { type: "spring", stiffness: 200 } }}
-            className="relative border rounded-lg shadow-md bg-gray-100 p-4 sm:p-6 
-                       flex flex-col items-center text-center 
-                       aspect-[4/5] md:aspect-square transition-all"
+            className="border rounded-lg shadow-md bg-gray-100 p-5
+                       flex flex-col items-center text-center h-64
+                       transition-all"
           >
             <motion.span
               variants={{
                 hidden: { scale: 0.8, opacity: 0 },
                 visible: { scale: 1, opacity: 1, transition: { duration: 0.4, delay: index * 0.1 + 0.2 } }
               }}
-              className="text-3xl sm:text-4xl"
+              className="text-4xl mb-3"
             >
               {card.emoji}
             </motion.span>
-            <h3 className="mt-2 text-base sm:text-lg font-semibold">{card.title}</h3>
-            <p className="mt-1 text-gray-600 text-sm">{card.description}</p>
+            <h3 className="text-lg font-semibold mb-2">{card.title}</h3>
+            <p className="text-gray-600 text-sm flex-grow">{card.description}</p>
           </motion.div>
         ))}
       </motion.div>
