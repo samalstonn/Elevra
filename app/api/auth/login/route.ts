@@ -54,7 +54,8 @@ export async function POST(request: Request) {
     });
 
     // Set cookie with session token
-    cookies().set({
+    const cookieStore = await cookies();
+    cookieStore.set({
       name: "session_token",
       value: sessionToken,
       httpOnly: true,

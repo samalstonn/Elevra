@@ -78,7 +78,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         throw new Error(data.message || "Login failed");
       }
 
-      setUser(data.user);
+      // Fetch the user data directly to ensure we have fresh data after login
+      await checkAuth();
     } catch (error) {
       throw error;
     } finally {
@@ -104,6 +105,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (!response.ok) {
         throw new Error(data.message || "Signup failed");
       }
+
+      // No need to fetch user data after signup as they still need to login
     } catch (error) {
       throw error;
     } finally {
