@@ -3,7 +3,6 @@
 import { AuthProvider, useAuth } from "../app/lib/auth-context";
 import { useState } from "react";
 import Link from "next/link";
-import AuthModal from "../components/AuthModal";
 import './globals.css';
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
@@ -21,8 +20,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
 
 function NavMenu() {
   const { user, loading, logout } = useAuth();
-  const [showAuthModal, setShowAuthModal] = useState(false);
-  const [authMode, _] = useState<"login" | "signup">("login");
 
   const capitalizeName = (name: string) => {
     return name
@@ -47,11 +44,8 @@ function NavMenu() {
         {/* Dashboard Button - Always Visible */}
         <button 
           className="px-6 py-2 text-lg font-semibold rounded-full bg-black text-white shadow-md hover:bg-gray-900 transition"
-          onClick={() => {
-            if (!user) setShowAuthModal(true);
-          }}
         >
-          <Link href={user ? "/dashboard" : "#"}>My Dashboard</Link>
+          <Link href={user ? "/dashboard" : "/login-page"}>My Dashboard</Link>
         </button>
   
         {!loading && (
@@ -80,22 +74,14 @@ function NavMenu() {
               </div>
             </div>
           ) : (
-            // Login Button
-            <button 
-              className="text-lg text-gray-700 font-medium hover:text-black transition"
-              onClick={() => setShowAuthModal(true)}
-            >
-              Login
-            </button>
+            // Login Button - Redirects to new login page
+            <Link href="/login-page">
+              <span className="text-lg text-gray-700 font-medium hover:text-black transition cursor-pointer">
+                Login
+              </span>
+            </Link>
           )
         )}
-  
-        {/* Auth Modal */}
-        <AuthModal 
-          isOpen={showAuthModal} 
-          onClose={() => setShowAuthModal(false)} 
-          initialMode={authMode}
-        />
       </div>
     </div>
   );

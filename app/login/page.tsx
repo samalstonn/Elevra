@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, Suspense } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { useAuth } from "../lib/auth-context";
 
 export default function LoginPage() {
@@ -15,19 +15,14 @@ export default function LoginPage() {
 function LoginPageContent() {
   const router = useRouter();
   const { user, loading: authLoading } = useAuth();
-  const searchParams = useSearchParams();
 
   useEffect(() => {
     if (user && !authLoading) {
       router.push("/dashboard");
     } else if (!authLoading) {
-      const successMsg = searchParams.get("success");
-      const redirectUrl = successMsg
-        ? `/?authModal=login&success=${encodeURIComponent(successMsg)}`
-        : "/?authModal=login";
-      router.push(redirectUrl);
+      router.push("/login-page");
     }
-  }, [user, authLoading, router, searchParams]);
+  }, [user, authLoading, router]);
 
   return <LoadingSpinner />;
 }
