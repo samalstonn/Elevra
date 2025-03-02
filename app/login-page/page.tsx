@@ -135,7 +135,7 @@ export default function LoginPage() {
       </div>
 
       {/* Signup Modal */}
-      {isSignupOpen && <AuthModal isOpen={isSignupOpen} onClose={() => {
+      {isSignupOpen && <AuthModal isOpen={isSignupOpen} initialMode="signup" onClose={() => {
         setIsSignupOpen(false);
         window.location.reload(); // Reload the page after signup
       }} />}

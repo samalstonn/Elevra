@@ -5,10 +5,11 @@ import { useRouter } from "next/navigation";
 import { FaUser, FaLock, FaEnvelope, FaTimes } from "react-icons/fa";
 import { useAuth } from "../app/lib/auth-context";
 
-type AuthModalProps = {
+interface AuthModalProps {
   isOpen: boolean;
   onClose: () => void;
-};
+  initialMode: "login" | "signup";
+}
 
 export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
   const router = useRouter();

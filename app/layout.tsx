@@ -1,7 +1,6 @@
 "use client";
 
 import { AuthProvider, useAuth } from "../app/lib/auth-context";
-import { useState } from "react";
 import Link from "next/link";
 import './globals.css';
 
