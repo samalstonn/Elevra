@@ -18,11 +18,15 @@ export const metadata: Metadata = {
   title: "Elevra",
 };
 
+export const dynamic = "force-dynamic";
+
+const clerkKey = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
+
 export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <ClerkProvider publishableKey={process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY}>
+    <ClerkProvider publishableKey={clerkKey || ""}>
       <html lang="en">
         <body className={inter.className}>
           <div className="flex flex-col min-h-screen">
