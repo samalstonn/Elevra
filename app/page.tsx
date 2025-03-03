@@ -1,13 +1,11 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { useEffect, useState, Suspense } from "react";
+import { Suspense } from "react";
 import { useRouter } from "next/navigation";
 import SearchBar from "../components/SearchBar";
 import FeatureCards from "../components/FeatureCards";
 import AboutUs from "@/components/AboutUs";
-import AuthModal from "@/components/AuthModal";
-import { useSearchParams } from "next/navigation";
 
 export default function HomePage() {
   return (
@@ -19,31 +17,7 @@ export default function HomePage() {
 
 function HomePageContent() {
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const [showAuthModal, setShowAuthModal] = useState(false);
-  const [authMode, setAuthMode] = useState<"login" | "signup">("login");
-  const [_, setSuccessMessage] = useState<string | null>(null);
 
-  // Check URL params for auth modal
-  useEffect(() => {
-    const authModalParam = searchParams.get("authModal");
-    if (authModalParam === "login" || authModalParam === "signup") {
-      setAuthMode(authModalParam);
-      setShowAuthModal(true);
-      
-      // Check for success message
-      const success = searchParams.get("success");
-      if (success) {
-        setSuccessMessage(success);
-      }
-      
-      // Remove the query params from URL without page reload
-      const url = new URL(window.location.href);
-      url.searchParams.delete("authModal");
-      url.searchParams.delete("success");
-      window.history.replaceState({}, "", url);
-    }
-  }, [searchParams]);
 
   const handleSearch = (zipCode: string) => {
     router.push(`/results?zipCode=${zipCode}`);
@@ -123,12 +97,6 @@ function HomePageContent() {
         <FeatureCards />
       </motion.div>
       
-      {/* Auth Modal */}
-      <AuthModal 
-        isOpen={showAuthModal} 
-        onClose={() => setShowAuthModal(false)} 
-        initialMode={authMode}
-      />
     </div>
   );
 }

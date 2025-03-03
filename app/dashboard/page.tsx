@@ -1,10 +1,7 @@
 "use client";
-
-import ProtectedRoute from "../../components/ProtectedRoute";
-import { useAuth } from "../lib/auth-context";
-
+import { useUser } from '@clerk/nextjs';
 const DashboardPage = () => {
-  const { user } = useAuth();
+  const { user } = useUser();
   
   const stats = [
     { label: 'Total Contributions', value: '$12,450' },
@@ -19,13 +16,12 @@ const DashboardPage = () => {
   ];
 
   return (
-    <ProtectedRoute>
       <div className="min-h-screen p-6">
         {/* Header Section */}
         <header className="mb-12">
           <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
           <p className="text-gray-600">
-            Welcome, {user?.name || user?.username}! Track your contributions and maximize your impact.
+            Welcome, {user?.firstName || user?.username || 'User'}! Track your contributions and maximize your impact.
           </p>
         </header>
 
@@ -80,7 +76,6 @@ const DashboardPage = () => {
           </div>
         </section>
       </div>
-    </ProtectedRoute>
   );
 };
 
