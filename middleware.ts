@@ -7,6 +7,7 @@ const isPublicRoute = createRouteMatcher([
   '/',            // Home page
   '/about(.*)',   // About page
   '/contact(.*)', // Contact page
+  "/not-found",   // 404 page
 ]);
 
 export default clerkMiddleware(async (auth, req) => {
