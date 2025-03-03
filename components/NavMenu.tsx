@@ -1,14 +1,10 @@
 "use client";
 
-import { useState } from "react";
 import Link from "next/link";
 import { useAuth } from "../app/lib/auth-context";
-import AuthModal from "./AuthModal";
 
 export default function NavMenu() {
   const { user, loading, logout } = useAuth();
-  const [showAuthModal, setShowAuthModal] = useState(false);
-  const [authMode, _] = useState<"login" | "signup">("login");
 
   const capitalizeName = (name: string) => {
     return name
@@ -24,14 +20,13 @@ export default function NavMenu() {
   return (
     <div className="relative flex w-full justify-end items-center space-x-4 px-6">
       {/* Dashboard Button - Always Visible */}
-      <button 
-        className="px-6 py-2 text-lg font-semibold rounded-full bg-black text-white shadow-md hover:bg-gray-900 transition flex items-center justify-center"
-        onClick={() => {
-          if (!user) setShowAuthModal(true);
-        }}
-      >
-        <Link href={user ? "/dashboard" : "#"}>My Dashboard</Link>
-      </button>
+      <Link href={user ? "/dashboard" : "/login-page"}>
+        <button 
+          className="px-6 py-2 text-lg font-semibold rounded-full bg-black text-white shadow-md hover:bg-gray-900 transition flex items-center justify-center"
+        >
+          My Dashboard
+        </button>
+      </Link>
 
       {!loading && (
         user ? (
@@ -59,22 +54,14 @@ export default function NavMenu() {
             </div>
           </div>
         ) : (
-          // Updated Login Button - Styled as Plain Text
-          <button 
-            className="text-lg text-gray-700 font-medium hover:text-black transition"
-            onClick={() => setShowAuthModal(true)}
-          >
-            Login
-          </button>
+          // Updated Login Button - Links to new login page
+          <Link href="/login-page">
+            <span className="text-lg text-gray-700 font-medium hover:text-black transition cursor-pointer">
+              Login
+            </span>
+          </Link>
         )
       )}
-
-      {/* Auth Modal */}
-      <AuthModal 
-        isOpen={showAuthModal} 
-        onClose={() => setShowAuthModal(false)} 
-        initialMode={authMode}
-      />
     </div>
   );
 }

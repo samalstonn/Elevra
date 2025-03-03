@@ -6,12 +6,12 @@ const prisma = new PrismaClient();
 
 export async function POST(request: Request) {
   try {
-    const { email, username, password, name, zipcode } = await request.json();
+    const { email, password, name, zipcode } = await request.json();
 
     // Validate required fields
-    if (!email || !username || !password) {
+    if (!email || !password) {
       return NextResponse.json(
-        { message: "Email, username, and password are required" },
+        { message: "Email, and password are required" },
         { status: 400 }
       );
     }
@@ -28,16 +28,6 @@ export async function POST(request: Request) {
       );
     }
 
-    const existingUserByUsername = await prisma.user.findUnique({
-      where: { username },
-    });
-
-    if (existingUserByUsername) {
-      return NextResponse.json(
-        { message: "Username already taken" },
-        { status: 400 }
-      );
-    }
 
     // Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
@@ -46,7 +36,6 @@ export async function POST(request: Request) {
     const newUser = await prisma.user.create({
       data: {
         email,
-        username,
         password: hashedPassword,
         name: name || null,
         zipcode: zipcode || null,

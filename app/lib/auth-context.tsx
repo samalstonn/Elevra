@@ -22,7 +22,6 @@ type AuthContextType = {
 
 type SignupData = {
   email: string;
-  username: string;
   password: string;
   name?: string;
   zipcode?: string;
