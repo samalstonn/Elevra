@@ -1,24 +1,34 @@
+"use client";
+
+import ProtectedRoute from "../../components/ProtectedRoute";
+import { useAuth } from "../lib/auth-context";
+
 const DashboardPage = () => {
-    const stats = [
-      { label: 'Total Contributions', value: '$12,450' },
-      { label: 'Candidates Supported', value: '24' },
-      { label: 'Local Impact Score', value: '89%' },
-    ];
+  const { user } = useAuth();
   
-    const actions = [
-      { label: 'View Impact', link: '#' },
-      { label: 'Donate Again', link: '#' },
-      { label: 'Manage Preferences', link: '#' },
-    ];
-  
-    return (
+  const stats = [
+    { label: 'Total Contributions', value: '$12,450' },
+    { label: 'Candidates Supported', value: '24' },
+    { label: 'Local Impact Score', value: '89%' },
+  ];
+
+  const actions = [
+    { label: 'View Impact', link: '#' },
+    { label: 'Donate Again', link: '#' },
+    { label: 'Manage Preferences', link: '#' },
+  ];
+
+  return (
+    <ProtectedRoute>
       <div className="min-h-screen p-6">
         {/* Header Section */}
         <header className="mb-12">
           <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
-          <p className="text-gray-600">Track your contributions and maximize your impact.</p>
+          <p className="text-gray-600">
+            Welcome, {user?.name || user?.username}! Track your contributions and maximize your impact.
+          </p>
         </header>
-  
+
         {/* Stats Section */}
         <section className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
           {stats.map((stat, index) => (
@@ -31,7 +41,7 @@ const DashboardPage = () => {
             </div>
           ))}
         </section>
-  
+
         {/* Quick Actions Section */}
         <section className="mb-12">
           <h2 className="text-2xl font-semibold text-gray-900 mb-6">Quick Actions</h2>
@@ -47,7 +57,7 @@ const DashboardPage = () => {
             ))}
           </div>
         </section>
-  
+
         {/* Recent Contributions Section */}
         <section>
           <h2 className="text-2xl font-semibold text-gray-900 mb-6">Your Recent Contributions</h2>
@@ -70,7 +80,8 @@ const DashboardPage = () => {
           </div>
         </section>
       </div>
-    );
-  };
-  
-  export default DashboardPage;
+    </ProtectedRoute>
+  );
+};
+
+export default DashboardPage;
