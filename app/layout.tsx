@@ -11,6 +11,7 @@ import { Button } from "../components/ui";
 import { Inter } from "next/font/google";
 import Link from "next/link";
 import './globals.css';
+import { Analytics } from "@vercel/analytics/react"
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -56,6 +57,7 @@ export default function RootLayout({
             {/* Main Content */}
             <main className="flex-grow w-full flex items-center justify-center min-h-[75vh]">
               {children}
+              <Analytics />
             </main>
 
             {/* Footer Section */}
