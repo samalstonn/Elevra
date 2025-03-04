@@ -46,9 +46,12 @@ export default function RootLayout({
                 </SignedIn>
 
                 <SignedOut>
-                  <SignInButton mode="redirect">
+                  {/* <SignInButton mode="redirect"> # removed for public routes
                     <Button>My Dashboard</Button>
-                  </SignInButton>
+                  </SignInButton> */}
+                  <Link href="/dashboard">
+                    <Button>My Dashboard</Button>
+                  </Link>
                   <SignInButton></SignInButton>
                 </SignedOut>
               </div>
