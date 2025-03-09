@@ -78,7 +78,7 @@ export default function SearchBar({ onSearch }: SearchBarProps) {
               handleSearch();
             }
           }}
-          className="flex-grow px-4 py-2 text-base sm:px-6 sm:py-4 sm:text-lg border-none rounded-l-full focus:outline-none focus:ring-2 focus:ring-purple-600"
+          className="flex-grow px-4 py-2 text-base sm:px-6 sm:py-4 sm:text-lg border-none rounded-l-full focus:outline-none focus:ring-0"
         />
   
         {/* Search Button */}
