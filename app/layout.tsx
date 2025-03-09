@@ -46,23 +46,22 @@ export default function RootLayout({
                 Elevra
               </Link>
 
-              {pathname.startsWith("/results") && (
+                {(pathname.startsWith("/results") || pathname.startsWith("/candidate")) && (
                 <div className="flex-grow flex items-center justify-center gap-4 mx-auto">
                   <Button
-                    variant="ghost"
-                    className="flex items-center text-gray-700"
-                    onClick={() => {
-                      // Placeholder for address change functionality
-                    }}
+                  variant="ghost"
+                  className="flex items-center text-gray-700 border border-gray-300 rounded-full shadow-sm"
+                  onClick={() => {
+                    // Placeholder for address change functionality
+                  }}
                   >
-                    📍 Dryden, NY
+                  📍 Dryden, NY
                   </Button>
                   <div className="max-w-4xl w-full">
-                    <SearchBar placeholder="Search elections or candidates..." />
+                  <SearchBar placeholder="Search elections or candidates..." />
                   </div>
-                
                 </div>
-              )}
+                )}
 
               <div className="flex items-center gap-4 shrink-0">
                 <SignedIn>

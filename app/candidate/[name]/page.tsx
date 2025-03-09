@@ -3,8 +3,8 @@
 import { useParams, notFound } from "next/navigation";
 import Image from "next/image";
 import { useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { FaGlobe, FaTwitter, FaLinkedin, FaDonate, FaTimes, FaCheckCircle } from "react-icons/fa";
+import { motion } from "framer-motion";
+import { FaGlobe, FaTwitter, FaLinkedin, FaDonate, FaCheckCircle } from "react-icons/fa";
 import { candidates } from "../../../data/test_data";
 
 function normalizeSlug(str: string): string {
@@ -29,9 +29,6 @@ export default function CandidatePage() {
     return notFound();
   }
 
-  const handleMissingLink = (platform: string) => {
-    setPopupMessage(`${candidate.name} has not provided a ${platform} link.`);
-  };
 
   const formattedPolicies = candidate.policies.map((policy) => {
     if (typeof policy === "string") {
@@ -49,166 +46,115 @@ export default function CandidatePage() {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.8, ease: "easeOut" }}
-      className="p-6 sm:p-8 pb-8 mb-16 max-w-3xl mx-auto bg-white rounded-lg shadow-xl border border-gray-200 relative"
+      className="p-4 sm:p-6 max-w-6xl mx-auto bg-white relative"
     >
-      {/* Candidate Profile */}
-      <div className="flex flex-col items-center text-center">
-      <Image
-          src={candidate.photo || "/default-profile.png"}
+      {/* Profile Header */}
+      <div className="flex flex-col items-start text-left">
+        <Image
+          src={candidate.photo || '/default-profile.png'}
+          width={100}
+          height={100}
           alt={candidate.name}
-          width={180}
-          height={180}
-          className="rounded-full shadow-lg object-cover border-4 border-gray-300"
+          className="rounded-full shadow-sm"
         />
-
-        {/* Candidate Name + Verified Badge */}
-        <div className="mt-3 flex items-center gap-2 relative">
-          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">{candidate.name}</h1>
-
-          {/* Verified or Unverified Icon */}
+        <h1 className="mt-2 text-xl font-bold text-gray-900 flex items-center gap-2 relative">
+          {candidate.name}
           <div
             className="relative cursor-pointer"
             onMouseEnter={() => setHovered(candidate.name)}
             onMouseLeave={() => setHovered(null)}
           >
             {candidate.verified ? (
-              <FaCheckCircle className="text-green-500 text-lg" />
+              <FaCheckCircle className="text-blue-500" />
             ) : (
-              <FaCheckCircle className="text-gray-400 text-lg" />
+              <FaCheckCircle className="text-gray-400" />
             )}
-
-            {/* Tooltip Popup */}
             {hovered === candidate.name && (
-              <div className="absolute top-[-32px] left-1/2 transform -translate-x-1/2 bg-gray-900/90 text-white text-xs font-medium border border-blue-400 rounded-md px-3 py-2 shadow-lg whitespace-nowrap">
+              <div
+                className="absolute bottom-full mb-2 left-1/2 transform -translate-x-1/2 bg-gray-900 text-white text-xs font-medium px-2 py-1 rounded shadow-md whitespace-nowrap z-10"
+              >
                 {candidate.verified
                   ? "This candidate has verified their information"
-                  : "This candidate has not yet verified their information"}
+                  : "This candidate has not verified their information"}
               </div>
             )}
           </div>
-        </div>
-
-        <p className="text-md sm:text-lg font-medium text-gray-600">{candidate.position}</p>
-        <p className="text-md font-semibold text-blue-600 mt-1">{candidate.politicalAffiliation}</p>
-        <p className="mt-2 text-gray-700 max-w-lg text-sm sm:text-base">{candidate.bio}</p>
+        </h1>
+        <p className="text-sm font-medium text-gray-600">{candidate.position}</p>
+        <p className="text-sm font-semibold text-blue-600">{candidate.politicalAffiliation}</p>
       </div>
-
-      {/* Social Links */}
-      <div className="mt-6 flex justify-center gap-6 sm:gap-4">
-        {candidate.website ? (
-          <a
-            href={candidate.website}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-blue-600 hover:text-blue-800 transition text-xl sm:text-2xl"
-          >
-            <FaGlobe />
+  
+      {/* Social Links Inline */}
+      <div className="mt-2 flex items-start gap-3">
+        {(
+          <a href={candidate.website} target="_blank" className="text-blue-600 hover:text-blue-800 text-lg">
+        <FaGlobe />
           </a>
-        ) : (
-          <span
-            onClick={() => handleMissingLink("website")}
-            className="text-gray-400 cursor-pointer text-xl sm:text-2xl"
-          >
-            <FaGlobe />
-          </span>
         )}
-
-        {candidate.linkedin ? (
-          <a
-            href={candidate.linkedin}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-blue-700 hover:text-blue-900 transition text-xl sm:text-2xl"
-          >
-            <FaLinkedin />
+        {(
+          <a href={candidate.linkedin} className="text-blue-600 hover:text-blue-800 text-xl">
+        <FaLinkedin />
           </a>
-        ) : (
-          <span
-            onClick={() => handleMissingLink("LinkedIn")}
-            className="text-gray-400 cursor-pointer text-xl sm:text-2xl"
-          >
-            <FaLinkedin />
-          </span>
         )}
-
-        {candidate.twitter ? (
-          <a
-            href={candidate.twitter}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-blue-500 hover:text-blue-700 transition text-xl sm:text-2xl"
-          >
-            <FaTwitter />
+        {(
+          <a href={candidate.twitter} className="text-blue-400 hover:text-blue-600 text-xl">
+        <FaTwitter />
           </a>
-        ) : (
-          <span
-            onClick={() => handleMissingLink("Twitter")}
-            className="text-gray-400 cursor-pointer text-xl sm:text-2xl"
-          >
-            <FaTwitter />
-          </span>
         )}
       </div>
-
-      {/* Candidate Policies */}
-      <div className="mt-8">
-        <h2 className="text-xl sm:text-2xl font-semibold text-gray-900">Policies</h2>
-        <ul className="mt-3 space-y-2">
+  
+      {/* Candidate Bio */}
+      <p className="mt-4 text-sm text-gray-700">{candidate.bio}</p>
+  
+      {/* Policies */}
+      <div className="mt-4">
+        <h2 className="text-lg font-semibold text-gray-900">Policies</h2>
+        <ul className="space-y-1 text-sm">
           {formattedPolicies.map((policy, index) => (
-            <li key={index} className="flex items-start text-gray-800 text-sm sm:text-base gap-2">
-              <div>
-                <span className="font-semibold">✅ {policy.title}{policy.description ? ":" : ""}</span> {policy.description}
-              </div>
+            <li key={index}>
+              <span className="font-semibold">✅ {policy.title}{policy.description ? ":" : ""}</span> {policy.description}
             </li>
           ))}
         </ul>
       </div>
-
-      {/* Additional Notes */}
+  
+      {/* Additional Notes (if present) */}
       {candidate.additionalNotes && (
-        <div className="mt-8">
-          <h2 className="text-xl sm:text-2xl font-semibold text-gray-900">Additional Notes</h2>
-          <p className="mt-3 text-gray-800 text-sm sm:text-base font-medium">
-            {candidate.additionalNotes}
-          </p>
+        <div className="mt-4">
+          <h2 className="text-lg font-semibold text-gray-900">Additional Notes</h2>
+          <p className="text-sm">{candidate.additionalNotes}</p>
         </div>
       )}
-
-      {/* Donate Button */}
-      {candidate.donationLink && (
-        <div className="mt-8 flex justify-center">
+  
+      {/* Buttons Inline */}
+      <div className="mt-4 flex justify-center gap-4">
+        {(
           <a
-            href={candidate.donationLink}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="bg-green-500 text-white px-6 py-3 rounded-lg flex items-center gap-2 text-lg font-semibold shadow-md hover:bg-green-600 transition"
+        href={candidate.donationLink}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="bg-green-500 text-white px-4 py-2 rounded-lg shadow hover:bg-green-600 transition flex items-center gap-2"
           >
-            <FaDonate />
-            Donate to {candidate.name}
+        <FaDonate />
+        <span>Donate</span>
           </a>
+        )}
+        <button
+          onClick={() => { /* placeholder function */ }}
+          className="bg-blue-600 text-white px-4 py-2 rounded-lg shadow-md hover:bg-blue-700 transition flex items-center gap-2"
+        >
+          <FaCheckCircle />
+          <span>This is me</span>
+        </button>
+      </div>
+  
+      {/* Popup Message */}
+      {popupMessage && (
+        <div className="fixed bottom-4 left-1/2 transform -translate-x-1/2 bg-red-500 text-white px-4 py-2 rounded shadow-md">
+          {popupMessage}
+          <button className="ml-2" onClick={() => setPopupMessage(null)}>✕</button>
         </div>
       )}
-
-      {/* Popup Message */}
-      <AnimatePresence>
-        {popupMessage && (
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 10 }}
-            transition={{ duration: 0.3 }}
-            className="fixed bottom-6 left-1/2 transform -translate-x-1/2 bg-red-600 text-white px-5 py-3 rounded-lg shadow-lg flex items-center gap-3 text-sm sm:text-base"
-          >
-            <span>{popupMessage}</span>
-            <button
-              onClick={() => setPopupMessage(null)}
-              className="text-white hover:text-gray-200"
-            >
-              <FaTimes />
-            </button>
-          </motion.div>
-        )}
-      </AnimatePresence>
     </motion.div>
   );
 }
