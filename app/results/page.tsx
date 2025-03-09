@@ -1,124 +1,117 @@
 "use client";
 
+import { Search, Filter, CheckIcon } from "lucide-react";
+import CandidateSection from "@/components/CandidateResultsSection";
+import { Candidate, candidates } from "@/data/test_data";
 import { motion } from "framer-motion";
-import Link from "next/link";
-import { Card, CardContent } from "../../components/Card";
-import { Button } from "../../components/ui";
-import { Search, Filter } from "lucide-react";
-import { candidates } from "../../data/test_data";
-import Image from "next/image";
+import { useState, useMemo } from "react";
 
 export default function ElectionResults() {
-  const zipCode =  "13053"; // Placeholder ZIP code
+  const zipCode = "13053"; // Placeholder ZIP code
+
+  // Track the selected election filter: null means "no filter" => show all
+  const [selectedElection, setSelectedElection] = useState<string | null>(null);
+
+  // Compute election filters sorted by the number of candidates
+  const electionFilters = useMemo(() => {
+    return [...new Set(candidates.map((candidate) => candidate.election))].sort((a, b) => {
+      const countA = candidates.filter((c) => c.election === a).length;
+      const countB = candidates.filter((c) => c.election === b).length;
+      return countB - countA; // Sort in descending order
+    });
+  }, [candidates]);
+
+  // Create a stable default open/close map for each election
+  const defaultOpenStates = useMemo(() => {
+    const initialStates: Record<string, boolean> = {};
+    electionFilters.forEach((e) => {
+      initialStates[e] = true; // default each election to open
+    });
+    return initialStates;
+  }, [electionFilters]);
+
+  // Single state object tracking open/close for each election
+  const [openStates, setOpenStates] = useState<Record<string, boolean>>(defaultOpenStates);
+
+  // Toggle a specific election's open/close state
+  function toggleElection(election: string) {
+    setOpenStates((prev) => ({
+      ...prev,
+      [election]: !prev[election],
+    }));
+  }
+
+  // If no filter is selected => show all elections
+  // If a filter is selected => show only that one
+  const filteredElections = selectedElection
+    ? electionFilters.filter((e) => e === selectedElection)
+    : electionFilters; // no filter => all
+
+  // Animation Variants
+  const fadeInVariants = {
+    hidden: { opacity: 0 },
+    visible: { opacity: 1, transition: { duration: 0.5, ease: "easeOut" } },
+  };
 
   return (
-    <motion.div 
-      initial={{ opacity: 0 }} 
-      animate={{ opacity: 1 }} 
-      transition={{ duration: 0.8, ease: "easeOut" }}
-      className="p-8 max-w-6xl mx-auto"
+    <motion.div
+      className="w-[95%] mx-auto px-3 mb-8 flex gap-6"
+      initial="hidden"
+      animate="visible"
+      variants={fadeInVariants}
     >
-      {/* Page Header */}
-      <motion.h1
-        initial={{ opacity: 0, y: 30 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.8, ease: "easeOut" }}
-        viewport={{ once: true }}
-        className="text-4xl font-bold text-center text-gray-900"
-      >
-        Meet the Candidates
-      </motion.h1>
-
-      {/* Display ZIP Code */}
-      <motion.p
-        initial={{ opacity: 0, y: 20 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6, ease: "easeOut" }}
-        viewport={{ once: true }}
-        className="text-center text-gray-600 mt-2"
-      >
-        Showing results for ZIP Code: <span className="font-semibold text-gray-900">{zipCode}</span>
-      </motion.p>
-
-      {/* Search Bar */}
+      {/* Filters based on Election Titles */}
       <motion.div
-        initial={{ opacity: 0, y: 30 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.8, delay: 0.2, ease: "easeOut" }}
-        viewport={{ once: true }}
-        className="mt-8 flex items-center bg-white border border-gray-300 p-4 rounded-full shadow-lg"
+        className="flex flex-col items-start gap-4 w-[220px] bg-white p-4 min-h-[400px]"
       >
-        <Search className="text-gray-500 mr-3 w-6 h-6" />
-        <input
-          type="text"
-          placeholder="Search candidates by name, position, or district"
-          className="w-full border-none outline-none text-lg text-gray-700 placeholder-gray-500"
-        />
+      {electionFilters.map((election) => (
+        <motion.button
+          key={election}
+          onClick={() => {
+            setSelectedElection((prev) => (prev === election ? null : election));
+          }}
+          className={`w-full flex items-center justify-between px-4 py-2 rounded-lg transition-all border border-gray-300 ${
+            selectedElection === election
+              ? "bg-purple-600 text-white border-purple-700"
+              : "bg-gray-100 text-gray-700 hover:bg-purple-100 hover:text-purple-700"
+          }`}
+          variants={fadeInVariants}
+        >
+          <span className="font-medium">{election}</span>
+        </motion.button>
+      ))}
       </motion.div>
 
-      {/* Filters */}
-      <motion.div
-        initial={{ opacity: 0, y: 30 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.8, delay: 0.3, ease: "easeOut" }}
-        viewport={{ once: true }}
-        className="flex flex-wrap justify-center gap-4 mt-6"
-      >
-        {["Position", "Party", "Location", "Incumbent", "Challenger"].map((filter, index) => (
-          <Button
-            key={index}
-            variant="outline"
-            className="flex items-center gap-2 border-gray-400 text-gray-700 hover:bg-purple-600 hover:text-white transition-all"
-          >
-            <Filter size={16} />
-            {filter}
-          </Button>
-        ))}
-      </motion.div>
+      {/* Candidate Sections */}
+      <motion.div variants={fadeInVariants} className="grid grid-cols-1 gap-6">
+      {filteredElections.map((election) => {
+        const isOpen = openStates[election] ?? false;
+        const filteredCandidates = candidates.filter(
+        (candidate): candidate is Candidate => candidate.election === election
+        );
 
-      {/* Candidate Cards Grid */}
-      <motion.div 
-        initial={{ opacity: 0, y: 50 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.8, delay: 0.4, ease: "easeOut" }}
-        viewport={{ once: true }}
-        className="mt-12 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
-      >
-        {candidates.map((candidate, index) => (
-          <motion.div
-            key={index}
-            initial={{ opacity: 0, y: 50 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: index * 0.1, ease: "easeOut" }}
-            viewport={{ once: true }}
+        return (
+        <motion.div
+          key={election}
+          variants={fadeInVariants}
+        >
+          <h2
+          className="text-xl font-semibold text-gray-900 cursor-pointer hover:text-gray-600 p-3 rounded-md transition-colors inline-flex items-center"
+          onClick={() => toggleElection(election)}
           >
-            <Link href={`/candidate/${candidate.name.replace(/\s+/g, "-").toLowerCase()}`}>
-              <Card className="group hover:shadow-2xl transition-all rounded-xl cursor-pointer h-[400px] flex flex-col shadow-lg">
-                <CardContent className="p-6 text-center flex flex-col items-center flex-grow">
-                <Image
-                  src={candidate.photo}
-                  alt={`${candidate.name}'s photo`}
-                  width={96}  // Adjust width as needed
-                  height={96} // Adjust height as needed
-                  className="rounded-full mb-4 object-cover aspect-square shadow-xl"
-                />
-                  <h2 className="text-xl font-semibold text-gray-900">
-                    {candidate.name}
-                  </h2>
-                  <p className="text-gray-600 mt-2">{candidate.position}</p>
-                  <p className="text-gray-500 mt-2 text-sm line-clamp-3">
-                    {candidate.bio}
-                  </p>
-                  <div className="mt-auto">
-                    <Button className="mt-4 bg-purple-600 text-white hover:bg-purple-700 transition-all shadow-md hover:shadow-lg">
-                      Learn More
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            </Link>
-          </motion.div>
-        ))}
+          <span
+            className={`mr-1 transform transition-transform text-xs ${
+            isOpen ? "rotate-90" : "rotate-0"
+            }`}
+          >
+            ▶︎
+          </span>
+          {election}
+          </h2>
+          {isOpen && <CandidateSection candidates={filteredCandidates} />}
+        </motion.div>
+        );
+      })}
       </motion.div>
     </motion.div>
   );

@@ -7,6 +7,10 @@ import { motion, AnimatePresence } from "framer-motion";
 import { FaGlobe, FaTwitter, FaLinkedin, FaDonate, FaTimes, FaCheckCircle } from "react-icons/fa";
 import { candidates } from "../../../data/test_data";
 
+function normalizeSlug(str: string): string {
+  return str.toLowerCase().replace(/[^\w\s]/g, " ").replace(/\s+/g, "-").trim();
+}
+
 export default function CandidatePage() {
   const { name } = useParams();
   const [popupMessage, setPopupMessage] = useState<string | null>(null);
@@ -16,9 +20,9 @@ export default function CandidatePage() {
     return notFound();
   }
 
-  const decodedName = decodeURIComponent(name).replace(/-/g, " ");
+  const decodedName = normalizeSlug(decodeURIComponent(name));
   const candidate = candidates.find(
-    (c) => c.name.toLowerCase() === decodedName.toLowerCase()
+    (c) => normalizeSlug(c.name) === decodedName
   );
 
   if (!candidate) {
@@ -153,7 +157,7 @@ export default function CandidatePage() {
           {formattedPolicies.map((policy, index) => (
             <li key={index} className="flex items-start text-gray-800 text-sm sm:text-base gap-2">
               <div>
-                <span className="font-semibold">✅ {policy.title}:</span> {policy.description}
+                <span className="font-semibold">✅ {policy.title}{policy.description ? ":" : ""}</span> {policy.description}
               </div>
             </li>
           ))}
