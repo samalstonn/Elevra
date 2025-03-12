@@ -70,8 +70,9 @@ export default function ElectionResults() {
           <motion.div
             key={election}
             variants={fadeInVariants}
+            className="p-4 mt-4"
           >
-            <h2 className="text-xl font-semibold text-gray-900 p-3 transition-colors">
+            <h2 className="text-3xl font-semibold text-gray-900 p-3 transition-colors">
               {election}
             </h2>
             <CandidateSection candidates={filteredCandidates} />

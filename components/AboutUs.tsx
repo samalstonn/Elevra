@@ -54,12 +54,11 @@ const AboutUs = () => {
           }
         }}
         viewport={{ once: true }}
-        className="mt-12 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 max-w-5xl mx-auto"
+        className="mt-12 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 max-w-5xl mx-auto"
       >
         {[
           { emoji: "🧠", title: "Contribute Smarter", text: "Make informed, data-driven decisions about which candidates to support." },
           { emoji: "⚡", title: "Donate Faster", text: "Our streamlined platform gets your contribution to local campaigns in just a few clicks." },
-          { emoji: "🚫", title: "Stay Spam Free", text: "We never share your info with third parties, so you can give without the endless follow-up emails." },
           { emoji: "📊", title: "Quantify Impact", text: "Track how your donations are being put to work in your community." }
         ].map((card, index) => (
           <motion.div

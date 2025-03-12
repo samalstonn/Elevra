@@ -1,37 +1,40 @@
 import { motion } from 'framer-motion';
 
 const FeatureCards = () => {
-  const cards = [
+  const cardsSectionOne = [
     {
-      title: "Take Control of Your Community",
-      description: "Push back against big donors and outside interests - shape policies that matter to you and those in your life.",
-      emoji: "🌍"
+      title: "Drive The Change You Want",
+      description: "Local officials can act fast, making decisions without the delays of big-government bureaucracy.",
+      emoji: "🚀"
     },
     {
-      title: 'Boost the Local Economy',
-      description: 'Keep money flowing back into your area, creating jobs and funding essential services.',
-      emoji: '💰',
+      title: "Build Neighborhood Connections",
+      description: "Engage with local leaders, foster collaboration, and create a more connected, thriving community.",
+      emoji: "👥"
     },
     {
-      title: 'Maximize Impact',
-      description: 'Local officials can adapt quickly without big-government red tape.',
-      emoji: '⚡',
+      title: "If You Don’t Show Up, Someone Else Will",
+      description: "Low-turnout elections mean a tiny group of voters decides everything. If you don’t vote, your loudest, most extreme neighbors will - and they’ll pick the people who run your life.",
+      emoji: "⚠️"
+    }
+  ];
+
+  const cardsSectionTwo = [
+    {
+      title: "Mayor Shapes Your Neighborhood",
+      description: "They decide what gets built, where money flows, and who your city serves. Your block thrives - or it gets left behind.",
+      emoji: "🏙️"
     },
     {
-      title: 'Your Help Goes Farther',
-      description: 'Local organizations often have lower operational costs, meaning a higher percentage of your donation goes directly to community services.',
-      emoji: '📊',
+      title: "District Attorney Determines Your Safety",
+      description: "They choose who faces charges and who walks free. They either protect your street or let danger back in.",
+      emoji: "⚖️"
     },
     {
-      title: 'Strengthen Neighborhood Ties',
-      description: 'Get to know politicians and community leaders personally. Foster collaboration and trust on issues that matter, creating a more vibrant, united neighborhood.',
-      emoji: '🏡',
-    },
-    {
-      title: 'Foster Civic Engagement',
-      description: 'Supporting local candidates encourages active community participation and strengthens democracy.',
-      emoji: '🤝',
-    },
+      title: "School Boards Control What Your Kids Learn",
+      description: "They pick who teaches, what's taught, and which schools get funded - or left behind. If parents don’t vote, someone else shapes kids' education, safety, and future.",
+      emoji: "🎓"
+    }
   ];
 
   return (
@@ -48,7 +51,7 @@ const FeatureCards = () => {
       viewport={{ once: true }}
       className="w-full bg-white py-20 px-4 sm:px-6 lg:px-8"
     >
-      {/* Section Header */}
+      {/* First Section Header */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         whileInView={{ opacity: 1, y: 0 }}
@@ -61,7 +64,7 @@ const FeatureCards = () => {
         </h2>
       </motion.div>
 
-      {/* Features Grid - Fixed 3x2 Layout on Large Screens */}
+      {/* First Section Cards Grid */}
       <motion.div 
         initial="hidden"
         whileInView="visible"
@@ -73,10 +76,9 @@ const FeatureCards = () => {
           },
         }}
         viewport={{ once: true }}
-        className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 
-                   gap-6 max-w-5xl mx-auto"
+        className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 max-w-5xl mx-auto"
       >
-        {cards.map((card, index) => (
+        {cardsSectionOne.map((card, index) => (
           <motion.div
             key={index}
             variants={{
@@ -85,9 +87,60 @@ const FeatureCards = () => {
             }}
             whileHover={{ scale: 1.04, transition: { type: "spring", stiffness: 100 } }}
             whileTap={{ scale: 0.97, transition: { type: "spring", stiffness: 200 } }}
-            className="border rounded-lg shadow-md bg-gray-100 p-5
-                       flex flex-col items-center text-center h-64
-                       transition-all"
+            className="border rounded-lg shadow-md bg-gray-100 p-5 flex flex-col items-center text-center h-64 transition-all"
+          >
+            <motion.span
+              variants={{
+                hidden: { scale: 0.8, opacity: 0 },
+                visible: { scale: 1, opacity: 1, transition: { duration: 0.4, delay: index * 0.1 + 0.2 } }
+              }}
+              className="text-4xl mb-3"
+            >
+              {card.emoji}
+            </motion.span>
+            <h3 className="text-lg font-semibold mb-2">{card.title}</h3>
+            <p className="text-gray-600 text-sm flex-grow">{card.description}</p>
+          </motion.div>
+        ))}
+      </motion.div>
+
+      {/* Second Section Header */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.8, ease: 'easeInOut', delay: 0.2 }}
+        viewport={{ once: true }}
+        className="max-w-5xl mx-auto text-center mt-24 mb-12 "
+      >
+        <h2 className="text-2xl sm:text-3xl font-extrabold text-gray-900">
+          What Do Local Politicians Decide?
+        </h2>
+      </motion.div>
+
+      {/* Second Section Cards Grid */}
+      <motion.div 
+        initial="hidden"
+        whileInView="visible"
+        variants={{
+          hidden: { opacity: 0 },
+          visible: {
+            opacity: 1,
+            transition: { staggerChildren: 0.2 },
+          },
+        }}
+        viewport={{ once: true }}
+        className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 max-w-5xl mx-auto"
+      >
+        {cardsSectionTwo.map((card, index) => (
+          <motion.div
+            key={index}
+            variants={{
+              hidden: { opacity: 0, y: 30, scale: 0.95 },
+              visible: { opacity: 1, y: 0, scale: 1, transition: { duration: 0.6, ease: 'easeInOut', delay: index * 0.1 } }
+            }}
+            whileHover={{ scale: 1.04, transition: { type: "spring", stiffness: 100 } }}
+            whileTap={{ scale: 0.97, transition: { type: "spring", stiffness: 200 } }}
+            className="border rounded-lg shadow-md bg-gray-100 p-5 flex flex-col items-center text-center h-64 transition-all"
           >
             <motion.span
               variants={{
