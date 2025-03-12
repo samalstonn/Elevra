@@ -1,11 +1,12 @@
 "use client";
 
-import { useParams, notFound } from "next/navigation";
+import { useParams, notFound, useSearchParams } from "next/navigation";
 import Image from "next/image";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { FaGlobe, FaTwitter, FaLinkedin, FaDonate, FaCheckCircle } from "react-icons/fa";
+import { FaGlobe, FaTwitter, FaLinkedin, FaCheckCircle } from "react-icons/fa";
 import { candidates } from "../../../data/test_data";
+import CheckoutButton from "@/components/DonateButton";
 
 function normalizeSlug(str: string): string {
   return str.toLowerCase().replace(/[^\w\s]/g, " ").replace(/\s+/g, "-").trim();
@@ -13,22 +14,41 @@ function normalizeSlug(str: string): string {
 
 export default function CandidatePage() {
   const { name } = useParams();
-  const [popupMessage, setPopupMessage] = useState<string | null>(null);
+  const [popupMessage, setPopupMessage] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
   const [hovered, setHovered] = useState<string | null>(null);
+  const searchParams = useSearchParams();
 
-  if (typeof name !== "string") {
-    return notFound();
-  }
 
-  const decodedName = normalizeSlug(decodeURIComponent(name));
+  const decodedName = name ? normalizeSlug(decodeURIComponent(Array.isArray(name) ? name[0] : name)) : "";
   const candidate = candidates.find(
     (c) => normalizeSlug(c.name) === decodedName
   );
+  
+  useEffect(() => {
+    if (!candidate) return;
+    const candidateName = candidate.name;
+    if (searchParams.get('session_id')) {
+      setPopupMessage({ type: 'success', message: `Your donation to ${candidateName} was successful! Thank you for your support!` });
+      const url = new URL(window.location.href);
+      url.searchParams.delete('session_id');
+      window.history.replaceState({}, '', url.toString());
+    } else if (searchParams.get('cancel')) {
+      setPopupMessage({ type: 'error', message: `Your donation to ${candidateName} was cancelled.` });
+      const url = new URL(window.location.href);
+      url.searchParams.delete('cancel');
+      window.history.replaceState({}, '', url.toString());
+    } else if (searchParams.get('error')) {
+      setPopupMessage({ type: 'error', message: `There was an error processing your donation. Please try again.` });
+      const url = new URL(window.location.href);
+      url.searchParams.delete('error');
+      window.history.replaceState({}, '', url.toString());
+    }
+  }, [searchParams, candidate]);
+
 
   if (!candidate) {
     return notFound();
   }
-
 
   const formattedPolicies = candidate.policies.map((policy) => {
     if (typeof policy === "string") {
@@ -40,6 +60,7 @@ export default function CandidatePage() {
     }
     return policy;
   });
+
 
   return (
     <motion.div
@@ -128,17 +149,15 @@ export default function CandidatePage() {
   
       {/* Buttons Inline */}
       <div className="mt-4 flex justify-center gap-4">
-        {(
-          <a
-        href={candidate.donationLink}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="bg-green-500 text-white px-4 py-2 rounded-lg shadow hover:bg-green-600 transition flex items-center gap-2"
-          >
-        <FaDonate />
-        <span>Donate</span>
-          </a>
-        )}
+        <CheckoutButton
+          cartItems={[
+            {
+              name: `Donation to ${candidate.name}'s Campaign`,
+              price: 10,     // Price in USD
+              quantity: 1,
+            },
+          ]}
+        />
         <button
           onClick={() => { /* placeholder function */ }}
           className="bg-blue-600 text-white px-4 py-2 rounded-lg shadow-md hover:bg-blue-700 transition flex items-center gap-2"
@@ -150,8 +169,8 @@ export default function CandidatePage() {
   
       {/* Popup Message */}
       {popupMessage && (
-        <div className="fixed bottom-4 left-1/2 transform -translate-x-1/2 bg-red-500 text-white px-4 py-2 rounded shadow-md">
-          {popupMessage}
+        <div className={`fixed top-24 left-1/2 transform -translate-x-1/2 ${popupMessage.type === 'success' ? 'bg-purple-600' : 'bg-red-500'} text-white text-center px-4 py-2 rounded-3xl shadow-md`}>
+          {popupMessage.message}
           <button className="ml-2" onClick={() => setPopupMessage(null)}>✕</button>
         </div>
       )}

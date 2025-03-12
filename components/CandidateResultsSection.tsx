@@ -5,6 +5,7 @@ import { Card, CardContent } from "../components/Card";
 import Image from "next/image";
 import { Candidate } from "../data/test_data";
 import { motion } from "framer-motion";
+import CheckoutButton from "@/components/DonateButton";
 
 interface CandidateSectionProps {
     candidates: Candidate[];
@@ -50,8 +51,8 @@ export default function CandidateSection({ candidates }: CandidateSectionProps) 
         >
 
             {/* Campaign Cards Section */}
-            <div className="mb-6">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="mb-2 md:mb-6">
+                <div className="grid grid-cols-1 gap-4">
                     {campaigns.map((campaign) => (
                         <Card key={campaign.id} className="bg-transparent" >
                             <CardContent>
@@ -74,10 +75,10 @@ export default function CandidateSection({ candidates }: CandidateSectionProps) 
                 </div>
             </div>
 
-            {/* Responsive Grid Layout */}
-            <motion.div className="grid grid-cols-3 gap-4">
+            {/* Responsive Layout for Candidate Cards */}
+            <motion.div className="flex flex-nowrap gap-4 overflow-x-auto md:grid md:grid-cols-3 md:gap-4 md:flex-wrap md:overflow-visible">
                 {candidates.map((candidate, index) => (
-                    <motion.div key={index} variants={cardVariants}>
+                    <motion.div key={index} variants={cardVariants} className="flex-shrink-0">
                         <Link href={`/candidate/${candidate.name.replace(/\s+/g, "-").toLowerCase()}`}>
                             <motion.div
                                 whileHover={{ scale: 1.05 }}
@@ -92,7 +93,7 @@ export default function CandidateSection({ candidates }: CandidateSectionProps) 
                                             height={64}
                                             className="h-20 w-20 rounded-full object-cover shadow-md"
                                         />
-                                        <h2 className="text-md font-semibold text-gray-900 mt-2 text-left line-clamp-2">
+                                        <h2 className="text-xl font-semibold text-gray-900 mt-2 text-left line-clamp-2">
                                             {candidate.name}
                                         </h2>
                                         <p className="text-gray-800 text-sm text-left">{candidate.position}</p>
@@ -101,14 +102,20 @@ export default function CandidateSection({ candidates }: CandidateSectionProps) 
                                         </p>
 
                                         {/* Donate Button */}
-                                        <motion.div className="absolute bottom-0">
-                                            <motion.button
-                                                whileHover={{ scale: 1.02 }}
-                                                transition={{ duration: 0.2, ease: "easeOut" }}
-                                                className="bg-purple-600 text-white hover:bg-purple-700 transition-all shadow-md hover:shadow-lg text-sm rounded-full w-full p-3"
-                                            >
-                                                Donate Now
-                                            </motion.button>
+                                        <motion.div
+                                            className="absolute bottom-2"
+                                            onClick={(event) => {
+                                                event.stopPropagation();
+                                                event.preventDefault();
+                                            }}
+                                        >
+                                            <CheckoutButton cartItems={[
+                                                {
+                                                    name: `Donation to ${candidate.name}'s Campaign`,
+                                                    price: 10, // Price in USD
+                                                    quantity: 1,
+                                                },
+                                            ]}/>
                                         </motion.div>
                                     </CardContent>
                                 </Card>

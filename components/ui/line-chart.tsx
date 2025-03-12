@@ -2,6 +2,8 @@
 
 import * as React from "react"
 import { CartesianGrid, Line, LineChart, XAxis } from "recharts"
+import { Eye } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 
 import {
   Card,
@@ -138,6 +140,11 @@ export function LineChartComponent() {
 
   return (
     <Card>
+      <CardTitle className="text-lg flex items-center gap-2 justify-center m-4">
+        <Eye className="text-purple-500" />
+        Page Views Trend
+        <Badge variant="default">+15% this week</Badge>
+      </CardTitle>
       <CardHeader className="flex flex-col items-stretch space-y-0 border-b p-0 sm:flex-row">
         <div className="flex flex-1 flex-col justify-center gap-1 px-6 py-5 sm:py-6">
           <CardTitle>Line Chart - Interactive</CardTitle>
