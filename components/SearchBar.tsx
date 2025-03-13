@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { Input } from './ui';
+import { Input } from './ui/input';
 
 interface SearchBarProps {
   onSearch: (searchTerm: string) => void;

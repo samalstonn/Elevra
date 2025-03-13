@@ -9,7 +9,7 @@ import {
   UserButton,
 } from "@clerk/nextjs";
 import "./globals.css";
-import { Button } from "../components/ui";
+import { Button } from "../components/ui/button";
 import { Inter } from "next/font/google";
 import Link from "next/link";
 import './globals.css';
@@ -50,7 +50,6 @@ export default function RootLayout({
                 <div className="flex-grow flex items-center justify-center gap-4 mx-auto">
                   <Button
                   variant="ghost"
-                  className="flex items-center text-gray-700 border border-gray-300 rounded-full shadow-sm"
                   onClick={() => {
                     // Placeholder for address change functionality
                   }}
@@ -65,16 +64,16 @@ export default function RootLayout({
 
               <div className="flex items-center gap-4 shrink-0">
                 <SignedIn>
-                  <Link href="/dashboard">
-                    <Button>My Dashboard</Button>
-                  </Link>
+                  <Button asChild>
+                    <Link href="/dashboard">My Dashboard</Link>
+                  </Button>
                   <UserButton />
                 </SignedIn>
 
                 <SignedOut>
-                  <Link href="/dashboard">
-                    <Button>My Dashboard</Button>
-                  </Link>
+                  <Button asChild>
+                    <Link href="/dashboard">My Dashboard</Link>
+                  </Button>
                   <SignInButton></SignInButton>
                 </SignedOut>
               </div>

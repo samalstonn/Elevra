@@ -5,6 +5,8 @@ import { Card, CardContent } from "../components/Card";
 import Image from "next/image";
 import { Candidate } from "../data/test_data";
 import { motion } from "framer-motion";
+import { Button } from "../components/ui/button";
+import { FaDonate } from "react-icons/fa";
 
 interface CandidateSectionProps {
     candidates: Candidate[];
@@ -101,14 +103,13 @@ export default function CandidateSection({ candidates }: CandidateSectionProps) 
                                         </p>
 
                                         {/* Donate Button */}
-                                        <motion.div className="absolute bottom-0">
-                                            <motion.button
+                                        <motion.div className="absolute bottom-0" 
                                                 whileHover={{ scale: 1.02 }}
-                                                transition={{ duration: 0.2, ease: "easeOut" }}
-                                                className="bg-purple-600 text-white hover:bg-purple-700 transition-all shadow-md hover:shadow-lg text-sm rounded-full w-full p-3"
-                                            >
-                                                Donate Now
-                                            </motion.button>
+                                                transition={{ duration: 0.2, ease: "easeOut" }}>
+                                            <Button variant="green" size="lg" onClick={() => { /* placeholder function */ }} className="flex items-center gap-2">
+                                                <FaDonate />
+                                                <span>Donate</span>
+                                            </Button>
                                         </motion.div>
                                     </CardContent>
                                 </Card>

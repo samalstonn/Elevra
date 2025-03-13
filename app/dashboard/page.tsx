@@ -1,5 +1,6 @@
 "use client";
 import { useUser } from '@clerk/nextjs';
+import { Button } from '../../components/ui/button';
 const DashboardPage = () => {
   const { user } = useUser();
   
@@ -61,17 +62,17 @@ const DashboardPage = () => {
             <div className="p-6 bg-gray-100 border rounded-xl shadow-md">
               <h3 className="text-xl font-bold mb-2">Jane Doe for City Council</h3>
               <p className="text-gray-600 text-sm mb-4">Donated $250 to support Jane&apos;s campaign for better public transportation.</p>
-              <button className="px-4 py-2 bg-purple-600 text-white rounded-full hover:bg-purple-700">View Details</button>
+              <Button variant="purple">View Details</Button>
             </div>
             <div className="p-6 bg-gray-100 border rounded-xl shadow-md">
               <h3 className="text-xl font-bold mb-2">John Smith for Mayor</h3>
               <p className="text-gray-600 text-sm mb-4">Contributed $500 to help John&apos;s campaign focus on affordable housing initiatives.</p>
-              <button className="px-4 py-2 bg-purple-600 text-white rounded-full hover:bg-purple-700">View Details</button>
+              <Button variant="purple">View Details</Button>
             </div>
             <div className="p-6 bg-gray-100 border rounded-xl shadow-md">
               <h3 className="text-xl font-bold mb-2">Emily Chen for School Board</h3>
               <p className="text-gray-600 text-sm mb-4">Supported with $1,200 to promote Emily&apos;s efforts in improving local education policies.</p>
-              <button className="px-4 py-2 bg-purple-600 text-white rounded-full hover:bg-purple-700">View Details</button>
+              <Button variant="purple">View Details</Button>
             </div>
           </div>
         </section>

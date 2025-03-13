@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import SearchBar from "../components/SearchBar";
 import FeatureCards from "../components/FeatureCards";
 import AboutUs from "@/components/AboutUs";
+import {Button} from "@/components/ui/button";
 
 export default function HomePage() {
   return (
@@ -97,26 +98,7 @@ function HomePageContent() {
         <FeatureCards />
       </motion.div>
 
-      <motion.h2
-          variants={{
-            hidden: { opacity: 0, y: 20 },
-            visible: { opacity: 1, y: 0, transition: { duration: 0.6, ease: "easeOut" } }
-          }}
-          className="text-1xl sm:text-3xl md:text-4xl tracking-tight text-gray-900 w-full leading-tight text-center mt-12"
-        >
-          Discover and Support Local Candidates in Seconds.
-        </motion.h2>
-
-      {/* Search Bar */}
-      <motion.div
-        variants={{
-          hidden: { opacity: 0, y: 30, scale: 0.9 },
-          visible: { opacity: 1, y: 0, scale: 1, transition: { duration: 0.6, ease: "easeOut" } }
-        }}
-        className="w-full max-w-lg sm:max-w-xl md:max-w-2xl lg:max-w-3xl py-6 mb-24"
-      >
-        <SearchBar onSearch={(zipCode: string) => handleSearch(zipCode)} />
-      </motion.div>
+      <div className="mb-12"><Button variant="purple" size="xxl" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>Explore Candidates</Button></div>
       
     </div>
   );
