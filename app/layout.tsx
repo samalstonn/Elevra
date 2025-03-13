@@ -42,7 +42,7 @@ export default function RootLayout({
         <body className={inter.className}>
           <div className="flex flex-col min-h-screen">
             {/* Header Section */}
-            <header className="w-full flex items-center justify-between gap-4 px-6 py-6">
+            <header className="w-full flex items-center justify-between gap-4 px-6 md:py-6">
               <Link href="/" className="text-3xl font-bold text-purple-900 shrink-0">
                 Elevra
               </Link>
