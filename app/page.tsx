@@ -98,7 +98,24 @@ function HomePageContent() {
         <FeatureCards />
       </motion.div>
 
-      <div className="mb-12"><Button variant="purple" size="xxl" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>Explore Candidates</Button></div>
+      <motion.div 
+        initial="hidden"
+        whileInView="visible"
+        viewport={{ once: true }}
+        variants={{
+          hidden: { opacity: 0, y: 30, scale: 0.9 },
+          visible: { opacity: 1, y: 0, scale: 1, transition: { duration: 0.6, ease: "easeOut" } }
+        }}
+        className="mb-12"
+      >
+        <Button 
+          variant="purple" 
+          size="xxl" 
+          onClick={() => {window.scrollTo({ top: 0, behavior: 'smooth' })}}
+        >
+          Explore Candidates Now
+        </Button>
+      </motion.div>
       
     </div>
   );
