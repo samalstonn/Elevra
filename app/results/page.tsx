@@ -4,6 +4,7 @@ import CandidateSection from "@/components/CandidateResultsSection";
 import { Candidate, candidates } from "@/data/test_data";
 import { motion } from "framer-motion";
 import { useState, useMemo } from "react";
+import { Button } from "../../components/ui/button";
 
 export default function ElectionResults() {
   // const zipCode = "13053"; // Placeholder ZIP code
@@ -34,28 +35,31 @@ export default function ElectionResults() {
 
   return (
     <motion.div
-      className="w-[95%] mx-auto px-3 mb-8 flex gap-6"
+      className="w-screen mx-auto px-4 mb-16 flex"
       initial="hidden"
       animate="visible"
       variants={fadeInVariants}
     >
       {/* Filters based on Election Titles */}
       <motion.div
-        className="flex flex-col items-start gap-4 w-[220px] bg-white p-4 min-h-[400px]"
+        className="flex flex-col items-start gap-4 bg-white min-h-[400px]"
       >
       {electionFilters.map((election) => (
-        <motion.button
+        <motion.div
           key={election}
-          onClick={() => setSelectedElection(election)}
-          className={`w-full flex items-center justify-between px-4 py-2 rounded-lg transition-all border border-gray-300 ${
-            selectedElection === election
-              ? "bg-purple-600 text-white border-purple-700"
-              : "bg-gray-100 text-gray-700 hover:bg-purple-100 hover:text-purple-700"
-          }`}
           variants={fadeInVariants}
         >
-          <span className="font-medium">{election}</span>
-        </motion.button>
+          <Button variant={`${
+                    selectedElection === election
+                      ? "purple"
+                      : "secondary"
+                    }`}
+                    size = "sm"
+                  onClick={() => setSelectedElection(election)}>
+            <span className="font-medium">{election}</span>
+          </Button>
+          
+        </motion.div>
       ))}
       </motion.div>
 
@@ -70,8 +74,9 @@ export default function ElectionResults() {
           <motion.div
             key={election}
             variants={fadeInVariants}
+            className="p-4 mt-4"
           >
-            <h2 className="text-xl font-semibold text-gray-900 p-3 transition-colors">
+            <h2 className="text-3xl font-semibold text-gray-900 p-3 transition-colors">
               {election}
             </h2>
             <CandidateSection candidates={filteredCandidates} />

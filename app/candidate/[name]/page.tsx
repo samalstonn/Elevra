@@ -6,6 +6,7 @@ import { useState } from "react";
 import { motion } from "framer-motion";
 import { FaGlobe, FaTwitter, FaLinkedin, FaDonate, FaCheckCircle } from "react-icons/fa";
 import { candidates } from "../../../data/test_data";
+import { Button } from "../../../components/ui/button";
 
 function normalizeSlug(str: string): string {
   return str.toLowerCase().replace(/[^\w\s]/g, " ").replace(/\s+/g, "-").trim();
@@ -125,27 +126,18 @@ export default function CandidatePage() {
           <p className="text-sm">{candidate.additionalNotes}</p>
         </div>
       )}
-  
+          
       {/* Buttons Inline */}
       <div className="mt-4 flex justify-center gap-4">
-        {(
-          <a
-        href={candidate.donationLink}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="bg-green-500 text-white px-4 py-2 rounded-lg shadow hover:bg-green-600 transition flex items-center gap-2"
-          >
-        <FaDonate />
-        <span>Donate</span>
-          </a>
-        )}
-        <button
-          onClick={() => { /* placeholder function */ }}
-          className="bg-blue-600 text-white px-4 py-2 rounded-lg shadow-md hover:bg-blue-700 transition flex items-center gap-2"
-        >
+      <Button variant="green" size="xl" onClick={() => { /* placeholder function */ }} className="flex items-center gap-2">
+          <FaDonate />
+          <span>Donate</span>
+        </Button>
+
+        <Button variant="purple" size="xl" onClick={() => { /* placeholder function */ }} className="flex items-center gap-2">
           <FaCheckCircle />
           <span>This is me</span>
-        </button>
+        </Button>
       </div>
   
       {/* Popup Message */}
