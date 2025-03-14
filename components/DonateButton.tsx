@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Button } from "../components/ui/button"; // Replace 'your-button-library' with the actual library or file path
+import { Button } from "../components/ui/button"; 
 import { FaDonate } from 'react-icons/fa';
 import getStripe from '../lib/get-stripe';
 

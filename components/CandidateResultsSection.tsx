@@ -6,8 +6,6 @@ import Image from "next/image";
 import { Candidate } from "../data/test_data";
 import { motion } from "framer-motion";
 import CheckoutButton from "@/components/DonateButton";
-import { Button } from "../components/ui/button";
-import { FaDonate } from "react-icons/fa";
 
 interface CandidateSectionProps {
     candidates: Candidate[];
