@@ -2,8 +2,7 @@
 
 import { motion } from "framer-motion";
 import { Card, CardHeader, CardContent, CardTitle } from "@/components/ui/card";
-import { BarChart3, Eye } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
+import { BarChart3 } from "lucide-react";
 import { LineChartComponent } from "@/components/ui/line-chart";
 import { PieChartComponent } from "@/components/ui/pie-chart";
 import { DollarSign } from "lucide-react";
@@ -24,13 +23,6 @@ export default function CandidateDashboard() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {/* Page Views Trend Card */}
           <Card className="shadow-lg">
-            <CardHeader className="flex items-center justify-between">
-              <CardTitle className="text-lg flex items-center gap-2">
-                <Eye className="text-purple-500" />
-                Page Views Trend
-              </CardTitle>
-              <Badge variant="default">+15% this week</Badge>
-            </CardHeader>
             <LineChartComponent />
           </Card>
 

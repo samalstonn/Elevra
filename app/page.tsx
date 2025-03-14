@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import SearchBar from "../components/SearchBar";
 import FeatureCards from "../components/FeatureCards";
 import AboutUs from "@/components/AboutUs";
+import {Button} from "@/components/ui/button";
 
 export default function HomePage() {
   return (
@@ -40,7 +41,7 @@ function HomePageContent() {
         }}
         className="flex flex-col items-center text-center py-12 sm:py-20 space-y-4 sm:space-y-6 w-full max-w-screen"
       >
-        <div className="h-24"></div> 
+        <div className="h-20"></div> 
         
         {/* Animated "Elevra" Header */}
         <motion.h1
@@ -75,7 +76,7 @@ function HomePageContent() {
         </motion.div>
       </motion.main>
 
-      <div className="mt-8 sm:mt-16 lg:mt-24"></div>
+      <div className="mt-4 sm:mt-8 lg:mt-8"></div>
 
       {/* About Us Section */}
       <motion.div 
@@ -95,6 +96,25 @@ function HomePageContent() {
         className="w-full max-w-4xl sm:max-w-6xl lg:max-w-7xl xl:max-w-[80%] px-2 sm:px-4"
       >
         <FeatureCards />
+      </motion.div>
+
+      <motion.div 
+        initial="hidden"
+        whileInView="visible"
+        viewport={{ once: true }}
+        variants={{
+          hidden: { opacity: 0, y: 30, scale: 0.9 },
+          visible: { opacity: 1, y: 0, scale: 1, transition: { duration: 0.6, ease: "easeOut" } }
+        }}
+        className="mb-12"
+      >
+        <Button 
+          variant="purple" 
+          size="xxl" 
+          onClick={() => {window.scrollTo({ top: 0, behavior: 'smooth' })}}
+        >
+          Explore Candidates Now
+        </Button>
       </motion.div>
       
     </div>
