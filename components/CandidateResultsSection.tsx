@@ -5,7 +5,8 @@ import { Card, CardContent } from "../components/Card";
 import Image from "next/image";
 import { Candidate } from "../data/test_data";
 import { motion } from "framer-motion";
-import CheckoutButton from "@/components/DonateButton";
+import { FaDonate } from "react-icons/fa";
+import { Button } from "./ui/button";
 
 interface CandidateSectionProps {
     candidates: Candidate[];
@@ -114,20 +115,13 @@ export default function CandidateSection({ candidates, election }: CandidateSect
                                         </p>
 
                                         {/* Donate Button */}
-                                        <motion.div
-                                            className="absolute bottom-2 left-1/2 transform -translate-x-1/2"
-                                            onClick={(event) => {
-                                                event.stopPropagation();
-                                                event.preventDefault();
-                                            }}
-                                        >
-                                            <CheckoutButton cartItems={[
-                                                {
-                                                    name: `Donation to ${candidate.name}'s Campaign`,
-                                                    price: 10, // Price in USD
-                                                    quantity: 1,
-                                                },
-                                            ]}/>
+                                        <motion.div className="absolute bottom-0" 
+                                                whileHover={{ scale: 1.02 }}
+                                                transition={{ duration: 0.2, ease: "easeOut" }}>
+                                            <Button variant="green" size="lg" onClick={() => { /* placeholder function */ }} className="flex items-center gap-2">
+                                                <FaDonate />
+                                                <span>Donate</span>
+                                            </Button>
                                         </motion.div>
                                     </CardContent>
                                 </Card>
