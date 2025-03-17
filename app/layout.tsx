@@ -17,7 +17,8 @@ import { Analytics } from "@vercel/analytics/react"
 import { SpeedInsights } from "@vercel/speed-insights/next"
 import { usePathname } from "next/navigation";
 import SearchBar from "../components/ResultsSearchBar";
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import {zipCodeDictionary } from "@/data/test_data";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -37,6 +38,13 @@ export default function RootLayout({
   const [mobileLocationOpen, setMobileLocationOpen] = useState(false);
   const [desktopLocationOpen, setDesktopLocationOpen] = useState(false);
 
+  const [selectedLocation, setSelectedLocation] = useState(zipCodeDictionary["13053"]);
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const zip = urlParams.get('zip');
+    setSelectedLocation(zip && zipCodeDictionary[zip] ? zipCodeDictionary[zip] : zipCodeDictionary["13053"]);
+  }, []);
+
   return (
     <ClerkProvider publishableKey={clerkKey || ""}>
       <html lang="en">
@@ -55,16 +63,23 @@ export default function RootLayout({
                     <Button
                       variant="ghost"
                       className="items-center text-gray-700 border border-gray-300 rounded-full shadow-sm"
-                      onClick={() => setDesktopLocationOpen(prev => !prev)}
+                      onClick={() => {
+                        setDesktopLocationOpen(prev => !prev);
+                      }}
                     >
-                      📍 Dryden, NY
+                      📍 {selectedLocation}
                     </Button>
                     {desktopLocationOpen && (
                       <div className="absolute left-0 mt-12 w-40 bg-white shadow-md rounded-lg z-10">
                         <button
                           onClick={() => {
-                            setDesktopLocationOpen(false);
-                            // Optionally update location state to Dryden, NY
+                            if (selectedLocation !== "Dryden, NY") {
+                              setDesktopLocationOpen(false);
+                              setSelectedLocation("Dryden, NY");
+                              window.location.href = "/results?zip=13053";
+                            } else {
+                              setDesktopLocationOpen(false);
+                            }
                           }}
                           className="block w-full text-left px-4 py-2 text-sm rounded-lg text-gray-700 hover:bg-gray-100"
                         >
@@ -72,8 +87,13 @@ export default function RootLayout({
                         </button>
                         <button
                           onClick={() => {
-                            setDesktopLocationOpen(false);
-                            // Optionally update location state to Lansing, NY
+                            if (selectedLocation !== "Lansing, NY") {
+                              setDesktopLocationOpen(false);
+                              setSelectedLocation("Lansing, NY");
+                              window.location.href = "/results?zip=14850";
+                            } else {
+                              setDesktopLocationOpen(false);
+                            }
                           }}
                           className="block w-full text-left px-4 py-2 text-sm rounded-lg text-gray-700 hover:bg-gray-100"
                         >
@@ -95,8 +115,13 @@ export default function RootLayout({
                       <div className="absolute left-0 mt-2 w-32 bg-white shadow-md rounded-md z-10">
                         <button
                           onClick={() => {
-                            setMobileLocationOpen(false);
-                            // Optionally update location state to Dryden, NY
+                            if (selectedLocation !== "Dryden, NY") {
+                              setMobileLocationOpen(false);
+                              setSelectedLocation("Dryden, NY");
+                              window.location.href = "/results?zip=13053";
+                            } else {
+                              setMobileLocationOpen(false);
+                            }
                           }}
                           className=" w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                         >
@@ -104,8 +129,13 @@ export default function RootLayout({
                         </button>
                         <button
                           onClick={() => {
-                            setMobileLocationOpen(false);
-                            // Optionally update location state to Lansing, NY
+                            if (selectedLocation !== "Lansing, NY") {
+                              setMobileLocationOpen(false);
+                              setSelectedLocation("Lansing, NY");
+                              window.location.href = "/results?zip=14850";
+                            } else {
+                              setMobileLocationOpen(false);
+                            }
                           }}
                           className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                         >

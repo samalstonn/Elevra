@@ -14,25 +14,26 @@ const buttonVariants = cva(
         destructive:
           "bg-destructive text-destructive-foreground shadow-sm hover:bg-destructive/90",
         outline:
-          "border border-input bg-background shadow-sm hover:bg-accent hover:text-accent-foreground",
+          "bg-background shadow-sm hover:bg-accent hover:text-accent-foreground",
         secondary:
           "bg-secondary text-secondary-foreground shadow-sm hover:bg-white shadow-none",
         ghost: "hover:bg-accent hover:text-accent-foreground",
         link: "text-primary underline-offset-4 hover:underline",
-        purple: "bg-purple-700 text-primary-foreground shadow hover:bg-purple-700/80",
-        green: "bg-green-700 text-primary-foreground shadow hover:bg-green-700/80",
+        purple: "bg-white border-2 border-purple-700 text-purple-700 shadow hover:bg-purple-700/10",
+        green: "bg-white border-2 border-green-700 text-green-700 shadow hover:bg-green-700/10",
+        whitePrimaryOutline: "bg-white border-2 border-primary text-primary shadow hover:bg-primary/10",
       },
       size: {
         default: "h-9 px-4 py-2",
-        sm: "h-8 px-3 text-xs",
+        sm: "h-8 px-3 p-2 text-xs",
         lg: "h-10 px-8",
-        xl: "h-12 p-4",
-        xxl: "h-16 p-4 text-lg",
+        xl: "h-8 px-8",
+        xxl: "h-16 px-4 text-lg",
         icon: "h-9 w-9",
       },
     },
     defaultVariants: {
-      variant: "default",
+      variant: "whitePrimaryOutline",
       size: "default",
     },
   }

@@ -12,9 +12,17 @@ export interface Candidate {
   twitter: string;
   donationLink: string;
   verified: boolean;
+  city: string;
+  state: string;
+  sources: string[];
 }
 
-export const candidates = [
+export const zipCodeDictionary: { [key: string]: string } = {
+  '13053': 'Dryden, NY',
+  '14850': 'Lansing, NY',
+}
+
+export const candidates: Candidate[] = [
   {
     name: "Jason Leifer",
     photo: "", // Photo URL unknown; search online later
@@ -33,6 +41,9 @@ export const candidates = [
     twitter: "",
     donationLink: "",
     verified: false,
+    city: "Dryden",
+    state: "NY",
+    sources: []
   },
   {
     name: "Dan Lamb",
@@ -53,6 +64,9 @@ export const candidates = [
     twitter: "",
     donationLink: "",
     verified: true,
+    city: "Dryden",
+    state: "NY",
+    sources: []
   },
   {
     name: "Leonardo Vargas-Méndez",
@@ -73,6 +87,9 @@ export const candidates = [
     twitter: "",
     donationLink: "",
     verified: false,
+    city: "Dryden",
+    state: "NY",
+    sources: []
   },
   {
     name: "Peter Walsh",
@@ -91,6 +108,9 @@ export const candidates = [
     twitter: "",
     donationLink: "",
     verified: false,
+    city: "Dryden",
+    state: "NY",
+    sources: []
   },
   {
     name: "Rick Young",
@@ -109,6 +129,9 @@ export const candidates = [
     twitter: "",
     donationLink: "",
     verified: false,
+    city: "Dryden",
+    state: "NY",
+    sources: []
   },
   {
     name: "Dan Wakeman",
@@ -121,14 +144,19 @@ export const candidates = [
       "Rural broadband expansion",
       "Improving rural roads",
       "Affordable housing",
-      "Public safety services"
+      "Public safety improvements",
+      "Fiscal conservatism",
+      "Attracting small businesses"
     ],
-    additionalNotes: "Running for an open seat; endorsed by the Dryden Democratic Committee.",
+    additionalNotes: "Nominated at Republican caucus; his second campaign in two years.",
     website: "",
     linkedin: "",
     twitter: "",
     donationLink: "",
     verified: false,
+    city: "Dryden",
+    state: "NY",
+    sources: []
   },
   {
     name: "Gregory Mezey",
@@ -149,6 +177,9 @@ export const candidates = [
     twitter: "",
     donationLink: "",
     verified: false,
+    city: "Dryden",
+    state: "NY",
+    sources: []
   },
   {
     name: "Lee Shurtleff",
@@ -168,6 +199,9 @@ export const candidates = [
     twitter: "",
     donationLink: "",
     verified: false,
+    city: "Dryden",
+    state: "NY",
+    sources: []
   },
   {
     name: "Michael J. Murphy",
@@ -188,6 +222,9 @@ export const candidates = [
     twitter: "",
     donationLink: "",
     verified: false,
+    city: "Dryden",
+    state: "NY",
+    sources: []
   },
   {
     name: "Thomas C. 'Tom' Corey",
@@ -207,6 +244,9 @@ export const candidates = [
     twitter: "",
     donationLink: "",
     verified: false,
+    city: "Dryden",
+    state: "NY",
+    sources: []
   },
   {
     name: "Jason L. Dickinson",
@@ -226,6 +266,9 @@ export const candidates = [
     twitter: "",
     donationLink: "",
     verified: false,
+    city: "Dryden",
+    state: "NY",
+    sources: []
   },
   {
     name: "Allison 'Allie' Buck",
@@ -245,6 +288,9 @@ export const candidates = [
     twitter: "",
     donationLink: "",
     verified: false,
+    city: "Dryden",
+    state: "NY",
+    sources: []
   },
   {
     name: "David S. Bravo-Cullen",
@@ -264,6 +310,9 @@ export const candidates = [
     twitter: "",
     donationLink: "",
     verified: false,
+    city: "Dryden",
+    state: "NY",
+    sources: []
   },
   {
     name: "Trevor Cross",
@@ -283,5 +332,61 @@ export const candidates = [
     twitter: "",
     donationLink: "",
     verified: false,
-}
+    city: "Dryden",
+    state: "NY",
+    sources: []
+  },
+  {
+    name: "Ronny Hardaway",
+    photo: "/ronny-hardaway.webp",
+    position: "Incumbent Mayor",
+    election: "Village Mayor (Lansing Village)",
+    politicalAffiliation: "Democrat",
+    bio: "Ronny Hardaway is the incumbent Mayor of Lansing, NY. He has been involved in local governance, focusing on infrastructure development and fiscal responsibility.",
+    policies: [
+      "Infrastructure improvements",
+      "Fiscal responsibility",
+      "Community engagement"
+    ],
+    additionalNotes: "Running for re-election as Village Mayor of Lansing.",
+    website: "",
+    linkedin: "",
+    twitter: "",
+    donationLink: "",
+    verified: false,
+    city: "Lansing",
+    state: "NY",
+    sources: [
+      "https://tompkinsweekly.com/articles/lansing-village-elections-april-23/",
+      "https://cornellsun.com/2024/04/24/village-of-lansing-elects-uncontested-trustees-amid-low-turnout/",
+      "https://1037qcountry.com/news/258852-village-of-lansing-seeks-trustee-candidates-ahead-of-april-election/",
+      "https://607newsnow.com/news/258852-village-of-lansing-seeks-trustee-candidates-ahead-of-april-election/"
+    ]
+  },
+  {
+    name: "Carolyn Greenwald",
+    photo: "/carolyn-greenwald.jpeg",
+    position: "Trustee Candidate",
+    election: "Village Trustee (Lansing Village)",
+    politicalAffiliation: "Democrat",
+    bio: "Carolyn Greenwald is running for Village Trustee in Lansing, NY. She has been an active community member and advocate for sustainable development and local governance transparency.",
+    policies: [
+      "Sustainable development",
+      "Government transparency",
+      "Public engagement"
+    ],
+    additionalNotes: "Seeking election as a Trustee for the Village of Lansing.",
+    website: "",
+    linkedin: "",
+    twitter: "",
+    donationLink: "",
+    verified: false,
+    city: "Lansing",
+    state: "NY",
+    sources: [
+      "https://cornellsun.com/2024/04/24/village-of-lansing-elects-uncontested-trustees-amid-low-turnout/",
+      "https://1037qcountry.com/news/258852-village-of-lansing-seeks-trustee-candidates-ahead-of-april-election/",
+      "https://607newsnow.com/news/258852-village-of-lansing-seeks-trustee-candidates-ahead-of-april-election/"
+    ]
+  }
 ];
