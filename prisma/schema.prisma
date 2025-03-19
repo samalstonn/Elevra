@@ -7,27 +7,49 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum ElectionType {
+  LOCAL
+  STATE
+  NATIONAL
+  UNIVERSITY
+}
+
 model Election {
   id            Int       @id @default(autoincrement())
   position      String
   date          DateTime
-  type          String    // e.g., "Presidential", "Local", "State"
-  location      String    // e.g., "City", "State", or "National"
+  type          ElectionType
+  city          String
+  state         String
+  active        Boolean
+  positions     Int
+  description   String
   candidates    Candidate[] // Relation to Candidate
-  zipcode       String
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 }
 
 model Candidate {
-  id            Int       @id @default(autoincrement())
-  name          String
-  party         String    // e.g., "Democrat", "Republican", "Independent"
-  bio           String?
-  policies      String[]  // Array of policy statements
-  website       String?
-  electionId    Int
-  election      Election  @relation(fields: [electionId], references: [id])
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  id              Int      @id @default(autoincrement())
+  name            String
+  photo           String?
+  verified        Boolean
+  party           String
+  position        String
+  bio             String   @default("")
+  policies        String[] // Each string should be in the format "string:string"
+  additionalNotes String?
+  website         String?
+  linkedin        String?
+  twitter         String?
+  city            String?
+  state           String?
+  sources         String[]
+  donations       String[]
+  history         String[] // history of positions held
+  electionId      Int
+  election        Election  @relation(fields: [electionId], references: [id])
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  clerkUserId     String?   @unique
 }

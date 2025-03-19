@@ -5,17 +5,9 @@ import { useRouter, useSearchParams } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { FaCheckCircle, FaArrowLeft, FaIdCard, FaFileUpload, FaInfoCircle } from "react-icons/fa";
+import { FaCheckCircle, FaArrowLeft, FaIdCard, FaInfoCircle } from "react-icons/fa";
 import { Button } from "../../../components/ui/button";
-import { candidates, Candidate } from "../../../data/test_data";
 
-interface NormalizeSlug {
-  (str: string): string;
-}
-
-const normalizeSlug: NormalizeSlug = (str) => {
-  return str.toLowerCase().replace(/[^\w\s]/g, " ").replace(/\s+/g, "-").trim();
-};
 
 interface FormErrors {
   fullName?: string;
@@ -30,7 +22,7 @@ interface FormErrors {
 function CandidateVerificationForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const candidateSlug = searchParams.get("candidate");
+
   
   const [formData, setFormData] = useState<{
     fullName: string;
@@ -38,6 +30,8 @@ function CandidateVerificationForm() {
     phone: string;
     position: string;
     website: string;
+    linkedin: string;
+    twitter: string;
     govId: File | null;
     proofOfCandidacy: File | null;
     additionalInfo: string;
@@ -48,6 +42,8 @@ function CandidateVerificationForm() {
     phone: "",
     position: "",
     website: "",
+    linkedin: "",
+    twitter: "",
     govId: null,
     proofOfCandidacy: null,
     additionalInfo: "",
@@ -199,9 +195,6 @@ function CandidateVerificationForm() {
                 </div>
               </div>
             )}
-            <p className="text-gray-600 mt-2">
-              Complete this form to verify your identity
-            </p>
           </div>
           {submitStatus === "success" ? (
             <div className="text-center py-8">
@@ -320,70 +313,33 @@ function CandidateVerificationForm() {
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
                     />
                   </div>
+                  <div>
+                  <label htmlFor="linkedin" className="block text-sm font-medium text-gray-700 mb-1">
+                    LinkedIn (optional)
+                  </label>
+                  <input
+                    type="url"
+                    id="linkedin"
+                    name="linkedin"
+                    value={formData.linkedin}
+                    onChange={handleInputChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  />
                 </div>
-              </div>
-      
-              <div className=" p-4 rounded-lg">
-                <h2 className="text-lg font-semibold text-blue-800 mb-2 flex items-center gap-2">
-                  <FaFileUpload /> Verification Documents
-                </h2>
-                <p className="text-sm text-gray-600 mb-4">
-                  Please provide the following documents to verify your identity and candidacy.
-                  All documents are securely stored and handled with strict confidentiality.
-                </p>
-      
-                <div className="space-y-4">
-                  <div>
-                    <label htmlFor="govId" className="block text-sm font-medium text-gray-700 mb-1">
-                      Government-Issued ID*
-                    </label>
-                    <div className={`border-2 border-dashed ${errors.govId ? 'border-red-500' : 'border-gray-300'} rounded-md p-4`}>
-                      <input
-                        type="file"
-                        id="govId"
-                        name="govId"
-                        onChange={handleInputChange}
-                        className="hidden"
-                      />
-                      <label htmlFor="govId" className="flex flex-col items-center justify-center cursor-pointer">
-                        <FaIdCard className="text-gray-400 text-3xl mb-2" />
-                        <span className="text-sm font-medium text-gray-600">
-                          {formData.govId ? formData.govId.name : "Click to upload driver's license, passport, or ID card"}
-                        </span>
-                        <span className="text-xs text-gray-500 mt-1">
-                          PDF, JPG, or PNG (max 5MB)
-                        </span>
-                      </label>
-                    </div>
-                    {errors.govId && <p className="mt-1 text-sm text-red-600">{errors.govId}</p>}
-                  </div>
-      
-                  <div>
-                    <label htmlFor="proofOfCandidacy" className="block text-sm font-medium text-gray-700 mb-1">
-                      Proof of Candidacy*
-                    </label>
-                    <div className={`border-2 border-dashed ${errors.proofOfCandidacy ? 'border-red-500' : 'border-gray-300'} rounded-md p-4`}>
-                      <input
-                        type="file"
-                        id="proofOfCandidacy"
-                        name="proofOfCandidacy"
-                        onChange={handleInputChange}
-                        className="hidden"
-                      />
-                      <label htmlFor="proofOfCandidacy" className="flex flex-col items-center justify-center cursor-pointer">
-                        <FaFileUpload className="text-gray-400 text-3xl mb-2" />
-                        <span className="text-sm font-medium text-gray-600">
-                          {formData.proofOfCandidacy ? formData.proofOfCandidacy.name : "Click to upload campaign filing documents or official announcement"}
-                        </span>
-                        <span className="text-xs text-gray-500 mt-1">
-                          PDF, JPG, or PNG (max 5MB)
-                        </span>
-                      </label>
-                    </div>
-                    {errors.proofOfCandidacy && (
-                      <p className="mt-1 text-sm text-red-600">{errors.proofOfCandidacy}</p>
-                    )}
-                  </div>
+
+                <div>
+                  <label htmlFor="twitter" className="block text-sm font-medium text-gray-700 mb-1">
+                    Twitter (optional)
+                  </label>
+                  <input
+                    type="url"
+                    id="twitter"
+                    name="twitter"
+                    value={formData.twitter}
+                    onChange={handleInputChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  />
+                </div>
                 </div>
               </div>
       
@@ -455,7 +411,7 @@ function CandidateVerificationForm() {
                   ) : (
                     <span className="flex items-center justify-center gap-2">
                       <FaCheckCircle />
-                      Submit Verification Request
+                      Continue Verification Request
                     </span>
                   )}
                 </Button>

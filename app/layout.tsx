@@ -38,7 +38,7 @@ export default function RootLayout({
   const [mobileLocationOpen, setMobileLocationOpen] = useState(false);
   const [desktopLocationOpen, setDesktopLocationOpen] = useState(false);
 
-  const [selectedLocation, setSelectedLocation] = useState(zipCodeDictionary["13053"]);
+  const [selectedLocation, setSelectedLocation] = useState({ city: 'Dryden', state: 'NY' });
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
     const zip = urlParams.get('zip');
@@ -51,7 +51,7 @@ export default function RootLayout({
         <body className={inter.className}>
           <div className="flex flex-col min-h-screen">
             {/* Header Section */}
-            <header className="w-full flex items-center justify-between gap-4 px-6 md:py-6">
+            <header className="w-full flex items-center justify-between gap-4 px-6 py-6">
               <Link href="/" className="text-3xl font-bold text-purple-900 shrink-0">
                 Elevra
               </Link>
@@ -67,15 +67,15 @@ export default function RootLayout({
                         setDesktopLocationOpen(prev => !prev);
                       }}
                     >
-                      📍 {selectedLocation}
+                      📍 {selectedLocation.city}, {selectedLocation.state}
                     </Button>
                     {desktopLocationOpen && (
                       <div className="absolute left-0 mt-12 w-40 bg-white shadow-md rounded-lg z-10">
                         <button
                           onClick={() => {
-                            if (selectedLocation !== "Dryden, NY") {
+                            if (selectedLocation.city !== "Dryden" || selectedLocation.state !== "NY") {
                               setDesktopLocationOpen(false);
-                              setSelectedLocation("Dryden, NY");
+                              setSelectedLocation({ city: "Dryden", state: "NY" });
                               window.location.href = "/results?zip=13053";
                             } else {
                               setDesktopLocationOpen(false);
@@ -87,9 +87,9 @@ export default function RootLayout({
                         </button>
                         <button
                           onClick={() => {
-                            if (selectedLocation !== "Lansing, NY") {
+                            if (selectedLocation.city !== "Lansing" || selectedLocation.state !== "NY") {
                               setDesktopLocationOpen(false);
-                              setSelectedLocation("Lansing, NY");
+                              setSelectedLocation({ city: "Lansing", state: "NY" });
                               window.location.href = "/results?zip=14850";
                             } else {
                               setDesktopLocationOpen(false);
@@ -115,9 +115,9 @@ export default function RootLayout({
                       <div className="absolute left-0 mt-2 w-32 bg-white shadow-md rounded-md z-10">
                         <button
                           onClick={() => {
-                            if (selectedLocation !== "Dryden, NY") {
+                            if (selectedLocation.city !== "Dryden" || selectedLocation.state !== "NY") {
                               setMobileLocationOpen(false);
-                              setSelectedLocation("Dryden, NY");
+                              setSelectedLocation({ city: "Dryden", state: "NY" });
                               window.location.href = "/results?zip=13053";
                             } else {
                               setMobileLocationOpen(false);
@@ -129,9 +129,9 @@ export default function RootLayout({
                         </button>
                         <button
                           onClick={() => {
-                            if (selectedLocation !== "Lansing, NY") {
+                            if (selectedLocation.city !== "Lansing" || selectedLocation.state !== "NY") {
                               setMobileLocationOpen(false);
-                              setSelectedLocation("Lansing, NY");
+                              setSelectedLocation({ city: "Lansing", state: "NY" });
                               window.location.href = "/results?zip=14850";
                             } else {
                               setMobileLocationOpen(false);

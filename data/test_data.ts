@@ -17,10 +17,10 @@ export interface Candidate {
   sources: string[];
 }
 
-export const zipCodeDictionary: { [key: string]: string } = {
-  '13053': 'Dryden, NY',
-  '14850': 'Lansing, NY',
-}
+export const zipCodeDictionary: { [key: string]: { city: string; state: string } } = {
+  '13053': { city: 'Dryden', state: 'NY' },
+  '14850': { city: 'Lansing', state: 'NY' },
+};
 
 export const candidates: Candidate[] = [
   {
