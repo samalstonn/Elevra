@@ -9,15 +9,14 @@ import { motion } from "framer-motion";
 import { FaGlobe, FaTwitter, FaLinkedin, FaCheckCircle, FaUserPlus, FaChevronUp, FaQuestionCircle } from "react-icons/fa";
 import CheckoutButton from "@/components/DonateButton";
 import { Button } from "../../../components/ui/button";
-import { candidates } from "../../../data/test_data"; // You might remove or adjust this if not needed
-import { Candidate } from "@prisma/client";
+import { Candidate, Election } from "@prisma/client";
 
 // Helper function to normalize slugs
 function normalizeSlug(str: string): string {
   return str.toLowerCase().replace(/[^\w\s]/g, " ").replace(/\s+/g, "-").trim();
 }
 
-export default function CandidateClient({ candidate, election }: { candidate: any; election: any }) {
+export default function CandidateClient({ candidate, election, suggestedCandidates }: { candidate: Candidate; election: Election; suggestedCandidates: Candidate[] }) {
   const searchParams = useSearchParams();
   const router = useRouter();
   const [popupMessage, setPopupMessage] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
@@ -26,22 +25,13 @@ export default function CandidateClient({ candidate, election }: { candidate: an
   const [hydrated, setHydrated] = useState(false);
   const [showSources, setShowSources] = useState(false);
 
-  // Optionally, if you still want to use the test_data for related candidates, you can filter them here.
   const decodedName = candidate.name ? normalizeSlug(candidate.name) : "";
-const relatedCandidates = election?.candidates
+  const relatedCandidates = election?.candidates
     ? election.candidates.filter((c: any) =>
             normalizeSlug(c.name) !== decodedName
         ).slice(0, 3)
     : [];
 
-  const randomCandidates = useMemo(() => {
-    const filtered = candidates.filter((c) => normalizeSlug(c.name) !== decodedName);
-    for (let i = filtered.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [filtered[i], filtered[j]] = [filtered[j], filtered[i]];
-    }
-    return filtered.slice(0, 3);
-  }, [decodedName]);
 
   useEffect(() => {
     setHydrated(true);
@@ -114,7 +104,7 @@ const relatedCandidates = election?.candidates
             </div>
           </h1>
           <p className="text-sm font-medium text-gray-600">{candidate.position}</p>
-          <p className="text-sm font-semibold text-purple-600">{candidate.politicalAffiliation}</p>
+          <p className="text-sm font-semibold text-purple-600">{candidate.party}</p>
         </div>
     
         {/* Social Links Inline */}
@@ -298,7 +288,7 @@ const relatedCandidates = election?.candidates
                 <h2 className="text-sm font-semibold text-gray-600">Suggested Candidates</h2>
               </div>
               <div className="space-y-3 ">
-                {randomCandidates.map((rc) => (
+                {suggestedCandidates.map((rc) => (
                   <motion.div key={rc.name} className="flex items-center justify-between ">
                     <Link 
                       href={`/candidate/${normalizeSlug(rc.name)}`}
@@ -313,7 +303,7 @@ const relatedCandidates = election?.candidates
                         />
                         <div className="flex flex-col">
                           <span className="text-sm font-semibold text-gray-900">{rc.name}</span>
-                          <span className="text-xs text-gray-500 line-clamp-1">Running for {rc.election}</span>
+                          <span className="text-xs text-gray-500 line-clamp-1">Running for {rc.election.position}</span>
                         </div>
                       
                       <Button variant="ghost" size="sm" className="text-purple-600 w-[10%] absolute right-0 " >

@@ -49,6 +49,7 @@ export default function CandidateSection({ candidates, election }: CandidateSect
                             </p>
                             <p className="text-sm text-gray-800 mt-2">
                                 <strong>Election Date:</strong> {new Date(election.date).toLocaleDateString("en-US", {
+                                    timeZone: "UTC",
                                     year: "numeric",
                                     month: "long",
                                     day: "numeric",

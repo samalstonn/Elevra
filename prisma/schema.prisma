@@ -53,3 +53,22 @@ model Candidate {
   updatedAt       DateTime  @updatedAt
   clerkUserId     String?   @unique
 }
+
+model UserValidationRequest {
+  id              Int      @id @default(autoincrement())
+  fullName        String
+  email           String
+  phone           String
+  position        String
+  website         String?
+  linkedin        String?
+  twitter         String?
+  additionalInfo  String?
+  city            String
+  state           String
+  candidateId     Int       
+  clerkUserId     String    @unique
+  electionId      Int       
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+}

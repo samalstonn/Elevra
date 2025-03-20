@@ -2,28 +2,29 @@
 
 import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import Image from "next/image";
+import { useUser } from "@clerk/nextjs";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { FaCheckCircle, FaArrowLeft, FaIdCard, FaInfoCircle } from "react-icons/fa";
 import { Button } from "../../../components/ui/button";
-
 
 interface FormErrors {
   fullName?: string;
   email?: string;
   phone?: string;
   position?: string;
-  govId?: string;
-  proofOfCandidacy?: string;
   agreeToTerms?: string;
+  city?: string;
+  state?: string;
 }
 
 function CandidateVerificationForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const candidateId = searchParams.get("candidateID");
+  const electionId = searchParams.get("electionID");
+  const { user } = useUser();
 
-  
   const [formData, setFormData] = useState<{
     fullName: string;
     email: string;
@@ -32,10 +33,10 @@ function CandidateVerificationForm() {
     website: string;
     linkedin: string;
     twitter: string;
-    govId: File | null;
-    proofOfCandidacy: File | null;
     additionalInfo: string;
     agreeToTerms: boolean;
+    city: string;
+    state: string;
   }>({
     fullName: "",
     email: "",
@@ -44,38 +45,15 @@ function CandidateVerificationForm() {
     website: "",
     linkedin: "",
     twitter: "",
-    govId: null,
-    proofOfCandidacy: null,
     additionalInfo: "",
-    agreeToTerms: false
+    agreeToTerms: false,
+    city: "",
+    state: ""
   });
   
   const [errors, setErrors] = useState<FormErrors>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitStatus, setSubmitStatus] = useState<null | "success" | "error">(null);
-  const [candidate, setCandidate] = useState<Candidate | null>(null);
-  const [hydrated, setHydrated] = useState(false);
-
-  useEffect(() => {
-    setHydrated(true);
-    if (candidateSlug) {
-      const foundCandidate = candidates.find(
-        (c) => normalizeSlug(c.name) === candidateSlug
-      );
-      
-      if (foundCandidate) {
-        setCandidate(foundCandidate);
-        setFormData(prev => ({
-          ...prev,
-          fullName: foundCandidate.name,
-          position: foundCandidate.position,
-          website: foundCandidate.website || ""
-        }));
-      }
-    }
-  }, [candidateSlug]);
-
-  if (!hydrated) return null;
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value, type, checked, files } = e.target as HTMLInputElement;
@@ -83,16 +61,14 @@ function CandidateVerificationForm() {
     if (type === "checkbox") {
       setFormData({ ...formData, [name]: checked });
     } else if (type === "file") {
-      if (files && files.length > 0) {
-        setFormData({ ...formData, [name]: files[0] });
-      }
+      // If you had file inputs, they would be handled here, but they are removed.
     } else {
       setFormData({ ...formData, [name]: value });
     }
     
     // Clear error for this field when user makes changes
     if (errors[name as keyof FormErrors]) {
-      setErrors({ ...errors, [name]: null });
+      setErrors({ ...errors, [name]: undefined });
     }
   };
 
@@ -107,9 +83,9 @@ function CandidateVerificationForm() {
     }
     if (!formData.phone.trim()) newErrors.phone = "Phone number is required";
     if (!formData.position.trim()) newErrors.position = "Position is required";
-    if (!formData.govId) newErrors.govId = "Government ID is required";
-    if (!formData.proofOfCandidacy) newErrors.proofOfCandidacy = "Proof of candidacy is required";
     if (!formData.agreeToTerms) newErrors.agreeToTerms = "You must agree to the terms";
+    if (!formData.city.trim()) newErrors.city = "City is required";
+    if (!formData.state.trim()) newErrors.state = "State is required";
     
     return newErrors;
   };
@@ -126,20 +102,35 @@ function CandidateVerificationForm() {
     setIsSubmitting(true);
     
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      
-      // Successful submission
-      setSubmitStatus("success");
-      
-      // Reset form
-      setTimeout(() => {
-        if (candidate) {
-          router.push(`/candidate/${normalizeSlug(candidate.name)}?verified=pending`);
-        } else {
-          router.push("/");
-        }
-      }, 2000);
+      const payload = {
+        fullName: formData.fullName,
+        email: formData.email,
+        phone: formData.phone,
+        position: formData.position,
+        website: formData.website,
+        linkedin: formData.linkedin,
+        twitter: formData.twitter,
+        additionalInfo: formData.additionalInfo,
+        city: formData.city,
+        state: formData.state,
+        candidateId: candidateId ? parseInt(candidateId) : 0,
+        clerkUserId: user?.id || "",
+        electionId: electionId ? parseInt(electionId) : 0
+      };
+
+      const response = await fetch("/api/userValidationRequest", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(payload)
+      });
+
+      if (response.ok) {
+        setSubmitStatus("success");
+      } else {
+        setSubmitStatus("error");
+      }
     } catch (error) {
       console.error("Error submitting form:", error);
       setSubmitStatus("error");
@@ -168,33 +159,10 @@ function CandidateVerificationForm() {
         </div>
         <div className="bg-white p-6 md:p-8">
           <div className="text-center mb-8">
-            <motion.div
-              initial={{ scale: 0.9 }}
-              animate={{ scale: 1 }}
-              transition={{ duration: 0.5 }}
-              className="mx-auto rounded-full flex items-center justify-center mb-4"
-            >
-      
-            </motion.div>
-              <div className="flex items-center justify-center gap-2">
-                <FaCheckCircle className="text-purple-600 text-3xl" />
-                <h1 className="text-2xl font-bold text-gray-900">Candidate Verification Request</h1>
-              </div>
-            {candidate && (
-              <div className="mt-4 flex items-center justify-center gap-3">
-                <Image
-                  src={candidate.photo || '/default-profile.png'}
-                  width={50}
-                  height={50}
-                  alt={candidate.name}
-                  className="rounded-full shadow-sm"
-                />
-                <div>
-                  <p className="font-semibold text-gray-900">{candidate.name}</p>
-                  <p className="text-sm text-gray-600">{candidate.position}</p>
-                </div>
-              </div>
-            )}
+            <div className="flex items-center justify-center gap-2">
+              <FaCheckCircle className="text-purple-600 text-3xl" />
+              <h1 className="text-2xl font-bold text-gray-900">Candidate Verification Request</h1>
+            </div>
           </div>
           {submitStatus === "success" ? (
             <div className="text-center py-8">
@@ -235,7 +203,7 @@ function CandidateVerificationForm() {
             </div>
           ) : (
             <form onSubmit={handleSubmit} className="space-y-6">
-              <div className=" p-4 rounded-lg mb-6">
+              <div className="p-4 rounded-lg mb-6">
                 <h2 className="text-lg font-semibold text-purple-800 mb-2 flex items-center gap-2">
                   <FaIdCard /> Candidate Information
                 </h2>
@@ -314,32 +282,60 @@ function CandidateVerificationForm() {
                     />
                   </div>
                   <div>
-                  <label htmlFor="linkedin" className="block text-sm font-medium text-gray-700 mb-1">
-                    LinkedIn (optional)
-                  </label>
-                  <input
-                    type="url"
-                    id="linkedin"
-                    name="linkedin"
-                    value={formData.linkedin}
-                    onChange={handleInputChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
-                  />
-                </div>
-
-                <div>
-                  <label htmlFor="twitter" className="block text-sm font-medium text-gray-700 mb-1">
-                    Twitter (optional)
-                  </label>
-                  <input
-                    type="url"
-                    id="twitter"
-                    name="twitter"
-                    value={formData.twitter}
-                    onChange={handleInputChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
-                  />
-                </div>
+                    <label htmlFor="linkedin" className="block text-sm font-medium text-gray-700 mb-1">
+                      LinkedIn (optional)
+                    </label>
+                    <input
+                      type="url"
+                      id="linkedin"
+                      name="linkedin"
+                      value={formData.linkedin}
+                      onChange={handleInputChange}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
+                    />
+                  </div>
+      
+                  <div>
+                    <label htmlFor="twitter" className="block text-sm font-medium text-gray-700 mb-1">
+                      Twitter (optional)
+                    </label>
+                    <input
+                      type="url"
+                      id="twitter"
+                      name="twitter"
+                      value={formData.twitter}
+                      onChange={handleInputChange}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
+                    />
+                  </div>
+                  <div>
+                    <label htmlFor="city" className="block text-sm font-medium text-gray-700 mb-1">
+                      City*
+                    </label>
+                    <input
+                      type="text"
+                      id="city"
+                      name="city"
+                      value={formData.city}
+                      onChange={handleInputChange}
+                      className={`w-full px-3 py-2 border ${errors.city ? 'border-red-500' : 'border-gray-300'} rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500`}
+                    />
+                    {errors.city && <p className="mt-1 text-sm text-red-600">{errors.city}</p>}
+                  </div>
+                  <div>
+                    <label htmlFor="state" className="block text-sm font-medium text-gray-700 mb-1">
+                      State*
+                    </label>
+                    <input
+                      type="text"
+                      id="state"
+                      name="state"
+                      value={formData.state}
+                      onChange={handleInputChange}
+                      className={`w-full px-3 py-2 border ${errors.state ? 'border-red-500' : 'border-gray-300'} rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500`}
+                    />
+                    {errors.state && <p className="mt-1 text-sm text-red-600">{errors.state}</p>}
+                  </div>
                 </div>
               </div>
       
@@ -375,15 +371,7 @@ function CandidateVerificationForm() {
                       I certify that all information provided is accurate*
                     </label>
                     <p className="text-gray-500">
-                      By checking this box, you agree to our{" "}
-                      <Link href="/terms" className="text-purple-600 hover:text-purple-800 underline">
-                        Terms of Service
-                      </Link>{" "}
-                      and{" "}
-                      <Link href="/privacy" className="text-purple-600 hover:text-purple-800 underline">
-                        Privacy Policy
-                      </Link>
-                      .
+                      By checking this box, you agree to our <Link href="/terms" className="text-purple-600 hover:text-purple-800 underline">Terms of Service</Link> and <Link href="/privacy" className="text-purple-600 hover:text-purple-800 underline">Privacy Policy</Link>.
                     </p>
                   </div>
                 </div>
