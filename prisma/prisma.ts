@@ -4,6 +4,9 @@ declare global {
   var prisma: PrismaClient | undefined;
 }
 
+console.log("DATABASE_URL_PROD:", process.env.DATABASE_URL_PROD);
+console.log("DATABASE_URL_DEV:", process.env.DATABASE_URL_DEV);
+
 const prismaClientSingleton = () => {
   return new PrismaClient({
     datasources: {
