@@ -6,6 +6,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { FaGlobe, FaTwitter, FaLinkedin, FaCheckCircle, FaUserPlus, FaChevronUp, FaQuestionCircle } from "react-icons/fa";
+import { MdEdit } from "react-icons/md";
 import CheckoutButton from "@/components/DonateButton";
 import { Button } from "../../../components/ui/button";
 import { Candidate, Election } from "@prisma/client";
@@ -15,7 +16,18 @@ import { normalizeSlug } from "@/lib/functions";
 type ElectionWithCandidates = Election & { candidates: Candidate[] };
 
 
-export default function CandidateClient({ candidate, election, suggestedCandidates }: { candidate: Candidate; election: ElectionWithCandidates; suggestedCandidates: Candidate[] }) {
+export default function CandidateClient({
+  candidate,
+  election,
+  suggestedCandidates,
+  isEditable,
+}: {
+  candidate: Candidate;
+  election: ElectionWithCandidates;
+  suggestedCandidates: Candidate[];
+  isEditable: boolean;
+}) {
+    
   const searchParams = useSearchParams();
   const router = useRouter();
   const [popupMessage, setPopupMessage] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
@@ -157,6 +169,16 @@ export default function CandidateClient({ candidate, election, suggestedCandidat
             
         {/* Buttons */}
         <div className="mt-4 flex justify-start gap-4">
+          {isEditable ? (
+            <Button 
+              variant="purple"
+              size="xl"
+              onClick={() => router.push(`/candidate/edit?candidateID=${candidate.id}&electionID=${election.id}`)}
+            >
+              <MdEdit />
+              <span>Edit Profile</span>
+            </Button>
+          ) : null}
           <CheckoutButton
             cartItems={[
               {
@@ -180,38 +202,38 @@ export default function CandidateClient({ candidate, election, suggestedCandidat
         </div>
 
         {/* Sources Dropdown Section */}
-        {candidate.sources && candidate.sources.length > 0 && (
+        {!candidate.verified && candidate.sources && candidate.sources.length > 0 && (
           <div className="mt-6">
             <div className="relative inline-block">
-                <button
-                  onClick={() => setShowSources(!showSources)}
-                  className="flex items-center text-sm text-purple-600 hover:underline focus:outline-none"
-                >
-                  <FaChevronUp className={`transition-transform duration-200 ${showSources ? "rotate-180" : "rotate-90"}`} />
-                  <span className="ml-2">Sources</span>
-                </button>
+          <button
+            onClick={() => setShowSources(!showSources)}
+            className="flex items-center text-sm text-purple-600 hover:underline focus:outline-none"
+          >
+            <FaChevronUp className={`transition-transform duration-200 ${showSources ? "rotate-180" : "rotate-90"}`} />
+            <span className="ml-2">Sources</span>
+          </button>
               <div className="absolute -top-0 -right-5">
-                <FaQuestionCircle 
-                  className="text-purple-600 cursor-pointer"
-                  onMouseEnter={() => setDropdownHovered(true)}
-                  onMouseLeave={() => setDropdownHovered(false)}
-                />
+          <FaQuestionCircle 
+            className="text-purple-600 cursor-pointer"
+            onMouseEnter={() => setDropdownHovered(true)}
+            onMouseLeave={() => setDropdownHovered(false)}
+          />
               </div>
-              {!candidate.verified && dropdownHovered && (
-                <div className="absolute left-2/3 transform -translate-x-1/2 -top-10 bg-gray-900 text-white text-xs px-2 py-1 rounded shadow whitespace-nowrap">
-                  Since this candidate is not yet verified, the Elevra team <br /> compiled relevant information using these sources.
-                </div>
+              {dropdownHovered && (
+          <div className="absolute left-2/3 transform -translate-x-1/2 -top-10 bg-gray-900 text-white text-xs px-2 py-1 rounded shadow whitespace-nowrap">
+            Since this candidate is not yet verified, the Elevra team <br /> compiled relevant information using these sources.
+          </div>
               )}
             </div>
             {showSources && (
               <ul className="list-disc list-inside text-sm text-purple-600 mt-2">
-                {candidate.sources.map((source: string, index: number) => (
-                  <li key={index}>
-                    <a href={source} target="_blank" rel="noopener noreferrer">
-                      {source}
-                    </a>
-                  </li>
-                ))}
+          {candidate.sources.map((source: string, index: number) => (
+            <li key={index}>
+              <a href={source} target="_blank" rel="noopener noreferrer">
+                {source}
+              </a>
+            </li>
+          ))}
               </ul>
             )}
           </div>
@@ -312,10 +334,6 @@ export default function CandidateClient({ candidate, election, suggestedCandidat
                           <p className="text-xs text-gray-600">{rc.position}</p>
                           <span className="text-xs text-purple-600 line-clamp-1">{rc.party}</span>
                         </div>
-                      
-                      <Button variant="ghost" size="sm" className="text-purple-600 w-[10%] absolute right-0 " >
-                        View
-                      </Button>
                     </Link>
                   </motion.div>
                 ))}
