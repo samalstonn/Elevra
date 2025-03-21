@@ -112,7 +112,7 @@ export default function EditCandidateForm({
         throw new Error(errorData.error || 'Failed to update candidate information');
       }
 
-      setSuccess('Your profile has been updated successfully!');
+      setSuccess('Your profile has been updated successfully! Redirecting...');
       
       // Redirect after a delay to allow user to see success message
       setTimeout(() => {

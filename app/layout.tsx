@@ -18,7 +18,6 @@ import { SpeedInsights } from "@vercel/speed-insights/next"
 import { usePathname } from "next/navigation";
 import SearchBar from "../components/ResultsSearchBar";
 import { useState, useEffect } from 'react';
-import {zipCodeDictionary } from "@/data/test_data";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -41,8 +40,11 @@ export default function RootLayout({
   const [selectedLocation, setSelectedLocation] = useState({ city: 'Dryden', state: 'NY' });
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
-    const zip = urlParams.get('zip');
-    setSelectedLocation(zip && zipCodeDictionary[zip] ? zipCodeDictionary[zip] : zipCodeDictionary["13053"]);
+    const city = urlParams.get('city');
+    const state = urlParams.get('state');
+    if (city && state) {
+      setSelectedLocation({ city, state });
+    }
   }, []);
 
   return (
@@ -76,7 +78,7 @@ export default function RootLayout({
                             if (selectedLocation.city !== "Dryden" || selectedLocation.state !== "NY") {
                               setDesktopLocationOpen(false);
                               setSelectedLocation({ city: "Dryden", state: "NY" });
-                              window.location.href = "/results?zip=13053";
+                              window.location.href = "/results?city=Dryden&state=NY";
                             } else {
                               setDesktopLocationOpen(false);
                             }
@@ -90,7 +92,7 @@ export default function RootLayout({
                             if (selectedLocation.city !== "Lansing" || selectedLocation.state !== "NY") {
                               setDesktopLocationOpen(false);
                               setSelectedLocation({ city: "Lansing", state: "NY" });
-                              window.location.href = "/results?zip=14850";
+                              window.location.href = "/results?city=Lansing&state=NY";
                             } else {
                               setDesktopLocationOpen(false);
                             }
@@ -98,6 +100,20 @@ export default function RootLayout({
                           className="block w-full text-left px-4 py-2 text-sm rounded-lg text-gray-700 hover:bg-gray-100"
                         >
                           Lansing, NY
+                        </button>
+                        <button
+                          onClick={() => {
+                            if (selectedLocation.city !== "Milwaukee" || selectedLocation.state !== "WI") {
+                              setDesktopLocationOpen(false);
+                              setSelectedLocation({ city: "Milwaukee", state: "WI" });
+                              window.location.href = "/results?city=Milwaukee&state=WI";
+                            } else {
+                              setDesktopLocationOpen(false);
+                            }
+                          }}
+                          className="block w-full text-left px-4 py-2 text-sm rounded-lg text-gray-700 hover:bg-gray-100"
+                        >
+                          Milwaukee, WI
                         </button>
                       </div>
                     )}
@@ -118,7 +134,7 @@ export default function RootLayout({
                             if (selectedLocation.city !== "Dryden" || selectedLocation.state !== "NY") {
                               setMobileLocationOpen(false);
                               setSelectedLocation({ city: "Dryden", state: "NY" });
-                              window.location.href = "/results?zip=13053";
+                              window.location.href = "/results?city=Dryden&state=NY";
                             } else {
                               setMobileLocationOpen(false);
                             }
@@ -132,7 +148,7 @@ export default function RootLayout({
                             if (selectedLocation.city !== "Lansing" || selectedLocation.state !== "NY") {
                               setMobileLocationOpen(false);
                               setSelectedLocation({ city: "Lansing", state: "NY" });
-                              window.location.href = "/results?zip=14850";
+                              window.location.href = "/results?city=Lansing&state=NY";
                             } else {
                               setMobileLocationOpen(false);
                             }

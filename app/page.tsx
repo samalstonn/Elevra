@@ -20,8 +20,8 @@ function HomePageContent() {
   const router = useRouter();
 
 
-  const handleSearch = (zipCode: string) => {
-    router.push(`/results?zipCode=${zipCode}`);
+  const handleSearch = (_: string) => {
+    router.push("/results?city=Milwaukee&state=WI");
   };
 
   return (

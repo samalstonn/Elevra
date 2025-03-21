@@ -1,7 +1,6 @@
 "use client";
 
 import { Election, Candidate } from "@prisma/client";
-import { zipCodeDictionary } from "@/data/test_data";
 import useSWR from "swr";
 import { motion } from "framer-motion";
 import { useState, useMemo, useEffect, useRef } from "react";
@@ -13,12 +12,13 @@ type ElectionWithCandidates = Election & { candidates: Candidate[] };
 const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
 export default function ElectionResults() {
-  const [selectedZip, _] = useState(() => {
+  const [location, _] = useState(() => {
     try {
       if (typeof window !== 'undefined') {
         const urlParams = new URLSearchParams(window.location.search);
-        const zip = urlParams.get('zip');
-        return zip && zipCodeDictionary[zip] ? zipCodeDictionary[zip] : { city: 'Dryden', state: 'NY' };
+        const city = urlParams.get('city');
+        const state = urlParams.get('state');
+        return { city: city, state: state };
       }
     } catch (error) {
       console.error("Error parsing zip code:", error);
@@ -26,7 +26,7 @@ export default function ElectionResults() {
     return { city: 'Dryden', state: 'NY' };
   });
   const { data: elections, isLoading } = useSWR<ElectionWithCandidates[]>(
-    `/api/elections?city=${selectedZip.city}&state=${selectedZip.state}`,
+    `/api/elections?city=${location.city}&state=${location.state}`,
     fetcher
   );
 
