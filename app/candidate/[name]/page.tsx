@@ -54,8 +54,6 @@ export default async function CandidatePage({
 
   const user = await currentUser();
   const currentUserId = user ? user.id : null;
-  console.log("currentUserId", currentUserId);
-  console.log("candidate.clerkUserId", candidate.clerkUserId);
   const isEditable = candidate.clerkUserId === currentUserId;
   
   return <CandidateClient candidate={candidate} election={election} suggestedCandidates={suggestedCandidates} isEditable={isEditable} />;

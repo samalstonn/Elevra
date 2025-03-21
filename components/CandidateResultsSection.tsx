@@ -45,7 +45,7 @@ export default function CandidateSection({ candidates, election }: CandidateSect
                         <CardContent>
                             <p className="text-sm text-gray-800">{election.description}</p>
                             <p className="text-sm text-gray-800 mt-2">
-                                <strong>Positions:</strong> 2
+                                <strong>Positions:</strong> {election.positions}
                             </p>
                             <p className="text-sm text-gray-800 mt-2">
                                 <strong>Election Date:</strong> {new Date(election.date).toLocaleDateString("en-US", {
@@ -86,7 +86,7 @@ export default function CandidateSection({ candidates, election }: CandidateSect
                                         <h2 className="text-xl font-semibold text-gray-900 mt-2 line-clamp-2">
                                             {candidate.name}
                                         </h2>
-                                        <p className="w-[85%] text-gray-800 text-sm ">{candidate.position}</p>
+                                        <p className="w-[85%] text-purple-700 text-sm ">{candidate.position}</p>
                                         <p
                                             className={`w-[75%] text-gray-500 text-xs ${
                                                 candidate.position.length > 37 ? "line-clamp-3" : "line-clamp-4"

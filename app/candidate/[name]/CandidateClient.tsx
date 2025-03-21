@@ -229,9 +229,9 @@ export default function CandidateClient({
               <ul className="list-disc list-inside text-sm text-purple-600 mt-2">
           {candidate.sources.map((source: string, index: number) => (
             <li key={index}>
-              <a href={source} target="_blank" rel="noopener noreferrer">
+                <span className="cursor-default">
                 {source}
-              </a>
+                </span>
             </li>
           ))}
               </ul>
@@ -293,9 +293,8 @@ export default function CandidateClient({
               onClick={() => {
                 if (candidate.city && candidate.state) {
                   const cityStateKey = `${candidate.city.trim()}, ${candidate.state.trim()}`;
-                  const zipCodes = cityStateToZip[cityStateKey];
-                  const zipCode = zipCodes && zipCodes.length > 0 ? zipCodes[0] : "14850";
-                  router.push(`/results?zipCode=${encodeURIComponent(zipCode)}`);
+                  const _ = cityStateToZip[cityStateKey];
+                  router.push("/results?city=Milwaukee&state=WI");
                 } else {
                   console.error("Candidate city or state is missing.");
                 }

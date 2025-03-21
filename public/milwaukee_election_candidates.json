@@ -1,0 +1,110 @@
+{
+  "election": {
+    "position": "Multiple Judicial and Educational Positions",
+    "date": "2025-04-01T00:00:00Z",
+    "active": true,
+    "city": "Milwaukee",
+    "state": "WI",
+    "type": "STATE",
+    "description": "Election for State Superintendent of Public Instruction, Justice of the Supreme Court, Milwaukee County Circuit Court Judges (Branches 6, 11, 26, 36, 40, and 41), and Milwaukee Municipal Judge (Branch 1).",
+    "positions": 9
+  },
+  "candidates": [
+    {
+      "name": "Brittany Kinser",
+      "party": "Nonpartisan (endorsed by Republicans)",
+      "policies": [
+        "Prioritize curriculum on foundational subjects (reading, writing, math, science)",
+        "Increase transparency in school fund spending",
+        "Restore high academic standards",
+        "Support school choice for Wisconsin families",
+        "Modernize the school funding formula to shift funding burden to state"
+      ],
+      "website": "https://kinserforwikids.com/",
+      "additionalNotes": "Former special education teacher, education consultant, CEO at City Forward Collective; endorsed by Republicans.",
+      "city": "Milwaukee",
+      "linkedin": "https://www.linkedin.com/in/brittany-kinser-19b2028/",
+      "photo": "",
+      "position": "Candidate for State Superintendent of Public Instruction",
+      "sources": [
+        "https://ballotpedia.org/Brittany_Kinser",
+        "https://kinserforwikids.com/"
+      ],
+      "state": "WI",
+      "verified": true,
+      "bio": "Brittany Kinser has experience as a special education teacher and educational consultant. She currently serves as CEO of City Forward Collective."
+    },
+    {
+      "name": "Jill Underly",
+      "party": "Democratic",
+      "policies": [
+        "Supports lower testing standards reflecting accurate student learning",
+        "Advocates increased state funding for public schools",
+        "Increase teacher recruitment and retention efforts",
+        "Supports career and technical education, literacy initiatives, and youth mental health programs",
+        "Opposes voucher expansion, supports public education funding equity"
+      ],
+      "website": "https://www.underlyforwi.com/",
+      "additionalNotes": "Incumbent Superintendent, former assistant director of Wisconsin DPI, superintendent of Pecatonica Area School District.",
+      "city": "Milwaukee",
+      "linkedin": "",
+      "photo": "",
+      "position": "Incumbent State Superintendent of Public Instruction",
+      "sources": [
+        "https://ballotpedia.org/Jill_Underly",
+        "https://www.underlyforwi.com/"
+      ],
+      "state": "WI",
+      "verified": true,
+      "bio": "Jill Underly is the incumbent Wisconsin Superintendent of Public Instruction with extensive educational administration experience."
+    },
+    {
+      "name": "Brad Schimel",
+      "party": "Conservative-leaning (nonpartisan election)",
+      "policies": [
+        "Pro-life stance supporting Wisconsin\u2019s 1849 abortion ban",
+        "Support for gun rights",
+        "Supports limiting EPA authority and other environmental regulatory bodies",
+        "Opposes Affordable Care Act (Obamacare)",
+        "Supports voter ID laws and limits on early voting"
+      ],
+      "website": "https://schimelforjustice.com/",
+      "additionalNotes": "Judge for Waukesha County Circuit Court, former Wisconsin Attorney General.",
+      "city": "Waukesha",
+      "linkedin": "https://www.linkedin.com/in/brad-schimel-59116a38/",
+      "photo": "",
+      "position": "Candidate for Wisconsin Supreme Court Justice",
+      "sources": [
+        "https://ballotpedia.org/Brad_Schimel",
+        "https://schimelforjustice.com/"
+      ],
+      "state": "WI",
+      "verified": true,
+      "bio": "Brad Schimel has served as Attorney General of Wisconsin and as a judge, holding conservative legal positions."
+    },
+    {
+      "name": "Susan Crawford",
+      "party": "Liberal-leaning (nonpartisan election)",
+      "policies": [
+        "Supports access to reproductive healthcare",
+        "Supports campaign finance regulation",
+        "Favors restorative justice and criminal justice diversion programs",
+        "Supports workers' rights and opposed Act 10",
+        "Supports nonpartisan redistricting and alternative voter verification methods"
+      ],
+      "website": "https://www.crawfordforwi.com/",
+      "additionalNotes": "Judge of Dane County Circuit Court, former chief legal counsel to Governor Jim Doyle.",
+      "city": "Dane County",
+      "linkedin": "https://www.linkedin.com/in/susan-crawford-237b6a18/",
+      "photo": "",
+      "position": "Candidate for Wisconsin Supreme Court Justice",
+      "sources": [
+        "https://ballotpedia.org/Susan_Crawford_(Wisconsin)",
+        "https://www.crawfordforwi.com/"
+      ],
+      "state": "WI",
+      "verified": true,
+      "bio": "Susan Crawford is a Dane County Circuit Judge with a liberal judicial philosophy advocating workers' rights and nonpartisan redistricting."
+    }
+  ]
+}
