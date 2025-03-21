@@ -7,7 +7,6 @@ export default function Page() {
         path="/sign-in"
         routing="path"
         signUpUrl="/sign-up"
-        forceRedirectUrl="/dashboard"
         appearance={{
           elements: {
             // Card container styling (the white background container)

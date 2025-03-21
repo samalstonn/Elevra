@@ -1,16 +1,23 @@
 import { PrismaClient } from '@prisma/client';
 
-let prisma: PrismaClient;
-
-if (process.env.NODE_ENV === 'production') {
-  // In production, always create a new PrismaClient instance
-  prisma = new PrismaClient();
-} else {
-  // In development, reuse a single PrismaClient instance
-  if (!global.prisma) {
-    global.prisma = new PrismaClient();
-  }
-  prisma = global.prisma;
+declare global {
+  var prisma: PrismaClient | undefined;
 }
+
+const prismaClientSingleton = () => {
+  return new PrismaClient({
+    datasources: {
+      db: {
+        url: process.env.NODE_ENV === 'production'
+          ? process.env.DATABASE_URL_PROD
+          : process.env.DATABASE_URL_DEV,
+      },
+    },
+  });
+};
+
+const prisma = globalThis.prisma || prismaClientSingleton();
+
+if (process.env.NODE_ENV !== 'production') globalThis.prisma = prisma;
 
 export default prisma;

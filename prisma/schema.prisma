@@ -8,26 +8,67 @@ datasource db {
 }
 
 model Election {
-  id            Int       @id @default(autoincrement())
-  position      String
-  date          DateTime
-  type          String    // e.g., "Presidential", "Local", "State"
-  location      String    // e.g., "City", "State", or "National"
-  candidates    Candidate[] // Relation to Candidate
-  zipcode       String
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  id          Int          @id @default(autoincrement())
+  position    String
+  date        DateTime
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  active      Boolean
+  city        String
+  description String
+  positions   Int
+  state       String
+  type        ElectionType
+  candidates  Candidate[]
 }
 
 model Candidate {
-  id            Int       @id @default(autoincrement())
-  name          String
-  party         String    // e.g., "Democrat", "Republican", "Independent"
-  bio           String?
-  policies      String[]  // Array of policy statements
-  website       String?
-  electionId    Int
-  election      Election  @relation(fields: [electionId], references: [id])
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  id              Int      @id @default(autoincrement())
+  name            String
+  party           String
+  policies        String[]
+  website         String?
+  electionId      Int
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  additionalNotes String?
+  city            String?
+  linkedin        String?
+  photo           String?
+  position        String
+  sources         String[]
+  state           String?
+  twitter         String?
+  verified        Boolean
+  donations       String[]
+  bio             String   @default("")
+  clerkUserId     String?  @unique
+  history         String[]
+  election        Election @relation(fields: [electionId], references: [id])
+}
+
+model UserValidationRequest {
+  id             Int      @id @default(autoincrement())
+  fullName       String
+  email          String
+  phone          String
+  position       String
+  website        String?
+  linkedin       String?
+  twitter        String?
+  additionalInfo String?
+  city           String
+  state          String
+  candidateId    Int
+  clerkUserId    String   @unique
+  electionId     Int
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}
+
+enum ElectionType {
+  LOCAL
+  STATE
+  NATIONAL
+  UNIVERSITY
 }

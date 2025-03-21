@@ -8,7 +8,7 @@ const AboutUs = () => {
       whileInView={{ opacity: 1, y: 0 }} 
       transition={{ duration: 0.8, ease: "easeInOut" }}
       viewport={{ once: true }}
-      className="w-screen bg-gray-100 py-32 px-6"
+      className="w-screen bg-gray-100 pt-32 pb-32 px-6"
     >
       <motion.div
         initial={{ opacity: 0, y: 20 }}

@@ -1,51 +1,59 @@
 "use client";
 
-import CandidateSection from "@/components/CandidateResultsSection";
-import { Candidate, candidates, zipCodeDictionary } from "@/data/test_data";
+import { Election, Candidate } from "@prisma/client";
+import { zipCodeDictionary } from "@/data/test_data";
+import useSWR from "swr";
 import { motion } from "framer-motion";
 import { useState, useMemo, useEffect, useRef } from "react";
 import { Button } from "../../components/ui/button";
+import CandidateSection from "../../components/CandidateResultsSection";
+
+type ElectionWithCandidates = Election & { candidates: Candidate[] };
+
+const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
 export default function ElectionResults() {
-
   const [selectedZip, _] = useState(() => {
-    if (typeof window !== 'undefined') {
-      const urlParams = new URLSearchParams(window.location.search);
-      const zip = urlParams.get('zip');
-      return zip && zipCodeDictionary[zip] ? zip : "13053";
-    } else {
-      return "13053";
+    try {
+      if (typeof window !== 'undefined') {
+        const urlParams = new URLSearchParams(window.location.search);
+        const zip = urlParams.get('zip');
+        return zip && zipCodeDictionary[zip] ? zipCodeDictionary[zip] : { city: 'Dryden', state: 'NY' };
+      }
+    } catch (error) {
+      console.error("Error parsing zip code:", error);
     }
+    return { city: 'Dryden', state: 'NY' };
   });
-  const selectedLocation = zipCodeDictionary[selectedZip];
+  const { data: elections, isLoading } = useSWR<ElectionWithCandidates[]>(
+    `/api/elections?city=${selectedZip.city}&state=${selectedZip.state}`,
+    fetcher
+  );
+
+  const sortedElections = useMemo(() => {
+    return elections ? [...elections].sort((a, b) => b.candidates.length - a.candidates.length) : [];
+  }, [elections]);
 
   // New: Prevent hydration errors by tracking mount state
   const [mounted, setMounted] = useState(false);
   useEffect(() => {
     setMounted(true);
   }, []);
-  // Instead of conditionally returning null here, we will render a fallback in the JSX
 
-  // Compute election filters sorted by the number of candidates
-  const electionFilters = useMemo(() => {
-    const filteredCandidates = candidates.filter(
-      (candidate) => `${candidate.city}, ${candidate.state}` === selectedLocation
-    );
-    return [...new Set(filteredCandidates.map((candidate) => candidate.election))].sort((a, b) => {
-      const countA = filteredCandidates.filter((c) => c.election === a).length;
-      const countB = filteredCandidates.filter((c) => c.election === b).length;
-      return countB - countA; // Sort in descending order
-    });
-  }, [selectedLocation]);
+  // Initialize filter state for elections
+  const [selectedElection, setSelectedElection] = useState<number | null>(null);
+
+  // Set default selected election when data loads
+  useEffect(() => {
+    if (sortedElections.length > 0 && !selectedElection) {
+      setSelectedElection(sortedElections[0].id);
+    }
+  }, [sortedElections, selectedElection]);
 
   // Track the selected election filter: default to first filter
-  const [selectedElection, setSelectedElection] = useState<string | null>(electionFilters[0] || null);
-
-  // If no filter is selected => show all elections
-  // If a filter is selected => show only that one
   const filteredElections = selectedElection
-    ? electionFilters.filter((e) => e === selectedElection)
-    : electionFilters; // no filter => all
+    ? sortedElections.filter((elec) => elec.id === selectedElection)
+    : sortedElections;
 
   // Animation Variants
   const fadeInVariants = {
@@ -86,15 +94,11 @@ export default function ElectionResults() {
         scroller.removeEventListener("scroll", updateScrollButtons);
       };
     }
-  }, [mounted, electionFilters]);
-
-  useEffect(() => {
-    localStorage.setItem('zipCode', selectedZip);
-  }, [selectedZip]);
+  }, [mounted, elections]);
 
   return (
     <>
-      {!mounted ? (
+      {!mounted || isLoading ? (
         <div className="w-screen h-screen flex items-center justify-center">
           Loading...
         </div>
@@ -108,15 +112,14 @@ export default function ElectionResults() {
           {/* Mobile Filters Header */}
           <div className="relative">
             <motion.div ref={scrollRef} variants={fadeInVariants} className="flex flex-nowrap overflow-x-auto gap-4 bg-white p-4 no-scrollbar">
-              {electionFilters.map((election) => (
+              {sortedElections.map((elec) => (
                 <Button
-                  key={election}
-                  onClick={() => setSelectedElection(election)}
-                  variant={selectedElection === election ? "purple" : "secondary"}
+                  key={elec.id}
+                  onClick={() => setSelectedElection(elec.id)}
+                  variant={selectedElection === elec.id ? "purple" : "secondary"}
                   size="sm"
-                  
                 >
-                  <span className="font-medium">{election}</span>
+                  <span className="font-medium">{elec.position}</span>
                 </Button>
               ))}
             </motion.div>
@@ -189,19 +192,13 @@ export default function ElectionResults() {
           <div className="mt-4">
             {/* Candidate Sections */}
             <motion.div variants={fadeInVariants} className="grid grid-cols-1 gap-6">
-              {filteredElections.map((election) => {
-                const filteredCandidates = candidates.filter(
-                  (candidate): candidate is Candidate =>
-                    candidate.election === election && `${candidate.city}, ${candidate.state}` === selectedLocation
-                );
-                return (
-                    <motion.div key={election} variants={fadeInVariants} className="mt-4 flex flex-col">
-                      <div className="flex-1">
-                        <CandidateSection candidates={filteredCandidates} election={election}/>
-                      </div>
-                    </motion.div>
-                );
-              })}
+              {(filteredElections || []).map((elec) => (
+                <motion.div key={elec.id} variants={fadeInVariants} className="mt-4 flex flex-col">
+                  <div className="flex-1">
+                    <CandidateSection candidates={elec.candidates} election={elec} />
+                  </div>
+                </motion.div>
+              ))}
             </motion.div>
           </div>
         </motion.div>
