@@ -5,7 +5,7 @@ export default function TermsPage() {
       <div className="max-w-3xl mx-auto p-4">
         <h1 className="text-4xl font-bold mb-4">Terms of Service</h1>
         <p className="mb-2">
-          Welcome to Elevra. These Terms of Service ("Terms") govern your access to and use of our website and services.
+          Welcome to Elevra. These Terms of Service (&quot;Terms&quot;) govern your access to and use of our website and services.
         </p>
         <h2 className="text-2xl font-semibold mt-6 mb-2">Acceptance of Terms</h2>
         <p className="mb-2">

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, Suspense } from "react";
+import { useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useUser } from "@clerk/nextjs";
 import Link from "next/link";
@@ -54,9 +54,10 @@ function CandidateVerificationForm() {
   const [errors, setErrors] = useState<FormErrors>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitStatus, setSubmitStatus] = useState<null | "success" | "error">(null);
+  const [submitError, setSubmitError] = useState<string | null>(null);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const { name, value, type, checked, files } = e.target as HTMLInputElement;
+    const { name, value, type, checked } = e.target as HTMLInputElement;
     
     if (type === "checkbox") {
       setFormData({ ...formData, [name]: checked });
@@ -129,10 +130,13 @@ function CandidateVerificationForm() {
       if (response.ok) {
         setSubmitStatus("success");
       } else {
+        const data = await response.json();
+        setSubmitError(data.error || "Submission error");
         setSubmitStatus("error");
       }
     } catch (error) {
       console.error("Error submitting form:", error);
+      setSubmitError("Submission error");
       setSubmitStatus("error");
     } finally {
       setIsSubmitting(false);
@@ -191,7 +195,7 @@ function CandidateVerificationForm() {
               </motion.div>
               <h2 className="text-xl font-semibold text-gray-900 mb-2">Submission Error</h2>
               <p className="text-gray-600 mb-4">
-                There was an error submitting your verification request. Please try again later or contact support.
+                {submitError ? submitError : "There was an error submitting your verification request. Please try again later or contact support."}
               </p>
               <Button
                 variant="purple"

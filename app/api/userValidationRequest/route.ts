@@ -29,6 +29,17 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Invalid electionId" }, { status: 400 });
   }
 
+  const existingRequest = await prisma.userValidationRequest.findUnique({
+    where: { clerkUserId: clerkUserId || "" },
+  });
+  
+  if (existingRequest) {
+    return NextResponse.json(
+      { error: "A validation request for this user has already been submitted." },
+      { status: 400 }
+    );
+  }
+
   const userValidationRequest = await prisma.userValidationRequest.create({
     data: {
       fullName,

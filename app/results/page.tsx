@@ -8,9 +8,9 @@ import { useState, useMemo, useEffect, useRef } from "react";
 import { Button } from "../../components/ui/button";
 import CandidateSection from "../../components/CandidateResultsSection";
 
-export type ElectionWithCandidates = Election & { candidates: Candidate[] };
+type ElectionWithCandidates = Election & { candidates: Candidate[] };
 
-export const fetcher = (url: string) => fetch(url).then((res) => res.json());
+const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
 export default function ElectionResults() {
   const [selectedZip, _] = useState(() => {

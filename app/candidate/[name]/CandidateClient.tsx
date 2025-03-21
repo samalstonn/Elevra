@@ -1,4 +1,3 @@
-// app/candidate/[name]/CandidateClient.tsx
 "use client";
 
 import { useSearchParams, useRouter } from "next/navigation";
@@ -10,13 +9,13 @@ import { FaGlobe, FaTwitter, FaLinkedin, FaCheckCircle, FaUserPlus, FaChevronUp,
 import CheckoutButton from "@/components/DonateButton";
 import { Button } from "../../../components/ui/button";
 import { Candidate, Election } from "@prisma/client";
+import { cityStateToZip } from "@/data/test_data";
+import { normalizeSlug } from "@/lib/functions";
 
-// Helper function to normalize slugs
-function normalizeSlug(str: string): string {
-  return str.toLowerCase().replace(/[^\w\s]/g, " ").replace(/\s+/g, "-").trim();
-}
+type ElectionWithCandidates = Election & { candidates: Candidate[] };
 
-export default function CandidateClient({ candidate, election, suggestedCandidates }: { candidate: Candidate; election: Election; suggestedCandidates: Candidate[] }) {
+
+export default function CandidateClient({ candidate, election, suggestedCandidates }: { candidate: Candidate; election: ElectionWithCandidates; suggestedCandidates: Candidate[] }) {
   const searchParams = useSearchParams();
   const router = useRouter();
   const [popupMessage, setPopupMessage] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
@@ -26,11 +25,16 @@ export default function CandidateClient({ candidate, election, suggestedCandidat
   const [showSources, setShowSources] = useState(false);
 
   const decodedName = candidate.name ? normalizeSlug(candidate.name) : "";
-  const relatedCandidates = election?.candidates
-    ? election.candidates.filter((c: any) =>
+  const relatedCandidates = election.candidates
+    ? election.candidates.filter((c: Candidate) =>
             normalizeSlug(c.name) !== decodedName
         ).slice(0, 3)
     : [];
+
+  const randomSuggestedCandidates = useMemo(() => {
+    const shuffled = [...suggestedCandidates].sort(() => 0.5 - Math.random());
+    return shuffled.slice(0, 3);
+  }, [suggestedCandidates]);
 
 
   useEffect(() => {
@@ -135,7 +139,7 @@ export default function CandidateClient({ candidate, election, suggestedCandidat
         <div className="mt-4">
           <h2 className="text-lg font-semibold text-gray-900">Policies</h2>
           <ul className="space-y-1 text-sm">
-            {(candidate.policies).map((policy: any, index: number) => (
+            {(candidate.policies).map((policy: string, index: number) => (
               <li key={index}>
                 <span className="font-semibold">✅ {policy}</span>
               </li>
@@ -265,11 +269,13 @@ export default function CandidateClient({ candidate, election, suggestedCandidat
               size="sm"
               className="w-full mt-4 text-purple-600 border-purple-300 hover:bg-purple-50"
               onClick={() => {
-                const  zipCode = localStorage.getItem('zipCode');
-                if (zipCode) {
+                if (candidate.city && candidate.state) {
+                  const cityStateKey = `${candidate.city.trim()}, ${candidate.state.trim()}`;
+                  const zipCodes = cityStateToZip[cityStateKey];
+                  const zipCode = zipCodes && zipCodes.length > 0 ? zipCodes[0] : "14850";
                   router.push(`/results?zipCode=${encodeURIComponent(zipCode)}`);
                 } else {
-                  router.back();
+                  console.error("Candidate city or state is missing.");
                 }
               }}
             >
@@ -285,13 +291,13 @@ export default function CandidateClient({ candidate, election, suggestedCandidat
           >
             <div className="bg-white p-4">
               <div className="flex justify-between items-center mb-3">
-                <h2 className="text-sm font-semibold text-gray-600">Suggested Candidates</h2>
+                <h2 className="text-sm font-semibold text-gray-600">Your Suggested Candidates</h2>
               </div>
               <div className="space-y-3 ">
-                {suggestedCandidates.map((rc) => (
+                {randomSuggestedCandidates.map((rc) => (
                   <motion.div key={rc.name} className="flex items-center justify-between ">
                     <Link 
-                      href={`/candidate/${normalizeSlug(rc.name)}`}
+                      href={`/candidate/${normalizeSlug(rc.name)}/?candidateID=${rc.id}&electionID=${rc.electionId}`}
                       className="flex items-center gap-3 "
                     >
                         <Image
@@ -303,7 +309,8 @@ export default function CandidateClient({ candidate, election, suggestedCandidat
                         />
                         <div className="flex flex-col">
                           <span className="text-sm font-semibold text-gray-900">{rc.name}</span>
-                          <span className="text-xs text-gray-500 line-clamp-1">Running for {rc.election.position}</span>
+                          <p className="text-xs text-gray-600">{rc.position}</p>
+                          <span className="text-xs text-purple-600 line-clamp-1">{rc.party}</span>
                         </div>
                       
                       <Button variant="ghost" size="sm" className="text-purple-600 w-[10%] absolute right-0 " >

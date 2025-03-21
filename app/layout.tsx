@@ -146,7 +146,7 @@ export default function RootLayout({
                   </div>
                   {/* Desktop search bar only */}
                   <div className="max-w-4xl w-full hidden md:block">
-                    <SearchBar placeholder="Search elections or candidates..." />
+                    <SearchBar placeholder="Search candidates..." />
                   </div>
                 </div>
                 )}

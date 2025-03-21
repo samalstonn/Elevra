@@ -1,4 +1,5 @@
 
+export const dynamic = "force-dynamic";
 import { notFound, redirect } from "next/navigation";
 import prisma from "@/prisma/prisma"; 
 import CandidateClient from "./CandidateClient";
@@ -6,10 +7,11 @@ import CandidateClient from "./CandidateClient";
 export default async function CandidatePage({
   searchParams,
 }: {
-  searchParams: { candidateID?: string; electionID?: string };
+  searchParams: Promise<URLSearchParams> 
 }) {
-  const candidateIDParam = searchParams.candidateID;
-  const electionIDParam = searchParams.electionID;
+  const resolvedSearchParams = await searchParams;
+  const candidateIDParam = resolvedSearchParams.get("candidateID");
+  const electionIDParam = resolvedSearchParams.get("electionID");
   
   if (!candidateIDParam || !electionIDParam) {
     // Redirect the user to the homepage if parameters are missing.
@@ -44,7 +46,6 @@ export default async function CandidatePage({
     where: {
       NOT: { id: candidate.id, electionId: candidate.electionId }, // Exclude the current candidate and election
     },
-    take: 3, 
     include: {
       election: true,
     }
