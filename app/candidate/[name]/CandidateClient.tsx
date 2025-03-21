@@ -5,7 +5,8 @@ import { useState, useEffect, useMemo } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { FaGlobe, FaTwitter, FaLinkedin, FaCheckCircle, FaUserPlus, FaChevronUp, FaQuestionCircle, FaPencilAlt } from "react-icons/fa";
+import { FaGlobe, FaTwitter, FaLinkedin, FaCheckCircle, FaUserPlus, FaChevronUp, FaQuestionCircle } from "react-icons/fa";
+import { MdEdit } from "react-icons/md";
 import CheckoutButton from "@/components/DonateButton";
 import { Button } from "../../../components/ui/button";
 import { Candidate, Election } from "@prisma/client";
@@ -88,22 +89,6 @@ export default function CandidateClient({
     >
       {/* Main candidate profile card */}
       <motion.div className="w-full md:w-2/3 flex flex-col sm:p-6 bg-white">
-        {/* Profile Header - Add Edit Button for Owner */}
-        <div className="flex flex-col items-start text-left relative">
-          {isEditable && (
-            <div className="absolute top-2 right-2">
-              <Button 
-                variant="outline"
-                size="sm"
-                onClick={() => router.push(`/candidate/edit?candidateID=${candidate.id}&electionID=${election.id}`)}
-                className="flex items-center gap-2 text-purple-600 border-purple-300 hover:bg-purple-50"
-              >
-                <FaPencilAlt />
-                <span>Edit Profile</span>
-              </Button>
-            </div>
-          )}
-        </div>
         {/* Profile Header */}
         <div className="flex flex-col items-start text-left">
           <Image
@@ -184,6 +169,14 @@ export default function CandidateClient({
             
         {/* Buttons */}
         <div className="mt-4 flex justify-start gap-4">
+          <Button 
+            variant="purple"
+            size="xl"
+            onClick={() => router.push(`/candidate/edit?candidateID=${candidate.id}&electionID=${election.id}`)}
+          >
+            <MdEdit />
+            <span>Edit Profile</span>
+          </Button>
           <CheckoutButton
             cartItems={[
               {

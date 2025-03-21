@@ -46,6 +46,7 @@ export default async function EditCandidatePage({
   // Get the election data
   const election = await prisma.election.findUnique({
     where: { id: Number(electionID) },
+    include: { candidates: true },
   });
   
   return <EditCandidateForm candidate={candidate} election={election} />;
