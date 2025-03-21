@@ -2,6 +2,9 @@ export const dynamic = "force-dynamic";
 import { notFound, redirect } from "next/navigation";
 import prisma from "@/prisma/prisma"; 
 import CandidateClient from "./CandidateClient";
+import { currentUser } from '@clerk/nextjs/server'
+
+
 
 export default async function CandidatePage({
   searchParams,
@@ -40,7 +43,6 @@ export default async function CandidatePage({
     notFound();
   }
 
-  // 2. Fetch suggested candidates for this election
   const suggestedCandidates = await prisma.candidate.findMany({
     where: {
       NOT: { id: candidate.id, electionId: candidate.electionId }, // Exclude the current candidate and election
@@ -49,6 +51,12 @@ export default async function CandidatePage({
       election: true,
     }
   });
+
+  const user = await currentUser();
+  const currentUserId = user ? user.id : null;
+  console.log("currentUserId", currentUserId);
+  console.log("candidate.clerkUserId", candidate.clerkUserId);
+  const isEditable = candidate.clerkUserId === currentUserId;
   
-  return <CandidateClient candidate={candidate} election={election} suggestedCandidates={suggestedCandidates}/>;
+  return <CandidateClient candidate={candidate} election={election} suggestedCandidates={suggestedCandidates} isEditable={isEditable} />;
 }

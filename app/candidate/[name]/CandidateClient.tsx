@@ -5,7 +5,7 @@ import { useState, useEffect, useMemo } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { FaGlobe, FaTwitter, FaLinkedin, FaCheckCircle, FaUserPlus, FaChevronUp, FaQuestionCircle } from "react-icons/fa";
+import { FaGlobe, FaTwitter, FaLinkedin, FaCheckCircle, FaUserPlus, FaChevronUp, FaQuestionCircle, FaPencilAlt } from "react-icons/fa";
 import CheckoutButton from "@/components/DonateButton";
 import { Button } from "../../../components/ui/button";
 import { Candidate, Election } from "@prisma/client";
@@ -15,7 +15,18 @@ import { normalizeSlug } from "@/lib/functions";
 type ElectionWithCandidates = Election & { candidates: Candidate[] };
 
 
-export default function CandidateClient({ candidate, election, suggestedCandidates }: { candidate: Candidate; election: ElectionWithCandidates; suggestedCandidates: Candidate[] }) {
+export default function CandidateClient({
+  candidate,
+  election,
+  suggestedCandidates,
+  isEditable,
+}: {
+  candidate: Candidate;
+  election: ElectionWithCandidates;
+  suggestedCandidates: Candidate[];
+  isEditable: boolean;
+}) {
+    
   const searchParams = useSearchParams();
   const router = useRouter();
   const [popupMessage, setPopupMessage] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
@@ -77,6 +88,22 @@ export default function CandidateClient({ candidate, election, suggestedCandidat
     >
       {/* Main candidate profile card */}
       <motion.div className="w-full md:w-2/3 flex flex-col sm:p-6 bg-white">
+        {/* Profile Header - Add Edit Button for Owner */}
+        <div className="flex flex-col items-start text-left relative">
+          {isEditable && (
+            <div className="absolute top-2 right-2">
+              <Button 
+                variant="outline"
+                size="sm"
+                onClick={() => router.push(`/candidate/edit?candidateID=${candidate.id}&electionID=${election.id}`)}
+                className="flex items-center gap-2 text-purple-600 border-purple-300 hover:bg-purple-50"
+              >
+                <FaPencilAlt />
+                <span>Edit Profile</span>
+              </Button>
+            </div>
+          )}
+        </div>
         {/* Profile Header */}
         <div className="flex flex-col items-start text-left">
           <Image
@@ -180,38 +207,38 @@ export default function CandidateClient({ candidate, election, suggestedCandidat
         </div>
 
         {/* Sources Dropdown Section */}
-        {candidate.sources && candidate.sources.length > 0 && (
+        {!candidate.verified && candidate.sources && candidate.sources.length > 0 && (
           <div className="mt-6">
             <div className="relative inline-block">
-                <button
-                  onClick={() => setShowSources(!showSources)}
-                  className="flex items-center text-sm text-purple-600 hover:underline focus:outline-none"
-                >
-                  <FaChevronUp className={`transition-transform duration-200 ${showSources ? "rotate-180" : "rotate-90"}`} />
-                  <span className="ml-2">Sources</span>
-                </button>
+          <button
+            onClick={() => setShowSources(!showSources)}
+            className="flex items-center text-sm text-purple-600 hover:underline focus:outline-none"
+          >
+            <FaChevronUp className={`transition-transform duration-200 ${showSources ? "rotate-180" : "rotate-90"}`} />
+            <span className="ml-2">Sources</span>
+          </button>
               <div className="absolute -top-0 -right-5">
-                <FaQuestionCircle 
-                  className="text-purple-600 cursor-pointer"
-                  onMouseEnter={() => setDropdownHovered(true)}
-                  onMouseLeave={() => setDropdownHovered(false)}
-                />
+          <FaQuestionCircle 
+            className="text-purple-600 cursor-pointer"
+            onMouseEnter={() => setDropdownHovered(true)}
+            onMouseLeave={() => setDropdownHovered(false)}
+          />
               </div>
-              {!candidate.verified && dropdownHovered && (
-                <div className="absolute left-2/3 transform -translate-x-1/2 -top-10 bg-gray-900 text-white text-xs px-2 py-1 rounded shadow whitespace-nowrap">
-                  Since this candidate is not yet verified, the Elevra team <br /> compiled relevant information using these sources.
-                </div>
+              {dropdownHovered && (
+          <div className="absolute left-2/3 transform -translate-x-1/2 -top-10 bg-gray-900 text-white text-xs px-2 py-1 rounded shadow whitespace-nowrap">
+            Since this candidate is not yet verified, the Elevra team <br /> compiled relevant information using these sources.
+          </div>
               )}
             </div>
             {showSources && (
               <ul className="list-disc list-inside text-sm text-purple-600 mt-2">
-                {candidate.sources.map((source: string, index: number) => (
-                  <li key={index}>
-                    <a href={source} target="_blank" rel="noopener noreferrer">
-                      {source}
-                    </a>
-                  </li>
-                ))}
+          {candidate.sources.map((source: string, index: number) => (
+            <li key={index}>
+              <a href={source} target="_blank" rel="noopener noreferrer">
+                {source}
+              </a>
+            </li>
+          ))}
               </ul>
             )}
           </div>
@@ -312,10 +339,6 @@ export default function CandidateClient({ candidate, election, suggestedCandidat
                           <p className="text-xs text-gray-600">{rc.position}</p>
                           <span className="text-xs text-purple-600 line-clamp-1">{rc.party}</span>
                         </div>
-                      
-                      <Button variant="ghost" size="sm" className="text-purple-600 w-[10%] absolute right-0 " >
-                        View
-                      </Button>
                     </Link>
                   </motion.div>
                 ))}
