@@ -169,14 +169,16 @@ export default function CandidateClient({
             
         {/* Buttons */}
         <div className="mt-4 flex justify-start gap-4">
-          <Button 
-            variant="purple"
-            size="xl"
-            onClick={() => router.push(`/candidate/edit?candidateID=${candidate.id}&electionID=${election.id}`)}
-          >
-            <MdEdit />
-            <span>Edit Profile</span>
-          </Button>
+          {isEditable ? (
+            <Button 
+              variant="purple"
+              size="xl"
+              onClick={() => router.push(`/candidate/edit?candidateID=${candidate.id}&electionID=${election.id}`)}
+            >
+              <MdEdit />
+              <span>Edit Profile</span>
+            </Button>
+          ) : null}
           <CheckoutButton
             cartItems={[
               {

@@ -1,10 +1,9 @@
 // app/candidate/edit/EditCandidateForm.tsx
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
-import Link from "next/link";
 import { motion } from "framer-motion";
 import { FaGlobe, FaTwitter, FaLinkedin, FaCheckCircle, FaArrowLeft, FaSave, FaTimes } from "react-icons/fa";
 import { Candidate, Election } from "@prisma/client";
@@ -26,7 +25,6 @@ export default function EditCandidateForm({
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
-  const [dropdownHovered, setDropdownHovered] = useState(false);
   const [hovered, setHovered] = useState<string | null>(null);
   
   // Form state
@@ -47,7 +45,6 @@ export default function EditCandidateForm({
 
   // State for new policy or source being added
   const [newPolicy, setNewPolicy] = useState("");
-  const [newSource, setNewSource] = useState("");
 
   // Generate a few related candidates for the preview sidebar
   const relatedCandidates = useMemo(() => {
@@ -78,23 +75,6 @@ export default function EditCandidateForm({
     setFormData((prev) => ({
       ...prev,
       policies: prev.policies.filter((_, i) => i !== index),
-    }));
-  };
-
-  const addSource = () => {
-    if (newSource.trim()) {
-      setFormData((prev) => ({
-        ...prev,
-        sources: [...prev.sources, newSource.trim()],
-      }));
-      setNewSource("");
-    }
-  };
-
-  const removeSource = (index: number) => {
-    setFormData((prev) => ({
-      ...prev,
-      sources: prev.sources.filter((_, i) => i !== index),
     }));
   };
 

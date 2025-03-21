@@ -8,7 +8,7 @@ import EditCandidateForm from "./EditCandidateForm";
 export default async function EditCandidatePage({
   searchParams,
 }: {
-  searchParams: { [key: string]: string | string[] | undefined }
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>
 }) {
     const resolvedSearchParams = await searchParams;
     const candidateID = resolvedSearchParams.candidateID;
