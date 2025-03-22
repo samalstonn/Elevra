@@ -3,30 +3,23 @@
 import { Election, Candidate } from "@prisma/client";
 import useSWR from "swr";
 import { motion } from "framer-motion";
-import { useState, useMemo, useEffect, useRef } from "react";
+import { useState, useMemo, useEffect, useRef, Suspense } from "react";
 import { Button } from "../../components/ui/button";
+import { useSearchParams } from "next/navigation";
 import CandidateSection from "../../components/CandidateResultsSection";
 
 type ElectionWithCandidates = Election & { candidates: Candidate[] };
 
 const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
-export default function ElectionResults() {
-  const [location, _] = useState(() => {
-    try {
-      if (typeof window !== 'undefined') {
-        const urlParams = new URLSearchParams(window.location.search);
-        const city = urlParams.get('city');
-        const state = urlParams.get('state');
-        return { city: city, state: state };
-      }
-    } catch (error) {
-      console.error("Error parsing zip code:", error);
-    }
-    return { city: 'Dryden', state: 'NY' };
-  });
+function ElectionResultsPage() {
+  const searchParams = useSearchParams();
+  const city = searchParams.get("city");
+  const state = searchParams.get("state");
+
+
   const { data: elections, isLoading } = useSWR<ElectionWithCandidates[]>(
-    `/api/elections?city=${location.city}&state=${location.state}`,
+    `/api/elections?city=${city}&state=${state}`,
     fetcher
   );
 
@@ -204,5 +197,13 @@ export default function ElectionResults() {
         </motion.div>
       )}
     </>
+  );
+}
+
+export default function ElectionResults() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <ElectionResultsPage />
+    </Suspense>
   );
 }
