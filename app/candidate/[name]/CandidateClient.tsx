@@ -56,23 +56,57 @@ export default function CandidateClient({
   useEffect(() => {
     if (!candidate) return;
     const candidateName = candidate.name;
-    if (searchParams.get("session_id")) {
+    
+    // Get the current URL and decode it
+    const currentUrl = new URL(window.location.href);
+    const decodedUrl = decodeURIComponent(currentUrl.toString());
+    
+    // Check for donation status parameters in the decoded URL
+    const hasCancel = decodedUrl.includes("cancel=true");
+    const hasSessionId = decodedUrl.includes("session_id");
+    const hasError = decodedUrl.includes("error");
+
+    console.log('URL Analysis:', { 
+      hasCancel, 
+      hasSessionId, 
+      hasError,
+      decodedUrl,
+      originalUrl: currentUrl.toString()
+    });
+
+    if (hasSessionId) {
+      console.log('Setting success message');
       setPopupMessage({ type: "success", message: `Your donation to ${candidateName} was successful! Thank you for your support!` });
-      const url = new URL(window.location.href);
-      url.searchParams.delete("session_id");
-      window.history.replaceState({}, "", url.toString());
-    } else if (searchParams.get("cancel")) {
+    } else if (hasCancel) {
+      console.log('Setting cancel message');
       setPopupMessage({ type: "error", message: `Your donation to ${candidateName} was cancelled.` });
-      const url = new URL(window.location.href);
-      url.searchParams.delete("cancel");
-      window.history.replaceState({}, "", url.toString());
-    } else if (searchParams.get("error")) {
+    } else if (hasError) {
+      console.log('Setting error message');
       setPopupMessage({ type: "error", message: `There was an error processing your donation. Please try again.` });
-      const url = new URL(window.location.href);
-      url.searchParams.delete("error");
-      window.history.replaceState({}, "", url.toString());
+    }
+
+    if (hasSessionId || hasCancel || hasError) {
+      // Clean up the URL by removing all donation-related parameters
+      const cleanUrl = new URL(window.location.href);
+      cleanUrl.searchParams.delete("session_id");
+      cleanUrl.searchParams.delete("cancel");
+      cleanUrl.searchParams.delete("error");
+      
+      // Get the clean electionID without any appended parameters
+      const electionID = cleanUrl.searchParams.get("electionID")?.split("?")[0];
+      if (electionID) {
+        cleanUrl.searchParams.set("electionID", electionID);
+      }
+      
+      // Update the URL without triggering a page reload
+      window.history.replaceState({}, "", cleanUrl.toString());
     }
   }, [searchParams, candidate]);
+
+  // Add a separate useEffect to handle popup message state changes
+  useEffect(() => {
+    console.log('Popup message state changed:', popupMessage);
+  }, [popupMessage]);
 
   if (!candidate) {
     return <div>Candidate not found</div>;
