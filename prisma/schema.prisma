@@ -8,6 +8,21 @@ datasource db {
   shadowDatabaseUrl = env("SHADOW_DATABASE_URL")
 }
 
+// Enums
+enum ElectionType {
+  LOCAL
+  STATE
+  NATIONAL
+  UNIVERSITY
+}
+
+enum VendorTier {
+  FREE
+  STANDARD
+  PREMIUM
+}
+
+// Models
 model Election {
   id          Int          @id @default(autoincrement())
   position    String
@@ -44,7 +59,11 @@ model Candidate {
   clerkUserId     String?  @unique
   history         String[]
   id              Int      @id @default(autoincrement()) @map("id")
-  election        Election @relation(fields: [electionId], references: [id])
+
+  // Relations
+  election    Election      @relation(fields: [electionId], references: [id])
+  Vendors     Vendor[]
+  Testimonial Testimonial[]
 }
 
 model UserValidationRequest {
@@ -103,15 +122,56 @@ model CandidateSubmission {
   notes           String?
 }
 
-enum ElectionType {
-  LOCAL
-  STATE
-  NATIONAL
-  UNIVERSITY
-}
-
 enum SubmissionStatus {
   PENDING
   APPROVED
   REJECTED
+}
+
+model Vendor {
+  id           Int        @id @default(autoincrement())
+  name         String
+  bio          String
+  website      String?
+  email        String
+  phone        String?
+  city         String
+  state        String
+  verified     Boolean    @default(false)
+  subscription VendorTier @default(FREE)
+  clerkUserId  String     @unique
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  // Relations
+  portfolio       PortfolioItem[] // optional media
+  testimonials    Testimonial[]
+  candidate       Candidate[] // campaigns they've worked with
+  ServiceCategory ServiceCategory[] @relation("VendorServices")
+}
+
+model ServiceCategory {
+  id      Int      @id @default(autoincrement())
+  name    String   @unique
+  vendors Vendor[] @relation("VendorServices")
+}
+
+model PortfolioItem {
+  id          Int     @id @default(autoincrement())
+  vendor      Vendor  @relation(fields: [vendorId], references: [id])
+  vendorId    Int
+  title       String
+  imageUrl    String
+  description String?
+}
+
+model Testimonial {
+  id          Int       @id @default(autoincrement())
+  vendor      Vendor    @relation(fields: [vendorId], references: [id])
+  vendorId    Int
+  candidate   Candidate @relation(fields: [candidateId], references: [id])
+  candidateId Int
+  content     String
+  rating      Int // e.g. 1–5 stars
+  createdAt   DateTime  @default(now())
 }
