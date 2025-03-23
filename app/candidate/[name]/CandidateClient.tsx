@@ -300,7 +300,9 @@ export default function CandidateClient({
                       className="flex items-center p-3 rounded-lg transition-colors"
                     >
                       <Image
-                        src={relatedCandidate.photo || '/default-profile.png'}
+                        src={
+                          // relatedCandidate.photo || 
+                          '/default-profile.png'}
                         width={50}
                         height={50}
                         alt={relatedCandidate.name}

@@ -77,7 +77,9 @@ export default function CandidateSection({ candidates, election }: CandidateSect
                                 <Card className="group transition-all rounded-lg cursor-pointer h-[315px] w-[350px] flex flex-col relative">
                                     <CardContent className="flex flex-col gap-2">
                                         <Image
-                                            src={candidate.photo || "/default-profile.png"}
+                                            src={
+                                                // candidate.photo || 
+                                                "/default-profile.png"}
                                             alt={`${candidate.name}'s photo`}
                                             width={64}
                                             height={64}
