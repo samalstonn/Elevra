@@ -2,9 +2,9 @@
 
 import { useSearchParams, useRouter } from "next/navigation";
 import { useState, useEffect, useMemo } from "react";
-import Image from "next/image";
 import Link from "next/link";
 import { motion } from "framer-motion";
+import {CandidateImage} from "@/components/CandidateImage"; 
 import { FaGlobe, FaTwitter, FaLinkedin, FaCheckCircle, FaUserPlus, FaChevronUp, FaQuestionCircle } from "react-icons/fa";
 import { MdEdit } from "react-icons/md";
 import CheckoutButton from "@/components/DonateButton";
@@ -125,13 +125,7 @@ export default function CandidateClient({
       <motion.div className="w-full md:w-2/3 flex flex-col sm:p-6 bg-white">
         {/* Profile Header */}
         <div className="flex flex-col items-start text-left">
-          <Image
-            src={candidate.photo || "/default-profile.png"}
-            width={150}
-            height={150}
-            alt={candidate.name}
-            className="rounded-full shadow-sm"
-          />
+          <CandidateImage photo={candidate.photo} name={candidate.name} width={150} height={150}/>
           <h1 className="mt-2 text-xl font-bold text-gray-900 flex items-center gap-2 relative">
             {candidate.name}
             <div
@@ -297,21 +291,13 @@ export default function CandidateClient({
                   >
                     <motion.div 
                       whileHover={{ scale: 1.02 }}
-                      className="flex items-center p-3 rounded-lg transition-colors"
+                      className="flex items-center p-3 rounded-lg transition-colors gap-3"
                     >
-                      <Image
-                        src={
-                          // relatedCandidate.photo || 
-                          '/default-profile.png'}
-                        width={50}
-                        height={50}
-                        alt={relatedCandidate.name}
-                        className="rounded-full shadow-sm mr-3"
-                      />
+                      <CandidateImage photo={relatedCandidate.photo} name={relatedCandidate.name} width={50} height={50} />
                       <div className="flex-1">
-                        <h3 className="font-medium text-gray-900">{relatedCandidate.name}</h3>
-                        <p className="text-xs text-gray-600">{relatedCandidate.position}</p>
-                        <p className="text-xs font-medium text-purple-600 mt-1">{relatedCandidate.party}</p>
+                      <h3 className="font-medium text-gray-900">{relatedCandidate.name}</h3>
+                      <p className="text-xs text-gray-600">{relatedCandidate.position}</p>
+                      <p className="text-xs font-medium text-purple-600 mt-1">{relatedCandidate.party}</p>
                       </div>
                       <FaUserPlus className="text-purple-600 ml-2" />
                     </motion.div>
@@ -357,18 +343,12 @@ export default function CandidateClient({
                       href={`/candidate/${normalizeSlug(rc.name)}/?candidateID=${rc.id}&electionID=${rc.electionId}`}
                       className="flex items-center gap-3 "
                     >
-                        <Image
-                          src={rc.photo || '/default-profile.png'}
-                          width={40}
-                          height={40}
-                          alt={rc.name}
-                          className="rounded-full object-cover"
-                        />
-                        <div className="flex flex-col">
-                          <span className="text-sm font-semibold text-gray-900">{rc.name}</span>
-                          <p className="text-xs text-gray-600">{rc.position}</p>
-                          <span className="text-xs text-purple-600 line-clamp-1">{rc.party}</span>
-                        </div>
+                      <CandidateImage photo={rc.photo} name={rc.name} width={40} height={40} />
+                      <div className="flex flex-col">
+                        <span className="text-sm font-semibold text-gray-900">{rc.name}</span>
+                        <p className="text-xs text-gray-600">{rc.position}</p>
+                        <span className="text-xs text-purple-600 line-clamp-1">{rc.party}</span>
+                      </div>
                     </Link>
                   </motion.div>
                 ))}

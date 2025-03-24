@@ -44,22 +44,23 @@ export default function Autocomplete({
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: -10 }}
           transition={{ duration: 0.2 }}
-          className="absolute z-50 w-full bg-white rounded-b-lg shadow-lg mt-1 max-h-60 overflow-auto"
+          className="absolute z-50 w-full bg-white rounded-b-lg shadow-lg mt-1 max-h-60 overflow-auto autocomplete-container"
+          style={{ textAlign: 'left' }}
           ref={containerRef}
         >
           {isLoading ? (
-            <div className="p-3 text-center text-sm text-gray-500">
-              <div className="animate-pulse flex justify-center items-center">
+            <div className="p-3 text-sm text-gray-500" style={{ textAlign: 'left' }}>
+              <div className="animate-pulse flex items-center justify-start">
                 <div className="h-5 w-5 bg-purple-200 rounded-full mr-2"></div>
                 <div className="h-5 bg-purple-200 rounded w-24"></div>
               </div>
             </div>
           ) : suggestions.length === 0 ? (
-            <div className="p-3 text-center text-sm text-gray-500">
+            <div className="p-3 text-sm text-gray-500" style={{ textAlign: 'left' }}>
               No matches found
             </div>
           ) : (
-            <ul className="py-1" role="listbox">
+            <ul className="py-1" role="listbox" style={{ textAlign: 'left' }}>
               {suggestions.map((suggestion, index) => (
                 <li
                   key={suggestion.id}
@@ -71,9 +72,10 @@ export default function Autocomplete({
                   }`}
                   onClick={() => onSelect(suggestion)}
                   onMouseEnter={() => setHighlightedIndex(index)}
+                  style={{ textAlign: 'left' }}
                 >
-                  <span className="font-medium">{suggestion.text}</span>
-                  <span className="text-gray-500 text-xs">
+                  <span className="font-medium" style={{ textAlign: 'left' }}>{suggestion.text}</span>
+                  <span className="text-gray-500 text-xs" style={{ textAlign: 'left' }}>
                     {suggestion.city && suggestion.stateName 
                       ? `${suggestion.city}, ${suggestion.stateName}`
                       : suggestion.placeName

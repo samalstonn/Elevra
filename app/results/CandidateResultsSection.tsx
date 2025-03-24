@@ -1,15 +1,16 @@
 "use client";
 
 import Link from "next/link";
-import { Card, CardContent } from "../components/Card";
-import Image from "next/image";
+import { Card, CardContent } from "../../components/Card";
 import { Candidate, Election } from "@prisma/client";
 import { motion } from "framer-motion";
-import { Button } from "./ui/button";
+import { Button } from "../../components/ui/button";
+import { CandidateImage } from "../../components/CandidateImage"; // Adjust the path as needed
 
 interface CandidateSectionProps {
     candidates: Candidate[];
     election: Election;
+    fallbackElections: Election[]; 
 }
 
 const containerVariants = {
@@ -22,9 +23,33 @@ const cardVariants = {
     visible: { opacity: 1, y: 0 },
 };
 
-export default function CandidateSection({ candidates, election }: CandidateSectionProps) {
+export default function CandidateSection({ candidates, election, fallbackElections }: CandidateSectionProps) {
     if (!candidates || candidates.length === 0) {
-        return null;
+        return (
+            <div className="text-center p-4">
+                <h2 className="text-lg font-semibold text-gray-900">No candidates available for this election.</h2>
+                {fallbackElections && (
+                    <div className="mt-4">
+                        <h3 className="text-md font-semibold text-gray-800">You might be interested in these elections:</h3>
+                        <ul className="list-disc list-inside">
+                            {fallbackElections.map((fallbackElection) => (
+                                <li key={fallbackElection.id} className="mt-2">
+                                    <Link href={{ pathname: `/election/${fallbackElection.id}` }}>
+                                        <span className="text-purple-600 hover:underline">{fallbackElection.position}</span>
+                                    </Link>
+                                    <span className="text-gray-600"> - {new Date(fallbackElection.date).toLocaleDateString("en-US", {
+                                            timeZone: "UTC",
+                                            year: "numeric",
+                                            month: "long",
+                                            day: "numeric",
+                                        })}</span>
+                                </li>
+                            ))}
+                        </ul>
+                    </div>
+                )}
+            </div>
+        );
     }
 
     return (
@@ -76,15 +101,7 @@ export default function CandidateSection({ candidates, election }: CandidateSect
                             >
                                 <Card className="group transition-all rounded-lg cursor-pointer h-[315px] w-[350px] flex flex-col relative">
                                     <CardContent className="flex flex-col gap-2">
-                                        <Image
-                                            src={
-                                                // candidate.photo || 
-                                                "/default-profile.png"}
-                                            alt={`${candidate.name}'s photo`}
-                                            width={64}
-                                            height={64}
-                                            className="h-20 w-20 rounded-full object-cover shadow-md"
-                                        />
+                                        <CandidateImage photo={candidate.photo} name={candidate.name} width={64} height={64} />
                                         <h2 className="text-xl font-semibold text-gray-900 mt-2 line-clamp-2">
                                             {candidate.name}
                                         </h2>
@@ -99,9 +116,9 @@ export default function CandidateSection({ candidates, election }: CandidateSect
                                         </p>
 
                                         {/* Donate Button */}
-                                        <motion.div className="absolute bottom-0" 
-                                                whileHover={{ scale: 1.02 }}
-                                                transition={{ duration: 0.2, ease: "easeOut" }}>
+                                        <motion.div className="absolute bottom-0"
+                                            whileHover={{ scale: 1.02 }}
+                                            transition={{ duration: 0.2, ease: "easeOut" }}>
                                             <Button variant="purple" size="sm" onClick={() => { /* placeholder function */ }} className="flex items-center gap-2">
                                                 <span>Learn More</span>
                                             </Button>

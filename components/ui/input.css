@@ -1,0 +1,9 @@
+/* Override default input styles to ensure left alignment */
+input.search-input {
+  text-align: left !important;
+}
+
+/* Ensure all content in the autocomplete is left-aligned */
+.autocomplete-container * {
+  text-align: left !important;
+} 

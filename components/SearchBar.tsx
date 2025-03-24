@@ -5,7 +5,8 @@ import { debounce } from '@/lib/debounce';
 import Autocomplete from './ui/Autocomplete';
 import ErrorPopup from './ui/ErrorPopup';
 import { AutocompleteSuggestion, NormalizedLocation, GeocodingError } from '@/types/geocoding';
-import { ChevronRight, Loader2 } from 'lucide-react';
+import { ChevronRight, Loader2, MapPinned } from 'lucide-react';
+import '@/components/ui/input.css';
 
 interface SearchBarProps {
   onSearch: (location: NormalizedLocation) => void;
@@ -224,14 +225,12 @@ export default function SearchBar({ onSearch }: SearchBarProps) {
         onClick={handleContainerClick}
       >
         {/* Icon */}
-        <div className="flex items-center justify-center w-10 h-10 sm:w-14 sm:h-14 text-gray-600">
-          <svg xmlns="http://www.w3.org/2000/svg" className="w-6 h-6 sm:w-7 sm:h-7" viewBox="0 0 24 24" fill="currentColor" stroke="none">
-            <path d="M12 2C8.13 2 5 5.13 5 9c0 3.87 5 10 7 10s7-6.13 7-10c0-3.87-3.13-7-7-7zm0 10.5c-1.38 0-2.5-1.12-2.5-2.5S10.62 7.5 12 7.5s2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z" />
-          </svg>
+        <div className="pl-2 pb-1 flex items-center justify-center text-gray-600">
+          <MapPinned className="w-6 h-6 sm:w-7 sm:h-7" />
         </div>
   
         {/* Input */}
-        <div className="relative flex-grow w-full">
+        <div className="flex-1 relative text-left">
           <Input
             ref={inputRef}
             type="text"
@@ -244,7 +243,8 @@ export default function SearchBar({ onSearch }: SearchBarProps) {
                 setShowSuggestions(true);
               }
             }}
-            className="flex-grow px-4 py-2 text-base sm:px-6 sm:py-4 sm:text-lg border-none rounded-l-full focus:outline-none focus:ring-0"
+            className="w-full px-4 py-2 text-base sm:px-6 sm:py-4 sm:text-lg border-none rounded-l-full focus:outline-none focus:ring-0 text-left search-input"
+            style={{ textAlign: 'left' }}
             aria-autocomplete="list"
             aria-expanded={showSuggestions}
             aria-owns="location-suggestions"
@@ -269,15 +269,23 @@ export default function SearchBar({ onSearch }: SearchBarProps) {
         <button
           onClick={handleSearch}
           disabled={isSubmitting || searchTerm.trim() === ''}
-          className={`flex items-center justify-center w-10 h-10 sm:w-14 sm:h-14 ${
-            isSubmitting ? 'bg-purple-700' : 'bg-purple-900 hover:bg-purple-800'
-          } rounded-full transition-all`}
+          className={`
+            flex items-center justify-center w-10 h-10 sm:w-14 sm:h-14
+            border-2 border-purple-600
+            bg-white
+            text-purple-600
+            hover:bg-purple-50
+            disabled:opacity-50
+            rounded-full
+            transition-all
+            cursor-pointer
+          `}
           aria-label="Search location"
         >
           {isSubmitting ? (
-            <Loader2 className="w-6 h-6 sm:w-7 sm:h-7 text-white animate-spin" />
+            <Loader2 className="w-6 h-6 sm:w-7 sm:h-7 text-purple-600 animate-spin" />
           ) : (
-            <ChevronRight className="w-6 h-6 sm:w-7 sm:h-7 text-white" />
+            <ChevronRight className="w-6 h-6 sm:w-7 sm:h-7 text-purple-600" />
           )}
         </button>
       </div>

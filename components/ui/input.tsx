@@ -1,5 +1,5 @@
 export function Input({ className = '', ...props }) {
-    const baseStyles = 'border rounded px-4 py-2 focus:outline-none focus:ring focus:ring-blue-300';
+    const baseStyles = 'border rounded px-4 py-2 focus:outline-none focus:ring focus:ring-blue-300 text-left';
   
     return (
       <input
@@ -7,6 +7,7 @@ export function Input({ className = '', ...props }) {
           ${baseStyles} 
           ${className}
         `}
+        style={{ textAlign: 'left', ...props.style }}
         {...props}
       />
     );
