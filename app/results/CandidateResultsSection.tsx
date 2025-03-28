@@ -6,6 +6,7 @@ import { Candidate, Election } from "@prisma/client";
 import { motion } from "framer-motion";
 import { Button } from "../../components/ui/button";
 import { CandidateImage } from "../../components/CandidateImage"; // Adjust the path as needed
+import { FaUserPlus } from "react-icons/fa"; // Import the user-plus icon from react-icons
 
 interface CandidateSectionProps {
     candidates: Candidate[];
@@ -24,31 +25,68 @@ const cardVariants = {
 };
 
 export default function CandidateSection({ candidates, election, fallbackElections }: CandidateSectionProps) {
-    if (!candidates || candidates.length === 0) {
+    console.log("election",election)
+    // If no election data is available
+    if (!election) {
         return (
-            <div className="text-center p-4">
-                <h2 className="text-lg font-semibold text-gray-900">No candidates available for this election.</h2>
-                {fallbackElections && (
-                    <div className="mt-4">
-                        <h3 className="text-md font-semibold text-gray-800">You might be interested in these elections:</h3>
-                        <ul className="list-disc list-inside">
-                            {fallbackElections.map((fallbackElection) => (
-                                <li key={fallbackElection.id} className="mt-2">
-                                    <Link href={{ pathname: `/election/${fallbackElection.id}` }}>
-                                        <span className="text-purple-600 hover:underline">{fallbackElection.position}</span>
+            <motion.div
+                className="max-w-6xl mx-auto py-8"
+                initial="hidden"
+                animate="visible"
+                variants={containerVariants}
+            >
+                <div className="text-center mb-8">
+                    <h2 className="text-2xl font-semibold text-gray-900 mb-2">No election information available</h2>
+                    <p className="text-gray-600 mb-8">Would you like to submit information about an upcoming election?</p>
+                    
+                    <div className="flex justify-center">
+                        <motion.div
+                            whileHover={{ scale: 1.05 }}
+                            transition={{ duration: 0.2, ease: "easeOut" }}
+                        >
+                            <Card className="group transition-all rounded-lg cursor-pointer h-[315px] w-[350px] flex flex-col relative">
+                                <CardContent className="flex flex-col items-center justify-center gap-4 h-full">
+                                    <div className="w-16 h-16 rounded-full bg-purple-100 flex items-center justify-center">
+                                        <FaUserPlus size={28} className="text-purple-600" />
+                                    </div>
+                                    <h2 className="text-xl font-semibold text-gray-900 text-center">
+                                        Submit a New Election
+                                    </h2>
+                                    <p className="text-gray-500 text-sm text-center mb-4">
+                                        Help us keep the community informed
+                                    </p>
+                                    <Link href="/submit-election" className="mt-auto mb-4">
+                                        <Button variant="purple" className="flex items-center gap-2">
+                                            <span>Submit Election Information</span>
+                                        </Button>
                                     </Link>
-                                    <span className="text-gray-600"> - {new Date(fallbackElection.date).toLocaleDateString("en-US", {
-                                            timeZone: "UTC",
-                                            year: "numeric",
-                                            month: "long",
-                                            day: "numeric",
-                                        })}</span>
-                                </li>
-                            ))}
-                        </ul>
+                                </CardContent>
+                            </Card>
+                        </motion.div>
                     </div>
-                )}
-            </div>
+                    
+                    {fallbackElections && fallbackElections.length > 0 && (
+                        <div className="mt-12">
+                            <h3 className="text-md font-semibold text-gray-800">Or browse these existing elections:</h3>
+                            <ul className="list-disc list-inside max-w-md mx-auto mt-4">
+                                {fallbackElections.map((fallbackElection) => (
+                                    <li key={fallbackElection.id} className="mt-2">
+                                        <Link href={{ pathname: `/election/${fallbackElection.id}` }}>
+                                            <span className="text-purple-600 hover:underline">{fallbackElection.position}</span>
+                                        </Link>
+                                        <span className="text-gray-600"> - {new Date(fallbackElection.date).toLocaleDateString("en-US", {
+                                                timeZone: "UTC",
+                                                year: "numeric",
+                                                month: "long",
+                                                day: "numeric",
+                                            })}</span>
+                                    </li>
+                                ))}
+                            </ul>
+                        </div>
+                    )}
+                </div>
+            </motion.div>
         );
     }
 
@@ -63,7 +101,7 @@ export default function CandidateSection({ candidates, election, fallbackElectio
                 {election.position}
             </h2>
 
-            {/* Campaign Cards Section */}
+            {/* Election Card Section - Always displayed */}
             <div className="mb-2 md:mb-6">
                 <div className="grid grid-cols-1 gap-4">
                     <Card key={election.id} className="bg-transparent">
@@ -90,46 +128,102 @@ export default function CandidateSection({ candidates, election, fallbackElectio
                 </div>
             </div>
 
-            {/* Responsive Layout for Candidate Cards */}
-            <motion.div className="flex flex-nowrap gap-2 overflow-x-auto md:grid md:grid-cols-3 sm:gap-2 md:flex-wrap md:overflow-visible justify-start">
-                {candidates.map((candidate, index) => (
-                    <motion.div key={index} variants={cardVariants} className="flex-shrink-0">
-                        <Link href={{ pathname: `/candidate/${candidate.name.replace(/\s+/g, "-").toLowerCase()}`, query: { candidateID: candidate.id, electionID: election.id } }}>
-                            <motion.div
-                                whileHover={{ scale: 1.05 }}
-                                transition={{ duration: 0.2, ease: "easeOut" }}
-                            >
-                                <Card className="group transition-all rounded-lg cursor-pointer h-[315px] w-[350px] flex flex-col relative">
-                                    <CardContent className="flex flex-col gap-2">
-                                        <CandidateImage photo={candidate.photo} name={candidate.name} width={64} height={64} />
-                                        <h2 className="text-xl font-semibold text-gray-900 mt-2 line-clamp-2">
-                                            {candidate.name}
-                                        </h2>
-                                        <p className="w-[85%] text-purple-700 text-sm ">{candidate.position}</p>
-                                        <p
-                                            className={`w-[75%] text-gray-500 text-xs ${
-                                                candidate.position.length > 37 ? "line-clamp-3" : "line-clamp-4"
-                                            }`}
-                                            style={{ display: '-webkit-box', WebkitBoxOrient: 'vertical' }}
-                                        >
-                                            {candidate.bio}
-                                        </p>
+            {/* Display blank candidate card if no candidates */}
+            {(!candidates || candidates.length === 0) ? (
+                <div>
+                    <h2 className="text-lg font-semibold text-gray-900 mb-4">No candidates available for this election yet.</h2>
+                    
+                    {/* Blank Candidate Card with CTA */}
+                    <div className="flex justify-center w-full mb-8">
+                        <motion.div
+                            whileHover={{ scale: 1.05 }}
+                            transition={{ duration: 0.2, ease: "easeOut" }}
+                        >
+                            <Card className="group transition-all rounded-lg cursor-pointer h-[315px] w-[350px] flex flex-col relative">
+                                <CardContent className="flex flex-col items-center justify-center gap-4 h-full">
+                                    <div className="w-16 h-16 rounded-full bg-purple-100 flex items-center justify-center">
+                                        <FaUserPlus size={28} className="text-purple-600" />
+                                    </div>
+                                    <h2 className="text-xl font-semibold text-gray-900 text-center">
+                                        Are you running for {election.position}?
+                                    </h2>
+                                    <p className="text-gray-500 text-sm text-center mb-4">
+                                        Please let us know here
+                                    </p>
+                                    <Link href="/submit-candidate" className="mt-auto mb-4">
+                                        <Button variant="purple" className="flex items-center gap-2">
+                                            <span>Submit Your Information</span>
+                                        </Button>
+                                    </Link>
+                                </CardContent>
+                            </Card>
+                        </motion.div>
+                    </div>
+                    
+                    {/* Fallback Elections Section */}
+                    {fallbackElections && fallbackElections.length > 0 && (
+                        <div className="mt-8">
+                            <h3 className="text-md font-semibold text-gray-800">You might be interested in these elections:</h3>
+                            <ul className="list-disc list-inside">
+                                {fallbackElections.map((fallbackElection) => (
+                                    <li key={fallbackElection.id} className="mt-2">
+                                        <Link href={{ pathname: `/election/${fallbackElection.id}` }}>
+                                            <span className="text-purple-600 hover:underline">{fallbackElection.position}</span>
+                                        </Link>
+                                        <span className="text-gray-600"> - {new Date(fallbackElection.date).toLocaleDateString("en-US", {
+                                                timeZone: "UTC",
+                                                year: "numeric",
+                                                month: "long",
+                                                day: "numeric",
+                                            })}</span>
+                                    </li>
+                                ))}
+                            </ul>
+                        </div>
+                    )}
+                </div>
+            ) : (
+                /* Candidate Cards Section - Only shown if candidates exist */
+                <motion.div className="flex flex-nowrap gap-2 overflow-x-auto md:grid md:grid-cols-3 sm:gap-2 md:flex-wrap md:overflow-visible justify-start">
+                    {candidates.map((candidate, index) => (
+                        <motion.div key={index} variants={cardVariants} className="flex-shrink-0">
+                            <Link href={{ pathname: `/candidate/${candidate.name.replace(/\s+/g, "-").toLowerCase()}`, query: { candidateID: candidate.id, electionID: election.id } }}>
+                                <motion.div
+                                    whileHover={{ scale: 1.05 }}
+                                    transition={{ duration: 0.2, ease: "easeOut" }}
+                                >
+                                    <Card className="group transition-all rounded-lg cursor-pointer h-[315px] w-[350px] flex flex-col relative">
+                                        <CardContent className="flex flex-col gap-2">
+                                            <CandidateImage photo={candidate.photo} name={candidate.name} width={64} height={64} />
+                                            <h2 className="text-xl font-semibold text-gray-900 mt-2 line-clamp-2">
+                                                {candidate.name}
+                                            </h2>
+                                            <p className="w-[85%] text-purple-700 text-sm ">{candidate.position}</p>
+                                            <p
+                                                className={`w-[75%] text-gray-500 text-xs ${
+                                                    candidate.position.length > 37 ? "line-clamp-3" : "line-clamp-4"
+                                                }`}
+                                                style={{ display: '-webkit-box', WebkitBoxOrient: 'vertical' }}
+                                            >
+                                                {candidate.bio}
+                                            </p>
 
-                                        {/* Donate Button */}
-                                        <motion.div className="absolute bottom-0"
-                                            whileHover={{ scale: 1.02 }}
-                                            transition={{ duration: 0.2, ease: "easeOut" }}>
-                                            <Button variant="purple" size="sm" onClick={() => { /* placeholder function */ }} className="flex items-center gap-2">
-                                                <span>Learn More</span>
-                                            </Button>
-                                        </motion.div>
-                                    </CardContent>
-                                </Card>
-                            </motion.div>
-                        </Link>
-                    </motion.div>
-                ))}
-            </motion.div>
+                                            {/* Donate Button */}
+                                            <motion.div className="absolute bottom-0"
+                                                whileHover={{ scale: 1.02 }}
+                                                transition={{ duration: 0.2, ease: "easeOut" }}>
+                                                <Button variant="purple" size="sm" onClick={() => { /* placeholder function */ }} className="flex items-center gap-2">
+                                                    <span>Learn More</span>
+                                                </Button>
+                                            </motion.div>
+                                        </CardContent>
+                                    </Card>
+                                </motion.div>
+                            </Link>
+                        </motion.div>
+                    ))}
+                </motion.div>
+            )}
         </motion.div>
     );
 }

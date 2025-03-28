@@ -51,3 +51,44 @@ export const STATE_ABBREVIATIONS: Record<string, string> = {
   WI: 'Wisconsin',
   WY: 'Wyoming'
 }; 
+
+
+// Function to normalize state input - returns full state name when possible
+export function normalizeState(state: string | null): string | null {
+  if (state == null) {
+    return null
+  }
+  // If it's a 2-letter abbreviation, convert to full state name
+  if (state.length === 2) {
+      const upperState = state.toUpperCase();
+      if (STATE_ABBREVIATIONS[upperState]) {
+          return STATE_ABBREVIATIONS[upperState]; // Return full state name
+      }
+  }
+  
+  // If it's already a full state name, return it properly capitalized
+  const lowerState = state.toLowerCase();
+  for (const [fullStateLower, abbr] of Object.entries(STATE_ABBREVIATIONS)) {
+      if (lowerState === fullStateLower) {
+          // Convert to proper case (first letter of each word capitalized)
+          return fullStateLower
+              .split(' ')
+              .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+              .join(' ');
+      }
+  }
+  
+  // If it's a valid state name but not in perfect format, format it properly
+  for (const fullStateLower of Object.keys(STATE_ABBREVIATIONS)) {
+      if (lowerState === fullStateLower) {
+          // Convert to proper case
+          return fullStateLower
+              .split(' ')
+              .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+              .join(' ');
+      }
+  }
+  
+  // If we can't identify the state, return null
+  return null;
+}

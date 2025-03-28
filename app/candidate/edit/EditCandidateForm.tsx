@@ -298,7 +298,7 @@ export default function EditCandidateForm({
             <ul className="space-y-2 text-sm mb-4">
               {formData.policies.map((policy, index) => (
                 <li key={index} className="flex items-center">
-                  <span className="font-semibold flex-grow">✅ {policy}</span>
+                  <span className="font-semibold flex-grow">{policy}</span>
                   <Button 
                     type="button"
                     variant="ghost" 
@@ -434,7 +434,7 @@ export default function EditCandidateForm({
               {relatedCandidates.length > 0 ? (
                 <div className="space-y-3">
                   {relatedCandidates.map((relatedCandidate) => (
-                    <div key={relatedCandidate.id} className="flex items-center p-2 bg-gray-50 rounded">
+                    <div key={relatedCandidate.id} className="flex items-center p-2 rounded">
                       <Image
                         src={relatedCandidate.photo || '/default-profile.png'}
                         width={30}

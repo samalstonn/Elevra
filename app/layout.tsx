@@ -17,7 +17,7 @@ import { Analytics } from "@vercel/analytics/react"
 import { SpeedInsights } from "@vercel/speed-insights/next"
 import { usePathname } from "next/navigation";
 import SearchBar from "../components/ResultsSearchBar";
-import { useState, useEffect } from 'react';
+import AddressButton from "../components/AddressButton";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -34,18 +34,6 @@ export default function RootLayout({
 }: Readonly<{ children: React.ReactNode }>) {
 
   const pathname = usePathname();
-  const [mobileLocationOpen, setMobileLocationOpen] = useState(false);
-  const [desktopLocationOpen, setDesktopLocationOpen] = useState(false);
-
-  const [selectedLocation, setSelectedLocation] = useState({ city: 'Dryden', state: 'NY' });
-  useEffect(() => {
-    const urlParams = new URLSearchParams(window.location.search);
-    const city = urlParams.get('city');
-    const state = urlParams.get('state');
-    if (city && state) {
-      setSelectedLocation({ city, state });
-    }
-  }, []);
 
   return (
     <ClerkProvider publishableKey={clerkKey || ""}>
@@ -57,109 +45,10 @@ export default function RootLayout({
               <Link href="/" className="text-3xl font-bold text-purple-900 shrink-0">
                 Elevra
               </Link>
-
                 {(pathname.startsWith("/results") || pathname.startsWith("/candidate/")) && (
                 <div className="flex-grow flex items-center justify-center gap-4 mx-auto">
-                  {/* Desktop location button with dropdown */}
-                  <div className="relative hidden md:flex">
-                    <Button
-                      variant="ghost"
-                      className="items-center text-gray-700 border border-gray-300 rounded-full shadow-sm"
-                      onClick={() => {
-                        setDesktopLocationOpen(prev => !prev);
-                      }}
-                    >
-                      📍 {selectedLocation.city}, {selectedLocation.state}
-                    </Button>
-                    {desktopLocationOpen && (
-                      <div className="absolute left-0 mt-12 w-40 bg-white shadow-md rounded-lg z-10">
-                        <button
-                          onClick={() => {
-                            if (selectedLocation.city !== "Dryden" || selectedLocation.state !== "NY") {
-                              setDesktopLocationOpen(false);
-                              setSelectedLocation({ city: "Dryden", state: "NY" });
-                              window.location.href = "/results?city=Dryden&state=NY";
-                            } else {
-                              setDesktopLocationOpen(false);
-                            }
-                          }}
-                          className="block w-full text-left px-4 py-2 text-sm rounded-lg text-gray-700 hover:bg-gray-100"
-                        >
-                          Dryden, NY
-                        </button>
-                        <button
-                          onClick={() => {
-                            if (selectedLocation.city !== "Lansing" || selectedLocation.state !== "NY") {
-                              setDesktopLocationOpen(false);
-                              setSelectedLocation({ city: "Lansing", state: "NY" });
-                              window.location.href = "/results?city=Lansing&state=NY";
-                            } else {
-                              setDesktopLocationOpen(false);
-                            }
-                          }}
-                          className="block w-full text-left px-4 py-2 text-sm rounded-lg text-gray-700 hover:bg-gray-100"
-                        >
-                          Lansing, NY
-                        </button>
-                        <button
-                          onClick={() => {
-                            if (selectedLocation.city !== "Milwaukee" || selectedLocation.state !== "WI") {
-                              setDesktopLocationOpen(false);
-                              setSelectedLocation({ city: "Milwaukee", state: "WI" });
-                              window.location.href = "/results?city=Milwaukee&state=WI";
-                            } else {
-                              setDesktopLocationOpen(false);
-                            }
-                          }}
-                          className="block w-full text-left px-4 py-2 text-sm rounded-lg text-gray-700 hover:bg-gray-100"
-                        >
-                          Milwaukee, WI
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                  {/* Mobile location button with dropdown */}
-                  <div className="relative md:hidden">
-                    <Button
-                      variant="ghost"
-                      className="flex items-center text-gray-700 border border-gray-300 rounded-full shadow-sm"
-                      onClick={() => setMobileLocationOpen(prev => !prev)}
-                    >
-                      📍
-                    </Button>
-                    {mobileLocationOpen && (
-                      <div className="absolute left-0 mt-2 w-32 bg-white shadow-md rounded-md z-10">
-                        <button
-                          onClick={() => {
-                            if (selectedLocation.city !== "Dryden" || selectedLocation.state !== "NY") {
-                              setMobileLocationOpen(false);
-                              setSelectedLocation({ city: "Dryden", state: "NY" });
-                              window.location.href = "/results?city=Dryden&state=NY";
-                            } else {
-                              setMobileLocationOpen(false);
-                            }
-                          }}
-                          className=" w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                        >
-                          Dryden, NY
-                        </button>
-                        <button
-                          onClick={() => {
-                            if (selectedLocation.city !== "Lansing" || selectedLocation.state !== "NY") {
-                              setMobileLocationOpen(false);
-                              setSelectedLocation({ city: "Lansing", state: "NY" });
-                              window.location.href = "/results?city=Lansing&state=NY";
-                            } else {
-                              setMobileLocationOpen(false);
-                            }
-                          }}
-                          className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                        >
-                          Lansing, NY
-                        </button>
-                      </div>
-                    )}
-                  </div>
+                  {/* Address button (both mobile and desktop) */}
+                  <AddressButton />
                   {/* Desktop search bar only */}
                   <div className="max-w-4xl w-full hidden md:block">
                     <SearchBar placeholder="Search candidates..." />

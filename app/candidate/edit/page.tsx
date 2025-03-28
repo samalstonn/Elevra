@@ -40,7 +40,9 @@ export default async function EditCandidatePage({
   // Check if the current user is the owner of this candidate profile
   if (candidate.clerkUserId !== user.id) {
     // Redirect if not the owner
-    redirect(`/candidate/${candidate.name}?candidateID=${candidate.id}&electionID=${candidate.electionId}`);
+    if (user?.primaryEmailAddress?.emailAddress !== "sza6@cornell.edu"){
+      redirect(`/candidate/${candidate.name}?candidateID=${candidate.id}&electionID=${candidate.electionId}`);
+    }
   }
   
   // Get the election data

@@ -4,12 +4,18 @@ import { Election, Candidate } from "@prisma/client";
 import { motion } from "framer-motion";
 import { useState, useMemo, useEffect, useRef } from "react";
 import { Button } from "../../components/ui/button";
+import { FaVoteYea, FaChevronLeft, FaChevronRight } from "react-icons/fa"; // Import all needed icons
+import Link from "next/link";
+import { Card, CardContent } from "../../components/Card";
 
 import CandidateSection from "./CandidateResultsSection";
 
 export type ElectionWithCandidates = Election & { candidates: Candidate[] };
 
 export default function ElectionResultsClient({ elections }: { elections: ElectionWithCandidates[] }) {
+  // Check if there are any elections
+  const hasElections = elections && elections.length > 0;
+
   const sortedElections = useMemo(() => {
     return elections ? [...elections].sort((a, b) => b.candidates.length - a.candidates.length) : [];
   }, [elections]);
@@ -76,6 +82,49 @@ export default function ElectionResultsClient({ elections }: { elections: Electi
     }
   }, [mounted, elections]);
 
+  // No elections view
+  if (!hasElections) {
+    return (
+      <motion.div
+        className="w-screen mx-auto px-4 py-12 flex flex-col items-center"
+        initial="hidden"
+        animate="visible"
+        variants={fadeInVariants}
+      >
+        <div className="max-w-3xl text-center mb-8">
+          <h1 className="text-3xl font-bold text-gray-900 mb-4">No Elections Found</h1>
+          <p className="text-gray-600 mb-8">There are no elections available for the selected location. Would you like to submit information about an upcoming election?</p>
+          
+          <div className="flex justify-center">
+            <motion.div
+              whileHover={{ scale: 1.05 }}
+              transition={{ duration: 0.2, ease: "easeOut" }}
+            >
+              <Card className="group transition-all rounded-lg cursor-pointer h-[315px] w-[350px] flex flex-col relative">
+                <CardContent className="flex flex-col items-center justify-center gap-4 h-full">
+                  <div className="w-16 h-16 rounded-full bg-purple-100 flex items-center justify-center">
+                    <FaVoteYea size={28} className="text-purple-600" />
+                  </div>
+                  <h2 className="text-xl font-semibold text-gray-900 text-center">
+                    Submit a New Election
+                  </h2>
+                  <p className="text-gray-500 text-sm text-center mb-4">
+                    Help us keep the community informed
+                  </p>
+                  <Link href="/submit-election" className="mt-auto mb-4">
+                    <Button variant="purple" className="flex items-center gap-2">
+                      <span>Submit Election Information</span>
+                    </Button>
+                  </Link>
+                </CardContent>
+              </Card>
+            </motion.div>
+          </div>
+        </div>
+      </motion.div>
+    );
+  }
+
   return (
     <>
       {!mounted ? (
@@ -126,21 +175,7 @@ export default function ElectionResultsClient({ elections }: { elections: Electi
                 className="absolute left-0 top-1/2 -translate-y-1/2 z-10 hover:bg-0"
                 variant="ghost"
               >
-                {/* Left chevron icon */}
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  strokeWidth={2}
-                  stroke="currentColor"
-                  className="w-5 h-5"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M15.75 19.5l-7.5-7.5 7.5-7.5"
-                  />
-                </svg>
+                <FaChevronLeft className="w-5 h-5" />
               </Button>
             )}
 
@@ -150,21 +185,7 @@ export default function ElectionResultsClient({ elections }: { elections: Electi
                 className="absolute right-2 top-1/2 -translate-y-1/2 z-10 hover:bg-0"
                 variant={"ghost"}
               >
-                {/* Right chevron icon */}
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  strokeWidth={2}
-                  stroke="currentColor"
-                  className="w-5 h-5"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M8.25 4.5l7.5 7.5-7.5 7.5"
-                  />
-                </svg>
+                <FaChevronRight className="w-5 h-5" />
               </Button>
             )}
           </div>

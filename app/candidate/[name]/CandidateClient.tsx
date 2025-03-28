@@ -181,7 +181,7 @@ export default function CandidateClient({
           <ul className="space-y-1 text-sm">
             {(candidate.policies).map((policy: string, index: number) => (
               <li key={index}>
-                <span className="font-semibold">✅ {policy}</span>
+                <span className="font-semibold">{policy}</span>
               </li>
             ))}
           </ul>
@@ -316,7 +316,7 @@ export default function CandidateClient({
                 if (candidate.city && candidate.state) {
                   const cityStateKey = `${candidate.city.trim()}, ${candidate.state.trim()}`;
                   const _ = cityStateToZip[cityStateKey];
-                  router.push("/results?city=Milwaukee&state=WI");
+                  router.push(`/results?city=${election.city}&state=${election.state}`);
                 } else {
                   console.error("Candidate city or state is missing.");
                 }
