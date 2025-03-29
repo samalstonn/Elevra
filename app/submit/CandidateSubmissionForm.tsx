@@ -396,8 +396,7 @@ export default function CandidateSubmissionForm({
               <div>
                 <div className="font-medium">{selectedElection.position}</div>
                 <div className="text-gray-600 text-sm">
-                  {selectedElection.city}, {selectedElection.state} •
-                  {selectedElection.date.toLocaleDateString()}
+                  {selectedElection.city}, {selectedElection.state}
                 </div>
               </div>
               <Button
