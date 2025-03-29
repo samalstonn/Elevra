@@ -6,7 +6,6 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { motion } from "framer-motion";
 import { FaSave, FaCheckCircle, FaPlus, FaTimes, FaGlobe, FaLinkedin, FaCity, FaFlag } from "react-icons/fa";
-import useSWR from "swr";
 import SearchBar from "@/components/ResultsSearchBar";
 
 // Type definition for Election data
@@ -66,8 +65,6 @@ interface FormErrors {
   electionId?: string;
 }
 
-// Fetcher for SWR
-const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
 export default function CandidateSubmissionForm({ userId }: CandidateSubmissionFormProps) {
   const [formData, setFormData] = useState<FormState>(initialFormState);
@@ -279,7 +276,6 @@ export default function CandidateSubmissionForm({ userId }: CandidateSubmissionF
         },
         body: JSON.stringify({
           ...formData,
-          twitter: "",
           electionId: formData.electionId === "new" ? null : parseInt(formData.electionId),
           clerkUserId: userId || null,
         }),
@@ -394,11 +390,13 @@ export default function CandidateSubmissionForm({ userId }: CandidateSubmissionF
               <SearchBar 
                 placeholder="Search for an election..." 
                 apiEndpoint="/api/elections/search"
+                shadow={false}
                 onResultSelect={(election) => {
                   setFormData(prev => ({ ...prev, electionId: election.id.toString() }));
                   if (errors.electionId) {
                     setErrors(prev => ({ ...prev, electionId: undefined }));
                   }
+                  
                 }} 
               />
             )}

@@ -11,12 +11,14 @@ interface SearchBarProps {
   placeholder?: string;
   apiEndpoint?: string; // Added to make the endpoint configurable
   onResultSelect?: (result: any) => void; // Added callback for selection
+  shadow: boolean
 }
 
 export default function SearchBar({ 
   placeholder = "Search...",
   apiEndpoint = "/api/candidates", // Default to original endpoint
-  onResultSelect
+  onResultSelect,
+  shadow
 }: SearchBarProps) {
   const [searchTerm, setSearchTerm] = useState("");
   const [results, setResults] = useState<any[]>([]);
@@ -136,7 +138,9 @@ export default function SearchBar({
   return (
     <div ref={containerRef} className="relative">
       <motion.div
-        className="flex items-center bg-white border border-gray-300 px-3 py-2 rounded-full shadow-md"
+        className={`flex items-center bg-white border border-gray-300 px-3 py-2 rounded-full ${
+          shadow ? "shadow-md" : ""
+        }`}
         initial={{ opacity: 0 }}
         animate={{ opacity: 1, transition: { duration: 0.3 } }}
       >

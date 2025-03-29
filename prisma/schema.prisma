@@ -3,8 +3,9 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider          = "postgresql"
+  url               = env("DATABASE_URL")
+  shadowDatabaseUrl = env("SHADOW_DATABASE_URL")
 }
 
 model Election {
@@ -96,7 +97,6 @@ model CandidateSubmission {
   photo           String?
   position        String
   state           String
-  twitter         String?
   bio             String
   clerkUserId     String?
   status          SubmissionStatus @default(PENDING)

@@ -1,5 +1,0 @@
-# This is a manually created migration to add submission tables
-# while preserving existing tables in the database
-
-migration_name = "20250329000000_add_submission_tables"
-checksum = "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"

@@ -5,7 +5,7 @@ import { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import {CandidateImage} from "@/components/CandidateImage"; 
-import { FaGlobe, FaTwitter, FaLinkedin, FaCheckCircle, FaUserPlus, FaChevronUp, FaQuestionCircle } from "react-icons/fa";
+import { FaGlobe, FaLinkedin, FaCheckCircle, FaUserPlus, FaChevronUp, FaQuestionCircle } from "react-icons/fa";
 import { MdEdit } from "react-icons/md";
 import CheckoutButton from "@/components/DonateButton";
 import { Button } from "../../../components/ui/button";
@@ -161,11 +161,6 @@ export default function CandidateClient({
           {candidate.linkedin && (
             <a href={candidate.linkedin} className="text-blue-600 hover:text-blue-800 text-xl">
               <FaLinkedin />
-            </a>
-          )}
-          {candidate.twitter && (
-            <a href={candidate.twitter} className="text-blue-400 hover:text-blue-600 text-xl">
-              <FaTwitter />
             </a>
           )}
         </div>
