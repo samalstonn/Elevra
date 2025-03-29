@@ -5,7 +5,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { motion } from "framer-motion";
-import { FaSave, FaCheckCircle, FaCalendarAlt, FaCity, FaFlag } from "react-icons/fa";
+import {
+  FaSave,
+  FaCheckCircle,
+  FaCalendarAlt,
+  FaCity,
+  FaFlag,
+} from "react-icons/fa";
 
 interface ElectionSubmissionFormProps {
   userId?: string | null;
@@ -46,11 +52,15 @@ interface FormErrors {
   positions?: string;
 }
 
-export default function ElectionSubmissionForm({ userId }: ElectionSubmissionFormProps) {
+export default function ElectionSubmissionForm({
+  userId,
+}: ElectionSubmissionFormProps) {
   const [formData, setFormData] = useState<FormState>(initialFormState);
   const [errors, setErrors] = useState<FormErrors>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [submitStatus, setSubmitStatus] = useState<null | "success" | "error">(null);
+  const [submitStatus, setSubmitStatus] = useState<null | "success" | "error">(
+    null
+  );
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [draftSaved, setDraftSaved] = useState(false);
 
@@ -69,7 +79,9 @@ export default function ElectionSubmissionForm({ userId }: ElectionSubmissionFor
 
   // Input change handler
   const handleInputChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
+    e: React.ChangeEvent<
+      HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
+    >
   ) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
@@ -100,13 +112,13 @@ export default function ElectionSubmissionForm({ userId }: ElectionSubmissionFor
   // Form validation
   const validateForm = (): FormErrors => {
     const newErrors: FormErrors = {};
-    
+
     if (!formData.position.trim()) {
       newErrors.position = "Position is required";
     } else if (formData.position.length > 200) {
       newErrors.position = "Position must be less than 200 characters";
     }
-    
+
     if (!formData.date) {
       newErrors.date = "Election date is required";
     } else {
@@ -116,48 +128,48 @@ export default function ElectionSubmissionForm({ userId }: ElectionSubmissionFor
         newErrors.date = "Election date must be in the future";
       }
     }
-    
+
     if (!formData.city.trim()) {
       newErrors.city = "City is required";
     } else if (formData.city.length > 100) {
       newErrors.city = "City must be less than 100 characters";
     }
-    
+
     if (!formData.state.trim()) {
       newErrors.state = "State is required";
     } else if (formData.state.length > 50) {
       newErrors.state = "State must be less than 50 characters";
     }
-    
+
     if (!formData.description.trim()) {
       newErrors.description = "Description is required";
     } else if (formData.description.length > 2000) {
       newErrors.description = "Description must be less than 2000 characters";
     }
-    
+
     const positions = parseInt(formData.positions);
     if (isNaN(positions) || positions < 1) {
       newErrors.positions = "Number of positions must be at least 1";
     } else if (positions > 100) {
       newErrors.positions = "Number of positions must be less than 100";
     }
-    
+
     return newErrors;
   };
 
   // Handle form submission
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    
+
     // Validate the form
     const newErrors = validateForm();
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
       return;
     }
-    
+
     setIsSubmitting(true);
-    
+
     try {
       const response = await fetch("/api/submit/election", {
         method: "POST",
@@ -192,7 +204,10 @@ export default function ElectionSubmissionForm({ userId }: ElectionSubmissionFor
     <form onSubmit={handleSubmit} className="space-y-6">
       {/* Position */}
       <div className="space-y-2">
-        <label htmlFor="position" className="block text-sm font-medium text-gray-700">
+        <label
+          htmlFor="position"
+          className="block text-sm font-medium text-gray-700"
+        >
           Election Position/Title*
         </label>
         <Input
@@ -211,7 +226,10 @@ export default function ElectionSubmissionForm({ userId }: ElectionSubmissionFor
 
       {/* Election Type */}
       <div className="space-y-2">
-        <label htmlFor="type" className="block text-sm font-medium text-gray-700">
+        <label
+          htmlFor="type"
+          className="block text-sm font-medium text-gray-700"
+        >
           Election Type*
         </label>
         <select
@@ -219,7 +237,7 @@ export default function ElectionSubmissionForm({ userId }: ElectionSubmissionFor
           name="type"
           value={formData.type}
           onChange={handleInputChange}
-          className="w-full px-3 py-2 border border-gray-300 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
+          className="w-full px-3 py-2 bg-white border border-gray-300 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
         >
           <option value="LOCAL">Local</option>
           <option value="STATE">State</option>
@@ -230,7 +248,10 @@ export default function ElectionSubmissionForm({ userId }: ElectionSubmissionFor
 
       {/* Date */}
       <div className="space-y-2">
-        <label htmlFor="date" className="block text-sm font-medium text-gray-700 flex items-center gap-2">
+        <label
+          htmlFor="date"
+          className="block text-sm font-medium text-gray-700 flex items-center gap-2"
+        >
           <FaCalendarAlt className="text-purple-600" /> Election Date*
         </label>
         <Input
@@ -239,7 +260,7 @@ export default function ElectionSubmissionForm({ userId }: ElectionSubmissionFor
           type="date"
           value={formData.date}
           onChange={handleInputChange}
-          className={errors.date ? "border-red-500" : ""}
+          className={`bg-white ${errors.date ? "border-red-500" : ""}`}
         />
         {errors.date && (
           <p className="text-red-500 text-xs mt-1">{errors.date}</p>
@@ -249,7 +270,10 @@ export default function ElectionSubmissionForm({ userId }: ElectionSubmissionFor
       {/* City and State */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="space-y-2">
-          <label htmlFor="city" className="block text-sm font-medium text-gray-700 flex items-center gap-2">
+          <label
+            htmlFor="city"
+            className="block text-sm font-medium text-gray-700 flex items-center gap-2"
+          >
             <FaCity className="text-purple-600" /> City*
           </label>
           <Input
@@ -265,7 +289,10 @@ export default function ElectionSubmissionForm({ userId }: ElectionSubmissionFor
           )}
         </div>
         <div className="space-y-2">
-          <label htmlFor="state" className="block text-sm font-medium text-gray-700 flex items-center gap-2">
+          <label
+            htmlFor="state"
+            className="block text-sm font-medium text-gray-700 flex items-center gap-2"
+          >
             <FaFlag className="text-purple-600" /> State*
           </label>
           <Input
@@ -284,7 +311,10 @@ export default function ElectionSubmissionForm({ userId }: ElectionSubmissionFor
 
       {/* Positions */}
       <div className="space-y-2">
-        <label htmlFor="positions" className="block text-sm font-medium text-gray-700">
+        <label
+          htmlFor="positions"
+          className="block text-sm font-medium text-gray-700"
+        >
           Number of Seats*
         </label>
         <Input
@@ -305,7 +335,10 @@ export default function ElectionSubmissionForm({ userId }: ElectionSubmissionFor
 
       {/* Description */}
       <div className="space-y-2">
-        <label htmlFor="description" className="block text-sm font-medium text-gray-700">
+        <label
+          htmlFor="description"
+          className="block text-sm font-medium text-gray-700"
+        >
           Election Description*
         </label>
         <Textarea
@@ -333,7 +366,10 @@ export default function ElectionSubmissionForm({ userId }: ElectionSubmissionFor
           className="p-3 bg-green-100 text-green-700 rounded-lg flex items-center gap-2"
         >
           <FaCheckCircle />
-          <span>Election information submitted successfully! Thank you for your contribution.</span>
+          <span>
+            Election information submitted successfully! Thank you for your
+            contribution.
+          </span>
         </motion.div>
       )}
 
@@ -380,9 +416,25 @@ export default function ElectionSubmissionForm({ userId }: ElectionSubmissionFor
         >
           {isSubmitting ? (
             <span className="flex items-center gap-2">
-              <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              <svg
+                className="animate-spin h-5 w-5 text-white"
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+              >
+                <circle
+                  className="opacity-25"
+                  cx="12"
+                  cy="12"
+                  r="10"
+                  stroke="currentColor"
+                  strokeWidth="4"
+                ></circle>
+                <path
+                  className="opacity-75"
+                  fill="currentColor"
+                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                ></path>
               </svg>
               Submitting...
             </span>
