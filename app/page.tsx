@@ -7,6 +7,7 @@ import SearchBar from "../components/SearchBar";
 import FeatureCards from "../components/FeatureCards";
 import AboutUs from "@/components/AboutUs";
 import {Button} from "@/components/ui/button";
+import { NormalizedLocation } from "@/types/geocoding";
 
 export default function HomePage() {
   return (
@@ -19,9 +20,8 @@ export default function HomePage() {
 function HomePageContent() {
   const router = useRouter();
 
-
-  const handleSearch = (_: string) => {
-    router.push("/results?city=Milwaukee&state=WI");
+  const handleSearch = (location: NormalizedLocation) => {
+    router.push(`/results?city=${encodeURIComponent(location.city)}&state=${encodeURIComponent(location.stateName)}`);
   };
 
   return (
@@ -72,7 +72,7 @@ function HomePageContent() {
           }}
           className="w-full max-w-lg sm:max-w-xl md:max-w-2xl lg:max-w-3xl py-6"
         >
-          <SearchBar onSearch={(zipCode: string) => handleSearch(zipCode)} />
+          <SearchBar onSearch={(location: NormalizedLocation) => handleSearch(location)} />
         </motion.div>
       </motion.main>
 
