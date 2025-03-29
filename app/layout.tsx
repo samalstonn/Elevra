@@ -9,6 +9,7 @@ import {
   UserButton,
 } from "@clerk/nextjs";
 import "./globals.css";
+import { useState, useEffect } from "react";
 import { Button } from "../components/ui/button";
 import { Inter } from "next/font/google";
 import Link from "next/link";
@@ -33,6 +34,14 @@ export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   const pathname = usePathname();
+  const [isMobile, setIsMobile] = useState<boolean>(false);
+  useEffect(() => {
+    const mediaQuery = window.matchMedia("(max-width: 768px)");
+    setIsMobile(mediaQuery.matches);
+    const handler = (event: MediaQueryListEvent) => setIsMobile(event.matches);
+    mediaQuery.addEventListener("change", handler);
+    return () => mediaQuery.removeEventListener("change", handler);
+  }, []);
 
   return (
     <ClerkProvider publishableKey={clerkKey || ""}>
@@ -50,8 +59,8 @@ export default function RootLayout({
               {(pathname.startsWith("/results") ||
                 pathname.startsWith("/candidate/")) && (
                 <div className="flex-grow flex items-center justify-center gap-4 mx-auto">
-                  {/* Address button (both mobile and desktop) */}
-                  <AddressButton />
+                  {/* Address button (only desktop) */}
+                  <AddressButton showLocation={!isMobile} />
                   {/* Desktop search bar only */}
                   <div className="max-w-4xl w-full hidden md:block">
                     <SearchBar

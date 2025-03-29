@@ -86,3 +86,11 @@ body {
   }
 }
 
+/* Apply this in a global stylesheet (e.g., globals.css) or a module 
+   that is imported globally (e.g., _app.tsx in Next.js). */
+   input:-webkit-autofill,
+   textarea:-webkit-autofill,
+   select:-webkit-autofill {
+     -webkit-box-shadow: 0 0 0 50px #ffffff inset !important;
+     -webkit-text-fill-color: #000000 !important;
+   }
