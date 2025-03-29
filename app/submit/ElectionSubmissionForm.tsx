@@ -112,13 +112,11 @@ export default function ElectionSubmissionForm({
   // Form validation
   const validateForm = (): FormErrors => {
     const newErrors: FormErrors = {};
-
     if (!formData.position.trim()) {
       newErrors.position = "Position is required";
     } else if (formData.position.length > 200) {
       newErrors.position = "Position must be less than 200 characters";
     }
-
     if (!formData.date) {
       newErrors.date = "Election date is required";
     } else {
@@ -128,39 +126,33 @@ export default function ElectionSubmissionForm({
         newErrors.date = "Election date must be in the future";
       }
     }
-
     if (!formData.city.trim()) {
       newErrors.city = "City is required";
     } else if (formData.city.length > 100) {
       newErrors.city = "City must be less than 100 characters";
     }
-
     if (!formData.state.trim()) {
       newErrors.state = "State is required";
     } else if (formData.state.length > 50) {
       newErrors.state = "State must be less than 50 characters";
     }
-
     if (!formData.description.trim()) {
       newErrors.description = "Description is required";
     } else if (formData.description.length > 2000) {
       newErrors.description = "Description must be less than 2000 characters";
     }
-
     const positions = parseInt(formData.positions);
     if (isNaN(positions) || positions < 1) {
       newErrors.positions = "Number of positions must be at least 1";
     } else if (positions > 100) {
       newErrors.positions = "Number of positions must be less than 100";
     }
-
     return newErrors;
   };
 
   // Handle form submission
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-
     // Validate the form
     const newErrors = validateForm();
     if (Object.keys(newErrors).length > 0) {
