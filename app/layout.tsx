@@ -18,6 +18,7 @@ import { SpeedInsights } from "@vercel/speed-insights/next"
 import { usePathname } from "next/navigation";
 import SearchBar from "../components/ResultsSearchBar";
 import AddressButton from "../components/AddressButton";
+import { FaPlus } from "react-icons/fa"
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -82,7 +83,7 @@ export default function RootLayout({
 
             {/* Footer Section */}
             <footer className="w-full py-6 text-center text-sm text-gray-500 border-t border-gray-200">
-              &copy; {new Date().getFullYear()} Elevra. All rights reserved.
+              <div>&copy; {new Date().getFullYear()} Elevra. All rights reserved.</div>
             </footer>
           </div>
         </body>

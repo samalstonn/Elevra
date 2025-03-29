@@ -55,6 +55,9 @@ export const STATE_ABBREVIATIONS: Record<string, string> = {
 
 // Function to normalize state input - returns full state name when possible
 export function normalizeState(state: string | null): string | null {
+  if (state == "all") {
+    return "all"
+  }
   if (state == null) {
     return null
   }

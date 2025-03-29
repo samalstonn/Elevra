@@ -147,8 +147,8 @@ export default function CandidateClient({
               )}
             </div>
           </h1>
-          <p className="text-sm font-medium text-gray-600">{candidate.position}</p>
           <p className="text-sm font-semibold text-purple-600">{candidate.party}</p>
+          <p className="text-sm font-medium text-gray-600">{candidate.position}</p>
         </div>
     
         {/* Social Links Inline */}

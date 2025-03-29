@@ -111,7 +111,7 @@ export default function ElectionResultsClient({ elections }: { elections: Electi
                   <p className="text-gray-500 text-sm text-center mb-4">
                     Help us keep the community informed
                   </p>
-                  <Link href="/submit-election" className="mt-auto mb-4">
+                  <Link href="/submit" className="mt-auto mb-4">
                     <Button variant="purple" className="flex items-center gap-2">
                       <span>Submit Election Information</span>
                     </Button>

@@ -55,7 +55,7 @@ export default function CandidateSection({ candidates, election, fallbackElectio
                                     <p className="text-gray-500 text-sm text-center mb-4">
                                         Help us keep the community informed
                                     </p>
-                                    <Link href="/submit-election" className="mt-auto mb-4">
+                                    <Link href="/submit" className="mt-auto mb-4">
                                         <Button variant="purple" className="flex items-center gap-2">
                                             <span>Submit Election Information</span>
                                         </Button>
@@ -150,7 +150,7 @@ export default function CandidateSection({ candidates, election, fallbackElectio
                                     <p className="text-gray-500 text-sm text-center mb-4">
                                         Please let us know here
                                     </p>
-                                    <Link href="/submit-candidate" className="mt-auto mb-4">
+                                    <Link href="/submit" className="mt-auto mb-4">
                                         <Button variant="purple" className="flex items-center gap-2">
                                             <span>Submit Your Information</span>
                                         </Button>

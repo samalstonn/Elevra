@@ -18,6 +18,24 @@ export async function GET(request: Request) {
         // Normalize the state value (handle both abbreviations and full names)
         const normalizedState = normalizeState(rawState);
 
+        // If city is 'all', return all elections (for dropdown lists)
+        if (city === 'all' && normalizedState === 'all') {
+            const allElections = await prisma.election.findMany({
+                select: {
+                    id: true,
+                    position: true,
+                    date: true,
+                    city: true,
+                    state: true
+                },
+                orderBy: {
+                    date: 'asc'
+                }
+            });
+            
+            return NextResponse.json(allElections);
+        }
+
         let elections: string | any[] = []
         
         if (normalizedState) {
