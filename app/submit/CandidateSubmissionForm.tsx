@@ -5,10 +5,18 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { motion } from "framer-motion";
-import { FaSave, FaCheckCircle, FaPlus, FaTimes, FaGlobe, FaLinkedin, FaCity, FaFlag } from "react-icons/fa";
+import {
+  FaSave,
+  FaCheckCircle,
+  FaPlus,
+  FaTimes,
+  FaGlobe,
+  FaLinkedin,
+  FaCity,
+  FaFlag,
+} from "react-icons/fa";
 import SearchBar from "@/components/ResultsSearchBar";
-import {Election} from "@prisma/client"
-
+import { Election } from "@prisma/client";
 
 interface CandidateSubmissionFormProps {
   userId?: string | null;
@@ -58,16 +66,21 @@ interface FormErrors {
   electionId?: string;
 }
 
-
-export default function CandidateSubmissionForm({ userId }: CandidateSubmissionFormProps) {
+export default function CandidateSubmissionForm({
+  userId,
+}: CandidateSubmissionFormProps) {
   const [formData, setFormData] = useState<FormState>(initialFormState);
   const [errors, setErrors] = useState<FormErrors>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [submitStatus, setSubmitStatus] = useState<null | "success" | "error">(null);
+  const [submitStatus, setSubmitStatus] = useState<null | "success" | "error">(
+    null
+  );
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [draftSaved, setDraftSaved] = useState(false);
   const [newPolicy, setNewPolicy] = useState("");
-  const [selectedElection, setSelectedElection] = useState<Election | null>(null);
+  const [selectedElection, setSelectedElection] = useState<Election | null>(
+    null
+  );
 
   // Load draft from localStorage on component mount
   useEffect(() => {
@@ -91,18 +104,19 @@ export default function CandidateSubmissionForm({ userId }: CandidateSubmissionF
         .catch(() => {
           // Fallback mock data if endpoint doesn't exist yet
           return {
-            json: () => Promise.resolve({
-              id: parseInt(formData.electionId),
-              position: "Election " + formData.electionId,
-              date: "2025-11-05",
-              city: "Sample City",
-              state: "ST"
-            })
+            json: () =>
+              Promise.resolve({
+                id: parseInt(formData.electionId),
+                position: "Election " + formData.electionId,
+                date: "2025-11-05",
+                city: "Sample City",
+                state: "ST",
+              }),
           };
         })
-        .then(res => res.json())
-        .then(data => setSelectedElection(data))
-        .catch(err => {
+        .then((res) => res.json())
+        .then((data) => setSelectedElection(data))
+        .catch((err) => {
           console.error("Error fetching election details:", err);
           setSelectedElection(null);
         });
@@ -113,7 +127,9 @@ export default function CandidateSubmissionForm({ userId }: CandidateSubmissionF
 
   // Input change handler
   const handleInputChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
+    e: React.ChangeEvent<
+      HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
+    >
   ) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
@@ -130,7 +146,7 @@ export default function CandidateSubmissionForm({ userId }: CandidateSubmissionF
   // Add policy to the list
   const addPolicy = () => {
     if (newPolicy.trim() === "") return;
-    
+
     // Check if we already have 5 policies
     if (formData.policies.length >= 5) {
       setErrors((prev) => ({
@@ -139,13 +155,13 @@ export default function CandidateSubmissionForm({ userId }: CandidateSubmissionF
       }));
       return;
     }
-    
+
     setFormData((prev) => ({
       ...prev,
       policies: [...prev.policies, newPolicy.trim()],
     }));
     setNewPolicy("");
-    
+
     // Clear policy error if it exists
     if (errors.policies) {
       setErrors((prev) => ({ ...prev, policies: undefined }));
@@ -158,7 +174,7 @@ export default function CandidateSubmissionForm({ userId }: CandidateSubmissionF
       ...prev,
       policies: prev.policies.filter((_, i) => i !== index),
     }));
-    
+
     // Clear policy error if it exists
     if (errors.policies) {
       setErrors((prev) => ({ ...prev, policies: undefined }));
@@ -182,47 +198,47 @@ export default function CandidateSubmissionForm({ userId }: CandidateSubmissionF
   // Form validation
   const validateForm = (): FormErrors => {
     const newErrors: FormErrors = {};
-    
+
     if (!formData.name.trim()) {
       newErrors.name = "Name is required";
     } else if (formData.name.length > 100) {
       newErrors.name = "Name must be less than 100 characters";
     }
-    
+
     if (!formData.party.trim()) {
       newErrors.party = "Party is required";
     } else if (formData.party.length > 100) {
       newErrors.party = "Party must be less than 100 characters";
     }
-    
+
     if (!formData.position.trim()) {
       newErrors.position = "Position is required";
     } else if (formData.position.length > 200) {
       newErrors.position = "Position must be less than 200 characters";
     }
-    
+
     if (!formData.bio.trim()) {
       newErrors.bio = "Bio is required";
     } else if (formData.bio.length > 2000) {
       newErrors.bio = "Bio must be less than 2000 characters";
     }
-    
+
     if (!formData.city.trim()) {
       newErrors.city = "City is required";
     } else if (formData.city.length > 100) {
       newErrors.city = "City must be less than 100 characters";
     }
-    
+
     if (!formData.state.trim()) {
       newErrors.state = "State is required";
     } else if (formData.state.length > 50) {
       newErrors.state = "State must be less than 50 characters";
     }
-    
+
     if (formData.website && !isValidUrl(formData.website)) {
       newErrors.website = "Please enter a valid URL";
     }
-    
+
     if (formData.linkedin && !isValidUrl(formData.linkedin)) {
       newErrors.linkedin = "Please enter a valid URL";
     }
@@ -230,11 +246,12 @@ export default function CandidateSubmissionForm({ userId }: CandidateSubmissionF
     if (formData.policies.length === 0) {
       newErrors.policies = "At least one policy is required";
     }
-    
+
     if (!formData.electionId && formData.electionId !== "new") {
-      newErrors.electionId = "Please select an election or 'Create New Election'";
+      newErrors.electionId =
+        "Please select an election or 'Create New Election'";
     }
-    
+
     return newErrors;
   };
 
@@ -244,7 +261,7 @@ export default function CandidateSubmissionForm({ userId }: CandidateSubmissionF
       new URL(url);
       return true;
     } catch (e) {
-      console.log(e)
+      console.log(e);
       return false;
     }
   };
@@ -252,16 +269,16 @@ export default function CandidateSubmissionForm({ userId }: CandidateSubmissionF
   // Handle form submission
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    
+
     // Validate the form
     const newErrors = validateForm();
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
       return;
     }
-    
+
     setIsSubmitting(true);
-    
+
     try {
       const response = await fetch("/api/submit/candidate", {
         method: "POST",
@@ -270,7 +287,10 @@ export default function CandidateSubmissionForm({ userId }: CandidateSubmissionF
         },
         body: JSON.stringify({
           ...formData,
-          electionId: formData.electionId === "new" ? null : parseInt(formData.electionId),
+          electionId:
+            formData.electionId === "new"
+              ? null
+              : parseInt(formData.electionId),
           clerkUserId: userId || null,
         }),
       });
@@ -291,12 +311,15 @@ export default function CandidateSubmissionForm({ userId }: CandidateSubmissionF
       setIsSubmitting(false);
     }
   };
-  
+
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
       {/* Name */}
       <div className="space-y-2">
-        <label htmlFor="name" className="block text-sm font-medium text-gray-700">
+        <label
+          htmlFor="name"
+          className="block text-sm font-medium text-gray-700"
+        >
           Candidate Full Name*
         </label>
         <Input
@@ -314,87 +337,102 @@ export default function CandidateSubmissionForm({ userId }: CandidateSubmissionF
 
       {/* Party */}
       <div className="space-y-2">
-        <label htmlFor="party" className="block text-sm font-medium text-gray-700">
-            Political Party/Affiliation*
+        <label
+          htmlFor="party"
+          className="block text-sm font-medium text-gray-700"
+        >
+          Political Party/Affiliation*
         </label>
         <Input
-            id="party"
-            name="party"
-            value={formData.party}
-            onChange={handleInputChange}
-            placeholder="e.g., Democrat, Republican, Independent"
-            className={`${errors.party ? "border-red-500" : ""} w-full`}
-            style={{ width: "100%" }}  // Ensure full width
+          id="party"
+          name="party"
+          value={formData.party}
+          onChange={handleInputChange}
+          placeholder="e.g., Democrat, Republican, Independent"
+          className={`${errors.party ? "border-red-500" : ""} w-full`}
+          style={{ width: "100%" }} // Ensure full width
         />
         {errors.party && (
-            <p className="text-red-500 text-xs mt-1">{errors.party}</p>
+          <p className="text-red-500 text-xs mt-1">{errors.party}</p>
         )}
       </div>
 
       {/* Position */}
       <div className="space-y-2">
-        <label htmlFor="position" className="block text-sm font-medium text-gray-700">
-            Candidate Position*
+        <label
+          htmlFor="position"
+          className="block text-sm font-medium text-gray-700"
+        >
+          Candidate Position*
         </label>
         <Input
-            id="position"
-            name="position"
-            value={formData.position}
-            onChange={handleInputChange}
-            placeholder="e.g., Incumbent Mayor, City Council Candidate"
-            className={`${errors.position ? "border-red-500" : ""} w-full`}
-            style={{ width: "100%" }}  // Ensure full width
+          id="position"
+          name="position"
+          value={formData.position}
+          onChange={handleInputChange}
+          placeholder="e.g., Incumbent Mayor, City Council Candidate"
+          className={`${errors.position ? "border-red-500" : ""} w-full`}
+          style={{ width: "100%" }} // Ensure full width
         />
         {errors.position && (
-            <p className="text-red-500 text-xs mt-1">{errors.position}</p>
+          <p className="text-red-500 text-xs mt-1">{errors.position}</p>
         )}
       </div>
 
       {/* Election */}
       <div className="space-y-2">
-        <label htmlFor="electionId" className="block text-sm font-medium text-gray-700">
+        <label
+          htmlFor="electionId"
+          className="block text-sm font-medium text-gray-700"
+        >
           Select Election*
         </label>
-        
+
         {/* Display the selected election */}
-        {formData.electionId && formData.electionId !== "new" && selectedElection && (
-          <div className="flex items-center justify-between bg-white border border-gray-300 px-4 py-2 rounded-xl shadow-sm">
-            <div>
-              <div className="font-medium">{selectedElection.position}</div>
-              <div className="text-gray-600 text-sm">
-                {selectedElection.city}, {selectedElection.state} • 
-                {new Date(selectedElection.date).toLocaleDateString()}
+        {formData.electionId &&
+          formData.electionId !== "new" &&
+          selectedElection && (
+            <div className="flex items-center justify-between bg-white border border-gray-300 px-4 py-2 rounded-xl shadow-sm">
+              <div>
+                <div className="font-medium">{selectedElection.position}</div>
+                <div className="text-gray-600 text-sm">
+                  {selectedElection.city}, {selectedElection.state} •
+                  {selectedElection.date.toLocaleDateString()}
+                </div>
               </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() =>
+                  setFormData((prev) => ({ ...prev, electionId: "" }))
+                }
+                className="text-gray-400 hover:text-gray-600"
+              >
+                Clear
+              </Button>
             </div>
-            <Button 
-              variant="ghost"
-              size="sm"
-              onClick={() => setFormData(prev => ({ ...prev, electionId: "" }))}
-              className="text-gray-400 hover:text-gray-600"
-            >
-              Clear
-            </Button>
-          </div>
-        )}
-        
+          )}
+
         {/* Show search or "Create New Election" option if no election is selected */}
         {(!formData.electionId || formData.electionId === "new") && (
           <div className="space-y-2">
             {formData.electionId !== "new" && (
-              <SearchBar 
-                placeholder="Search for an election..." 
+              <SearchBar
+                placeholder="Search for an election..."
                 apiEndpoint="/api/elections/search"
                 shadow={false}
                 onResultSelect={(election) => {
-                  setFormData(prev => ({ ...prev, electionId: election.id.toString() }));
+                  setFormData((prev) => ({
+                    ...prev,
+                    electionId: election.id.toString(),
+                  }));
                   if (errors.electionId) {
-                    setErrors(prev => ({ ...prev, electionId: undefined }));
+                    setErrors((prev) => ({ ...prev, electionId: undefined }));
                   }
-                  
-                }} 
+                }}
               />
             )}
-            
+
             <div className="flex items-center mt-2 text-purple-600 text-sm">
               <input
                 type="checkbox"
@@ -402,20 +440,22 @@ export default function CandidateSubmissionForm({ userId }: CandidateSubmissionF
                 className="mr-2"
                 checked={formData.electionId === "new"}
                 onChange={(e) => {
-                  setFormData(prev => ({ 
-                    ...prev, 
-                    electionId: e.target.checked ? "new" : "" 
+                  setFormData((prev) => ({
+                    ...prev,
+                    electionId: e.target.checked ? "new" : "",
                   }));
                   if (errors.electionId) {
-                    setErrors(prev => ({ ...prev, electionId: undefined }));
+                    setErrors((prev) => ({ ...prev, electionId: undefined }));
                   }
                 }}
               />
-              <label htmlFor="create-new-election">I need to create a new election</label>
+              <label htmlFor="create-new-election">
+                I need to create a new election
+              </label>
             </div>
           </div>
         )}
-        
+
         {errors.electionId && (
           <p className="text-red-500 text-xs mt-1">{errors.electionId}</p>
         )}
@@ -424,7 +464,10 @@ export default function CandidateSubmissionForm({ userId }: CandidateSubmissionF
       {/* City and State */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="space-y-2">
-          <label htmlFor="city" className="block text-sm font-medium text-gray-700 flex items-center gap-2">
+          <label
+            htmlFor="city"
+            className="block text-sm font-medium text-gray-700 flex items-center gap-2"
+          >
             <FaCity className="text-purple-600" /> City*
           </label>
           <Input
@@ -440,7 +483,10 @@ export default function CandidateSubmissionForm({ userId }: CandidateSubmissionF
           )}
         </div>
         <div className="space-y-2">
-          <label htmlFor="state" className="block text-sm font-medium text-gray-700 flex items-center gap-2">
+          <label
+            htmlFor="state"
+            className="block text-sm font-medium text-gray-700 flex items-center gap-2"
+          >
             <FaFlag className="text-purple-600" /> State*
           </label>
           <Input
@@ -459,7 +505,10 @@ export default function CandidateSubmissionForm({ userId }: CandidateSubmissionF
 
       {/* Bio */}
       <div className="space-y-2">
-        <label htmlFor="bio" className="block text-sm font-medium text-gray-700">
+        <label
+          htmlFor="bio"
+          className="block text-sm font-medium text-gray-700"
+        >
           Candidate Biography*
         </label>
         <Textarea
@@ -484,12 +533,14 @@ export default function CandidateSubmissionForm({ userId }: CandidateSubmissionF
         <label className="block text-sm font-medium text-gray-700">
           Policies* ({formData.policies.length}/5)
         </label>
-        
+
         <div className="flex gap-2">
           <Input
             id="newPolicy"
             value={newPolicy}
-            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewPolicy(e.target.value)}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+              setNewPolicy(e.target.value)
+            }
             placeholder="Add a policy"
             className="flex-grow"
           />
@@ -504,14 +555,17 @@ export default function CandidateSubmissionForm({ userId }: CandidateSubmissionF
             <span>Add</span>
           </Button>
         </div>
-        
+
         {errors.policies && (
           <p className="text-red-500 text-xs mt-1">{errors.policies}</p>
         )}
-        
+
         <ul className="mt-3 space-y-2">
           {formData.policies.map((policy, index) => (
-            <li key={index} className="flex items-center bg-gray-50 p-2 rounded-md">
+            <li
+              key={index}
+              className="flex items-center bg-gray-50 p-2 rounded-md"
+            >
               <span className="flex-grow">{policy}</span>
               <Button
                 type="button"
@@ -529,8 +583,10 @@ export default function CandidateSubmissionForm({ userId }: CandidateSubmissionF
 
       {/* Website, LinkedIn */}
       <div className="space-y-4">
-        <h3 className="text-sm font-medium text-gray-700">Optional Contact Information</h3>
-        
+        <h3 className="text-sm font-medium text-gray-700">
+          Optional Contact Information
+        </h3>
+
         <div className="flex items-center gap-3">
           <FaGlobe className="text-purple-600 text-lg" />
           <div className="flex-grow space-y-1">
@@ -548,29 +604,32 @@ export default function CandidateSubmissionForm({ userId }: CandidateSubmissionF
             )}
           </div>
         </div>
-        
-          <div className="flex items-center gap-3">
-            <FaLinkedin className="text-purple-600 text-lg" />
-            <div className="flex-grow space-y-1 w-full">
-                <Input
-                    id="linkedin"
-                    name="linkedin"
-                    value={formData.linkedin}
-                    onChange={handleInputChange}
-                    placeholder="https://linkedin.com/in/username"
-                    className={`${errors.linkedin ? "border-red-500" : ""} w-full`}
-                    style={{ width: "100%" }}  // Ensure full width
-                />
-                    {errors.linkedin && (
-                    <p className="text-red-500 text-xs">{errors.linkedin}</p>
-                )}
-            </div>
+
+        <div className="flex items-center gap-3">
+          <FaLinkedin className="text-purple-600 text-lg" />
+          <div className="flex-grow space-y-1 w-full">
+            <Input
+              id="linkedin"
+              name="linkedin"
+              value={formData.linkedin}
+              onChange={handleInputChange}
+              placeholder="https://linkedin.com/in/username"
+              className={`${errors.linkedin ? "border-red-500" : ""} w-full`}
+              style={{ width: "100%" }} // Ensure full width
+            />
+            {errors.linkedin && (
+              <p className="text-red-500 text-xs">{errors.linkedin}</p>
+            )}
           </div>
         </div>
+      </div>
 
       {/* Additional Notes */}
       <div className="space-y-2">
-        <label htmlFor="additionalNotes" className="block text-sm font-medium text-gray-700">
+        <label
+          htmlFor="additionalNotes"
+          className="block text-sm font-medium text-gray-700"
+        >
           Additional Notes (Optional)
         </label>
         <Textarea
@@ -592,7 +651,10 @@ export default function CandidateSubmissionForm({ userId }: CandidateSubmissionF
           className="p-3 bg-green-100 text-green-700 rounded-lg flex items-center gap-2"
         >
           <FaCheckCircle />
-          <span>Candidate information submitted successfully! Thank you for your contribution.</span>
+          <span>
+            Candidate information submitted successfully! Thank you for your
+            contribution.
+          </span>
         </motion.div>
       )}
 
@@ -639,9 +701,25 @@ export default function CandidateSubmissionForm({ userId }: CandidateSubmissionF
         >
           {isSubmitting ? (
             <span className="flex items-center gap-2">
-              <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              <svg
+                className="animate-spin h-5 w-5 text-white"
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+              >
+                <circle
+                  className="opacity-25"
+                  cx="12"
+                  cy="12"
+                  r="10"
+                  stroke="currentColor"
+                  strokeWidth="4"
+                ></circle>
+                <path
+                  className="opacity-75"
+                  fill="currentColor"
+                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                ></path>
               </svg>
               Submitting...
             </span>
