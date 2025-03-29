@@ -71,7 +71,7 @@ export function normalizeState(state: string | null): string | null {
   
   // If it's already a full state name, return it properly capitalized
   const lowerState = state.toLowerCase();
-  for (const [fullStateLower, abbr] of Object.entries(STATE_ABBREVIATIONS)) {
+  for (const [fullStateLower, _] of Object.entries(STATE_ABBREVIATIONS)) {
       if (lowerState === fullStateLower) {
           // Convert to proper case (first letter of each word capitalized)
           return fullStateLower

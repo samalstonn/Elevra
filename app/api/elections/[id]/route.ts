@@ -1,14 +1,13 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/prisma/prisma"; 
 
-export async function GET(
-  request: Request,
-  { params }: { params: { id: string } }
-) {
+export async function GET(request: NextRequest) {
   try {
-    // Await the params object before accessing its properties
-    const resolvedParams = await params;
-    const electionId = parseInt(resolvedParams.id);
+    const { searchParams, pathname } = new URL(request.url);
+    const _ = searchParams.get("search");
+    const parts = pathname.split('/');
+    const idStr = parts[parts.length - 1];
+    const electionId = parseInt(idStr);
     
     // Get the election by ID
     const election = await prisma.election.findUnique({

@@ -7,15 +7,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { motion } from "framer-motion";
 import { FaSave, FaCheckCircle, FaPlus, FaTimes, FaGlobe, FaLinkedin, FaCity, FaFlag } from "react-icons/fa";
 import SearchBar from "@/components/ResultsSearchBar";
+import {Election} from "@prisma/client"
 
-// Type definition for Election data
-type Election = {
-  id: number;
-  position: string;
-  date: string;
-  city: string;
-  state: string;
-};
 
 interface CandidateSubmissionFormProps {
   userId?: string | null;
@@ -251,6 +244,7 @@ export default function CandidateSubmissionForm({ userId }: CandidateSubmissionF
       new URL(url);
       return true;
     } catch (e) {
+      console.log(e)
       return false;
     }
   };
@@ -495,7 +489,7 @@ export default function CandidateSubmissionForm({ userId }: CandidateSubmissionF
           <Input
             id="newPolicy"
             value={newPolicy}
-            onChange={(e:any) => setNewPolicy(e.target.value)}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewPolicy(e.target.value)}
             placeholder="Add a policy"
             className="flex-grow"
           />

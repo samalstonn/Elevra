@@ -4,24 +4,34 @@ import React, { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
 import { Search } from "lucide-react";
 import Link from "next/link";
-import { Candidate } from "@prisma/client";
 import { normalizeSlug } from "@/lib/functions";
+
+type SearchResult = {
+  id: string;
+  name?: string;
+  electionId?: string;
+  position?: string;
+  city?: string;
+  state?: string;
+  date?: string;
+  party?: string;
+};
 
 interface SearchBarProps {
   placeholder?: string;
   apiEndpoint?: string; // Added to make the endpoint configurable
-  onResultSelect?: (result: any) => void; // Added callback for selection
-  shadow: boolean
+  onResultSelect?: (result: SearchResult) => void; // Added callback for selection
+  shadow: boolean;
 }
 
-export default function SearchBar({ 
+export default function SearchBar({
   placeholder = "Search...",
   apiEndpoint = "/api/candidates", // Default to original endpoint
   onResultSelect,
-  shadow
+  shadow,
 }: SearchBarProps) {
   const [searchTerm, setSearchTerm] = useState("");
-  const [results, setResults] = useState<any[]>([]);
+  const [results, setResults] = useState<SearchResult[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   // Create a ref for the container to detect clicks outside
   const containerRef = useRef<HTMLDivElement>(null);
@@ -29,7 +39,10 @@ export default function SearchBar({
   // Hide results when clicking outside the search container
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
+      if (
+        containerRef.current &&
+        !containerRef.current.contains(event.target as Node)
+      ) {
         setResults([]);
       }
     };
@@ -53,16 +66,21 @@ export default function SearchBar({
         .then((data) => {
           if (Array.isArray(data)) {
             const term = searchTerm.toLowerCase();
-            
+
             // Filter results based on the search term
             // Check for name property (candidates) or position property (elections)
-            const filteredData = data.filter((item) =>
-              (item.name?.toLowerCase().includes(term) || false) ||
-              (item.position?.toLowerCase().includes(term) || false) ||
-              (item.city?.toLowerCase().includes(term) || false) ||
-              (item.state?.toLowerCase().includes(term) || false)
+            const filteredData = data.filter(
+              (item: SearchResult) =>
+                item.name?.toLowerCase().includes(term) ||
+                false ||
+                item.position?.toLowerCase().includes(term) ||
+                false ||
+                item.city?.toLowerCase().includes(term) ||
+                false ||
+                item.state?.toLowerCase().includes(term) ||
+                false
             );
-            
+
             // Sort filtered results by relevance
             const sortedData = filteredData.sort((a, b) => {
               // For candidates
@@ -79,7 +97,7 @@ export default function SearchBar({
               }
               return 0;
             });
-            
+
             // Show up to 5 results
             setResults(sortedData.slice(0, 5));
           } else {
@@ -97,7 +115,7 @@ export default function SearchBar({
   }, [searchTerm, apiEndpoint]);
 
   // Handle rendering results based on data type
-  const renderResult = (item: any) => {
+  const renderResult = (item: SearchResult) => {
     // For candidates
     if (item.name && item.electionId) {
       return (
@@ -111,7 +129,7 @@ export default function SearchBar({
           )}
         </>
       );
-    } 
+    }
     // For elections
     else if (item.position) {
       return (
@@ -130,9 +148,13 @@ export default function SearchBar({
         </>
       );
     }
-    
+
     // Generic fallback
-    return <div className="font-semibold">{item.name || item.position || "Item"}</div>;
+    return (
+      <div className="font-semibold">
+        {item.name || item.position || "Item"}
+      </div>
+    );
   };
 
   return (
@@ -155,12 +177,12 @@ export default function SearchBar({
       </motion.div>
       {results.length > 0 && (
         <ul className="absolute left-0 right-0 bg-white border border-gray-300 mt-1 rounded-md shadow-lg max-h-60 overflow-y-auto z-10">
-          {results.map((item: any, index) => (
+          {results.map((item, index) => (
             <li key={item.id || index} className="px-4 py-2 hover:bg-gray-100">
               {/* Render differently based on if we use onResultSelect prop */}
               {onResultSelect ? (
-                <div 
-                  className="cursor-pointer" 
+                <div
+                  className="cursor-pointer"
                   onClick={() => {
                     onResultSelect(item);
                     setSearchTerm("");
@@ -172,7 +194,9 @@ export default function SearchBar({
               ) : (
                 // Default behavior for candidates
                 <Link
-                  href={`/candidate/${normalizeSlug(item.name)}?candidateID=${item.id}&electionID=${item.electionId}`}
+                  href={`/candidate/${normalizeSlug(
+                    item.name || ""
+                  )}?candidateID=${item.id}&electionID=${item.electionId}`}
                 >
                   {renderResult(item)}
                 </Link>
@@ -182,7 +206,9 @@ export default function SearchBar({
         </ul>
       )}
       {isLoading && (
-        <div className="absolute right-2 top-2 text-gray-500 text-xs">Loading...</div>
+        <div className="absolute right-2 top-2 text-gray-500 text-xs">
+          Loading...
+        </div>
       )}
     </div>
   );

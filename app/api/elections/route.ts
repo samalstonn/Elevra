@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import prisma from "@/prisma/prisma"; // Adjust the import path to match your project structure
 import { normalizeState } from "@/lib/stateMapping"
+import { Election } from "@prisma/client";
 
 export async function GET(request: Request) {
     try {
@@ -36,7 +37,7 @@ export async function GET(request: Request) {
             return NextResponse.json(allElections);
         }
 
-        let elections: string | any[] = []
+        let elections: string | Election[] = []
         
         if (normalizedState) {
             elections = await prisma.election.findMany({

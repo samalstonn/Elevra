@@ -12,13 +12,12 @@ import "./globals.css";
 import { Button } from "../components/ui/button";
 import { Inter } from "next/font/google";
 import Link from "next/link";
-import './globals.css';
-import { Analytics } from "@vercel/analytics/react"
-import { SpeedInsights } from "@vercel/speed-insights/next"
+import "./globals.css";
+import { Analytics } from "@vercel/analytics/react";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 import { usePathname } from "next/navigation";
 import SearchBar from "../components/ResultsSearchBar";
 import AddressButton from "../components/AddressButton";
-import { FaPlus } from "react-icons/fa"
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -33,7 +32,6 @@ const clerkKey = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
 export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
-
   const pathname = usePathname();
 
   return (
@@ -43,19 +41,26 @@ export default function RootLayout({
           <div className="flex flex-col min-h-screen">
             {/* Header Section */}
             <header className="w-full flex items-center justify-between gap-4 px-6 py-6">
-              <Link href="/" className="text-3xl font-bold text-purple-900 shrink-0">
+              <Link
+                href="/"
+                className="text-3xl font-bold text-purple-900 shrink-0"
+              >
                 Elevra
               </Link>
-                {(pathname.startsWith("/results") || pathname.startsWith("/candidate/")) && (
+              {(pathname.startsWith("/results") ||
+                pathname.startsWith("/candidate/")) && (
                 <div className="flex-grow flex items-center justify-center gap-4 mx-auto">
                   {/* Address button (both mobile and desktop) */}
                   <AddressButton />
                   {/* Desktop search bar only */}
                   <div className="max-w-4xl w-full hidden md:block">
-                    <SearchBar placeholder="Search candidates..." />
+                    <SearchBar
+                      shadow={true}
+                      placeholder="Search candidates..."
+                    />
                   </div>
                 </div>
-                )}
+              )}
 
               <div className="flex items-center gap-4 shrink-0">
                 <SignedIn>
@@ -83,7 +88,9 @@ export default function RootLayout({
 
             {/* Footer Section */}
             <footer className="w-full py-6 text-center text-sm text-gray-500 border-t border-gray-200">
-              <div>&copy; {new Date().getFullYear()} Elevra. All rights reserved.</div>
+              <div>
+                &copy; {new Date().getFullYear()} Elevra. All rights reserved.
+              </div>
             </footer>
           </div>
         </body>

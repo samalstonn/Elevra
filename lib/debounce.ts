@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 export function debounce<T extends (...args: any[]) => any>(
   func: T,
   wait: number = 500
@@ -12,5 +14,6 @@ export function debounce<T extends (...args: any[]) => any>(
     timeout = setTimeout(() => {
       func(...args);
     }, wait);
+ 
   };
-} 
+}

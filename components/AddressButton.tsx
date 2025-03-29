@@ -1,11 +1,11 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { getLocationSuggestions, normalizeLocation } from '@/lib/geocoding';
 import { debounce } from '@/lib/debounce';
 import ErrorPopup from './ui/ErrorPopup';
-import { AutocompleteSuggestion, NormalizedLocation } from '@/types/geocoding';
+import { AutocompleteSuggestion } from '@/types/geocoding';
 import { MapPinned, Loader2, X } from 'lucide-react';
 
 export default function AddressButton() {
@@ -95,9 +95,8 @@ export default function AddressButton() {
     }
   }, [isSearchMode]);
 
-  // Fetch location suggestions with debounce
-  const fetchSuggestions = useCallback(
-    debounce(async (input: string) => {
+  const debouncedFetchSuggestions = debounce<(input: string) => Promise<void>>(
+    async (input: string) => {
       if (input.trim().length < 2) {
         setSuggestions([]);
         setIsLoading(false);
@@ -112,8 +111,8 @@ export default function AddressButton() {
       } finally {
         setIsLoading(false);
       }
-    }, 500),
-    []
+    },
+    500
   );
 
   // Handle input changes for location search
@@ -123,7 +122,7 @@ export default function AddressButton() {
     
     if (value.trim().length >= 2) {
       setIsLoading(true);
-      fetchSuggestions(value);
+      debouncedFetchSuggestions(value);
     } else {
       setSuggestions([]);
     }
@@ -165,6 +164,7 @@ export default function AddressButton() {
         setIsDropdownOpen(false);
       }
     } catch (error) {
+      console.log(error)
       setErrorMessage('Error processing location. Please try again.');
       setShowError(true);
     } finally {
@@ -204,9 +204,6 @@ export default function AddressButton() {
 
   // Navigate to new location - always redirect to results page
   const navigateToLocation = (city: string, state: string) => {
-    // Get current URL and params to preserve any other relevant params
-    const url = new URL(window.location.href);
-    const params = new URLSearchParams(url.search);
     
     // Create a new params object with only the parameters we want to keep
     const newParams = new URLSearchParams();
@@ -221,12 +218,6 @@ export default function AddressButton() {
     // Update selected location state and navigate
     setSelectedLocation({ city, state });
     router.push(newUrl);
-  };
-
-  // Handle preset location selection
-  const handleSelectPresetLocation = (city: string, state: string) => {
-    navigateToLocation(city, state);
-    setIsDropdownOpen(false);
   };
 
   // Handle search mode toggle
@@ -314,7 +305,6 @@ export default function AddressButton() {
                       }`}
                       onClick={() => handleSelectSuggestion(suggestion)}
                       id={`suggestion-${index}`}
-                      aria-selected={index === highlightedIndex}
                     >
                       {suggestion.placeName}
                     </button>

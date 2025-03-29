@@ -1,10 +1,10 @@
-import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { Input } from './ui/input';
 import { getLocationSuggestions, normalizeLocation } from '@/lib/geocoding';
 import { debounce } from '@/lib/debounce';
 import Autocomplete from './ui/Autocomplete';
 import ErrorPopup from './ui/ErrorPopup';
-import { AutocompleteSuggestion, NormalizedLocation, GeocodingError } from '@/types/geocoding';
+import { AutocompleteSuggestion, NormalizedLocation } from '@/types/geocoding';
 import { ChevronRight, Loader2, MapPinned } from 'lucide-react';
 import '@/components/ui/input.css';
 
@@ -14,7 +14,7 @@ interface SearchBarProps {
 
 export default function SearchBar({ onSearch }: SearchBarProps) {
   const [searchTerm, setSearchTerm] = useState('');
-  const [placeholderBase, setPlaceholderBase] = useState('Enter your ');
+  const [placeholderBase, _] = useState('Enter your ');
   const [placeholderPhrase, setPlaceholderPhrase] = useState('');
   
   const [suggestions, setSuggestions] = useState<AutocompleteSuggestion[]>([]);
@@ -87,26 +87,22 @@ export default function SearchBar({ onSearch }: SearchBarProps) {
     };
   }, []);
 
-  // Fetch location suggestions with debounce
-  const fetchSuggestions = useCallback(
-    debounce(async (input: string) => {
-      if (input.trim().length < 2) {
-        setSuggestions([]);
-        setIsLoading(false);
-        return;
-      }
+  const debouncedFetchSuggestions = debounce(async (input: string) => {
+    if (input.trim().length < 2) {
+      setSuggestions([]);
+      setIsLoading(false);
+      return;
+    }
 
-      try {
-        const results = await getLocationSuggestions(input);
-        setSuggestions(results);
-      } catch (error) {
-        console.error('Error fetching suggestions:', error);
-      } finally {
-        setIsLoading(false);
-      }
-    }, 500),
-    []
-  );
+    try {
+      const results = await getLocationSuggestions(input);
+      setSuggestions(results);
+    } catch (error) {
+      console.error('Error fetching suggestions:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  }, 500);
 
   // Handle input changes
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -116,7 +112,7 @@ export default function SearchBar({ onSearch }: SearchBarProps) {
     if (value.trim().length >= 2) {
       setIsLoading(true);
       setShowSuggestions(true);
-      fetchSuggestions(value);
+      debouncedFetchSuggestions(value);
     } else {
       setShowSuggestions(false);
       setSuggestions([]);
@@ -162,6 +158,7 @@ export default function SearchBar({ onSearch }: SearchBarProps) {
         onSearch(result);
       }
     } catch (error) {
+      console.log(error)
       setErrorMessage('Error processing location. Please try again.');
       setShowError(true);
     } finally {

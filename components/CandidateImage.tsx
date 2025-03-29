@@ -12,11 +12,16 @@ interface CandidateImageProps {
 const getInitialSrc = (photo?: string | null): string => {
   if (photo && !photo.startsWith("/")) {
     return "/default-profile.png";
-    }
+  }
   return photo || "/default-profile.png";
 };
 
-export function CandidateImage({ photo, name, width = 64, height = 64 }: CandidateImageProps) {
+export function CandidateImage({
+  photo,
+  name,
+  width = 64,
+  height = 64,
+}: CandidateImageProps) {
   const [imgSrc, setImgSrc] = useState<string>(getInitialSrc(photo));
 
   return (

@@ -175,10 +175,10 @@ function extractCityState(feature: MapboxFeature): { city?: string; state?: stri
   
   // For regions (states)
   else if (feature.place_type.includes('region')) {
-    const stateCode = feature.properties.short_code?.toUpperCase().replace('US-', '') || feature.text;
+    const stateCode = (feature.properties as { short_code?: string }).short_code?.toUpperCase().replace('US-', '') || feature.text;
     result.state = stateCode;
     result.stateName = STATE_ABBREVIATIONS[stateCode] || stateCode;
   }
   
   return result;
-} 
+}
