@@ -48,14 +48,15 @@ export default function SubmitPage() {
         </Button>
       </div>
 
-      <div className="bg-white p-6 rounded-xl shadow-md">
+      <div className="bg-white p-6">
         <h1 className="text-2xl sm:text-3xl font-bold text-center text-gray-900 mb-8">
           Submit Information
         </h1>
 
         <p className="text-gray-600 mb-6 text-center">
-          Help your community by submitting information about elections and candidates.
-          The Elevra team will review all submissions before being published.
+          Help your community by submitting information about elections and
+          candidates. The Elevra team will review all submissions before being
+          published.
         </p>
 
         {/* Replace the Tabs/TabsList/TabsTrigger with your custom TabButton */}
