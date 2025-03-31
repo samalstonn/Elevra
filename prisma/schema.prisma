@@ -129,7 +129,7 @@ enum SubmissionStatus {
 }
 
 model Vendor {
-  id           Int        @id @default(autoincrement())
+  id           Int              @id @default(autoincrement())
   name         String
   bio          String
   website      String?
@@ -137,11 +137,11 @@ model Vendor {
   phone        String?
   city         String
   state        String
-  verified     Boolean    @default(false)
-  subscription VendorTier @default(FREE)
-  clerkUserId  String     @unique
-  createdAt    DateTime   @default(now())
-  updatedAt    DateTime   @updatedAt
+  status       SubmissionStatus @default(PENDING)
+  subscription VendorTier       @default(FREE)
+  clerkUserId  String           @unique
+  createdAt    DateTime         @default(now())
+  updatedAt    DateTime         @updatedAt
 
   // Relations
   portfolio       PortfolioItem[] // optional media
@@ -150,9 +150,20 @@ model Vendor {
   ServiceCategory ServiceCategory[] @relation("VendorServices")
 }
 
+enum ServiceCategoryType {
+  CREATIVE_BRANDING
+  DIGITAL_TECH
+  PHYSICAL_MEDIA
+  CONSULTING_PR
+  OTHER
+}
+
 model ServiceCategory {
-  id      Int      @id @default(autoincrement())
-  name    String   @unique
+  id          Int                 @id @default(autoincrement())
+  name        String              @unique
+  type        ServiceCategoryType @unique
+  description String? // Optional short description of the category
+
   vendors Vendor[] @relation("VendorServices")
 }
 
