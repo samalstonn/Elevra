@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { Vendor } from "@prisma/client";
 import {
   LayoutDashboard,
   User,
@@ -20,10 +21,7 @@ import { Badge } from "@/components/ui/badge";
 
 interface VendorDashboardLayoutProps {
   children: React.ReactNode;
-  vendor: {
-    name: string;
-    status: string;
-  };
+  vendor: Vendor;
 }
 
 const navigation = [
@@ -145,20 +143,10 @@ export default function VendorDashboardLayout({
               <p className="text-sm font-medium">{vendor.name}</p>
               <div className="flex mt-1">
                 <Badge
-                  variant={
-                    vendor.status === "APPROVED"
-                      ? "success"
-                      : vendor.status === "PENDING"
-                      ? "warning"
-                      : "destructive"
-                  }
+                  variant={vendor.verified ? "success" : "warning"}
                   className="text-xs"
                 >
-                  {vendor.status === "APPROVED"
-                    ? "Verified"
-                    : vendor.status === "PENDING"
-                    ? "Pending"
-                    : "Rejected"}
+                  {vendor.verified ? "Verified" : "Unverified"}
                 </Badge>
               </div>
             </div>

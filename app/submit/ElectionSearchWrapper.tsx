@@ -17,7 +17,6 @@ type Election = {
 interface ElectionSearchWrapperProps {
   value: string;
   onChange: (electionId: string) => void;
-  onError?: (error: string | null) => void;
 }
 
 export default function ElectionSearchWrapper({

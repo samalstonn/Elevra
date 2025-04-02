@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import {
   AreaChart,
   Area,
@@ -11,7 +12,7 @@ import {
 } from "recharts";
 
 // Sample data - this would be replaced with real analytics data
-const generateData = () => {
+const generateDummyData = () => {
   const data = [];
   const now = new Date();
 
@@ -28,9 +29,23 @@ const generateData = () => {
   return data;
 };
 
-const data = generateData();
+const sampleData = generateDummyData();
+
+interface TrafficDataPoint {
+  date: string;
+  views: number;
+}
 
 export default function VendorTrafficChart() {
+  const [data, setData] = useState<TrafficDataPoint[] | []>([]);
+
+  useEffect(() => {
+    // Option 1: Fetch from real API
+    // fetchVendorTrafficData().then(setData);
+
+    // Option 2: Generate fresh random data for demo purposes
+    setData(sampleData);
+  }, []);
   return (
     <ResponsiveContainer width="100%" height="100%">
       <AreaChart

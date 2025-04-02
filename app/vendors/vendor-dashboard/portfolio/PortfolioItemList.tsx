@@ -123,6 +123,8 @@ export default function PortfolioItemList({
             {item.imageUrl ? (
               <div className="relative h-full w-full">
                 <Image
+                  width={50}
+                  height={50}
                   src={item.imageUrl}
                   alt={item.title}
                   className="object-cover h-full w-full"

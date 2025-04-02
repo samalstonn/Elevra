@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import {
   LineChart,
   Line,
@@ -31,9 +32,40 @@ const generateData = () => {
   return data;
 };
 
-const data = generateData();
+const sampleData = generateData();
+
+interface AnalyticsDataPoint {
+  date: string;
+  views: number;
+  visitors: number;
+  engagement: number;
+}
 
 export default function VendorAnalyticsOverview() {
+  const [data, setData] = useState<AnalyticsDataPoint[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchAnalyticsData = async () => {
+      try {
+        // const response = await fetch("/api/vendor/analytics/overview");
+        // if (!response.ok) {
+        //   throw new Error("Failed to fetch analytics data");
+        // }
+        // const analyticsData = await response.json();
+        const analyticsData = sampleData;
+        setData(analyticsData);
+      } catch (err) {
+        setError("Error loading analytics data");
+        console.error(err);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchAnalyticsData();
+  }, []);
   return (
     <ResponsiveContainer width="100%" height="100%">
       <LineChart

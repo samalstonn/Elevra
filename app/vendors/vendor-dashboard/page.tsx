@@ -33,31 +33,51 @@ export default async function VendorDashboard() {
   }
 
   // Check if user exists in our database as a vendor
-  const vendor = await prisma.vendor.findUnique({
-    where: { clerkUserId: user.id },
-    include: {
-      portfolio: true,
-      testimonials: {
-        include: {
-          candidate: true,
+  let vendor;
+  try {
+    vendor = await prisma.vendor.findUnique({
+      where: { clerkUserId: user.id },
+      include: {
+        portfolio: true,
+        testimonials: {
+          include: {
+            candidate: true,
+          },
+          orderBy: {
+            createdAt: "desc",
+          },
+          take: 3,
         },
-        orderBy: {
-          createdAt: "desc",
-        },
-        take: 3,
+        serviceCategories: true,
       },
-      ServiceCategory: true,
-    },
-  });
-
+    });
+  } catch (error) {
+    console.error("Error fetching vendor data:", error);
+    return (
+      <div className="p-8 text-center">
+        <h2 className="text-xl font-bold text-red-600">Error</h2>
+        <p className="mt-2">
+          Failed to load vendor dashboard. Please try again later.
+        </p>
+      </div>
+    );
+  }
   if (!vendor) {
     // If user is authenticated but not a vendor in our DB
     // This could happen if registration process failed midway
     redirect("/vendors?tab=signup");
   }
 
-  // Count total profile views (placeholder for now)
-  const profileViews = 120; // This would come from your analytics system
+  // Fetch profile views from analytics system
+  const analytics =
+    // await prisma.vendorAnalytics.findUnique({
+    //   where: { vendorId: vendor.id },
+    //   select: { profileViews: true },
+    // });
+    {
+      profileViews: 120,
+    };
+  const profileViews = analytics?.profileViews || 0;
 
   // Calculate average rating
   const averageRating =
@@ -71,7 +91,7 @@ export default async function VendorDashboard() {
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <h1 className="text-2xl font-bold tracking-tight">Dashboard</h1>
-          {vendor.status === "APPROVED" && (
+          {vendor.verified && (
             <div className="flex items-center gap-1 text-green-600">
               <BadgeCheck className="h-5 w-5" />
               <span className="text-sm font-medium">Verified Vendor</span>
@@ -249,9 +269,9 @@ export default async function VendorDashboard() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              {vendor.ServiceCategory.length > 0 ? (
+              {vendor.serviceCategories.length > 0 ? (
                 <div className="flex flex-wrap gap-2">
-                  {vendor.ServiceCategory.map((category) => (
+                  {vendor.serviceCategories.map((category) => (
                     <div
                       key={category.id}
                       className="bg-purple-50 text-purple-700 rounded-full px-3 py-1 text-sm"

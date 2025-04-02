@@ -134,7 +134,7 @@ export async function POST(request: Request) {
     await prisma.vendor.update({
       where: { id: newVendor.id },
       data: {
-        ServiceCategory: {
+        serviceCategories: {
           connect: { id: serviceCategoryRecord.id },
         },
       },

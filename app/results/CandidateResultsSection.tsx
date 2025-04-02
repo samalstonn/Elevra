@@ -29,7 +29,8 @@ export default function CandidateSection({
   election,
   fallbackElections,
 }: CandidateSectionProps) {
-  console.log("election", election);
+  const electionIsActive = new Date(election.date) >= new Date();
+
   // If no election data is available
   if (!election) {
     return (
@@ -147,10 +148,10 @@ export default function CandidateSection({
                 <strong>Status:</strong>{" "}
                 <span
                   className={
-                    election.active ? "text-green-600" : "text-red-600"
+                    electionIsActive ? "text-green-600" : "text-red-600"
                   }
                 >
-                  {election.active ? "Active" : "Inactive"}
+                  {electionIsActive ? "Active" : "Inactive"}
                 </span>
               </p>
             </CardContent>

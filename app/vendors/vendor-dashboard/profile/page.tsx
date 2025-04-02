@@ -24,7 +24,7 @@ export default async function VendorProfilePage() {
   const vendor = await prisma.vendor.findUnique({
     where: { clerkUserId: user.id },
     include: {
-      ServiceCategory: true,
+      serviceCategories: true,
     },
   });
 
@@ -36,7 +36,7 @@ export default async function VendorProfilePage() {
   const serviceCategories = await prisma.serviceCategory.findMany();
 
   // Map vendor's selected categories to their IDs for the form
-  const selectedCategoryIds = vendor.ServiceCategory.map(
+  const selectedCategoryIds = vendor.serviceCategories.map(
     (category) => category.id
   );
 

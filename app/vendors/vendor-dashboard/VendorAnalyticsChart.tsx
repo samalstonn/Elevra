@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import {
   AreaChart,
   Area,
@@ -16,20 +17,36 @@ interface DataPoint {
   interactions: number;
 }
 
-interface VendorAnalyticsChartProps {
-  data: DataPoint[];
-}
+const generateData = () => {
+  const data = [];
+  const now = new Date();
 
-export default function VendorAnalyticsChart({ data }: VendorAnalyticsChartProps) {
-  // component implementation, e.g., rendering the chart with the passed data
-  return (
-    <div>
-      {/* Your chart component implementation here using the 'data' prop */}
-    </div>
-  );
-}
+  for (let i = 30; i >= 0; i--) {
+    const date = new Date(now);
+    date.setDate(date.getDate() - i);
+
+    data.push({
+      date: date.toISOString().slice(0, 10),
+      views: Math.floor(Math.random() * 20) + 5,
+      interactions: Math.floor(Math.random() * 10) + 1,
+    });
+  }
+
+  return data;
+};
+
+const sampleData = generateData();
 
 export default function VendorAnalyticsChart() {
+  const [data, setData] = useState<DataPoint[] | []>([]);
+
+  useEffect(() => {
+    // Option 1: Fetch from real API
+    // fetchVendorTrafficData().then(setData);
+
+    // Option 2: Generate fresh random data for demo purposes
+    setData(sampleData);
+  }, []);
   return (
     <div className="h-[300px] w-full">
       <ResponsiveContainer width="100%" height="100%">

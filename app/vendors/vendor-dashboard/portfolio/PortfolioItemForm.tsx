@@ -182,7 +182,7 @@ export default function PortfolioItemForm({
           )}
         />
 
-        <FormField
+        {/* <FormField
           control={form.control}
           name="imageUrl"
           render={({ field }) => (
@@ -220,7 +220,7 @@ export default function PortfolioItemForm({
               <FormMessage />
             </FormItem>
           )}
-        />
+        /> */}
 
         <Button type="submit" disabled={isSubmitting}>
           {isSubmitting ? (

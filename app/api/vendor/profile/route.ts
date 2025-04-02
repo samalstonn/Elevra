@@ -36,7 +36,7 @@ export async function PUT(request: Request) {
     const vendor = await prisma.vendor.findUnique({
       where: { id: vendorId },
       include: {
-        ServiceCategory: true,
+        serviceCategories: true,
       },
     });
 
@@ -57,8 +57,8 @@ export async function PUT(request: Request) {
       await prisma.vendor.update({
         where: { id: vendorId },
         data: {
-          ServiceCategory: {
-            disconnect: vendor.ServiceCategory.map((category) => ({
+          serviceCategories: {
+            disconnect: vendor.serviceCategories.map((category) => ({
               id: category.id,
             })),
           },
@@ -76,12 +76,12 @@ export async function PUT(request: Request) {
           website: website || null,
           city,
           state,
-          ServiceCategory: {
+          serviceCategories: {
             connect: serviceCategories.map((id: number) => ({ id })),
           },
         },
         include: {
-          ServiceCategory: true,
+          serviceCategories: true,
         },
       });
     });

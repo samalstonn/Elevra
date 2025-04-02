@@ -10,11 +10,39 @@ import { LineChartComponent } from "@/components/ui/line-chart";
 import { PieChartComponent } from "@/components/ui/pie-chart";
 import { Candidate } from "@prisma/client";
 
+type Activity = {
+  icon: string;
+  description: string;
+};
+
+type Donation = {
+  donorName: string;
+  amount: number;
+};
+
 export default function CandidateDashboard() {
   const router = useRouter();
   const { user, isLoaded, isSignedIn } = useUser();
   const [candidate, setCandidate] = useState<Candidate | null>(null);
   const [loading, setLoading] = useState(true);
+  const [activities, setActivities] = useState<Activity[] | []>([]);
+  const [donations, setDonations] = useState<Donation[] | []>([]);
+
+  useEffect(() => {
+    if (candidate?.id) {
+      // Fetch recent activities
+      fetch(`/api/candidate/${candidate.id}/activities`)
+        .then((res) => (res.ok ? res.json() : []))
+        .then((data) => setActivities(data))
+        .catch((err) => console.error("Error fetching activities:", err));
+
+      // Fetch recent donations
+      fetch(`/api/candidate/${candidate.id}/donations`)
+        .then((res) => (res.ok ? res.json() : []))
+        .then((data) => setDonations(data))
+        .catch((err) => console.error("Error fetching donations:", err));
+    }
+  }, [candidate?.id]);
 
   useEffect(() => {
     // Redirect if not signed in
@@ -105,80 +133,44 @@ export default function CandidateDashboard() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-import { useState, useEffect } from 'react';
-// ... other imports
+            {activities.length > 0 ? (
+              <ul className="text-sm space-y-1">
+                {activities.map((activity, index) => (
+                  <li key={index} className="text-purple-700">
+                    {activity.icon} {activity.description}
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="text-gray-500 text-sm">No recent activities</p>
+            )}
+          </CardContent>
+        </Card>
 
-export default function CandidateDashboard({ candidate }) {
-  // New state for dynamic data
-  const [activities, setActivities] = useState([]);
-  const [donations, setDonations] = useState([]);
-
-  // Fetch dynamic data when the candidate ID is available
-  useEffect(() => {
-    if (candidate?.id) {
-      // Fetch recent activities
-      fetch(`/api/candidate/${candidate.id}/activities`)
-        .then(res => res.ok ? res.json() : [])
-        .then(data => setActivities(data))
-        .catch(err => console.error("Error fetching activities:", err));
-
-      // Fetch recent donations
-      fetch(`/api/candidate/${candidate.id}/donations`)
-        .then(res => res.ok ? res.json() : [])
-        .then(data => setDonations(data))
-        .catch(err => console.error("Error fetching donations:", err));
-    }
-  }, [candidate?.id]);
-
-  return (
-    <>
-      {/* Other parts of the dashboard */}
-
-      <Card>
-        <CardContent>
-          {activities.length > 0 ? (
-            <ul className="text-sm space-y-1">
-              {activities.map((activity, index) => (
-                <li key={index} className="text-purple-700">
-                  {activity.icon} {activity.description}
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <p className="text-gray-500 text-sm">No recent activities</p>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Recent Donations Card */}
-      <Card className="shadow-lg">
-        <CardHeader className="flex items-center justify-between">
-          <CardTitle className="text-lg flex items-center gap-2">
-            <DollarSign className="text-purple-500" />
-            Recent Donations
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          {donations.length > 0 ? (
-            <ul className="text-sm space-y-2">
-              {donations.map((donation, index) => (
-                <li key={index} className="flex justify-between text-purple-700">
-                  <span>{donation.donorName}</span>
-                  <span className="font-semibold">${donation.amount}</span>
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <p className="text-gray-500 text-sm">No recent donations</p>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* ... any other components */}
-    </>
-  );
-}
-            </ul>
+        {/* Recent Donations Card */}
+        <Card className="shadow-lg">
+          <CardHeader className="flex items-center justify-between">
+            <CardTitle className="text-lg flex items-center gap-2">
+              <DollarSign className="text-purple-500" />
+              Recent Donations
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {donations.length > 0 ? (
+              <ul className="text-sm space-y-2">
+                {donations.map((donation, index) => (
+                  <li
+                    key={index}
+                    className="flex justify-between text-purple-700"
+                  >
+                    <span>{donation.donorName}</span>
+                    <span className="font-semibold">${donation.amount}</span>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="text-gray-500 text-sm">No recent donations</p>
+            )}
           </CardContent>
         </Card>
       </div>
