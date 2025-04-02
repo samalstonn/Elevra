@@ -19,7 +19,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { ToastAction } from "@/components/ui/toast";
-import { ImagePlus, Loader2 } from "lucide-react";
+import { Loader2 } from "lucide-react";
 
 // Define the form schema
 const formSchema = z.object({
@@ -154,7 +154,7 @@ export default function PortfolioItemForm({
             <FormItem>
               <FormLabel>Title</FormLabel>
               <FormControl>
-                <Input placeholder="Portfolio item title" {...field} />
+                <Input placeholder="Portfolio Item Title" {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>

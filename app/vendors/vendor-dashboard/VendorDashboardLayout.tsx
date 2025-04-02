@@ -92,20 +92,10 @@ export default function VendorDashboardLayout({
                 <p className="text-sm font-medium">{vendor.name}</p>
                 <div className="flex mt-1">
                   <Badge
-                    variant={
-                      vendor.status === "APPROVED"
-                        ? "success"
-                        : vendor.status === "PENDING"
-                        ? "warning"
-                        : "destructive"
-                    }
+                    variant={vendor.verified ? "success" : "warning"}
                     className="text-xs"
                   >
-                    {vendor.status === "APPROVED"
-                      ? "Verified"
-                      : vendor.status === "PENDING"
-                      ? "Pending"
-                      : "Rejected"}
+                    {vendor.verified ? "Verified" : "Unverified"}
                   </Badge>
                 </div>
               </div>

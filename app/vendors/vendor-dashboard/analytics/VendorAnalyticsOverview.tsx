@@ -43,8 +43,8 @@ interface AnalyticsDataPoint {
 
 export default function VendorAnalyticsOverview() {
   const [data, setData] = useState<AnalyticsDataPoint[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [_isLoading, setIsLoading] = useState(true);
+  const [_error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchAnalyticsData = async () => {

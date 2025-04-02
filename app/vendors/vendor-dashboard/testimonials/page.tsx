@@ -131,7 +131,7 @@ export default async function VendorTestimonialsPage() {
               <CardHeader>
                 <CardTitle>Request a Testimonial</CardTitle>
                 <CardDescription>
-                  Send a testimonial request to a candidate you`&apos;`ve worked
+                  Send a testimonial request to a candidate you&apos;ve worked
                   with
                 </CardDescription>
               </CardHeader>

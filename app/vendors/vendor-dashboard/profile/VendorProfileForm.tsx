@@ -1,5 +1,5 @@
 "use client";
-import { Vendor } from '@prisma/client';
+import { Vendor } from "@prisma/client";
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
@@ -280,11 +280,15 @@ export default function VendorProfileForm({
                               <Checkbox
                                 checked={field.value?.includes(category.id)}
                                 onCheckedChange={(checked) => {
+                                  const isCategorySelected =
+                                    field.value?.includes(category.id);
                                   return checked
-                                    ? field.onChange([
-                                        ...field.value,
-                                        category.id,
-                                      ])
+                                    ? !isCategorySelected
+                                      ? field.onChange([
+                                          ...field.value,
+                                          category.id,
+                                        ])
+                                      : field.onChange(field.value)
                                     : field.onChange(
                                         field.value?.filter(
                                           (value) => value !== category.id

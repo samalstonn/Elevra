@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import {
   BarChart,
   Bar,
@@ -10,6 +11,12 @@ import {
   Legend,
   ResponsiveContainer,
 } from "recharts";
+
+type DataPoint = {
+  name: string;
+  count: number;
+  rate: number;
+};
 
 // Sample data - this would be replaced with real analytics data
 const generateData = () => {
@@ -34,9 +41,33 @@ const generateData = () => {
   return data;
 };
 
-const data = generateData();
+const sampleData = generateData();
 
 export default function VendorEngagementChart() {
+  const [data, setData] = useState<DataPoint[] | []>([]);
+  const [_isLoading, setIsLoading] = useState(true);
+  const [_error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchSourcesData = async () => {
+      try {
+        // const response = await fetch("/api/vendor/analytics/sources");
+        // if (!response.ok) {
+        //   throw new Error("Failed to fetch traffic sources data");
+        // }
+        // const sourcesData = await response.json();
+        const sourcesData = sampleData;
+        setData(sourcesData);
+      } catch (err) {
+        setError("Error loading traffic sources data");
+        console.error(err);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchSourcesData();
+  }, []);
   return (
     <ResponsiveContainer width="100%" height="100%">
       <BarChart

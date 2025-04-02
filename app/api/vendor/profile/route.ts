@@ -32,6 +32,29 @@ export async function PUT(request: Request) {
       );
     }
 
+    // Example validation for email
+    if (email && !email.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)) {
+      return NextResponse.json(
+        { error: "Invalid email format" },
+        { status: 400 }
+      );
+    }
+
+    // Example validation for service categories
+    if (serviceCategories && Array.isArray(serviceCategories)) {
+      // Validate that all service categories exist
+      const categoryCount = await prisma.serviceCategory.count({
+        where: { id: { in: serviceCategories } },
+      });
+
+      if (categoryCount !== serviceCategories.length) {
+        return NextResponse.json(
+          { error: "One or more service categories are invalid" },
+          { status: 400 }
+        );
+      }
+    }
+
     // Check if the vendor exists and belongs to the authenticated user
     const vendor = await prisma.vendor.findUnique({
       where: { id: vendorId },
@@ -89,7 +112,7 @@ export async function PUT(request: Request) {
     return NextResponse.json(updatedVendor);
   } catch (error: unknown) {
     if (error instanceof Error) {
-      console.error("Error updating candidate:", error);
+      console.error("Error updating vendor:", error);
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
   }

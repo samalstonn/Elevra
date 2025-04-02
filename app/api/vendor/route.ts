@@ -93,8 +93,15 @@ export async function POST(request: Request) {
     }
 
     // Extract service category data
+    // Check if the provided service category is valid
+    const validServiceCategories = Object.values(ServiceCategoryType);
+    if (!validServiceCategories.includes(requestData.serviceCategory)) {
+      return NextResponse.json(
+        { error: "Invalid service category provided" },
+        { status: 400 }
+      );
+    }
     const serviceCategory = requestData.serviceCategory as ServiceCategoryType;
-    console.info("Normalized service category:", serviceCategory);
 
     // Create vendor record
     const newVendor = await prisma.vendor.create({

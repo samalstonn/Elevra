@@ -26,8 +26,8 @@ interface TrafficSource {
 
 export default function VendorSourcesChart() {
   const [data, setData] = useState<TrafficSource[] | []>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [_isLoading, setIsLoading] = useState(true);
+  const [_error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchSourcesData = async () => {

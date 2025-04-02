@@ -20,13 +20,28 @@ export default async function VendorProfilePage() {
     redirect("/sign-in");
   }
 
-  // Check if user exists in our database as a vendor
-  const vendor = await prisma.vendor.findUnique({
-    where: { clerkUserId: user.id },
-    include: {
-      serviceCategories: true,
-    },
-  });
+  let vendor = null;
+  try {
+    // Check if user exists in our database as a vendor
+    vendor = await prisma.vendor.findUnique({
+      where: { clerkUserId: user.id },
+      include: {
+        serviceCategories: true,
+      },
+    });
+  } catch (error) {
+    console.error("Error fetching data:", error);
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <div className="text-center">
+          <h2 className="text-xl font-bold mb-2">Database error</h2>
+          <p className="text-gray-600">
+            Unable to fetch profile data. Please try again later.
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   if (!vendor) {
     redirect("/vendors?tab=signup");

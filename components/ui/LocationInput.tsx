@@ -33,6 +33,38 @@ export default function LocationInput({
   const inputRef = useRef<HTMLInputElement>(null);
   const suggestionsRef = useRef<HTMLDivElement>(null);
 
+  const normalizeAndSelectLocation = async (
+    input: string,
+    fallback: string,
+    updateInput: boolean = false
+  ) => {
+    try {
+      const normalizedLocation = await normalizeLocation(input);
+      if (
+        "city" in normalizedLocation &&
+        "state" in normalizedLocation &&
+        normalizedLocation.city &&
+        normalizedLocation.state
+      ) {
+        setSelectedLocation({
+          city: normalizedLocation.city,
+          state: normalizedLocation.state,
+        });
+        if (updateInput && normalizedLocation.fullAddress) {
+          setInputValue(normalizedLocation.fullAddress);
+        }
+        const fullAddress = normalizedLocation.fullAddress || fallback;
+        onLocationSelect(
+          normalizedLocation.city,
+          normalizedLocation.state,
+          fullAddress
+        );
+      }
+    } catch (error) {
+      console.error("Error normalizing location:", error);
+    }
+  };
+
   // Close suggestions when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -98,69 +130,17 @@ export default function LocationInput({
       });
       onLocationSelect(suggestion.city, suggestion.state, suggestion.placeName);
     } else {
-      // Try to normalize the location if city/state not provided in suggestion
-      try {
-        const normalizedLocation = await normalizeLocation(
-          suggestion.placeName
-        );
-        if (
-          "city" in normalizedLocation &&
-          "state" in normalizedLocation &&
-          normalizedLocation.city &&
-          normalizedLocation.state
-        ) {
-          setSelectedLocation({
-            city: normalizedLocation.city,
-            state: normalizedLocation.state,
-          });
-
-          // Fix for line 114: Handle potentially undefined fullAddress
-          const fullAddress =
-            normalizedLocation.fullAddress || suggestion.placeName;
-          onLocationSelect(
-            normalizedLocation.city,
-            normalizedLocation.state,
-            fullAddress
-          );
-        }
-      } catch (error) {
-        console.error("Error normalizing location:", error);
-      }
+      await normalizeAndSelectLocation(
+        suggestion.placeName,
+        suggestion.placeName
+      );
     }
   };
 
   // Handle blur - validate location
   const handleBlur = async () => {
     if (inputValue && !selectedLocation) {
-      try {
-        const normalizedLocation = await normalizeLocation(inputValue);
-        if (
-          "city" in normalizedLocation &&
-          "state" in normalizedLocation &&
-          normalizedLocation.city &&
-          normalizedLocation.state
-        ) {
-          setSelectedLocation({
-            city: normalizedLocation.city,
-            state: normalizedLocation.state,
-          });
-
-          // Fix for line 133: Handle potentially undefined fullAddress
-          if (normalizedLocation.fullAddress) {
-            setInputValue(normalizedLocation.fullAddress);
-          }
-
-          // Fix for line 137: Handle potentially undefined fullAddress
-          const fullAddress = normalizedLocation.fullAddress || inputValue;
-          onLocationSelect(
-            normalizedLocation.city,
-            normalizedLocation.state,
-            fullAddress
-          );
-        }
-      } catch (error) {
-        console.error("Error validating location:", error);
-      }
+      await normalizeAndSelectLocation(inputValue, inputValue, true);
     }
 
     // Hide suggestions after a short delay (allows for clicks on suggestions)

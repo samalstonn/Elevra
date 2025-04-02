@@ -16,14 +16,28 @@ export default async function VendorDashboardLayout({
   }
 
   // Check if user exists in our database as a vendor
-  const vendor = await prisma.vendor.findUnique({
-    where: { clerkUserId: user.id },
-  });
+  try {
+    const vendor = await prisma.vendor.findUnique({
+      where: { clerkUserId: user.id },
+    });
 
-  if (!vendor) {
-    // If user is authenticated but not a vendor in our DB
-    // This could happen if registration process failed midway
-    redirect("/vendors?tab=signup");
+    if (!vendor) {
+      // If user is authenticated but not a vendor in our DB
+      // This could happen if registration process failed midway
+      redirect("/vendors?tab=signup");
+    }
+  } catch (error) {
+    console.error("Error fetching vendor data:", error);
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <div className="text-center">
+          <h2 className="text-xl font-bold mb-2">Database error</h2>
+          <p className="text-gray-600">
+            Unable to fetch your vendor profile. Please try again later.
+          </p>
+        </div>
+      </div>
+    );
   }
 
   return (

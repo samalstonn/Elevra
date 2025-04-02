@@ -57,6 +57,7 @@ export default function PortfolioItemList({
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
 
   const { toast } = useToast();
 
@@ -101,16 +102,23 @@ export default function PortfolioItemList({
           Start showcasing your work by adding your first portfolio item. This
           will help candidates see your expertise.
         </p>
-        <Button
-          onClick={() =>
-            (
-              document.querySelector('[data-value="add"]') as HTMLButtonElement
-            )?.click()
-          }
-          variant="default"
-        >
+        <Button onClick={() => setIsAddDialogOpen(true)} variant="default">
           Add Your First Portfolio Item
         </Button>
+        <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+          <DialogContent className="sm:max-w-[600px]">
+            <DialogHeader>
+              <DialogTitle>Add Portfolio Item</DialogTitle>
+              <DialogDescription>
+                Add a new item to your portfolio to showcase your work.
+              </DialogDescription>
+            </DialogHeader>
+            <PortfolioItemForm
+              vendorId={vendorId}
+              onSuccess={() => setIsAddDialogOpen(false)}
+            />
+          </DialogContent>
+        </Dialog>
       </div>
     );
   }

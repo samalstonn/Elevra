@@ -37,6 +37,7 @@ model Candidate {
   photo           String?
   position        String
   sources         String[]
+  verified        Boolean          @default(false)
   state           String?
   donations       String[]
   bio             String           @default("")

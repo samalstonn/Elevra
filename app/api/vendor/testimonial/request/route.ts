@@ -75,6 +75,16 @@ export async function POST(request: Request) {
 
     // This is a simplified example - in production, you would:
     // 1. Store the request in a database
+    // await prisma.testimonialRequest.create({
+    // data: {
+    //     vendorId,
+    //     candidateId,
+    //     message,
+    //     status: 'PENDING',
+    //     requestedAt: new Date(),
+    // },
+    // });
+
     // 2. Generate a unique link for the candidate to submit their testimonial
     // 3. Send an email to the candidate with the link
 
