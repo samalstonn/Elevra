@@ -105,48 +105,79 @@ export default function CandidateDashboard() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <ul className="text-sm space-y-1">
-              <li className="text-purple-700">
-                🔸 10 new endorsements received
-              </li>
-              <li className="text-purple-700">
-                🔍 5 searches mentioning your name
-              </li>
-              <li className="text-purple-700">👥 8 new followers this week</li>
-            </ul>
-          </CardContent>
-        </Card>
+import { useState, useEffect } from 'react';
+// ... other imports
 
-        {/* Recent Donations Card */}
-        <Card className="shadow-lg">
-          <CardHeader className="flex items-center justify-between">
-            <CardTitle className="text-lg flex items-center gap-2">
-              <DollarSign className="text-purple-500" />
-              Recent Donations
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
+export default function CandidateDashboard({ candidate }) {
+  // New state for dynamic data
+  const [activities, setActivities] = useState([]);
+  const [donations, setDonations] = useState([]);
+
+  // Fetch dynamic data when the candidate ID is available
+  useEffect(() => {
+    if (candidate?.id) {
+      // Fetch recent activities
+      fetch(`/api/candidate/${candidate.id}/activities`)
+        .then(res => res.ok ? res.json() : [])
+        .then(data => setActivities(data))
+        .catch(err => console.error("Error fetching activities:", err));
+
+      // Fetch recent donations
+      fetch(`/api/candidate/${candidate.id}/donations`)
+        .then(res => res.ok ? res.json() : [])
+        .then(data => setDonations(data))
+        .catch(err => console.error("Error fetching donations:", err));
+    }
+  }, [candidate?.id]);
+
+  return (
+    <>
+      {/* Other parts of the dashboard */}
+
+      <Card>
+        <CardContent>
+          {activities.length > 0 ? (
+            <ul className="text-sm space-y-1">
+              {activities.map((activity, index) => (
+                <li key={index} className="text-purple-700">
+                  {activity.icon} {activity.description}
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="text-gray-500 text-sm">No recent activities</p>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Recent Donations Card */}
+      <Card className="shadow-lg">
+        <CardHeader className="flex items-center justify-between">
+          <CardTitle className="text-lg flex items-center gap-2">
+            <DollarSign className="text-purple-500" />
+            Recent Donations
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {donations.length > 0 ? (
             <ul className="text-sm space-y-2">
-              <li className="flex justify-between text-purple-700">
-                <span>John Doe</span>
-                <span className="font-semibold">$250</span>
-              </li>
-              <li className="flex justify-between text-purple-700">
-                <span>Jane Smith</span>
-                <span className="font-semibold">$100</span>
-              </li>
-              <li className="flex justify-between text-purple-700">
-                <span>Michael Johnson</span>
-                <span className="font-semibold">$500</span>
-              </li>
-              <li className="flex justify-between text-purple-700">
-                <span>Emily Davis</span>
-                <span className="font-semibold">$75</span>
-              </li>
-              <li className="flex justify-between text-purple-700">
-                <span>Chris Brown</span>
-                <span className="font-semibold">$300</span>
-              </li>
+              {donations.map((donation, index) => (
+                <li key={index} className="flex justify-between text-purple-700">
+                  <span>{donation.donorName}</span>
+                  <span className="font-semibold">${donation.amount}</span>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="text-gray-500 text-sm">No recent donations</p>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* ... any other components */}
+    </>
+  );
+}
             </ul>
           </CardContent>
         </Card>
