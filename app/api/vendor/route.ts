@@ -46,12 +46,11 @@ export async function GET(request: Request) {
     }
 
     return NextResponse.json(vendor);
-  } catch (error: any) {
-    console.error("Error fetching vendor:", error);
-    return NextResponse.json(
-      { error: error.message || "Internal server error" },
-      { status: 500 }
-    );
+  } catch (error: unknown) {
+    if (error instanceof Error) {
+      console.error("Error updating candidate:", error);
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
   }
 }
 
@@ -145,11 +144,10 @@ export async function POST(request: Request) {
       { success: true, vendor: newVendor },
       { status: 201 }
     );
-  } catch (error: any) {
-    console.error("Error creating vendor:", error);
-    return NextResponse.json(
-      { error: error.message || "Internal server error" },
-      { status: 500 }
-    );
+  } catch (error: unknown) {
+    if (error instanceof Error) {
+      console.error("Error updating candidate:", error);
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
   }
 }

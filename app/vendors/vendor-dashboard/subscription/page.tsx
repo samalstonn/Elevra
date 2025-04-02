@@ -125,10 +125,7 @@ export default async function VendorSubscriptionPage() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <SubscriptionPricingTable
-              currentPlan={vendor.subscription}
-              vendorId={vendor.id}
-            />
+            <SubscriptionPricingTable currentPlan={vendor.subscription} />
           </CardContent>
         </Card>
       </div>

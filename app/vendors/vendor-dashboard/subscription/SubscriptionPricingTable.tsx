@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { Check, X, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { VendorTier } from "@prisma/client";
@@ -69,14 +68,11 @@ const tiers = [
 
 interface SubscriptionPricingTableProps {
   currentPlan: VendorTier;
-  vendorId: number;
 }
 
 export default function SubscriptionPricingTable({
   currentPlan,
-  vendorId,
 }: SubscriptionPricingTableProps) {
-  const router = useRouter();
   const [upgradingTier, setUpgradingTier] = useState<VendorTier | null>(null);
 
   const { toast } = useToast();
@@ -95,15 +91,15 @@ export default function SubscriptionPricingTable({
         // This would be replaced with a real Stripe checkout integration
 
         // Create a mock cart item for Stripe checkout
-        const cartItems = [
-          {
-            name: `${
-              tierId.charAt(0) + tierId.slice(1).toLowerCase()
-            } Vendor Subscription (Monthly)`,
-            price: tierId === VendorTier.STANDARD ? 5000 : 15000, // in cents
-            quantity: 1,
-          },
-        ];
+        // const cartItems = [
+        //   {
+        //     name: `${
+        //       tierId.charAt(0) + tierId.slice(1).toLowerCase()
+        //     } Vendor Subscription (Monthly)`,
+        //     price: tierId === VendorTier.STANDARD ? 5000 : 15000, // in cents
+        //     quantity: 1,
+        //   },
+        // ];
 
         // Simulate an API call to create a checkout session
         setTimeout(() => {

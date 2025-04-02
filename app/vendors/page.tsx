@@ -5,7 +5,6 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { TabButton } from "@/components/ui/tab-button";
 import { FeatureCard } from "@/components/ui/feature-card";
-import { TestimonialCard } from "@/components/ui/testimonial-card";
 import VendorSignupForm from "@/components/auth/VendorSignUpForm";
 import VendorLoginForm from "@/components/auth/VendorLoginForm";
 

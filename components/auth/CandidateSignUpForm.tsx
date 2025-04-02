@@ -21,7 +21,7 @@ import SearchBar from "@/components/ResultsSearchBar";
 import { Election } from "@prisma/client";
 import { getLocationSuggestions, normalizeLocation } from "@/lib/geocoding";
 import { debounce } from "@/lib/debounce";
-import { AutocompleteSuggestion, NormalizedLocation } from "@/types/geocoding";
+import { AutocompleteSuggestion } from "@/types/geocoding";
 import { Loader2 } from "lucide-react";
 
 // Form state interface
@@ -346,6 +346,7 @@ export default function CandidateSignupForm() {
       new URL(url);
       return true;
     } catch (e) {
+      console.log(e);
       return false;
     }
   };
@@ -455,8 +456,10 @@ export default function CandidateSignupForm() {
         setErrorMessage(data.error || "Failed to submit candidate information");
         setSubmitStatus("error");
       }
-    } catch (error: any) {
-      console.error("Error submitting form:", error);
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        console.error("Error creating candidate:", error);
+      }
       setErrorMessage("An unexpected error occurred. Please try again later.");
       setSubmitStatus("error");
     } finally {
@@ -641,8 +644,8 @@ export default function CandidateSignupForm() {
           Election (Optional)
         </label>
         <p className="text-sm text-gray-500">
-          If you're not currently running in an election, leave this blank. You
-          can add an election later from your dashboard.
+          If you`&apos;`re not currently running in an election, leave this
+          blank. You can add an election later from your dashboard.
         </p>
 
         {/* Display the selected election */}

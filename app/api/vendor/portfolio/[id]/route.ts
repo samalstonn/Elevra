@@ -2,10 +2,8 @@ import { NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import prisma from "@/prisma/prisma";
 
-export async function PUT(
-  request: Request,
-  { params }: { params: { id: string } }
-) {
+export async function PUT(request: Request, context: unknown) {
+  const { params } = context as { params: { id: string } };
   try {
     // Get authenticated user
     const { userId } = await auth();
@@ -65,19 +63,16 @@ export async function PUT(
     });
 
     return NextResponse.json(updatedItem);
-  } catch (error: any) {
-    console.error("Error updating portfolio item:", error);
-    return NextResponse.json(
-      { error: error.message || "Internal server error" },
-      { status: 500 }
-    );
+  } catch (error: unknown) {
+    if (error instanceof Error) {
+      console.error("Error updating candidate:", error);
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
   }
 }
 
-export async function DELETE(
-  request: Request,
-  { params }: { params: { id: string } }
-) {
+export async function DELETE(request: Request, context: unknown) {
+  const { params } = context as { params: { id: string } };
   try {
     // Get authenticated user
     const { userId } = await auth();
@@ -120,11 +115,10 @@ export async function DELETE(
     });
 
     return NextResponse.json({ success: true });
-  } catch (error: any) {
-    console.error("Error deleting portfolio item:", error);
-    return NextResponse.json(
-      { error: error.message || "Internal server error" },
-      { status: 500 }
-    );
+  } catch (error: unknown) {
+    if (error instanceof Error) {
+      console.error("Error updating candidate:", error);
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
   }
 }

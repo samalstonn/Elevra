@@ -10,7 +10,6 @@ import {
   FaExclamationTriangle,
 } from "react-icons/fa";
 import { useAuth } from "@clerk/nextjs";
-import { useUser } from "@clerk/nextjs";
 
 // Candidate interface based on Prisma schema
 interface Candidate {
@@ -37,7 +36,6 @@ export default function CandidateLoginForm() {
 
   const router = useRouter();
   const { isLoaded, userId } = useAuth();
-  const { user } = useUser();
 
   // Check if the user is already registered as a candidate when component mounts
   useEffect(() => {
@@ -85,7 +83,7 @@ export default function CandidateLoginForm() {
           );
           setLoginStatus("error");
         }
-      } catch (error: any) {
+      } catch (error: unknown) {
         console.error("Error checking candidate status:", error);
         setError("An unexpected error occurred. Please try again later.");
         setLoginStatus("error");
@@ -180,7 +178,7 @@ export default function CandidateLoginForm() {
                 </h3>
                 <p className="text-gray-600 mb-4">
                   Your candidate account is still under review. Once approved,
-                  you'll have full access to the candidate dashboard.
+                  you`&apos;`ll have full access to the candidate dashboard.
                 </p>
                 <p className="text-gray-600">
                   Thank you for your patience! Please look out for an email from

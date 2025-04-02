@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import { Input } from "@/components/ui/input";
 import { getLocationSuggestions, normalizeLocation } from "@/lib/geocoding";
 import { debounce } from "@/lib/debounce";
-import { AutocompleteSuggestion, NormalizedLocation } from "@/types/geocoding";
+import { AutocompleteSuggestion } from "@/types/geocoding";
 import { Loader2 } from "lucide-react";
 import { FaMapMarkerAlt, FaCheckCircle } from "react-icons/fa";
 

@@ -10,7 +10,6 @@ import {
   FaExclamationTriangle,
 } from "react-icons/fa";
 import { useAuth } from "@clerk/nextjs";
-import { useUser } from "@clerk/nextjs";
 
 // Vendor interface based on Prisma schema
 interface Vendor {
@@ -36,7 +35,6 @@ export default function VendorLoginForm() {
 
   const router = useRouter();
   const { isLoaded, userId } = useAuth();
-  const { user } = useUser();
 
   // Check if the user is already registered as a vendor when component mounts
   useEffect(() => {
@@ -84,10 +82,10 @@ export default function VendorLoginForm() {
           );
           setLoginStatus("error");
         }
-      } catch (error: any) {
-        console.error("Error checking vendor status:", error);
-        setError("An unexpected error occurred. Please try again later.");
-        setLoginStatus("error");
+      } catch (error: unknown) {
+        if (error instanceof Error) {
+          console.error("Error creating candidate:", error);
+        }
       } finally {
         setIsLoading(false);
       }
@@ -179,7 +177,7 @@ export default function VendorLoginForm() {
                 </h3>
                 <p className="text-gray-600 mb-4">
                   Your vendor account is still under review. Once approved,
-                  you'll have full access to the vendor dashboard.
+                  you`&apos;`ll have full access to the vendor dashboard.
                 </p>
                 <p className="text-gray-600">
                   Thank you for your patience! Please look out for an email from

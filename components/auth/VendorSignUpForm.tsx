@@ -9,10 +9,7 @@ import { motion } from "framer-motion";
 import {
   FaSave,
   FaCheckCircle,
-  FaTimes,
   FaGlobe,
-  FaCity,
-  FaFlag,
   FaPhone,
   FaEnvelope,
   FaBriefcase,
@@ -22,7 +19,7 @@ import { useAuth } from "@clerk/nextjs";
 import { useUser } from "@clerk/nextjs";
 import { getLocationSuggestions, normalizeLocation } from "@/lib/geocoding";
 import { debounce } from "@/lib/debounce";
-import { AutocompleteSuggestion, NormalizedLocation } from "@/types/geocoding";
+import { AutocompleteSuggestion } from "@/types/geocoding";
 import { Loader2 } from "lucide-react";
 
 // Define service category enum to match Prisma schema
@@ -406,8 +403,10 @@ export default function VendorSignupForm() {
         setErrorMessage(data.error || "Failed to submit vendor information");
         setSubmitStatus("error");
       }
-    } catch (error: any) {
-      console.error("Error submitting form:", error);
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        console.error("Error creating candidate:", error);
+      }
       setErrorMessage("An unexpected error occurred. Please try again later.");
       setSubmitStatus("error");
     } finally {

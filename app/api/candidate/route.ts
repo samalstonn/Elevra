@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import prisma from "@/prisma/prisma";
 import { auth } from "@clerk/nextjs/server";
+import { Prisma } from "@prisma/client";
 
 export async function GET(request: Request) {
   try {
@@ -49,10 +50,14 @@ export async function GET(request: Request) {
     }
 
     return NextResponse.json(candidate);
-  } catch (error: any) {
+  } catch (error: unknown) {
+    if (error instanceof Error) {
+      console.error("Error fetching candidate:", error);
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
     console.error("Error fetching candidate:", error);
     return NextResponse.json(
-      { error: error.message || "Internal server error" },
+      { error: "Internal server error" },
       { status: 500 }
     );
   }
@@ -78,7 +83,6 @@ export async function POST(request: Request) {
       website,
       linkedin,
       policies,
-      electionId,
       clerkUserId,
       additionalNotes,
     } = body;
@@ -120,7 +124,7 @@ export async function POST(request: Request) {
       );
     }
 
-    const createData: any = {
+    const createData: Omit<Prisma.CandidateCreateInput, "id"> = {
       name,
       party,
       position,
@@ -134,30 +138,33 @@ export async function POST(request: Request) {
       additionalNotes: additionalNotes || null,
     };
 
-    // Explicitly tell Prisma to use its own ID generation
-    delete createData.id; // Make sure no ID is being passed
-
-    // Add election relation if provided
-    if (electionId) {
-      createData.electionId = electionId;
-    }
-
     try {
       const candidate = await prisma.candidate.create({
         data: createData,
       });
       return NextResponse.json(candidate);
-    } catch (error) {
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        console.error("Prisma error:", error);
+        return NextResponse.json(
+          { error: "Database error creating candidate" },
+          { status: 500 }
+        );
+      }
       console.error("Prisma error:", error);
       return NextResponse.json(
         { error: "Database error creating candidate" },
         { status: 500 }
       );
     }
-  } catch (error: any) {
+  } catch (error: unknown) {
+    if (error instanceof Error) {
+      console.error("Error creating candidate:", error);
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
     console.error("Error creating candidate:", error);
     return NextResponse.json(
-      { error: error.message || "Internal server error" },
+      { error: "Internal server error" },
       { status: 500 }
     );
   }

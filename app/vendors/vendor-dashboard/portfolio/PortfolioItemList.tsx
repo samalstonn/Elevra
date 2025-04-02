@@ -2,12 +2,10 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
-  CardDescription,
   CardFooter,
   CardHeader,
   CardTitle,
@@ -19,7 +17,6 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
   DialogClose,
 } from "@/components/ui/dialog";
 import {
@@ -37,6 +34,7 @@ import {
   ExternalLink,
   Image as ImageIcon,
 } from "lucide-react";
+import Image from "next/image";
 
 interface PortfolioItemListProps {
   portfolioItems: {
@@ -53,7 +51,9 @@ export default function PortfolioItemList({
   vendorId,
 }: PortfolioItemListProps) {
   const router = useRouter();
-  const [selectedItem, setSelectedItem] = useState<any | null>(null);
+  const [selectedItem, setSelectedItem] = useState<
+    PortfolioItemListProps["portfolioItems"][number] | null
+  >(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -102,7 +102,11 @@ export default function PortfolioItemList({
           will help candidates see your expertise.
         </p>
         <Button
-          onClick={() => (document.querySelector('[data-value="add"]') as HTMLButtonElement)?.click()}
+          onClick={() =>
+            (
+              document.querySelector('[data-value="add"]') as HTMLButtonElement
+            )?.click()
+          }
           variant="default"
         >
           Add Your First Portfolio Item
@@ -118,7 +122,7 @@ export default function PortfolioItemList({
           <div className="relative aspect-video w-full overflow-hidden">
             {item.imageUrl ? (
               <div className="relative h-full w-full">
-                <img
+                <Image
                   src={item.imageUrl}
                   alt={item.title}
                   className="object-cover h-full w-full"

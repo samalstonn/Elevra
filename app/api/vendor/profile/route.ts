@@ -87,11 +87,10 @@ export async function PUT(request: Request) {
     });
 
     return NextResponse.json(updatedVendor);
-  } catch (error: any) {
-    console.error("Error updating vendor profile:", error);
-    return NextResponse.json(
-      { error: error.message || "Internal server error" },
-      { status: 500 }
-    );
+  } catch (error: unknown) {
+    if (error instanceof Error) {
+      console.error("Error updating candidate:", error);
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
   }
 }

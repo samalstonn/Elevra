@@ -95,11 +95,12 @@ export async function POST(request: NextRequest) {
       success: true,
       candidate: updatedCandidate,
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
+    if (error instanceof Error) {
+      console.error("Error updating candidate:", error);
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
     console.error("Error updating candidate:", error);
-    return NextResponse.json(
-      { error: error.message || "Failed to update candidate" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Failed to update candidate" }, { status: 500 });
   }
 }

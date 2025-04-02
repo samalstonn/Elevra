@@ -30,7 +30,7 @@ export default function TestimonialsList({
         <h3 className="text-lg font-semibold mb-2">No testimonials yet</h3>
         <p className="text-gray-500 mb-6 max-w-md">
           Testimonials help build trust with potential clients. Request
-          testimonials from candidates you've worked with.
+          testimonials from candidates you`&apos;`ve worked with.
         </p>
       </div>
     );

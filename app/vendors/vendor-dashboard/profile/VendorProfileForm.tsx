@@ -1,4 +1,5 @@
 "use client";
+import { Vendor } from '@prisma/client';
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
@@ -60,7 +61,7 @@ const formSchema = z.object({
 type FormValues = z.infer<typeof formSchema>;
 
 interface VendorProfileFormProps {
-  vendor: any;
+  vendor: Vendor;
   categoriesByType: Record<
     string,
     { id: number; name: string; type: ServiceCategoryType }[]
