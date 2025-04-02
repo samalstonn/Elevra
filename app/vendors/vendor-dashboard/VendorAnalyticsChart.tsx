@@ -10,26 +10,24 @@ import {
   ResponsiveContainer,
 } from "recharts";
 
-// Sample data - this would be replaced with real analytics data
-const generateData = () => {
-  const data = [];
-  const now = new Date();
+interface DataPoint {
+  date: string;
+  views: number;
+  interactions: number;
+}
 
-  for (let i = 30; i >= 0; i--) {
-    const date = new Date(now);
-    date.setDate(date.getDate() - i);
+interface VendorAnalyticsChartProps {
+  data: DataPoint[];
+}
 
-    data.push({
-      date: date.toISOString().slice(0, 10),
-      views: Math.floor(Math.random() * 20) + 5,
-      interactions: Math.floor(Math.random() * 10) + 1,
-    });
-  }
-
-  return data;
-};
-
-const data = generateData();
+export default function VendorAnalyticsChart({ data }: VendorAnalyticsChartProps) {
+  // component implementation, e.g., rendering the chart with the passed data
+  return (
+    <div>
+      {/* Your chart component implementation here using the 'data' prop */}
+    </div>
+  );
+}
 
 export default function VendorAnalyticsChart() {
   return (
