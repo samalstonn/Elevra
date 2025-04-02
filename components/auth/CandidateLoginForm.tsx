@@ -12,23 +12,24 @@ import {
 import { useAuth } from "@clerk/nextjs";
 import { useUser } from "@clerk/nextjs";
 
-// Vendor interface based on Prisma schema
-interface Vendor {
+// Candidate interface based on Prisma schema
+interface Candidate {
   id: number;
   name: string;
+  party: string;
+  position: string;
   bio: string;
-  email: string;
-  phone?: string;
+  website?: string;
+  linkedin?: string;
   city: string;
   state: string;
   status: "PENDING" | "APPROVED" | "REJECTED";
-  subscription: string;
-  website?: string;
+  electionId?: number;
 }
 
-export default function VendorLoginForm() {
+export default function CandidateLoginForm() {
   const [isLoading, setIsLoading] = useState(false);
-  const [vendor, setVendor] = useState<Vendor | null>(null);
+  const [candidate, setCandidate] = useState<Candidate | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loginStatus, setLoginStatus] = useState<
     null | "success" | "pending" | "rejected" | "error"
@@ -38,9 +39,9 @@ export default function VendorLoginForm() {
   const { isLoaded, userId } = useAuth();
   const { user } = useUser();
 
-  // Check if the user is already registered as a vendor when component mounts
+  // Check if the user is already registered as a candidate when component mounts
   useEffect(() => {
-    const checkVendorStatus = async () => {
+    const checkCandidateStatus = async () => {
       if (!isLoaded || !userId) {
         return;
       }
@@ -49,7 +50,7 @@ export default function VendorLoginForm() {
       setError(null);
 
       try {
-        const response = await fetch(`/api/vendor?clerkUserId=${userId}`, {
+        const response = await fetch(`/api/candidate?clerkUserId=${userId}`, {
           method: "GET",
           headers: {
             "Content-Type": "application/json",
@@ -57,35 +58,35 @@ export default function VendorLoginForm() {
         });
 
         if (response.ok) {
-          const vendorData: Vendor = await response.json();
-          setVendor(vendorData);
+          const candidateData: Candidate = await response.json();
+          setCandidate(candidateData);
 
-          if (vendorData.status === "APPROVED") {
+          if (candidateData.status === "APPROVED") {
             setLoginStatus("success");
-            // Redirect to vendor dashboard after successful login
+            // Redirect to candidate dashboard after successful login
             setTimeout(() => {
-              router.push("/vendors/vendor-dashboard");
+              router.push("/candidates/candidate-dashboard");
             }, 1500);
-          } else if (vendorData.status === "PENDING") {
+          } else if (candidateData.status === "PENDING") {
             setLoginStatus("pending");
-          } else if (vendorData.status === "REJECTED") {
+          } else if (candidateData.status === "REJECTED") {
             setLoginStatus("rejected");
           }
         } else if (response.status === 404) {
-          // Vendor not found - user needs to sign up
-          setVendor(null);
+          // Candidate not found - user needs to sign up
+          setCandidate(null);
           setError(
-            "You haven't registered as a vendor yet. Please sign up first."
+            "You haven't registered as a candidate yet. Please sign up first."
           );
         } else {
           const data = await response.json();
           setError(
-            data.error || "An error occurred while checking vendor status"
+            data.error || "An error occurred while checking candidate status"
           );
           setLoginStatus("error");
         }
       } catch (error: any) {
-        console.error("Error checking vendor status:", error);
+        console.error("Error checking candidate status:", error);
         setError("An unexpected error occurred. Please try again later.");
         setLoginStatus("error");
       } finally {
@@ -93,7 +94,7 @@ export default function VendorLoginForm() {
       }
     };
 
-    checkVendorStatus();
+    checkCandidateStatus();
   }, [isLoaded, userId, router]);
 
   if (!isLoaded) {
@@ -104,10 +105,10 @@ export default function VendorLoginForm() {
     return (
       <div className="text-center p-6">
         <h2 className="text-xl font-semibold mb-4">Authentication Required</h2>
-        <p className="mb-4">Please sign in to access your vendor account.</p>
+        <p className="mb-4">Please sign in to access your candidate account.</p>
         <Button
           variant="purple"
-          onClick={() => router.push("/sign-in?redirect=/vendors")}
+          onClick={() => router.push("/sign-in?redirect=/candidates")}
         >
           Sign In
         </Button>
@@ -124,13 +125,13 @@ export default function VendorLoginForm() {
         className="w-full text-center"
       >
         <h1 className="text-2xl font-bold text-purple-700 mb-4">
-          Vendor Portal
+          Candidate Portal
         </h1>
 
         {isLoading ? (
           <div className="flex flex-col items-center justify-center p-8">
             <FaSpinner className="animate-spin text-purple-600 text-3xl mb-4" />
-            <p className="text-gray-600">Checking your vendor account...</p>
+            <p className="text-gray-600">Checking your candidate account...</p>
           </div>
         ) : error ? (
           <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-left">
@@ -143,9 +144,9 @@ export default function VendorLoginForm() {
                   <Button
                     variant="purple"
                     className="mt-4"
-                    onClick={() => router.push("/vendors?tab=signup")}
+                    onClick={() => router.push("/candidates?tab=signup")}
                   >
-                    Register as a Vendor
+                    Register as a Candidate
                   </Button>
                 )}
               </div>
@@ -164,7 +165,7 @@ export default function VendorLoginForm() {
                   Login Successful!
                 </h3>
                 <p className="text-gray-600 mb-4">
-                  Welcome back, {vendor?.name}.
+                  Welcome back, {candidate?.name}.
                 </p>
                 <p className="text-gray-600">
                   Redirecting to your dashboard...
@@ -178,8 +179,8 @@ export default function VendorLoginForm() {
                   Account Pending Approval
                 </h3>
                 <p className="text-gray-600 mb-4">
-                  Your vendor account is still under review. Once approved,
-                  you'll have full access to the vendor dashboard.
+                  Your candidate account is still under review. Once approved,
+                  you'll have full access to the candidate dashboard.
                 </p>
                 <p className="text-gray-600">
                   Thank you for your patience! Please look out for an email from
@@ -201,7 +202,7 @@ export default function VendorLoginForm() {
                   Account Not Approved
                 </h3>
                 <p className="text-gray-600 mb-4">
-                  Unfortunately, your vendor account application was not
+                  Unfortunately, your candidate account application was not
                   approved at this time.
                 </p>
                 <p className="text-gray-600">

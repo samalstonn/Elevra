@@ -95,11 +95,7 @@ export async function POST(request: Request) {
 
     // Extract service category data
     const serviceCategory = requestData.serviceCategory as ServiceCategoryType;
-    const normalizedServiceCategory = serviceCategory
-      .split("_")
-      .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
-      .join(" ");
-    console.info("Normalized service category:", normalizedServiceCategory);
+    console.info("Normalized service category:", serviceCategory);
 
     // Create vendor record
     const newVendor = await prisma.vendor.create({
@@ -121,11 +117,11 @@ export async function POST(request: Request) {
 
     // Create service category relation if it doesn't exist
     const serviceCategoryRecord = await prisma.serviceCategory.upsert({
-      where: { type: normalizedServiceCategory as ServiceCategoryType },
+      where: { type: serviceCategory as ServiceCategoryType },
       update: {},
       create: {
-        name: normalizedServiceCategory,
-        type: normalizedServiceCategory as ServiceCategoryType,
+        name: serviceCategory,
+        type: serviceCategory as ServiceCategoryType,
         description: requestData.serviceDescription,
       },
     });

@@ -16,7 +16,10 @@ export async function GET(request: Request) {
 
     // Ensure the requested clerkUserId matches the authenticated user
     if (!clerkUserId || clerkUserId !== userId) {
-      return NextResponse.json({ error: "Unauthorized access" }, { status: 403 });
+      return NextResponse.json(
+        { error: "Unauthorized access" },
+        { status: 403 }
+      );
     }
 
     // Find the candidate in the database
@@ -25,20 +28,24 @@ export async function GET(request: Request) {
       select: {
         id: true,
         name: true,
+        party: true,
         position: true,
         city: true,
         state: true,
-        verified: true,
+        status: true,
         bio: true,
         website: true,
         linkedin: true,
-        twitter: true,
-        // Add other fields you want to return
+        electionId: true,
+        policies: true,
       },
     });
 
     if (!candidate) {
-      return NextResponse.json({ error: "Candidate not found" }, { status: 404 });
+      return NextResponse.json(
+        { error: "Candidate not found" },
+        { status: 404 }
+      );
     }
 
     return NextResponse.json(candidate);
@@ -49,4 +56,109 @@ export async function GET(request: Request) {
       { status: 500 }
     );
   }
-} 
+}
+
+export async function POST(request: Request) {
+  try {
+    // Get auth session to verify the request
+    const { userId } = await auth();
+    if (!userId) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    // Parse the request body
+    const body = await request.json();
+    const {
+      name,
+      party,
+      position,
+      city,
+      state,
+      bio,
+      website,
+      linkedin,
+      policies,
+      electionId,
+      clerkUserId,
+      additionalNotes,
+    } = body;
+
+    // Validate required fields
+    if (
+      !name ||
+      !party ||
+      !position ||
+      !city ||
+      !state ||
+      !bio ||
+      !policies ||
+      policies.length === 0
+    ) {
+      return NextResponse.json(
+        { error: "Missing required fields" },
+        { status: 400 }
+      );
+    }
+
+    // Ensure the clerkUserId matches the authenticated user
+    if (clerkUserId !== userId) {
+      return NextResponse.json(
+        { error: "Unauthorized access" },
+        { status: 403 }
+      );
+    }
+
+    // Check if candidate already exists
+    const existingCandidate = await prisma.candidate.findUnique({
+      where: { clerkUserId },
+    });
+
+    if (existingCandidate) {
+      return NextResponse.json(
+        { error: "Candidate with this user ID already exists" },
+        { status: 409 }
+      );
+    }
+
+    const createData: any = {
+      name,
+      party,
+      position,
+      city,
+      state,
+      bio,
+      website: website || null,
+      linkedin: linkedin || null,
+      policies,
+      clerkUserId,
+      additionalNotes: additionalNotes || null,
+    };
+
+    // Explicitly tell Prisma to use its own ID generation
+    delete createData.id; // Make sure no ID is being passed
+
+    // Add election relation if provided
+    if (electionId) {
+      createData.electionId = electionId;
+    }
+
+    try {
+      const candidate = await prisma.candidate.create({
+        data: createData,
+      });
+      return NextResponse.json(candidate);
+    } catch (error) {
+      console.error("Prisma error:", error);
+      return NextResponse.json(
+        { error: "Database error creating candidate" },
+        { status: 500 }
+      );
+    }
+  } catch (error: any) {
+    console.error("Error creating candidate:", error);
+    return NextResponse.json(
+      { error: error.message || "Internal server error" },
+      { status: 500 }
+    );
+  }
+}

@@ -43,9 +43,9 @@ model Candidate {
   party           String
   policies        String[]
   website         String?
-  electionId      Int
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  electionId      Int?
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
   additionalNotes String?
   city            String?
   linkedin        String?
@@ -53,15 +53,15 @@ model Candidate {
   position        String
   sources         String[]
   state           String?
-  verified        Boolean  @default(false)
+  status          SubmissionStatus @default(PENDING)
   donations       String[]
-  bio             String   @default("")
-  clerkUserId     String?  @unique
+  bio             String           @default("")
+  clerkUserId     String?          @unique
   history         String[]
-  id              Int      @id @default(autoincrement()) @map("id")
+  id              Int              @id @default(autoincrement())
 
   // Relations
-  election    Election      @relation(fields: [electionId], references: [id])
+  election    Election?     @relation(fields: [electionId], references: [id])
   Vendors     Vendor[]
   Testimonial Testimonial[]
 }

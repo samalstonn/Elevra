@@ -5,7 +5,14 @@ import { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { motion } from "framer-motion";
-import { FaGlobe, FaLinkedin, FaCheckCircle, FaArrowLeft, FaSave, FaTimes } from "react-icons/fa";
+import {
+  FaGlobe,
+  FaLinkedin,
+  FaCheckCircle,
+  FaArrowLeft,
+  FaSave,
+  FaTimes,
+} from "react-icons/fa";
 import { Candidate, Election } from "@prisma/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -14,11 +21,11 @@ import { normalizeSlug } from "@/lib/functions";
 
 type ElectionWithCandidates = Election & { candidates: Candidate[] };
 
-export default function EditCandidateForm({ 
-  candidate, 
-  election 
-}: { 
-  candidate: Candidate; 
+export default function EditCandidateForm({
+  candidate,
+  election,
+}: {
+  candidate: Candidate;
   election: ElectionWithCandidates | null;
 }) {
   const router = useRouter();
@@ -26,7 +33,7 @@ export default function EditCandidateForm({
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [hovered, setHovered] = useState<string | null>(null);
-  
+
   // Form state
   const [formData, setFormData] = useState({
     name: candidate.name,
@@ -48,9 +55,7 @@ export default function EditCandidateForm({
   // Generate a few related candidates for the preview sidebar
   const relatedCandidates = useMemo(() => {
     if (!election?.candidates) return [];
-    return election.candidates
-      .filter((c) => c.id !== candidate.id)
-      .slice(0, 3);
+    return election.candidates.filter((c) => c.id !== candidate.id).slice(0, 3);
   }, [election, candidate]);
 
   const handleChange = (
@@ -84,10 +89,10 @@ export default function EditCandidateForm({
     setSuccess(null);
 
     try {
-      const response = await fetch('/api/candidate/update', {
-        method: 'POST',
+      const response = await fetch("/api/candidate/update", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({
           candidateId: candidate.id,
@@ -107,22 +112,32 @@ export default function EditCandidateForm({
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to update candidate information');
+        throw new Error(
+          errorData.error || "Failed to update candidate information"
+        );
       }
 
-      setSuccess('Your profile has been updated successfully! Redirecting...');
-      
+      setSuccess("Your profile has been updated successfully! Redirecting...");
+
       // Redirect after a delay to allow user to see success message
       setTimeout(() => {
-        router.push(`/candidate/${normalizeSlug(formData.name)}?candidateID=${candidate.id}&electionID=${candidate.electionId}`);
+        router.push(
+          `/candidate/${normalizeSlug(formData.name)}?candidateID=${
+            candidate.id
+          }&electionID=${candidate.electionId}`
+        );
         router.refresh();
       }, 2000);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'An unknown error occurred');
+      setError(
+        err instanceof Error ? err.message : "An unknown error occurred"
+      );
     } finally {
       setIsLoading(false);
     }
   };
+
+  const verified = candidate.status === "APPROVED";
 
   return (
     <form onSubmit={handleSubmit}>
@@ -130,14 +145,18 @@ export default function EditCandidateForm({
       {error && (
         <div className="fixed top-24 left-1/2 transform -translate-x-1/2 bg-red-500 text-white text-center px-4 py-2 rounded-3xl shadow-md z-50">
           {error}
-          <button className="ml-2" onClick={() => setError(null)}>✕</button>
+          <button className="ml-2" onClick={() => setError(null)}>
+            ✕
+          </button>
         </div>
       )}
-      
+
       {success && (
         <div className="fixed top-24 left-1/2 transform -translate-x-1/2 bg-purple-600 text-white text-center px-4 py-2 rounded-3xl shadow-md z-50">
           {success}
-          <button className="ml-2" onClick={() => setSuccess(null)}>✕</button>
+          <button className="ml-2" onClick={() => setSuccess(null)}>
+            ✕
+          </button>
         </div>
       )}
 
@@ -160,10 +179,14 @@ export default function EditCandidateForm({
         {/* Main candidate profile edit section */}
         <motion.div className="w-full md:w-2/3 flex flex-col sm:p-6 bg-white">
           <div className="mb-6 pb-4">
-            <h1 className="text-2xl font-bold text-gray-900">Edit Your Profile</h1>
-            <p className="text-sm text-gray-600">Make changes to your profile to better inform voters</p>
+            <h1 className="text-2xl font-bold text-gray-900">
+              Edit Your Profile
+            </h1>
+            <p className="text-sm text-gray-600">
+              Make changes to your profile to better inform voters
+            </p>
           </div>
-          
+
           {/* Profile Header */}
           <div className="flex flex-col items-start text-left relative">
             <div className="w-[150px] h-[150px] rounded-full shadow-sm relative bg-gray-100 flex items-center justify-center overflow-hidden">
@@ -178,7 +201,9 @@ export default function EditCandidateForm({
             </div>
 
             <div className="mt-4 w-full">
-              <label className="block text-sm font-medium text-gray-700 mb-1">Name *</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Name *
+              </label>
               <Input
                 name="name"
                 value={formData.name}
@@ -189,7 +214,9 @@ export default function EditCandidateForm({
             </div>
 
             <div className="w-full">
-              <label className="block text-sm font-medium text-gray-700 mb-1">Position *</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Position *
+              </label>
               <Input
                 name="position"
                 value={formData.position}
@@ -200,7 +227,9 @@ export default function EditCandidateForm({
             </div>
 
             <div className="w-full">
-              <label className="block text-sm font-medium text-gray-700 mb-1">Party *</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Party *
+              </label>
               <Input
                 name="party"
                 value={formData.party}
@@ -211,25 +240,29 @@ export default function EditCandidateForm({
             </div>
 
             <div className="relative mt-2 mb-2">
-              <div 
+              <div
                 className="relative cursor-pointer"
                 onMouseEnter={() => setHovered("verification")}
                 onMouseLeave={() => setHovered(null)}
               >
-                {candidate.verified ? (
+                {verified ? (
                   <div className="flex items-center">
                     <FaCheckCircle className="text-blue-500 mr-2" />
-                    <span className="text-sm text-gray-600">This profile is verified</span>
+                    <span className="text-sm text-gray-600">
+                      This profile is verified
+                    </span>
                   </div>
                 ) : (
                   <div className="flex items-center">
                     <FaCheckCircle className="text-gray-400 mr-2" />
-                    <span className="text-sm text-gray-600">This profile is not yet verified</span>
+                    <span className="text-sm text-gray-600">
+                      This profile is not yet verified
+                    </span>
                   </div>
                 )}
                 {hovered === "verification" && (
                   <div className="absolute bottom-full mb-2 left-1/2 transform -translate-x-1/2 bg-gray-900 text-white text-xs font-medium px-2 py-1 rounded shadow-md whitespace-nowrap z-10">
-                    {candidate.verified
+                    {verified
                       ? "Your profile is verified"
                       : "Your profile is pending verification"}
                   </div>
@@ -237,10 +270,12 @@ export default function EditCandidateForm({
               </div>
             </div>
           </div>
-      
+
           {/* Social Links Inline */}
           <div className="mt-6 mb-2">
-            <h3 className="text-sm font-medium text-gray-700 mb-3">Social Media & Website</h3>
+            <h3 className="text-sm font-medium text-gray-700 mb-3">
+              Social Media & Website
+            </h3>
             <div className="grid grid-cols-1 gap-4">
               <div className="flex items-center">
                 <FaGlobe className="text-blue-600 mr-3" />
@@ -264,10 +299,12 @@ export default function EditCandidateForm({
               </div>
             </div>
           </div>
-      
+
           {/* Candidate Bio */}
           <div className="mt-6">
-            <h3 className="text-sm font-medium text-gray-700 mb-2">Biography*</h3>
+            <h3 className="text-sm font-medium text-gray-700 mb-2">
+              Biography*
+            </h3>
             <Textarea
               name="bio"
               value={formData.bio}
@@ -277,19 +314,23 @@ export default function EditCandidateForm({
               placeholder="Share your background, experience, and qualifications..."
             />
           </div>
-      
+
           {/* Policies */}
           <div className="mt-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">Policies</h3>
-            <p className="text-sm text-gray-600 mb-3">List the key policies you support or propose</p>
-            
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">
+              Policies
+            </h3>
+            <p className="text-sm text-gray-600 mb-3">
+              List the key policies you support or propose
+            </p>
+
             <ul className="space-y-2 text-sm mb-4">
               {formData.policies.map((policy, index) => (
                 <li key={index} className="flex items-center">
                   <span className="font-semibold flex-grow">{policy}</span>
-                  <Button 
+                  <Button
                     type="button"
-                    variant="ghost" 
+                    variant="ghost"
                     size="sm"
                     onClick={() => removePolicy(index)}
                     className="text-red-500 hover:text-red-700"
@@ -299,17 +340,19 @@ export default function EditCandidateForm({
                 </li>
               ))}
             </ul>
-            
+
             <div className="flex items-center gap-2">
               <Input
                 value={newPolicy}
-                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewPolicy(e.target.value)}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                  setNewPolicy(e.target.value)
+                }
                 placeholder="Add a new policy..."
                 className="w-full border-gray-300"
               />
-              <Button 
+              <Button
                 type="button"
-                variant="outline" 
+                variant="outline"
                 size="sm"
                 onClick={addPolicy}
                 className="whitespace-nowrap"
@@ -318,10 +361,12 @@ export default function EditCandidateForm({
               </Button>
             </div>
           </div>
-      
+
           {/* Additional Notes */}
           <div className="mt-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">Additional Notes</h3>
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">
+              Additional Notes
+            </h3>
             <Textarea
               name="additionalNotes"
               value={formData.additionalNotes}
@@ -346,7 +391,9 @@ export default function EditCandidateForm({
                 />
               </div>
               <div>
-                <label className="block text-xs text-gray-500 mb-1">State</label>
+                <label className="block text-xs text-gray-500 mb-1">
+                  State
+                </label>
                 <Input
                   name="state"
                   value={formData.state}
@@ -356,7 +403,7 @@ export default function EditCandidateForm({
               </div>
             </div>
           </div>
-          
+
           {/* Action Buttons */}
           <div className="mt-8 flex justify-end space-x-4">
             <Button
@@ -368,7 +415,7 @@ export default function EditCandidateForm({
             >
               Cancel
             </Button>
-            
+
             <Button
               type="submit"
               variant="purple"
@@ -388,60 +435,78 @@ export default function EditCandidateForm({
         </motion.div>
 
         {/* Preview sidebar - non-editable */}
-        <motion.div 
+        <motion.div
           initial={{ opacity: 0, x: 10 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.8, ease: "easeOut", delay: 0.2 }}
           className="w-full md:w-1/3 h-fit mt-24"
         >
-            <div className="bg-white p-4">
-            
+          <div className="bg-white p-4">
             {/* Profile Preview */}
             <div className="mb-6 p-3 rounded">
               <div className="flex items-center gap-3">
-              <Image
-                src={candidate.photo || "/default-profile.png"}
-                width={40}
-                height={40}
-                alt={formData.name}
+                <Image
+                  src={candidate.photo || "/default-profile.png"}
+                  width={40}
+                  height={40}
+                  alt={formData.name}
                   className="rounded-full"
                 />
                 <div>
-                  <div className="font-medium text-gray-900">{formData.name}</div>
-                  <div className="text-xs text-gray-600">{formData.position}</div>
-                  <div className="text-xs font-medium text-purple-600">{formData.party}</div>
+                  <div className="font-medium text-gray-900">
+                    {formData.name}
+                  </div>
+                  <div className="text-xs text-gray-600">
+                    {formData.position}
+                  </div>
+                  <div className="text-xs font-medium text-purple-600">
+                    {formData.party}
+                  </div>
                 </div>
               </div>
             </div>
-            
+
             {/* Election Context */}
             <div className="mb-4">
-              <h3 className="text-sm font-medium text-gray-700 mb-2">Election: {election?.position}</h3>
-              <p className="text-xs text-gray-600 mb-2">Other candidates in this election:</p>
-              
+              <h3 className="text-sm font-medium text-gray-700 mb-2">
+                Election: {election?.position}
+              </h3>
+              <p className="text-xs text-gray-600 mb-2">
+                Other candidates in this election:
+              </p>
+
               {relatedCandidates.length > 0 ? (
                 <div className="space-y-3">
                   {relatedCandidates.map((relatedCandidate) => (
-                    <div key={relatedCandidate.id} className="flex items-center p-2 rounded">
+                    <div
+                      key={relatedCandidate.id}
+                      className="flex items-center p-2 rounded"
+                    >
                       <Image
-                        src={relatedCandidate.photo || '/default-profile.png'}
+                        src={relatedCandidate.photo || "/default-profile.png"}
                         width={30}
                         height={30}
                         alt={relatedCandidate.name}
                         className="rounded-full mr-2"
                       />
                       <div>
-                        <div className="text-sm font-medium">{relatedCandidate.name}</div>
-                        <div className="text-xs text-purple-600">{relatedCandidate.party}</div>
+                        <div className="text-sm font-medium">
+                          {relatedCandidate.name}
+                        </div>
+                        <div className="text-xs text-purple-600">
+                          {relatedCandidate.party}
+                        </div>
                       </div>
                     </div>
                   ))}
                 </div>
               ) : (
-                <p className="text-sm text-gray-500 italic">No other candidates found.</p>
+                <p className="text-sm text-gray-500 italic">
+                  No other candidates found.
+                </p>
               )}
             </div>
-            
+
             {/* Help Text */}
             <div className="rounded text-sm text-blue-800 whitespace-nowrap">
               <h4 className="font-medium mb-1">Tips for a Great Profile</h4>

@@ -9,81 +9,67 @@ import { motion } from "framer-motion";
 import {
   FaSave,
   FaCheckCircle,
+  FaPlus,
   FaTimes,
   FaGlobe,
-  FaCity,
-  FaFlag,
-  FaPhone,
-  FaEnvelope,
-  FaBriefcase,
+  FaLinkedin,
   FaMapMarkerAlt,
 } from "react-icons/fa";
 import { useAuth } from "@clerk/nextjs";
 import { useUser } from "@clerk/nextjs";
+import SearchBar from "@/components/ResultsSearchBar";
+import { Election } from "@prisma/client";
 import { getLocationSuggestions, normalizeLocation } from "@/lib/geocoding";
 import { debounce } from "@/lib/debounce";
 import { AutocompleteSuggestion, NormalizedLocation } from "@/types/geocoding";
 import { Loader2 } from "lucide-react";
 
-// Define service category enum to match Prisma schema
-enum ServiceCategoryType {
-  CREATIVE_BRANDING = "CREATIVE_BRANDING",
-  DIGITAL_TECH = "DIGITAL_TECH",
-  PHYSICAL_MEDIA = "PHYSICAL_MEDIA",
-  CONSULTING_PR = "CONSULTING_PR",
-  OTHER = "OTHER",
-}
-
-// Service category display names
-const serviceCategoryLabels = {
-  [ServiceCategoryType.CREATIVE_BRANDING]: "Creative & Branding",
-  [ServiceCategoryType.DIGITAL_TECH]: "Digital & Technology",
-  [ServiceCategoryType.PHYSICAL_MEDIA]: "Physical Media & Production",
-  [ServiceCategoryType.CONSULTING_PR]: "Consulting & PR",
-  [ServiceCategoryType.OTHER]: "Other Services",
-};
-
-// Define the form state interface
+// Form state interface
 interface FormState {
   name: string;
-  email: string;
-  phone: string;
+  party: string;
+  position: string;
   bio: string;
   website: string;
+  linkedin: string;
   city: string;
   state: string;
-  serviceCategory: ServiceCategoryType;
-  serviceDescription: string;
-}
-
-// Form validation error interface
-interface FormErrors {
-  name?: string;
-  email?: string;
-  phone?: string;
-  bio?: string;
-  location?: string;
-  city?: string;
-  state?: string;
-  website?: string;
-  serviceCategory?: string;
-  serviceDescription?: string;
+  policies: string[];
+  electionId: string;
+  additionalNotes: string;
 }
 
 // Initial empty form state
 const initialFormState: FormState = {
   name: "",
-  email: "",
-  phone: "",
+  party: "",
+  position: "",
   bio: "",
   website: "",
+  linkedin: "",
   city: "",
   state: "",
-  serviceCategory: ServiceCategoryType.OTHER,
-  serviceDescription: "",
+  policies: [],
+  electionId: "",
+  additionalNotes: "",
 };
 
-export default function VendorSignupForm() {
+// Form validation error interface
+interface FormErrors {
+  name?: string;
+  party?: string;
+  position?: string;
+  bio?: string;
+  city?: string;
+  state?: string;
+  location?: string;
+  website?: string;
+  linkedin?: string;
+  policies?: string;
+  electionId?: string;
+}
+
+export default function CandidateSignupForm() {
   const [formData, setFormData] = useState<FormState>(initialFormState);
   const [errors, setErrors] = useState<FormErrors>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -92,6 +78,10 @@ export default function VendorSignupForm() {
   );
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [draftSaved, setDraftSaved] = useState(false);
+  const [newPolicy, setNewPolicy] = useState("");
+  const [selectedElection, setSelectedElection] = useState<Election | null>(
+    null
+  );
 
   // Location search state
   const [locationInput, setLocationInput] = useState("");
@@ -109,7 +99,7 @@ export default function VendorSignupForm() {
 
   // Load draft from localStorage on component mount
   useEffect(() => {
-    const savedDraft = localStorage.getItem("vendorSignupDraft");
+    const savedDraft = localStorage.getItem("candidateSignupDraft");
     if (savedDraft) {
       try {
         const parsedDraft = JSON.parse(savedDraft);
@@ -122,15 +112,13 @@ export default function VendorSignupForm() {
       }
     }
 
-    // Pre-fill email from Clerk if available
-    if (user && user.emailAddresses && user.emailAddresses.length > 0) {
-      const primaryEmail = user.emailAddresses.find(
-        (email) => email.id === user.primaryEmailAddressId
-      )?.emailAddress;
-      if (primaryEmail) {
+    // Pre-fill email and name from Clerk if available
+    if (user) {
+      const fullName = `${user.firstName || ""} ${user.lastName || ""}`.trim();
+      if (fullName) {
         setFormData((prev) => ({
           ...prev,
-          email: primaryEmail,
+          name: prev.name || fullName,
         }));
       }
     }
@@ -154,6 +142,26 @@ export default function VendorSignupForm() {
       document.removeEventListener("mousedown", handleClickOutside);
     };
   }, []);
+
+  // Fetch election details when electionId changes
+  useEffect(() => {
+    if (formData.electionId) {
+      fetch(`/api/elections/${formData.electionId}`)
+        .then((res) => {
+          if (!res.ok) {
+            throw new Error("Election not found");
+          }
+          return res.json();
+        })
+        .then((data) => setSelectedElection(data))
+        .catch((err) => {
+          console.error("Error fetching election details:", err);
+          setSelectedElection(null);
+        });
+    } else {
+      setSelectedElection(null);
+    }
+  }, [formData.electionId]);
 
   // Input change handler
   const handleInputChange = (
@@ -283,9 +291,43 @@ export default function VendorSignupForm() {
     }, 200);
   };
 
+  // Add policy to the list
+  const addPolicy = () => {
+    if (newPolicy.trim() === "") return;
+    // Check if we already have 5 policies
+    if (formData.policies.length >= 5) {
+      setErrors((prev) => ({
+        ...prev,
+        policies: "Maximum of 5 policies allowed",
+      }));
+      return;
+    }
+    setFormData((prev) => ({
+      ...prev,
+      policies: [...prev.policies, newPolicy.trim()],
+    }));
+    setNewPolicy("");
+    // Clear policy error if it exists
+    if (errors.policies) {
+      setErrors((prev) => ({ ...prev, policies: undefined }));
+    }
+  };
+
+  // Remove policy from the list
+  const removePolicy = (index: number) => {
+    setFormData((prev) => ({
+      ...prev,
+      policies: prev.policies.filter((_, i) => i !== index),
+    }));
+    // Clear policy error if it exists
+    if (errors.policies) {
+      setErrors((prev) => ({ ...prev, policies: undefined }));
+    }
+  };
+
   // Save draft to localStorage
   const saveDraft = () => {
-    localStorage.setItem("vendorSignupDraft", JSON.stringify(formData));
+    localStorage.setItem("candidateSignupDraft", JSON.stringify(formData));
     setDraftSaved(true);
     // Reset draft saved notification after 3 seconds
     setTimeout(() => setDraftSaved(false), 3000);
@@ -293,9 +335,19 @@ export default function VendorSignupForm() {
 
   // Clear draft from localStorage and reset form
   const clearDraft = () => {
-    localStorage.removeItem("vendorSignupDraft");
+    localStorage.removeItem("candidateSignupDraft");
     setFormData(initialFormState);
     setLocationInput("");
+  };
+
+  // URL validation helper
+  const isValidUrl = (url: string): boolean => {
+    try {
+      new URL(url);
+      return true;
+    } catch (e) {
+      return false;
+    }
   };
 
   // Form validation
@@ -303,23 +355,25 @@ export default function VendorSignupForm() {
     const newErrors: FormErrors = {};
 
     if (!formData.name.trim()) {
-      newErrors.name = "Business name is required";
+      newErrors.name = "Name is required";
     } else if (formData.name.length > 100) {
       newErrors.name = "Name must be less than 100 characters";
     }
 
-    if (!formData.email.trim()) {
-      newErrors.email = "Email is required";
-    } else if (!/^\S+@\S+\.\S+$/.test(formData.email)) {
-      newErrors.email = "Please enter a valid email address";
+    if (!formData.party.trim()) {
+      newErrors.party = "Party is required";
+    } else if (formData.party.length > 100) {
+      newErrors.party = "Party must be less than 100 characters";
     }
 
-    if (formData.phone && !/^[0-9\-\(\)\s\+]+$/.test(formData.phone)) {
-      newErrors.phone = "Please enter a valid phone number";
+    if (!formData.position.trim()) {
+      newErrors.position = "Position is required";
+    } else if (formData.position.length > 200) {
+      newErrors.position = "Position must be less than 200 characters";
     }
 
     if (!formData.bio.trim()) {
-      newErrors.bio = "Business bio is required";
+      newErrors.bio = "Bio is required";
     } else if (formData.bio.length > 2000) {
       newErrors.bio = "Bio must be less than 2000 characters";
     }
@@ -340,25 +394,17 @@ export default function VendorSignupForm() {
       newErrors.website = "Please enter a valid URL";
     }
 
-    if (!formData.serviceDescription.trim()) {
-      newErrors.serviceDescription = "Service description is required";
-    } else if (formData.serviceDescription.length > 1000) {
-      newErrors.serviceDescription =
-        "Service description must be less than 1000 characters";
+    if (formData.linkedin && !isValidUrl(formData.linkedin)) {
+      newErrors.linkedin = "Please enter a valid URL";
     }
+
+    if (formData.policies.length === 0) {
+      newErrors.policies = "At least one policy is required";
+    }
+
+    // Election can be optional as specified
 
     return newErrors;
-  };
-
-  // URL validation helper
-  const isValidUrl = (url: string): boolean => {
-    try {
-      new URL(url);
-      return true;
-    } catch (e) {
-      console.log(e);
-      return false;
-    }
   };
 
   // Handle form submission
@@ -367,7 +413,7 @@ export default function VendorSignupForm() {
 
     // Check if user is authenticated
     if (!isLoaded || !userId) {
-      setErrorMessage("You must be logged in to register as a vendor.");
+      setErrorMessage("You must be logged in to register as a candidate.");
       setSubmitStatus("error");
       return;
     }
@@ -382,13 +428,16 @@ export default function VendorSignupForm() {
     setIsSubmitting(true);
 
     try {
-      const response = await fetch("/api/vendor", {
+      const response = await fetch("/api/candidate", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
           ...formData,
+          electionId: formData.electionId
+            ? parseInt(formData.electionId)
+            : undefined,
           clerkUserId: userId,
         }),
       });
@@ -397,13 +446,13 @@ export default function VendorSignupForm() {
         setSubmitStatus("success");
         clearDraft(); // Clear draft after successful submission
 
-        // Redirect to vendor dashboard after successful submission
+        // Redirect to candidate dashboard after successful submission
         setTimeout(() => {
-          router.push("/vendors/vendor-dashboard");
+          router.push("/candidates/candidate-dashboard");
         }, 2000);
       } else {
         const data = await response.json();
-        setErrorMessage(data.error || "Failed to submit vendor information");
+        setErrorMessage(data.error || "Failed to submit candidate information");
         setSubmitStatus("error");
       }
     } catch (error: any) {
@@ -423,10 +472,12 @@ export default function VendorSignupForm() {
     return (
       <div className="text-center p-6">
         <h2 className="text-xl font-semibold mb-4">Authentication Required</h2>
-        <p className="mb-4">Please sign in before registering as a vendor.</p>
+        <p className="mb-4">
+          Please sign in before registering as a candidate.
+        </p>
         <Button
           variant="purple"
-          onClick={() => router.push("/sign-in?redirect=/vendors")}
+          onClick={() => router.push("/sign-in?redirect=/candidates")}
         >
           Sign In
         </Button>
@@ -436,20 +487,20 @@ export default function VendorSignupForm() {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
-      {/* Business Name */}
+      {/* Candidate Name */}
       <div className="space-y-2 text-left">
         <label
           htmlFor="name"
           className="block text-sm font-medium text-gray-700"
         >
-          Business Name*
+          Full Name*
         </label>
         <Input
           id="name"
           name="name"
           value={formData.name}
           onChange={handleInputChange}
-          placeholder="Your business or service name"
+          placeholder="Your full name"
           className={errors.name ? "border-red-500" : ""}
           style={{ width: "100%" }}
         />
@@ -458,69 +509,47 @@ export default function VendorSignupForm() {
         )}
       </div>
 
-      {/* Contact Information */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <label
-            htmlFor="email"
-            className="block text-sm font-medium text-gray-700 flex items-center gap-2"
-          >
-            <FaEnvelope className="text-purple-600" /> Email*
-          </label>
-          <Input
-            id="email"
-            name="email"
-            type="email"
-            value={formData.email}
-            onChange={handleInputChange}
-            placeholder="contact@example.com"
-            className={errors.email ? "border-red-500" : ""}
-          />
-          {errors.email && (
-            <p className="text-red-500 text-xs mt-1">{errors.email}</p>
-          )}
-        </div>
-
-        <div className="space-y-2">
-          <label
-            htmlFor="phone"
-            className="block text-sm font-medium text-gray-700 flex items-center gap-2"
-          >
-            <FaPhone className="text-purple-600" /> Phone (Optional)
-          </label>
-          <Input
-            id="phone"
-            name="phone"
-            value={formData.phone}
-            onChange={handleInputChange}
-            placeholder="(123) 456-7890"
-            className={errors.phone ? "border-red-500" : ""}
-          />
-          {errors.phone && (
-            <p className="text-red-500 text-xs mt-1">{errors.phone}</p>
-          )}
-        </div>
-      </div>
-
-      {/* Website */}
-      <div className="space-y-2">
+      {/* Party Affiliation */}
+      <div className="space-y-2 text-left">
         <label
-          htmlFor="website"
-          className="block text-sm font-medium text-gray-700 flex items-center gap-2"
+          htmlFor="party"
+          className="block text-sm font-medium text-gray-700"
         >
-          <FaGlobe className="text-purple-600" /> Website (Optional)
+          Political Party/Affiliation*
         </label>
         <Input
-          id="website"
-          name="website"
-          value={formData.website}
+          id="party"
+          name="party"
+          value={formData.party}
           onChange={handleInputChange}
-          placeholder="https://yourbusiness.com"
-          className={errors.website ? "border-red-500" : ""}
+          placeholder="e.g., Democrat, Republican, Independent"
+          className={errors.party ? "border-red-500" : ""}
           style={{ width: "100%" }}
         />
-        {errors.website && (
-          <p className="text-red-500 text-xs mt-1">{errors.website}</p>
+        {errors.party && (
+          <p className="text-red-500 text-xs mt-1">{errors.party}</p>
+        )}
+      </div>
+
+      {/* Position */}
+      <div className="space-y-2 text-left">
+        <label
+          htmlFor="position"
+          className="block text-sm font-medium text-gray-700"
+        >
+          Position*
+        </label>
+        <Input
+          id="position"
+          name="position"
+          value={formData.position}
+          onChange={handleInputChange}
+          placeholder="e.g., Mayor, City Council, State Representative"
+          className={errors.position ? "border-red-500" : ""}
+          style={{ width: "100%" }}
+        />
+        {errors.position && (
+          <p className="text-red-500 text-xs mt-1">{errors.position}</p>
         )}
       </div>
 
@@ -603,13 +632,64 @@ export default function VendorSignupForm() {
         </div>
       )}
 
-      {/* Business Bio */}
-      <div className="space-y-2">
+      {/* Election Search */}
+      <div className="space-y-2 text-left">
+        <label
+          htmlFor="electionId"
+          className="block text-sm font-medium text-gray-700"
+        >
+          Election (Optional)
+        </label>
+        <p className="text-sm text-gray-500">
+          If you're not currently running in an election, leave this blank. You
+          can add an election later from your dashboard.
+        </p>
+
+        {/* Display the selected election */}
+        {formData.electionId && selectedElection && (
+          <div className="flex items-center justify-between bg-white border border-gray-300 px-4 py-2 rounded-xl shadow-sm">
+            <div>
+              <div className="font-medium">{selectedElection.position}</div>
+              <div className="text-gray-600 text-sm">
+                {selectedElection.city}, {selectedElection.state}
+              </div>
+            </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() =>
+                setFormData((prev) => ({ ...prev, electionId: "" }))
+              }
+              className="text-gray-400 hover:text-gray-600"
+            >
+              Clear
+            </Button>
+          </div>
+        )}
+
+        {/* Show search if no election is selected */}
+        {!formData.electionId && (
+          <SearchBar
+            placeholder="Search for an election..."
+            apiEndpoint="/api/elections/search"
+            shadow={false}
+            onResultSelect={(election) => {
+              setFormData((prev) => ({
+                ...prev,
+                electionId: election.id.toString(),
+              }));
+            }}
+          />
+        )}
+      </div>
+
+      {/* Bio */}
+      <div className="space-y-2 text-left">
         <label
           htmlFor="bio"
-          className="block text-sm font-medium text-gray-700 text-left"
+          className="block text-sm font-medium text-gray-700"
         >
-          Business Description*
+          Biography*
         </label>
         <Textarea
           id="bio"
@@ -617,7 +697,7 @@ export default function VendorSignupForm() {
           rows={4}
           value={formData.bio}
           onChange={handleInputChange}
-          placeholder="Describe your business, experience, and what sets you apart..."
+          placeholder="Provide information about your background, experience, and qualifications..."
           className={errors.bio ? "border-red-500" : ""}
         />
         {errors.bio && (
@@ -628,54 +708,118 @@ export default function VendorSignupForm() {
         </p>
       </div>
 
-      {/* Service Category */}
-      <div className="space-y-2">
-        <label
-          htmlFor="serviceCategory"
-          className="block text-sm font-medium text-gray-700 flex items-center gap-2"
-        >
-          <FaBriefcase className="text-purple-600" /> Service Category*
+      {/* Policies */}
+      <div className="space-y-2 text-left">
+        <label className="block text-sm font-medium text-gray-700">
+          Policies* ({formData.policies.length}/5)
         </label>
-        <select
-          id="serviceCategory"
-          name="serviceCategory"
-          value={formData.serviceCategory}
-          onChange={handleInputChange}
-          className="w-full rounded-md border border-gray-300 py-2 px-3 shadow-sm focus:border-purple-500 focus:outline-none focus:ring-purple-500"
-        >
-          {Object.entries(serviceCategoryLabels).map(([value, label]) => (
-            <option key={value} value={value}>
-              {label}
-            </option>
+        <div className="flex gap-2">
+          <Input
+            id="newPolicy"
+            value={newPolicy}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+              setNewPolicy(e.target.value)
+            }
+            placeholder="Add a policy"
+            className="flex-grow"
+          />
+          <Button
+            type="button"
+            onClick={addPolicy}
+            disabled={formData.policies.length >= 5}
+            variant="outline"
+            className="whitespace-nowrap flex items-center gap-2"
+          >
+            <FaPlus />
+            <span>Add</span>
+          </Button>
+        </div>
+
+        {errors.policies && (
+          <p className="text-red-500 text-xs mt-1">{errors.policies}</p>
+        )}
+
+        <ul className="mt-3 space-y-2">
+          {formData.policies.map((policy, index) => (
+            <li
+              key={index}
+              className="flex items-center bg-gray-50 p-2 rounded-md"
+            >
+              <span className="flex-grow">{policy}</span>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={() => removePolicy(index)}
+                className="text-red-500 hover:text-red-700"
+              >
+                <FaTimes />
+              </Button>
+            </li>
           ))}
-        </select>
+        </ul>
       </div>
 
-      {/* Service Description */}
-      <div className="space-y-2">
+      {/* Website and LinkedIn */}
+      <div className="space-y-4">
+        <h3 className="text-sm font-medium text-gray-700 text-left">
+          Optional Contact Information
+        </h3>
+
+        <div className="flex items-center gap-3">
+          <FaGlobe className="text-purple-600 text-lg" />
+          <div className="flex-grow space-y-1">
+            <Input
+              id="website"
+              name="website"
+              value={formData.website}
+              onChange={handleInputChange}
+              placeholder="https://example.com"
+              className={`${errors.website ? "border-red-500" : ""} w-full`}
+              style={{ width: "100%" }}
+            />
+            {errors.website && (
+              <p className="text-red-500 text-xs">{errors.website}</p>
+            )}
+          </div>
+        </div>
+
+        <div className="flex items-center gap-3">
+          <FaLinkedin className="text-purple-600 text-lg" />
+          <div className="flex-grow space-y-1 w-full">
+            <Input
+              id="linkedin"
+              name="linkedin"
+              value={formData.linkedin}
+              onChange={handleInputChange}
+              placeholder="https://linkedin.com/in/username"
+              className={`${errors.linkedin ? "border-red-500" : ""} w-full`}
+              style={{ width: "100%" }}
+            />
+            {errors.linkedin && (
+              <p className="text-red-500 text-xs">{errors.linkedin}</p>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Additional Notes */}
+      <div className="space-y-2 text-left">
         <label
-          htmlFor="serviceDescription"
-          className="block text-sm font-medium text-gray-700 text-left"
+          htmlFor="additionalNotes"
+          className="block text-sm font-medium text-gray-700"
         >
-          Detailed Service Description*
+          Additional Notes (Optional)
         </label>
         <Textarea
-          id="serviceDescription"
-          name="serviceDescription"
+          id="additionalNotes"
+          name="additionalNotes"
           rows={3}
-          value={formData.serviceDescription}
+          value={formData.additionalNotes}
           onChange={handleInputChange}
-          placeholder="Explain your services, expertise, and how you can help political campaigns..."
-          className={errors.serviceDescription ? "border-red-500" : ""}
+          placeholder="Any additional information..."
+          className="w-full"
         />
-        {errors.serviceDescription && (
-          <p className="text-red-500 text-xs mt-1">
-            {errors.serviceDescription}
-          </p>
-        )}
-        <p className="text-gray-500 text-xs">
-          {formData.serviceDescription.length}/1000 characters
-        </p>
       </div>
 
       {/* Display Success/Error Messages */}
@@ -686,9 +830,7 @@ export default function VendorSignupForm() {
           className="p-3 bg-green-100 text-green-700 rounded-lg flex items-center gap-2"
         >
           <FaCheckCircle />
-          <span>
-            Registration submitted successfully! Redirecting to dashboard...
-          </span>
+          <span>Registration successful! Redirecting to your dashboard...</span>
         </motion.div>
       )}
 
@@ -759,7 +901,7 @@ export default function VendorSignupForm() {
               Submitting...
             </span>
           ) : (
-            "Register as a Vendor"
+            "Register as a Candidate"
           )}
         </Button>
       </div>
