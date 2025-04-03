@@ -83,9 +83,8 @@ export default function TestimonialsList({
                   ))}
                 </div>
                 <div className="relative mt-4">
-                  <Quote className="absolute -top-2 -left-2 h-6 w-6 text-gray-200" />
-                  <p className="text-gray-700 italic pt-2 px-6">
-                    {testimonial.content}
+                  <p className="text-gray-700 italic pt-2">
+                    "{testimonial.content}"
                   </p>
                 </div>
                 <div className="mt-4 text-right">

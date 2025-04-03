@@ -23,6 +23,23 @@ import {
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import VendorAnalyticsChart from "./VendorAnalyticsChart";
+import {
+  Vendor,
+  Testimonial,
+  PortfolioItem,
+  ServiceCategory,
+  Candidate,
+} from "@prisma/client";
+
+type TestimonialWithCandidates = Testimonial & {
+  candidate: Candidate;
+};
+
+type VendorExtended = Vendor & {
+  testimonials: TestimonialWithCandidates[];
+  portfolio: PortfolioItem[];
+  serviceCategories: ServiceCategory[];
+};
 
 export default async function VendorDashboard() {
   // Get the current user from Clerk
@@ -33,7 +50,7 @@ export default async function VendorDashboard() {
   }
 
   // Check if user exists in our database as a vendor
-  let vendor;
+  let vendor: VendorExtended | null;
   try {
     vendor = await prisma.vendor.findUnique({
       where: { clerkUserId: user.id },
@@ -90,7 +107,9 @@ export default async function VendorDashboard() {
     <VendorDashboardLayout vendor={vendor}>
       <div className="space-y-6">
         <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-bold tracking-tight">Dashboard</h1>
+          <h1 className="text-2xl font-bold tracking-tight">
+            Welcome, {vendor.name}
+          </h1>
           {vendor.verified && (
             <div className="flex items-center gap-1 text-green-600">
               <BadgeCheck className="h-5 w-5" />

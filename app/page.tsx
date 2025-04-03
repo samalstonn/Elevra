@@ -4,6 +4,7 @@ import { motion } from "framer-motion";
 import { Suspense } from "react";
 import { useRouter } from "next/navigation";
 import SearchBar from "../components/SearchBar";
+import Showcase from "../components/Showcase";
 import FeatureCards from "../components/FeatureCards";
 import AboutUs from "@/components/AboutUs";
 import { Button } from "@/components/ui/button";
@@ -133,14 +134,21 @@ function HomePageContent() {
         </motion.div>
       </motion.main>
 
-      <div className="mt-4 sm:mt-8 lg:mt-8"></div>
+      {/* Showcase Section - Added here */}
+      <motion.div
+        initial="hidden"
+        whileInView="visible"
+        viewport={{ once: true }}
+        className="max-w-screen bg-gray-50"
+      >
+        <Showcase />
+      </motion.div>
 
       {/* About Us Section */}
       <motion.div
         initial="hidden"
         whileInView="visible"
         viewport={{ once: true }}
-        className="w-full max-w-screen"
       >
         <AboutUs />
       </motion.div>
@@ -150,7 +158,6 @@ function HomePageContent() {
         initial="hidden"
         whileInView="visible"
         viewport={{ once: true }}
-        className="w-full max-w-4xl sm:max-w-6xl lg:max-w-7xl xl:max-w-[80%] px-2 sm:px-4"
       >
         <FeatureCards />
       </motion.div>
@@ -168,17 +175,8 @@ function HomePageContent() {
             transition: { duration: 0.6, ease: "easeOut" },
           },
         }}
-        className="mb-12"
+        
       >
-        <Button
-          variant="purple"
-          size="xxl"
-          onClick={() => {
-            window.scrollTo({ top: 0, behavior: "smooth" });
-          }}
-        >
-          Explore Candidates Now
-        </Button>
       </motion.div>
     </div>
   );

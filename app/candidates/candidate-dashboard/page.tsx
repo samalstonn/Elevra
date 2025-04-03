@@ -25,23 +25,28 @@ export default function CandidateDashboard() {
   const { user, isLoaded, isSignedIn } = useUser();
   const [candidate, setCandidate] = useState<Candidate | null>(null);
   const [loading, setLoading] = useState(true);
-  const [activities, setActivities] = useState<Activity[] | []>([]);
-  const [donations, setDonations] = useState<Donation[] | []>([]);
+  const [activities, setActivities] = useState<Activity[]>([
+    { icon: "🚀", description: "Launched new campaign strategy" },
+    { icon: "📈", description: "Increased social media engagement by 25%" },
+  ]);
+  const [donations, setDonations] = useState<Donation[]>([
+    { donorName: "Clark Kent", amount: 100 },
+    { donorName: "Lois Lane", amount: 200 },
+  ]);
 
   useEffect(() => {
-    if (candidate?.id) {
-      // Fetch recent activities
-      fetch(`/api/candidate/${candidate.id}/activities`)
-        .then((res) => (res.ok ? res.json() : []))
-        .then((data) => setActivities(data))
-        .catch((err) => console.error("Error fetching activities:", err));
-
-      // Fetch recent donations
-      fetch(`/api/candidate/${candidate.id}/donations`)
-        .then((res) => (res.ok ? res.json() : []))
-        .then((data) => setDonations(data))
-        .catch((err) => console.error("Error fetching donations:", err));
-    }
+    // if (candidate?.id) {
+    //   // Fetch recent activities
+    //   fetch(`/api/candidate/${candidate.id}/activities`)
+    //     .then((res) => (res.ok ? res.json() : []))
+    //     .then((data) => setActivities(data))
+    //     .catch((err) => console.error("Error fetching activities:", err));
+    //   // Fetch recent donations
+    //   fetch(`/api/candidate/${candidate.id}/donations`)
+    //     .then((res) => (res.ok ? res.json() : []))
+    //     .then((data) => setDonations(data))
+    //     .catch((err) => console.error("Error fetching donations:", err));
+    // }
   }, [candidate?.id]);
 
   useEffect(() => {

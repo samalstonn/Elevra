@@ -13,6 +13,7 @@ import {
 
 interface DataPoint {
   date: string;
+  timestamp: number;
   views: number;
   interactions: number;
 }
@@ -27,6 +28,7 @@ const generateData = () => {
 
     data.push({
       date: date.toISOString().slice(0, 10),
+      timestamp: date.getTime(),
       views: Math.floor(Math.random() * 20) + 5,
       interactions: Math.floor(Math.random() * 10) + 1,
     });
@@ -61,10 +63,13 @@ export default function VendorAnalyticsChart() {
         >
           <CartesianGrid strokeDasharray="3 3" />
           <XAxis
-            dataKey="date"
-            tickFormatter={(date) => {
-              const d = new Date(date);
-              return d.getDate() + "/" + (d.getMonth() + 1);
+            dataKey="timestamp"
+            type="number"
+            scale="time"
+            domain={["dataMin", "dataMax"]}
+            tickFormatter={(tick) => {
+              const d = new Date(tick);
+              return d.getMonth() + 1 + "/" + d.getDate();
             }}
             tick={{ fontSize: 12 }}
           />
