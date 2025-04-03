@@ -32,9 +32,7 @@ const showcaseContent = {
 
 type ContentType = "voters" | "campaigns" | "vendors";
 
-const Showcase: React.FC<ShowcaseProps> = ({
-  title = "Build your campaign with Elevra",
-}) => {
+const Showcase: React.FC<ShowcaseProps> = ({}) => {
   const [activeContent, setActiveContent] = useState<ContentType>("voters");
   const [imageError, setImageError] = useState<Record<ContentType, boolean>>({
     voters: false,
@@ -72,10 +70,12 @@ const Showcase: React.FC<ShowcaseProps> = ({
               {/* Try to load image first */}
               {!imageError[activeContent] && (
                 <div className="flex justify-center">
-                  <img
+                  <Image
+                    width={1160}
+                    height={706}
                     src={showcaseContent[activeContent].imageUrl}
                     alt={showcaseContent[activeContent].title}
-                    className="rounded-lg max-w-full h-auto shadow-[0_0_10px_rgba(0,0,0,0.3)]"
+                    className="rounded-lg shadow-[0_0_10px_rgba(0,0,0,0.3)] object-contain"
                     onError={() => handleImageError(activeContent)}
                   />
                 </div>

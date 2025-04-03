@@ -1,6 +1,6 @@
 "use client";
 
-import { Star, Quote, MessageSquare } from "lucide-react";
+import { Star, MessageSquare } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 
@@ -84,7 +84,7 @@ export default function TestimonialsList({
                 </div>
                 <div className="relative mt-4">
                   <p className="text-gray-700 italic pt-2">
-                    "{testimonial.content}"
+                    &quot;{testimonial.content}&quot;
                   </p>
                 </div>
                 <div className="mt-4 text-right">

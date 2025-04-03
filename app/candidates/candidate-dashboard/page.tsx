@@ -25,11 +25,11 @@ export default function CandidateDashboard() {
   const { user, isLoaded, isSignedIn } = useUser();
   const [candidate, setCandidate] = useState<Candidate | null>(null);
   const [loading, setLoading] = useState(true);
-  const [activities, setActivities] = useState<Activity[]>([
+  const [activities, _setActivities] = useState<Activity[]>([
     { icon: "🚀", description: "Launched new campaign strategy" },
     { icon: "📈", description: "Increased social media engagement by 25%" },
   ]);
-  const [donations, setDonations] = useState<Donation[]>([
+  const [donations, _setDonations] = useState<Donation[]>([
     { donorName: "Clark Kent", amount: 100 },
     { donorName: "Lois Lane", amount: 200 },
   ]);
