@@ -28,23 +28,26 @@ model Candidate {
   party           String
   policies        String[]
   website         String?
-  electionId      Int
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  electionId      Int?
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
   additionalNotes String?
   city            String?
   linkedin        String?
   photo           String?
   position        String
   sources         String[]
+  verified        Boolean          @default(false)
   state           String?
-  verified        Boolean  @default(false)
   donations       String[]
-  bio             String   @default("")
-  clerkUserId     String?  @unique
+  bio             String           @default("")
+  clerkUserId     String?          @unique
   history         String[]
-  id              Int      @id @default(autoincrement()) @map("id")
-  election        Election @relation(fields: [electionId], references: [id])
+  id              Int              @id @default(autoincrement())
+  status          SubmissionStatus @default(PENDING)
+  election        Election?        @relation(fields: [electionId], references: [id])
+  Testimonial     Testimonial[]
+  Vendors         Vendor[]         @relation("CandidateToVendor")
 }
 
 model UserValidationRequest {
@@ -103,6 +106,55 @@ model CandidateSubmission {
   notes           String?
 }
 
+model Vendor {
+  id                Int               @id @default(autoincrement())
+  name              String
+  bio               String
+  website           String?
+  email             String
+  phone             String?
+  city              String
+  state             String
+  verified          Boolean           @default(false)
+  subscription      VendorTier        @default(FREE)
+  clerkUserId       String            @unique
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
+  status            SubmissionStatus  @default(PENDING)
+  portfolio         PortfolioItem[]
+  testimonials      Testimonial[]
+  candidate         Candidate[]       @relation("CandidateToVendor")
+  serviceCategories ServiceCategory[] @relation("VendorServices")
+}
+
+model ServiceCategory {
+  id          Int                 @id @default(autoincrement())
+  name        String              @unique
+  type        ServiceCategoryType @unique
+  description String?
+  vendors     Vendor[]            @relation("VendorServices")
+}
+
+model PortfolioItem {
+  id          Int     @id @default(autoincrement())
+  vendorId    Int
+  title       String
+  imageUrl    String
+  description String?
+  vendor      Vendor  @relation(fields: [vendorId], references: [id])
+}
+
+model Testimonial {
+  id          Int       @id @default(autoincrement())
+  vendorId    Int
+  candidateId Int
+  content     String
+  rating      Int
+  createdAt   DateTime  @default(now())
+  candidate   Candidate @relation(fields: [candidateId], references: [id])
+  vendor      Vendor    @relation(fields: [vendorId], references: [id])
+}
+
 enum ElectionType {
   LOCAL
   STATE
@@ -110,8 +162,22 @@ enum ElectionType {
   UNIVERSITY
 }
 
+enum VendorTier {
+  FREE
+  STANDARD
+  PREMIUM
+}
+
 enum SubmissionStatus {
   PENDING
   APPROVED
   REJECTED
+}
+
+enum ServiceCategoryType {
+  CREATIVE_BRANDING
+  DIGITAL_TECH
+  PHYSICAL_MEDIA
+  CONSULTING_PR
+  OTHER
 }

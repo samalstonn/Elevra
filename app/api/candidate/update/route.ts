@@ -1,4 +1,3 @@
-// app/api/candidate/update/route.ts
 import { NextRequest, NextResponse } from "next/server";
 import { currentUser } from "@clerk/nextjs/server";
 import prisma from "@/prisma/prisma";
@@ -16,23 +15,31 @@ export async function POST(request: NextRequest) {
 
     // Parse the request body
     const body = await request.json();
-    const { 
-      candidateId, 
-      name, 
-      position, 
-      party, 
-      bio, 
-      website, 
-      linkedin, 
-      additionalNotes, 
-      city, 
-      state, 
-      policies, 
-      sources 
+    const {
+      candidateId,
+      name,
+      position,
+      party,
+      bio,
+      website,
+      linkedin,
+      additionalNotes,
+      city,
+      state,
+      policies,
+      electionId,
     } = body;
 
     // Validate required fields
-    if (!candidateId || !name || !position || !party || !bio) {
+    if (
+      !candidateId ||
+      !name ||
+      !position ||
+      !party ||
+      !bio ||
+      !city ||
+      !state
+    ) {
       return NextResponse.json(
         { error: "Missing required fields" },
         { status: 400 }
@@ -41,7 +48,7 @@ export async function POST(request: NextRequest) {
 
     // Fetch the candidate to verify ownership
     const candidate = await prisma.candidate.findUnique({
-      where: { id: Number(candidateId) }
+      where: { id: Number(candidateId) },
     });
 
     if (!candidate) {
@@ -66,30 +73,34 @@ export async function POST(request: NextRequest) {
         name,
         position,
         party,
-        bio: bio || null,
+        bio,
         website: website || null,
         linkedin: linkedin || null,
         additionalNotes: additionalNotes || null,
-        city: city || null,
-        state: state || null,
+        city,
+        state,
         policies: policies || [],
-        sources: sources || [],
-        // Keep the existing photo and verified status
+        // Only update electionId if provided
+        ...(electionId ? { electionId: Number(electionId) } : {}),
+        // Keep existing fields
         photo: candidate.photo,
-        verified: candidate.verified,
-      }
+        status: candidate.status,
+        sources: candidate.sources,
+        donations: candidate.donations,
+        history: candidate.history,
+      },
     });
 
     return NextResponse.json({
       success: true,
-      candidate: updatedCandidate
+      candidate: updatedCandidate,
     });
-
-  } catch (error) {
+  } catch (error: unknown) {
+    if (error instanceof Error) {
+      console.error("Error updating candidate:", error);
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
     console.error("Error updating candidate:", error);
-    return NextResponse.json(
-      { error: "Failed to update candidate" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Failed to update candidate" }, { status: 500 });
   }
 }

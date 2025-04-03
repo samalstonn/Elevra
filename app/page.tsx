@@ -4,9 +4,10 @@ import { motion } from "framer-motion";
 import { Suspense } from "react";
 import { useRouter } from "next/navigation";
 import SearchBar from "../components/SearchBar";
+import Showcase from "../components/Showcase";
 import FeatureCards from "../components/FeatureCards";
 import AboutUs from "@/components/AboutUs";
-import {Button} from "@/components/ui/button";
+import { Button } from "@/components/ui/button";
 import { NormalizedLocation } from "@/types/geocoding";
 
 export default function HomePage() {
@@ -21,33 +22,45 @@ function HomePageContent() {
   const router = useRouter();
 
   const handleSearch = (location: NormalizedLocation) => {
-    router.push(`/results?city=${encodeURIComponent(location.city)}&state=${encodeURIComponent(location.stateName)}`);
+    router.push(
+      `/results?city=${encodeURIComponent(
+        location.city
+      )}&state=${encodeURIComponent(location.stateName)}`
+    );
   };
 
   return (
     <div className="min-h-screen flex flex-col items-center w-full overflow-x-hidden mx-auto">
-      
       {/* Hero Section */}
-      <motion.main 
+      <motion.main
         initial="hidden"
         animate="visible"
         variants={{
           hidden: { opacity: 0, y: 30 },
-          visible: { 
-            opacity: 1, 
+          visible: {
+            opacity: 1,
             y: 0,
-            transition: { duration: 0.8, ease: "easeOut", staggerChildren: 0.2 }
-          }
+            transition: {
+              duration: 0.8,
+              ease: "easeOut",
+              staggerChildren: 0.2,
+            },
+          },
         }}
         className="flex flex-col items-center text-center py-12 sm:py-20 space-y-4 sm:space-y-6 w-full max-w-screen"
       >
-        <div className="h-20"></div> 
-        
+        <div className="h-20"></div>
+
         {/* Animated "Elevra" Header */}
         <motion.h1
           variants={{
             hidden: { opacity: 0, y: 20, rotate: -2 },
-            visible: { opacity: 1, y: 0, rotate: 0, transition: { duration: 0.6, ease: "easeOut" } }
+            visible: {
+              opacity: 1,
+              y: 0,
+              rotate: 0,
+              transition: { duration: 0.6, ease: "easeOut" },
+            },
           }}
           className="text-4xl sm:text-6xl md:text-7xl font-bold text-purple-900"
         >
@@ -57,7 +70,11 @@ function HomePageContent() {
         <motion.h2
           variants={{
             hidden: { opacity: 0, y: 20 },
-            visible: { opacity: 1, y: 0, transition: { duration: 0.6, ease: "easeOut" } }
+            visible: {
+              opacity: 1,
+              y: 0,
+              transition: { duration: 0.6, ease: "easeOut" },
+            },
           }}
           className="text-1xl sm:text-3xl md:text-4xl tracking-tight text-gray-900 w-full leading-tight"
         >
@@ -68,55 +85,99 @@ function HomePageContent() {
         <motion.div
           variants={{
             hidden: { opacity: 0, y: 30, scale: 0.9 },
-            visible: { opacity: 1, y: 0, scale: 1, transition: { duration: 0.6, ease: "easeOut" } }
+            visible: {
+              opacity: 1,
+              y: 0,
+              scale: 1,
+              transition: { duration: 0.6, ease: "easeOut" },
+            },
           }}
           className="w-full max-w-lg sm:max-w-xl md:max-w-2xl lg:max-w-3xl py-6"
         >
-          <SearchBar onSearch={(location: NormalizedLocation) => handleSearch(location)} />
+          <SearchBar
+            onSearch={(location: NormalizedLocation) => handleSearch(location)}
+          />
+        </motion.div>
+
+        <motion.div
+          variants={{
+            hidden: { opacity: 0, y: 30, scale: 0.9 },
+            visible: {
+              opacity: 1,
+              y: 0,
+              scale: 1,
+              transition: { duration: 0.6, ease: "easeOut" },
+            },
+          }}
+          className="mt-8 text-center text-gray-700 flex justify-center items-center gap-4"
+        >
+          <span>Looking for something else? I am a...</span>
+        </motion.div>
+        <motion.div
+          variants={{
+            hidden: { opacity: 0, y: 30, scale: 0.9 },
+            visible: {
+              opacity: 1,
+              y: 0,
+              scale: 1,
+              transition: { duration: 0.6, ease: "easeOut" },
+            },
+          }}
+          className="flex justify-center items-center gap-2"
+        >
+          <Button variant="purple" asChild>
+            <a href="/vendors">Vendor</a>
+          </Button>
+          <Button variant="purple" asChild>
+            <a href="/candidates">Candidate</a>
+          </Button>
         </motion.div>
       </motion.main>
 
-      <div className="mt-4 sm:mt-8 lg:mt-8"></div>
+      {/* Showcase Section - Added here */}
+      <motion.div
+        initial="hidden"
+        whileInView="visible"
+        viewport={{ once: true }}
+        className="max-w-screen bg-gray-50"
+      >
+        <Showcase />
+      </motion.div>
 
       {/* About Us Section */}
-      <motion.div 
-        initial="hidden" 
-        whileInView="visible" 
+      <motion.div
+        initial="hidden"
+        whileInView="visible"
         viewport={{ once: true }}
-        className="w-full max-w-screen"
       >
         <AboutUs />
       </motion.div>
 
       {/* Feature Cards Section */}
-      <motion.div 
+      <motion.div
         initial="hidden"
         whileInView="visible"
         viewport={{ once: true }}
-        className="w-full max-w-4xl sm:max-w-6xl lg:max-w-7xl xl:max-w-[80%] px-2 sm:px-4"
       >
         <FeatureCards />
       </motion.div>
 
-      <motion.div 
+      <motion.div
         initial="hidden"
         whileInView="visible"
         viewport={{ once: true }}
         variants={{
           hidden: { opacity: 0, y: 30, scale: 0.9 },
-          visible: { opacity: 1, y: 0, scale: 1, transition: { duration: 0.6, ease: "easeOut" } }
+          visible: {
+            opacity: 1,
+            y: 0,
+            scale: 1,
+            transition: { duration: 0.6, ease: "easeOut" },
+          },
         }}
-        className="mb-12"
+        
       >
-        <Button 
-          variant="purple" 
-          size="xxl" 
-          onClick={() => {window.scrollTo({ top: 0, behavior: 'smooth' })}}
-        >
-          Explore Candidates Now
-        </Button>
       </motion.div>
-      
     </div>
   );
 }

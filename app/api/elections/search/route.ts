@@ -11,17 +11,17 @@ export async function GET(request: NextRequest) {
       const elections = await prisma.election.findMany({
         take: 10,
         orderBy: {
-          date: 'desc'
+          date: "desc",
         },
         select: {
           id: true,
           position: true,
           date: true,
           city: true,
-          state: true
-        }
+          state: true,
+        },
       });
-      
+
       return NextResponse.json(elections);
     }
 
@@ -32,39 +32,42 @@ export async function GET(request: NextRequest) {
           {
             position: {
               contains: searchTerm,
-              mode: 'insensitive'
-            }
+              mode: "insensitive",
+            },
           },
           {
             city: {
               contains: searchTerm,
-              mode: 'insensitive'
-            }
+              mode: "insensitive",
+            },
           },
           {
             state: {
               contains: searchTerm,
-              mode: 'insensitive'
-            }
-          }
-        ]
+              mode: "insensitive",
+            },
+          },
+        ],
       },
       select: {
         id: true,
         position: true,
         date: true,
         city: true,
-        state: true
+        state: true,
       },
       orderBy: {
-        date: 'desc'
+        date: "desc",
       },
-      take: 10
+      take: 10,
     });
 
     return NextResponse.json(elections);
   } catch (error) {
     console.error("Error searching elections:", error);
-    return NextResponse.json({ error: "Error searching elections" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Error searching elections" },
+      { status: 500 }
+    );
   }
 }

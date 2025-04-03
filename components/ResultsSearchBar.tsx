@@ -6,7 +6,7 @@ import { Search } from "lucide-react";
 import Link from "next/link";
 import { normalizeSlug } from "@/lib/functions";
 
-type SearchResult = {
+export type SearchResult = {
   id: string;
   name?: string;
   electionId?: string;

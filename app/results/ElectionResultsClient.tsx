@@ -14,10 +14,13 @@ export type ElectionWithCandidates = Election & { candidates: Candidate[] };
 
 export default function ElectionResultsClient({ elections }: { elections: ElectionWithCandidates[] }) {
   // Check if there are any elections
-  const hasElections = elections && elections.length > 0;
+  const hasElections = Array.isArray(elections) && elections.length > 0;
 
   const sortedElections = useMemo(() => {
-    return elections ? [...elections].sort((a, b) => b.candidates.length - a.candidates.length) : [];
+    if (Array.isArray(elections)) {
+      return [...elections].sort((a, b) => b.candidates.length - a.candidates.length);
+    }
+    return [];
   }, [elections]);
 
   // New: Prevent hydration errors by tracking mount state

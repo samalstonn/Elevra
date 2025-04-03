@@ -146,7 +146,6 @@ export default function CandidateSubmissionForm({
   // Add policy to the list
   const addPolicy = () => {
     if (newPolicy.trim() === "") return;
-
     // Check if we already have 5 policies
     if (formData.policies.length >= 5) {
       setErrors((prev) => ({
@@ -155,13 +154,11 @@ export default function CandidateSubmissionForm({
       }));
       return;
     }
-
     setFormData((prev) => ({
       ...prev,
       policies: [...prev.policies, newPolicy.trim()],
     }));
     setNewPolicy("");
-
     // Clear policy error if it exists
     if (errors.policies) {
       setErrors((prev) => ({ ...prev, policies: undefined }));
@@ -174,7 +171,6 @@ export default function CandidateSubmissionForm({
       ...prev,
       policies: prev.policies.filter((_, i) => i !== index),
     }));
-
     // Clear policy error if it exists
     if (errors.policies) {
       setErrors((prev) => ({ ...prev, policies: undefined }));
@@ -198,37 +194,31 @@ export default function CandidateSubmissionForm({
   // Form validation
   const validateForm = (): FormErrors => {
     const newErrors: FormErrors = {};
-
     if (!formData.name.trim()) {
       newErrors.name = "Name is required";
     } else if (formData.name.length > 100) {
       newErrors.name = "Name must be less than 100 characters";
     }
-
     if (!formData.party.trim()) {
       newErrors.party = "Party is required";
     } else if (formData.party.length > 100) {
       newErrors.party = "Party must be less than 100 characters";
     }
-
     if (!formData.position.trim()) {
       newErrors.position = "Position is required";
     } else if (formData.position.length > 200) {
       newErrors.position = "Position must be less than 200 characters";
     }
-
     if (!formData.bio.trim()) {
       newErrors.bio = "Bio is required";
     } else if (formData.bio.length > 2000) {
       newErrors.bio = "Bio must be less than 2000 characters";
     }
-
     if (!formData.city.trim()) {
       newErrors.city = "City is required";
     } else if (formData.city.length > 100) {
       newErrors.city = "City must be less than 100 characters";
     }
-
     if (!formData.state.trim()) {
       newErrors.state = "State is required";
     } else if (formData.state.length > 50) {
@@ -269,7 +259,6 @@ export default function CandidateSubmissionForm({
   // Handle form submission
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-
     // Validate the form
     const newErrors = validateForm();
     if (Object.keys(newErrors).length > 0) {
@@ -311,7 +300,6 @@ export default function CandidateSubmissionForm({
       setIsSubmitting(false);
     }
   };
-
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
       {/* Name */}
@@ -532,7 +520,6 @@ export default function CandidateSubmissionForm({
         <label className="block text-sm font-medium text-gray-700">
           Policies* ({formData.policies.length}/5)
         </label>
-
         <div className="flex gap-2">
           <Input
             id="newPolicy"
