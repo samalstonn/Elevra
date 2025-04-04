@@ -32,7 +32,7 @@ export default function AnalyticsPage() {
             <AlertDescription>
               Gain deeper insights into profile engagement, reach, and more.
               <Link
-                href="/candidate-dashboard/upgrade"
+                href="/candidates/candidate-dashboard/upgrade"
                 className="font-semibold underline ml-2 hover:text-blue-900"
               >
                 Upgrade Now

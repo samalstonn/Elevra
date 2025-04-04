@@ -86,6 +86,7 @@ const Showcase: React.FC<ShowcaseProps> = ({}) => {
                     height={706}
                     src={showcaseContent[activeContent].imageUrl}
                     alt={showcaseContent[activeContent].title}
+                    style={{ width: "1160px", height: "auto" }}
                     className="rounded-lg shadow-[0_0_10px_rgba(0,0,0,0.3)] object-contain"
                     onError={() => handleImageError(activeContent)}
                   />

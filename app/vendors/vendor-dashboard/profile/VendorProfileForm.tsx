@@ -1,10 +1,10 @@
 "use client";
 import { Vendor } from "@prisma/client";
 
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm } from "react-hook-form";
+import { useForm, Controller } from "react-hook-form";
 import * as z from "zod";
 import { ServiceCategoryType } from "@prisma/client";
 import { Button } from "@/components/ui/button";
@@ -19,11 +19,14 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import { ToastAction } from "@/components/ui/toast";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Check, Loader2 } from "lucide-react";
+import { FaMapMarkerAlt, FaCheckCircle } from "react-icons/fa";
+import { AutocompleteSuggestion } from "@/types/geocoding";
+import { getLocationSuggestions, normalizeLocation } from "@/lib/geocoding";
+import { debounce } from "@/lib/debounce";
+import { MultiSelect } from "@/components/ui/multi-select";
 
 // Define the form schema
 const formSchema = z.object({
@@ -77,6 +80,21 @@ export default function VendorProfileForm({
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // Location search state
+  const [locationInput, setLocationInput] = useState("");
+  const [locationSuggestions, setLocationSuggestions] = useState<
+    AutocompleteSuggestion[]
+  >([]);
+  const [isLoadingLocations, setIsLoadingLocations] = useState(false);
+  const [showLocationSuggestions, setShowLocationSuggestions] = useState(false);
+  const locationInputRef = useRef<HTMLInputElement>(null);
+  const suggestionsRef = useRef<HTMLDivElement>(null);
+  const [locationErrors, setLocationErrors] = useState<{
+    city?: string;
+    state?: string;
+    location?: string;
+  }>({});
+
   // Initialize the form with vendor data
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -93,6 +111,142 @@ export default function VendorProfileForm({
   });
 
   const { toast } = useToast();
+
+  // Set location input when component mounts
+  useEffect(() => {
+    if (vendor.city && vendor.state) {
+      setLocationInput(`${vendor.city}, ${vendor.state}`);
+    }
+  }, [vendor]);
+
+  // Close suggestions when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        suggestionsRef.current &&
+        !suggestionsRef.current.contains(event.target as Node) &&
+        locationInputRef.current &&
+        !locationInputRef.current.contains(event.target as Node)
+      ) {
+        setShowLocationSuggestions(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
+
+  // Location input change handler with debounced suggestions
+  const handleLocationInputChange = (
+    e: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    const value = e.target.value;
+    setLocationInput(value);
+
+    // Clear location-related errors
+    if (
+      locationErrors.city ||
+      locationErrors.state ||
+      locationErrors.location
+    ) {
+      setLocationErrors({});
+    }
+
+    if (value.trim().length >= 2) {
+      setIsLoadingLocations(true);
+      setShowLocationSuggestions(true);
+      debouncedFetchLocationSuggestions(value);
+    } else {
+      setShowLocationSuggestions(false);
+      setLocationSuggestions([]);
+    }
+  };
+
+  // Debounced location suggestions fetch
+  const debouncedFetchLocationSuggestions = debounce(async (input: string) => {
+    if (input.trim().length < 2) {
+      setLocationSuggestions([]);
+      setIsLoadingLocations(false);
+      return;
+    }
+
+    try {
+      const results = await getLocationSuggestions(input);
+      setLocationSuggestions(results);
+    } catch (error) {
+      console.error("Error fetching location suggestions:", error);
+    } finally {
+      setIsLoadingLocations(false);
+    }
+  }, 500);
+
+  // Handle location suggestion selection
+  const handleSelectLocationSuggestion = async (
+    suggestion: AutocompleteSuggestion
+  ) => {
+    setLocationInput(suggestion.placeName);
+    setShowLocationSuggestions(false);
+
+    if (suggestion.city && suggestion.state) {
+      form.setValue("city", suggestion.city);
+      form.setValue("state", suggestion.state);
+    } else {
+      // Try to normalize the location if city/state not provided in suggestion
+      try {
+        const normalizedLocation = await normalizeLocation(
+          suggestion.placeName
+        );
+        if ("city" in normalizedLocation && "state" in normalizedLocation) {
+          form.setValue("city", normalizedLocation.city || "");
+          form.setValue("state", normalizedLocation.state || "");
+          setLocationInput(normalizedLocation.fullAddress || "");
+        }
+      } catch (error) {
+        console.error("Error normalizing location:", error);
+        setLocationErrors({
+          location: "Unable to determine city and state from this location",
+        });
+      }
+    }
+  };
+
+  // Handle manual location validation when input field loses focus
+  const handleLocationBlur = async () => {
+    if (
+      locationInput &&
+      (!form.getValues("city") || !form.getValues("state"))
+    ) {
+      try {
+        const normalizedLocation = await normalizeLocation(locationInput);
+        if ("city" in normalizedLocation && "state" in normalizedLocation) {
+          form.setValue("city", normalizedLocation.city || "");
+          form.setValue("state", normalizedLocation.state || "");
+          setLocationInput(normalizedLocation.fullAddress || "");
+        } else if ("message" in normalizedLocation) {
+          setLocationErrors({
+            location: normalizedLocation.message,
+          });
+        }
+      } catch (error) {
+        console.error("Error validating location:", error);
+      }
+    }
+
+    // Hide suggestions after a short delay (allows for clicks on suggestions)
+    setTimeout(() => {
+      setShowLocationSuggestions(false);
+    }, 200);
+  };
+
+  // Prepare category options for MultiSelect
+  const allCategories = Object.values(categoriesByType)
+    .flat()
+    .map((category) => ({
+      value: category.id.toString(),
+      label: `${formatCategoryType(category.type)}: ${category.name}`,
+    }));
 
   // Submit handler
   const onSubmit = async (data: FormValues) => {
@@ -134,9 +288,6 @@ export default function VendorProfileForm({
     }
   };
 
-  // Group service categories by type for better display
-  const categoryTypes = Object.keys(categoriesByType) as ServiceCategoryType[];
-
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
@@ -146,6 +297,7 @@ export default function VendorProfileForm({
           render={({ field }) => (
             <FormItem>
               <FormLabel>Business Name</FormLabel>
+              <br />
               <FormControl>
                 <Input placeholder="Your business name" {...field} />
               </FormControl>
@@ -183,6 +335,7 @@ export default function VendorProfileForm({
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Contact Email</FormLabel>
+                <br />
                 <FormControl>
                   <Input placeholder="your@email.com" {...field} />
                 </FormControl>
@@ -212,104 +365,120 @@ export default function VendorProfileForm({
           render={({ field }) => (
             <FormItem>
               <FormLabel>Website (Optional)</FormLabel>
+              <br />
               <FormControl>
-                <Input placeholder="https://yourbusiness.com" {...field} />
+                <Input
+                  placeholder="https://yourbusiness.com"
+                  {...field}
+                  style={{ width: "100%" }}
+                />
               </FormControl>
               <FormMessage />
             </FormItem>
           )}
         />
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <FormField
-            control={form.control}
-            name="city"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>City</FormLabel>
-                <FormControl>
-                  <Input placeholder="Your city" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
+        {/* Location with Autocomplete */}
+        <div className="space-y-2 relative">
+          <FormLabel className="block text-sm font-medium flex items-center gap-2">
+            <FaMapMarkerAlt className="text-purple-600" /> Location
+          </FormLabel>
+          <div className="relative">
+            <Input
+              ref={locationInputRef}
+              id="location"
+              name="location"
+              value={locationInput}
+              onChange={handleLocationInputChange}
+              onBlur={handleLocationBlur}
+              onFocus={() => {
+                if (locationInput.trim().length >= 2) {
+                  setShowLocationSuggestions(true);
+                }
+              }}
+              placeholder="Enter city, state, or ZIP code"
+              className={locationErrors.location ? "border-red-500" : ""}
+              autoComplete="off"
+              style={{ width: "100%" }}
+            />
+            {isLoadingLocations && (
+              <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+                <Loader2 className="h-4 w-4 animate-spin text-gray-400" />
+              </div>
             )}
-          />
+          </div>
+          {locationErrors.location && (
+            <p className="text-xs text-red-600 mt-1">
+              {locationErrors.location}
+            </p>
+          )}
 
-          <FormField
-            control={form.control}
-            name="state"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>State</FormLabel>
-                <FormControl>
-                  <Input placeholder="Your state" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+          {/* Location Suggestions */}
+          {showLocationSuggestions && locationSuggestions.length > 0 && (
+            <div
+              ref={suggestionsRef}
+              className="absolute z-10 w-full mt-1 bg-white shadow-lg rounded-md border border-gray-200 max-h-60 overflow-y-auto"
+            >
+              <ul className="py-1">
+                {locationSuggestions.map((suggestion, index) => (
+                  <li
+                    key={suggestion.id || index}
+                    className="px-4 py-2 hover:bg-purple-50 cursor-pointer flex items-center"
+                    onClick={() => handleSelectLocationSuggestion(suggestion)}
+                  >
+                    <FaMapMarkerAlt className="text-purple-400 mr-2 flex-shrink-0" />
+                    <span className="text-sm">{suggestion.placeName}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {/* Display selected location info */}
+          {form.getValues("city") && form.getValues("state") && (
+            <div className="flex items-center text-sm text-gray-600 mt-1">
+              <FaCheckCircle className="text-green-500 mr-2" />
+              <span>
+                Selected: {form.getValues("city")}, {form.getValues("state")}
+              </span>
+            </div>
+          )}
         </div>
 
-        <div>
-          <FormLabel className="text-base">Service Categories</FormLabel>
-          <FormDescription className="mt-1 mb-4">
-            Select the categories that best represent your services.
-          </FormDescription>
+        {/* Hidden City and State fields (populated by location selection) */}
+        <input type="hidden" {...form.register("city")} />
+        <input type="hidden" {...form.register("state")} />
 
-          {categoryTypes.map((type) => (
-            <Card key={type} className="mb-4">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium">
-                  {formatCategoryType(type)}
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                  {categoriesByType[type]?.map((category) => (
-                    <FormField
-                      key={category.id}
-                      control={form.control}
-                      name="serviceCategories"
-                      render={({ field }) => {
-                        return (
-                          <FormItem
-                            key={category.id}
-                            className="flex flex-row items-start space-x-3 space-y-0"
-                          >
-                            <FormControl>
-                              <Checkbox
-                                checked={field.value?.includes(category.id)}
-                                onCheckedChange={(checked) => {
-                                  const isCategorySelected =
-                                    field.value?.includes(category.id);
-                                  return checked
-                                    ? !isCategorySelected
-                                      ? field.onChange([
-                                          ...field.value,
-                                          category.id,
-                                        ])
-                                      : field.onChange(field.value)
-                                    : field.onChange(
-                                        field.value?.filter(
-                                          (value) => value !== category.id
-                                        )
-                                      );
-                                }}
-                              />
-                            </FormControl>
-                            <FormLabel className="font-normal cursor-pointer">
-                              {category.name}
-                            </FormLabel>
-                          </FormItem>
-                        );
+        {/* Service Categories with MultiSelect */}
+        <FormField
+          control={form.control}
+          name="serviceCategories"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel className="text-base">Service Categories</FormLabel>
+              <FormDescription className="mt-1 mb-4">
+                Select the categories that best represent your services.
+              </FormDescription>
+              <FormControl>
+                <Controller
+                  control={form.control}
+                  name="serviceCategories"
+                  render={({ field }) => (
+                    <MultiSelect
+                      placeholder="Select categories..."
+                      options={allCategories}
+                      value={field.value.map((id) => id.toString())}
+                      onChange={(values) => {
+                        field.onChange(values.map((v) => parseInt(v)));
                       }}
                     />
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
+                  )}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
 
         <Button
           type="submit"

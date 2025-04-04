@@ -25,7 +25,7 @@ export function PortfolioItemCard({ item }: PortfolioItemCardProps) {
             onError={(e) => {
               // Fallback if image fails to load
               e.currentTarget.src =
-                "[https://placehold.co/600x400/eee/ccc?text=Image+Not+Found](https://www.google.com/search?q=https://placehold.co/600x400/eee/ccc%3Ftext%3DImage%2BNot%2BFound)";
+                "https://placehold.co/600x400/eee/ccc?text=Image+Not+Found";
             }}
           />
         </AspectRatio>

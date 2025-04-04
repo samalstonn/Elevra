@@ -69,7 +69,7 @@ export default function OverviewPage() {
           <CardContent>
             <div className="text-2xl font-bold">$0</div>
             <Link
-              href="/candidate-dashboard/upgrade"
+              href="/candidates/candidate-dashboard/upgrade"
               className="text-xs text-blue-600 hover:underline"
             >
               Upgrade to track donations
@@ -91,8 +91,9 @@ export default function OverviewPage() {
             </Link>
           </Button>
           <Button variant="outline" asChild>
-            <Link href="//candidate/your-public-profile-slug">
+            <Link href={`/candidates/candidate.slug/public-profile`}>
               {" "}
+              {/* Link will be updated when candidate profile routes are finalized */}
               {/* TODO: Link to actual public profile */}
               <Eye className="mr-2 h-4 w-4" /> View Public Profile
             </Link>

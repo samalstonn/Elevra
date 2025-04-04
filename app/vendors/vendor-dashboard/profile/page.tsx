@@ -74,21 +74,15 @@ export default async function VendorProfilePage() {
       <div className="space-y-6">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">
-            Profile Management
+            Vendor Profile Management
           </h1>
           <p className="text-muted-foreground">
-            Update your vendor profile information and service categories
+            Your public profile information that will be displayed to
+            candidates.
           </p>
         </div>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Vendor Information</CardTitle>
-            <CardDescription>
-              Your public profile information that will be displayed to
-              candidates
-            </CardDescription>
-          </CardHeader>
+        <Card className="border-0 rounded-none shadow-none">
           <CardContent>
             <VendorProfileForm
               vendor={vendor}

@@ -12,6 +12,17 @@ import {
 import { Button } from "@/components/ui/button";
 import { Trash2, Users } from "lucide-react"; // Icons
 import { format } from "date-fns"; // Date formatting
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 // Define the expected shape of list data
 interface MailingList {
@@ -68,7 +79,6 @@ export function MailingListTable({ lists }: MailingListTableProps) {
               {list.subscriberCount}
             </TableCell>
             <TableCell>{format(new Date(list.createdAt), "PP")}</TableCell>
-            {/* Removed the whitespace and comment that was here */}
             <TableCell className="text-right space-x-2">
               <Button
                 variant="outline"
@@ -77,13 +87,29 @@ export function MailingListTable({ lists }: MailingListTableProps) {
               >
                 <Users className="h-4 w-4 mr-1" /> View
               </Button>
-              <Button
-                variant="destructive"
-                size="sm"
-                onClick={() => handleDelete(list.id)}
-              >
-                <Trash2 className="h-4 w-4 mr-1" /> Delete
-              </Button>
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button variant="destructive" size="sm">
+                    <Trash2 className="h-4 w-4 mr-1" /> Delete
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      This action cannot be undone. This will permanently delete
+                      the mailing list "{list.name}" and remove your data from
+                      our servers.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction onClick={() => handleDelete(list.id)}>
+                      Delete
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
             </TableCell>
           </TableRow>
         ))}

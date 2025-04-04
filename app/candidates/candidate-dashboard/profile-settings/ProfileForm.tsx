@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useForm, Controller, type SubmitHandler } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -18,13 +18,12 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { CandidateDashboardData } from "@/types/candidate";
 import { Loader2 } from "lucide-react";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"; // For Election selection
+import { FaMapMarkerAlt, FaCheckCircle } from "react-icons/fa";
+import { AutocompleteSuggestion } from "@/types/geocoding";
+import { getLocationSuggestions, normalizeLocation } from "@/lib/geocoding";
+import { debounce } from "@/lib/debounce";
+import SearchBar from "@/components/ResultsSearchBar";
+import { Election } from "@prisma/client";
 
 // Define Zod schema for validation
 // Important: Make policies non-optional since the form expects it as a required field
@@ -73,9 +72,24 @@ export function ProfileForm({
 }: ProfileFormProps) {
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [availableElections, setAvailableElections] = useState<
-    { id: number; date: Date; position: string; city: string; state: string }[]
+  const [selectedElection, setSelectedElection] = useState<Election | null>(
+    null
+  );
+
+  // Location search state
+  const [locationInput, setLocationInput] = useState("");
+  const [locationSuggestions, setLocationSuggestions] = useState<
+    AutocompleteSuggestion[]
   >([]);
+  const [isLoadingLocations, setIsLoadingLocations] = useState(false);
+  const [showLocationSuggestions, setShowLocationSuggestions] = useState(false);
+  const locationInputRef = useRef<HTMLInputElement>(null);
+  const suggestionsRef = useRef<HTMLDivElement>(null);
+  const [locationErrors, setLocationErrors] = useState<{
+    city?: string;
+    state?: string;
+    location?: string;
+  }>({});
 
   // Prepare the policies data - ensure it's a non-empty array
   const initialPolicies = Array.isArray(candidateData.policies)
@@ -86,32 +100,13 @@ export function ProfileForm({
   const policiesWithDefault =
     initialPolicies.length > 0 ? initialPolicies : [""];
 
-  // Fetch available elections for the dropdown
-  useEffect(() => {
-    const fetchElections = async () => {
-      try {
-        // Fetch all elections - adjust API endpoint if needed
-        const response = await fetch("/api/elections?city=all&state=all");
-        if (!response.ok) throw new Error("Failed to fetch elections");
-        const data = await response.json();
-        setAvailableElections(data);
-      } catch (error) {
-        console.error("Error fetching elections:", error);
-        toast({
-          title: "Error",
-          description: "Could not load available elections.",
-          variant: "destructive",
-        });
-      }
-    };
-    fetchElections();
-  }, [toast]);
-
   const {
     register,
     handleSubmit,
     control,
     reset,
+    setValue,
+    getValues,
     formState: { errors },
   } = useForm<ProfileFormData>({
     resolver: zodResolver(profileSchema),
@@ -131,6 +126,30 @@ export function ProfileForm({
       electionId: candidateData.electionId || null,
     },
   });
+
+  // Initialize location input and fetch election when component mounts
+  useEffect(() => {
+    // Set location input if city and state are available
+    if (candidateData.city && candidateData.state) {
+      setLocationInput(`${candidateData.city}, ${candidateData.state}`);
+    }
+
+    // Fetch election details if electionId exists
+    if (candidateData.electionId) {
+      fetch(`/api/elections/${candidateData.electionId}`)
+        .then((res) => {
+          if (!res.ok) {
+            throw new Error("Election not found");
+          }
+          return res.json();
+        })
+        .then((data) => setSelectedElection(data))
+        .catch((err) => {
+          console.error("Error fetching election details:", err);
+          setSelectedElection(null);
+        });
+    }
+  }, [candidateData]);
 
   // Reset form if candidateData changes
   useEffect(() => {
@@ -153,6 +172,124 @@ export function ProfileForm({
       electionId: candidateData.electionId || null,
     });
   }, [candidateData, reset]);
+
+  // Close suggestions when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        suggestionsRef.current &&
+        !suggestionsRef.current.contains(event.target as Node) &&
+        locationInputRef.current &&
+        !locationInputRef.current.contains(event.target as Node)
+      ) {
+        setShowLocationSuggestions(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
+
+  // Location input change handler with debounced suggestions
+  const handleLocationInputChange = (
+    e: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    const value = e.target.value;
+    setLocationInput(value);
+
+    // Clear location-related errors
+    if (
+      locationErrors.city ||
+      locationErrors.state ||
+      locationErrors.location
+    ) {
+      setLocationErrors({});
+    }
+
+    if (value.trim().length >= 2) {
+      setIsLoadingLocations(true);
+      setShowLocationSuggestions(true);
+      debouncedFetchLocationSuggestions(value);
+    } else {
+      setShowLocationSuggestions(false);
+      setLocationSuggestions([]);
+    }
+  };
+
+  // Debounced location suggestions fetch
+  const debouncedFetchLocationSuggestions = debounce(async (input: string) => {
+    if (input.trim().length < 2) {
+      setLocationSuggestions([]);
+      setIsLoadingLocations(false);
+      return;
+    }
+
+    try {
+      const results = await getLocationSuggestions(input);
+      setLocationSuggestions(results);
+    } catch (error) {
+      console.error("Error fetching location suggestions:", error);
+    } finally {
+      setIsLoadingLocations(false);
+    }
+  }, 500);
+
+  // Handle location suggestion selection
+  const handleSelectLocationSuggestion = async (
+    suggestion: AutocompleteSuggestion
+  ) => {
+    setLocationInput(suggestion.placeName);
+    setShowLocationSuggestions(false);
+
+    if (suggestion.city && suggestion.state) {
+      setValue("city", suggestion.city);
+      setValue("state", suggestion.state);
+    } else {
+      // Try to normalize the location if city/state not provided in suggestion
+      try {
+        const normalizedLocation = await normalizeLocation(
+          suggestion.placeName
+        );
+        if ("city" in normalizedLocation && "state" in normalizedLocation) {
+          setValue("city", normalizedLocation.city || "");
+          setValue("state", normalizedLocation.state || "");
+          setLocationInput(normalizedLocation.fullAddress || "");
+        }
+      } catch (error) {
+        console.error("Error normalizing location:", error);
+        setLocationErrors({
+          location: "Unable to determine city and state from this location",
+        });
+      }
+    }
+  };
+
+  // Handle manual location validation when input field loses focus
+  const handleLocationBlur = async () => {
+    if (locationInput && (!getValues("city") || !getValues("state"))) {
+      try {
+        const normalizedLocation = await normalizeLocation(locationInput);
+        if ("city" in normalizedLocation && "state" in normalizedLocation) {
+          setValue("city", normalizedLocation.city || "");
+          setValue("state", normalizedLocation.state || "");
+          setLocationInput(normalizedLocation.fullAddress || "");
+        } else if ("message" in normalizedLocation) {
+          setLocationErrors({
+            location: normalizedLocation.message,
+          });
+        }
+      } catch (error) {
+        console.error("Error validating location:", error);
+      }
+    }
+
+    // Hide suggestions after a short delay (allows for clicks on suggestions)
+    setTimeout(() => {
+      setShowLocationSuggestions(false);
+    }, 200);
+  };
 
   // Explicit type for onSubmit to match ProfileFormData exactly
   const onSubmit: SubmitHandler<ProfileFormData> = async (data) => {
@@ -195,7 +332,7 @@ export function ProfileForm({
   };
 
   return (
-    <Card>
+    <Card className="border-0 rounded-none shadow-none">
       <CardHeader>
         <CardTitle>Edit Profile Information</CardTitle>
         <CardDescription>
@@ -208,6 +345,7 @@ export function ProfileForm({
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <Label htmlFor="name">Full Name</Label>
+              <br />
               <Input id="name" {...register("name")} />
               {errors.name && (
                 <p className="text-xs text-red-600 mt-1">
@@ -217,6 +355,7 @@ export function ProfileForm({
             </div>
             <div>
               <Label htmlFor="party">Party Affiliation</Label>
+              <br />
               <Input id="party" {...register("party")} />
               {errors.party && (
                 <p className="text-xs text-red-600 mt-1">
@@ -226,75 +365,151 @@ export function ProfileForm({
             </div>
           </div>
 
-          {/* Position & Election */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="position">Position Sought</Label>
-              <Input id="position" {...register("position")} />
-              {errors.position && (
-                <p className="text-xs text-red-600 mt-1">
-                  {errors.position.message}
-                </p>
-              )}
-            </div>
-            <div>
-              <Label htmlFor="electionId">Link to Election (Optional)</Label>
-              <Controller
-                control={control}
-                name="electionId"
-                render={({ field }) => (
-                  <Select
-                    value={field.value ? field.value.toString() : "null"}
-                    onValueChange={(value) =>
-                      field.onChange(value === "null" ? null : parseInt(value))
-                    }
-                  >
-                    <SelectTrigger id="electionId">
-                      <SelectValue placeholder="Select an election..." />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="null">None</SelectItem>
-                      {availableElections.map((election) => (
-                        <SelectItem
-                          key={election.id}
-                          value={election.id.toString()}
-                        >
-                          {election.position} ({election.city}, {election.state}{" "}
-                          - {new Date(election.date).toLocaleDateString()})
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                )}
-              />
-              {errors.electionId && (
-                <p className="text-xs text-red-600 mt-1">
-                  {errors.electionId.message}
-                </p>
-              )}
-            </div>
+          {/* Position */}
+          <div>
+            <Label htmlFor="position">Current Position</Label>
+            <br />
+            <Input id="position" {...register("position")} />
+            {errors.position && (
+              <p className="text-xs text-red-600 mt-1">
+                {errors.position.message}
+              </p>
+            )}
           </div>
 
-          {/* Location */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="city">City</Label>
-              <Input id="city" {...register("city")} />
-              {errors.city && (
-                <p className="text-xs text-red-600 mt-1">
-                  {errors.city.message}
-                </p>
+          {/* Location with Autocomplete */}
+          <div className="space-y-2 relative">
+            <Label
+              htmlFor="location"
+              className="block text-sm font-medium text-gray-700 flex items-center gap-2"
+            >
+              <FaMapMarkerAlt className="text-purple-600" /> Location
+            </Label>
+            <div className="relative">
+              <Input
+                ref={locationInputRef}
+                id="location"
+                name="location"
+                value={locationInput}
+                onChange={handleLocationInputChange}
+                onBlur={handleLocationBlur}
+                onFocus={() => {
+                  if (locationInput.trim().length >= 2) {
+                    setShowLocationSuggestions(true);
+                  }
+                }}
+                placeholder="Enter city, state, or ZIP code"
+                className={locationErrors.location ? "border-red-500" : ""}
+                autoComplete="off"
+                style={{ width: "100%" }}
+              />
+              {isLoadingLocations && (
+                <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+                  <Loader2 className="h-4 w-4 animate-spin text-gray-400" />
+                </div>
               )}
             </div>
-            <div>
-              <Label htmlFor="state">State (Abbreviation)</Label>
-              <Input id="state" {...register("state")} maxLength={2} />
-              {errors.state && (
-                <p className="text-xs text-red-600 mt-1">
-                  {errors.state.message}
-                </p>
-              )}
-            </div>
+            {locationErrors.location && (
+              <p className="text-xs text-red-600 mt-1">
+                {locationErrors.location}
+              </p>
+            )}
+
+            {/* Location Suggestions */}
+            {showLocationSuggestions && locationSuggestions.length > 0 && (
+              <div
+                ref={suggestionsRef}
+                className="absolute z-10 w-full mt-1 bg-white shadow-lg rounded-md border border-gray-200 max-h-60 overflow-y-auto"
+              >
+                <ul className="py-1">
+                  {locationSuggestions.map((suggestion, index) => (
+                    <li
+                      key={suggestion.id || index}
+                      className="px-4 py-2 hover:bg-purple-50 cursor-pointer flex items-center"
+                      onClick={() => handleSelectLocationSuggestion(suggestion)}
+                    >
+                      <FaMapMarkerAlt className="text-purple-400 mr-2 flex-shrink-0" />
+                      <span className="text-sm">{suggestion.placeName}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            {/* Display selected location info */}
+            {getValues("city") && getValues("state") && (
+              <div className="flex items-center text-sm text-gray-600 mt-1">
+                <FaCheckCircle className="text-green-500 mr-2" />
+                <span>
+                  Selected: {getValues("city")}, {getValues("state")}
+                </span>
+              </div>
+            )}
+          </div>
+
+          {/* Hidden City and State fields (populated by location selection) */}
+          <input type="hidden" {...register("city")} />
+          <input type="hidden" {...register("state")} />
+
+          {/* Election Search */}
+          <div className="space-y-2 text-left">
+            <Label
+              htmlFor="electionId"
+              className="block text-sm font-medium text-gray-700"
+            >
+              Link to Election (Optional)
+            </Label>
+            <p className="text-sm text-gray-500">
+              If you're not currently running in an election, leave this blank.
+            </p>
+
+            {/* Display the selected election */}
+            {selectedElection && (
+              <div className="flex items-center justify-between bg-white border border-gray-300 px-4 py-2 rounded-xl shadow-sm">
+                <div>
+                  <div className="font-medium">{selectedElection.position}</div>
+                  <div className="text-gray-600 text-sm">
+                    {selectedElection.city}, {selectedElection.state}
+                  </div>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    setSelectedElection(null);
+                    setValue("electionId", null);
+                  }}
+                  className="text-gray-400 hover:text-gray-600"
+                >
+                  Clear
+                </Button>
+              </div>
+            )}
+
+            {/* Show search if no election is selected */}
+            {!selectedElection && (
+              <SearchBar
+                placeholder="Search for an election..."
+                apiEndpoint="/api/elections/search"
+                shadow={false}
+                onResultSelect={(election) => {
+                  fetch(`/api/elections/${election.id}`)
+                    .then((res) => {
+                      if (!res.ok) {
+                        throw new Error("Election not found");
+                      }
+                      return res.json();
+                    })
+                    .then((electionData) => {
+                      setSelectedElection(electionData);
+                      setValue("electionId", electionData.id);
+                    })
+                    .catch((err) => {
+                      console.error("Error fetching election details:", err);
+                    });
+                }}
+              />
+            )}
           </div>
 
           {/* Bio */}
