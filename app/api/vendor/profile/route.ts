@@ -130,7 +130,7 @@ export async function PUT(request: Request) {
     // Use transaction to safely update vendor and relations
     const updatedVendor = await prisma.$transaction(async (prisma) => {
       // 1. Update basic vendor fields (including potentially the slug)
-      const partiallyUpdatedVendor = await prisma.vendor.update({
+      await prisma.vendor.update({
         where: { id: vendorIdNum },
         data: updateData,
         include: { serviceCategories: true }, // Re-include for step 2

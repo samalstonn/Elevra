@@ -77,7 +77,9 @@ export function VendorContactForm({
             <Input
               id="name"
               value={name}
-              onChange={(e: any) => setName(e.target.value)}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                setName(e.target.value)
+              }
               className="col-span-3"
               required
               disabled={isSubmitting}
@@ -92,7 +94,9 @@ export function VendorContactForm({
               id="email"
               type="email"
               value={email}
-              onChange={(e: any) => setEmail(e.target.value)}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                setEmail(e.target.value)
+              }
               className="col-span-3"
               required
               disabled={isSubmitting}
@@ -100,17 +104,15 @@ export function VendorContactForm({
           </div>
           {/* Message Field */}
           <div className="grid grid-cols-4 items-start gap-4">
-            {" "}
-            {/* Use items-start for textarea */}
             <Label htmlFor="message" className="text-right pt-2">
-              {" "}
-              {/* Add padding-top */}
               Message
             </Label>
             <Textarea
               id="message"
               value={message}
-              onChange={(e) => setMessage(e.target.value)}
+              onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) =>
+                setMessage(e.target.value)
+              }
               className="col-span-3 min-h-[100px]" // Set min height
               required
               disabled={isSubmitting}

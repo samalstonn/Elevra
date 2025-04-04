@@ -3,7 +3,7 @@ import React from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogTrigger } from "@/components/ui/dialog"; // Import Dialog components
+import { DialogTrigger } from "@/components/ui/dialog"; // Import Dialog components
 import {
   Globe,
   MapPin,

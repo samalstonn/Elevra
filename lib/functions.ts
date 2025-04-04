@@ -25,12 +25,11 @@ export async function generateUniqueSlug(
     return `vendor-${Date.now()}`;
   }
 
-  let slug = normalizeSlug(name);
+  const slug = normalizeSlug(name);
   let uniqueSlug = slug;
   let counter = 1;
 
   // Loop to find a unique slug
-  // eslint-disable-next-line no-constant-condition
   while (true) {
     // Check if the current slug exists in the database
     const existingVendor = await prisma.vendor.findFirst({

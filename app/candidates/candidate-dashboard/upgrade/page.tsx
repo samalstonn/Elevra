@@ -14,7 +14,7 @@ import {
 import { Check, Star, Zap } from "lucide-react"; // Icons
 import { useToast } from "@/hooks/use-toast";
 import getStripe from "@/lib/get-stripe"; // Your Stripe utility
-import { useAuth } from "@clerk/nextjs"; // To check current plan later
+// import { useAuth } from "@clerk/nextjs"; // To check current plan later
 
 // Define the features for each plan
 const freeFeatures = [
@@ -67,6 +67,17 @@ const plans = [
   // Add more plans here if needed (e.g., Annual)
 ];
 
+export interface Plan {
+  name: string;
+  price: string;
+  interval: string;
+  features: string[];
+  isCurrent?: boolean;
+  cta?: string;
+  stripePriceId?: string | null; // Optional for free plan
+  highlight?: boolean; // Optional for highlighting
+}
+
 export default function UpgradePage() {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
@@ -75,7 +86,7 @@ export default function UpgradePage() {
   // const currentPlan = user?.publicMetadata?.subscriptionTier || 'Free';
   const currentPlan = "Free"; // Placeholder
 
-  const handleUpgradeClick = async (plan: any) => {
+  const handleUpgradeClick = async (plan: Plan) => {
     if (!plan.stripePriceId || plan.isCurrent) return; // Don't proceed if no price ID or already current
 
     setIsLoading(true);

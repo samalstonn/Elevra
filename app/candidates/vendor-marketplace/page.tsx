@@ -17,7 +17,7 @@ import { NormalizedLocation } from "@/types/geocoding";
 import { useAuth } from "@clerk/nextjs"; // To potentially get candidate's default location
 
 // Debounce function (assuming it's correctly imported or defined)
-import { debounce } from "@/lib/debounce";
+// import { debounce } from "@/lib/debounce";
 import { Candidate } from "@prisma/client";
 
 // Main component for the Vendor Discovery page
@@ -106,9 +106,9 @@ export default function VendorDiscoveryPage() {
   ); // Dependencies for useCallback
 
   // Debounced version of fetchVendors for location changes
-  const debouncedFetchVendors = useCallback(debounce(fetchVendors, 500), [
-    fetchVendors,
-  ]);
+  // const debouncedFetchVendors = useCallback(debounce(fetchVendors, 500), [
+  //   fetchVendors,
+  // ]);
 
   // Fetch categories on initial component mount
   useEffect(() => {

@@ -29,10 +29,6 @@ export type PublicVendorProfile = Prisma.VendorGetPayload<{
         imageUrl: true;
         description: true;
       };
-      orderBy: {
-        // Add ordering if needed, e.g., by creation date
-        // createdAt: 'desc'
-      };
     };
     testimonials: {
       select: {
@@ -60,12 +56,11 @@ export type PublicVendorProfile = Prisma.VendorGetPayload<{
 /**
  * GET handler to fetch public profile data for a specific vendor by slug.
  */
-export async function GET(
-  request: NextRequest,
-  { params }: { params: { vendorSlug: string } }
-) {
+export async function GET(request: NextRequest) {
   try {
-    const { vendorSlug } = await params;
+    const { pathname } = new URL(request.url);
+
+    const vendorSlug = pathname.split("/").pop(); // Extract the slug from the URL
 
     if (!vendorSlug) {
       return NextResponse.json(

@@ -16,7 +16,7 @@ import {
   CreditCard, // Upgrade Prompt Link
   Users, // Vendor Marketplace
 } from "lucide-react";
-import { useAuth } from "@clerk/nextjs"; // To get subscription status later
+// import { useAuth } from "@clerk/nextjs"; // To get subscription status later
 
 // Define navigation items
 const navItems = [

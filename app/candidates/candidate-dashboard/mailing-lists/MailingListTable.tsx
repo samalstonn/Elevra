@@ -4,7 +4,6 @@ import React from "react";
 import {
   Table,
   TableBody,
-  TableCaption,
   TableCell,
   TableHead,
   TableHeader,
@@ -46,7 +45,7 @@ export function MailingListTable({ lists }: MailingListTableProps) {
   if (lists.length === 0) {
     return (
       <p className="text-center text-gray-500 py-4">
-        You haven't created any mailing lists yet.
+        You haven&apos;t created any mailing lists yet.
       </p>
     );
   }

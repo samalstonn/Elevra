@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/prisma/prisma";
-import { Prisma, Vendor, ServiceCategory } from "@prisma/client"; // Import necessary types
+import { Prisma, ServiceCategory } from "@prisma/client"; // Import necessary types
 import { DiscoveryVendor } from "@/types/vendor";
 
 // Define the structure for the API response from /api/vendors/discovery

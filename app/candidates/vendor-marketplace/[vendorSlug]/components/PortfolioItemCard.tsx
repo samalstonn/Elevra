@@ -1,12 +1,6 @@
 import React from "react";
 import Image from "next/image"; // Using Next.js Image for optimization
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardDescription, CardTitle } from "@/components/ui/card";
 import { AspectRatio } from "@/components/ui/aspect-ratio"; // For consistent image sizing
 import { VendorProfilePortfolioItem } from "@/types/vendor";
 

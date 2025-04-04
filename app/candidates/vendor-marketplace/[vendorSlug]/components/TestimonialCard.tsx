@@ -60,7 +60,9 @@ export function TestimonialCard({ testimonial }: TestimonialCardProps) {
       </CardHeader>
       <CardContent className="p-0 mb-2">
         {/* Testimonial Content */}
-        <p className="text-sm text-gray-700 italic">"{testimonial.content}"</p>
+        <p className="text-sm text-gray-700 italic">
+          &quot;{testimonial.content}&quot;
+        </p>
       </CardContent>
       <CardFooter className="p-0">
         {/* Date Posted */}

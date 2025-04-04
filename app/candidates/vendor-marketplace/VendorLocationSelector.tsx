@@ -29,27 +29,32 @@ export function VendorLocationSelector({
   const containerRef = useRef<HTMLDivElement>(null); // Ref for detecting clicks outside
 
   // Debounced function to fetch suggestions
+  // Fixed: Using a properly memoized callback with inline function and dependencies
   const fetchSuggestions = useCallback(
-    debounce(async (searchTerm: string) => {
-      if (searchTerm.length < 2) {
-        setSuggestions([]);
-        setIsSuggestionsVisible(false);
-        return;
-      }
-      setIsLoading(true);
-      try {
-        const results = await getLocationSuggestions(searchTerm);
-        setSuggestions(results);
-        setIsSuggestionsVisible(results.length > 0);
-      } catch (error) {
-        console.error("Error fetching suggestions:", error);
-        setSuggestions([]);
-        setIsSuggestionsVisible(false);
-      } finally {
-        setIsLoading(false);
-      }
-    }, 300), // Debounce suggestions fetch by 300ms
-    []
+    (searchTerm: string) => {
+      const debouncedFetch = debounce(async (term: string) => {
+        if (term.length < 2) {
+          setSuggestions([]);
+          setIsSuggestionsVisible(false);
+          return;
+        }
+        setIsLoading(true);
+        try {
+          const results = await getLocationSuggestions(term);
+          setSuggestions(results);
+          setIsSuggestionsVisible(results.length > 0);
+        } catch (error) {
+          console.error("Error fetching suggestions:", error);
+          setSuggestions([]);
+          setIsSuggestionsVisible(false);
+        } finally {
+          setIsLoading(false);
+        }
+      }, 300);
+
+      debouncedFetch(searchTerm);
+    },
+    [setSuggestions, setIsSuggestionsVisible, setIsLoading] // Proper dependencies
   );
 
   // Handle input changes
