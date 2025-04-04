@@ -1,7 +1,6 @@
 import { redirect } from "next/navigation";
 import { currentUser } from "@clerk/nextjs/server";
 import prisma from "@/prisma/prisma";
-import { Toaster } from "@/components/ui/toaster";
 
 export default async function VendorDashboardLayout({
   children,
@@ -42,10 +41,7 @@ export default async function VendorDashboardLayout({
 
   return (
     <>
-      <div style={{ width: "72%" }}>
-        {children}
-        <Toaster />
-      </div>
+      <div style={{ width: "72%" }}>{children}</div>
     </>
   );
 }

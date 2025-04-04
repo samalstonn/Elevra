@@ -19,6 +19,7 @@ import { SpeedInsights } from "@vercel/speed-insights/next";
 import { usePathname } from "next/navigation";
 import SearchBar from "../components/ResultsSearchBar";
 import AddressButton from "../components/AddressButton";
+import { Toaster } from "@/components/ui/toaster";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -93,6 +94,7 @@ export default function RootLayout({
               {children}
               <Analytics />
               <SpeedInsights />
+              <Toaster />
             </main>
 
             {/* Footer Section */}

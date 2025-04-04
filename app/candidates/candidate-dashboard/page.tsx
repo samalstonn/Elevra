@@ -1,184 +1,126 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
-import { useUser } from "@clerk/nextjs";
-import { motion } from "framer-motion";
-import { Card, CardHeader, CardContent, CardTitle } from "@/components/ui/card";
-import { BarChart3, DollarSign } from "lucide-react";
-import { LineChartComponent } from "@/components/ui/line-chart";
-import { PieChartComponent } from "@/components/ui/pie-chart";
-import { Candidate } from "@prisma/client";
+import React from "react";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import Link from "next/link";
+import { Eye, Edit, BarChart3, Mail, HandCoins } from "lucide-react"; // Icons
 
-type Activity = {
-  icon: string;
-  description: string;
-};
-
-type Donation = {
-  donorName: string;
-  amount: number;
-};
-
-export default function CandidateDashboard() {
-  const router = useRouter();
-  const { user, isLoaded, isSignedIn } = useUser();
-  const [candidate, setCandidate] = useState<Candidate | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [activities, _setActivities] = useState<Activity[]>([
-    { icon: "🚀", description: "Launched new campaign strategy" },
-    { icon: "📈", description: "Increased social media engagement by 25%" },
-  ]);
-  const [donations, _setDonations] = useState<Donation[]>([
-    { donorName: "Clark Kent", amount: 100 },
-    { donorName: "Lois Lane", amount: 200 },
-  ]);
-
-  useEffect(() => {
-    // if (candidate?.id) {
-    //   // Fetch recent activities
-    //   fetch(`/api/candidate/${candidate.id}/activities`)
-    //     .then((res) => (res.ok ? res.json() : []))
-    //     .then((data) => setActivities(data))
-    //     .catch((err) => console.error("Error fetching activities:", err));
-    //   // Fetch recent donations
-    //   fetch(`/api/candidate/${candidate.id}/donations`)
-    //     .then((res) => (res.ok ? res.json() : []))
-    //     .then((data) => setDonations(data))
-    //     .catch((err) => console.error("Error fetching donations:", err));
-    // }
-  }, [candidate?.id]);
-
-  useEffect(() => {
-    // Redirect if not signed in
-    if (isLoaded && !isSignedIn) {
-      router.push("/sign-in");
-      return;
-    }
-
-    if (isSignedIn && user) {
-      // Fetch candidate data from our database
-      fetch(`/api/candidate?clerkUserId=${user.id}`)
-        .then((res) => {
-          if (!res.ok) {
-            throw new Error("Failed to fetch candidate data");
-          }
-          return res.json();
-        })
-        .then((data) => {
-          setCandidate(data);
-          setLoading(false);
-        })
-        .catch((err) => {
-          console.error(err);
-          setLoading(false);
-          // If there's an error fetching candidate data, redirect to signup
-          router.push("/sign-up");
-        });
-    }
-  }, [isLoaded, isSignedIn, user, router]);
-
-  if (!isLoaded || loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <p>Loading...</p>
-      </div>
-    );
-  }
-
-  if (!candidate) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <p>No candidate data found. Please complete registration.</p>
-      </div>
-    );
-  }
-
-  const verified = candidate.status === "APPROVED";
+export default function OverviewPage() {
+  // Placeholder data - replace with actual fetched data later
+  const placeholderStats = {
+    profileViews: 123,
+    subscribers: 45,
+    donations: 0, // Placeholder for premium feature
+  };
 
   return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      className="min-h-screen py-8 px-4 sm:px-8 lg:px-16"
-    >
-      <header className="mb-8">
-        <h1 className="text-3xl font-bold text-purple-800">
-          Welcome Back, {candidate.name}
-        </h1>
-        <p className="text-gray-900">
-          Real-time insights on your campaign performance
-        </p>
-      </header>
+    <div className="space-y-6">
+      <h1 className="text-3xl font-bold text-gray-800">Dashboard Overview</h1>
 
-      {/* Status Banner */}
-      {!verified && (
-        <div className="bg-yellow-100 border-l-4 border-yellow-500 p-4 mb-6">
-          <p className="text-yellow-700">
-            Your account is pending verification. Some features may be limited
-            until verification is complete.
-          </p>
-        </div>
-      )}
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* Page Views Trend Card */}
-        <Card className="">
-          <LineChartComponent />
-        </Card>
-
-        <PieChartComponent />
-
-        {/* Recent Activity Card */}
-        <Card className="">
-          <CardHeader className="flex items-center justify-between">
-            <CardTitle className="flex items-center gap-2 text-lg">
-              <BarChart3 className="text-purple-500" />
-              Recent Activity
-            </CardTitle>
+      {/* Quick Stats Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Profile Views</CardTitle>
+            <Eye className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            {activities.length > 0 ? (
-              <ul className="text-sm space-y-1">
-                {activities.map((activity, index) => (
-                  <li key={index} className="text-purple-700">
-                    {activity.icon} {activity.description}
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <p className="text-gray-500 text-sm">No recent activities</p>
-            )}
+            <div className="text-2xl font-bold">
+              {placeholderStats.profileViews}
+            </div>
+            <p className="text-xs text-muted-foreground">
+              +10% from last month
+            </p>{" "}
+            {/* Placeholder change */}
           </CardContent>
         </Card>
-
-        {/* Recent Donations Card */}
-        <Card className="shadow-lg">
-          <CardHeader className="flex items-center justify-between">
-            <CardTitle className="text-lg flex items-center gap-2">
-              <DollarSign className="text-purple-500" />
-              Recent Donations
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">
+              Mailing List Subscribers
             </CardTitle>
+            <Mail className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            {donations.length > 0 ? (
-              <ul className="text-sm space-y-2">
-                {donations.map((donation, index) => (
-                  <li
-                    key={index}
-                    className="flex justify-between text-purple-700"
-                  >
-                    <span>{donation.donorName}</span>
-                    <span className="font-semibold">${donation.amount}</span>
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <p className="text-gray-500 text-sm">No recent donations</p>
-            )}
+            <div className="text-2xl font-bold">
+              {placeholderStats.subscribers}
+            </div>
+            <p className="text-xs text-muted-foreground">+5 since last week</p>{" "}
+            {/* Placeholder change */}
+          </CardContent>
+        </Card>
+        <Card className="opacity-50 bg-gray-50">
+          {" "}
+          {/* Placeholder for locked feature */}
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">
+              Total Donations
+            </CardTitle>
+            <HandCoins className="h-4 w-4 text-muted-foreground" />{" "}
+            {/* Use correct icon */}
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">$0</div>
+            <Link
+              href="/candidate-dashboard/upgrade"
+              className="text-xs text-blue-600 hover:underline"
+            >
+              Upgrade to track donations
+            </Link>
           </CardContent>
         </Card>
       </div>
-    </motion.div>
+
+      {/* Quick Actions Card */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Quick Actions</CardTitle>
+          <CardDescription>Manage your campaign essentials.</CardDescription>
+        </CardHeader>
+        <CardContent className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+          <Button variant="outline" asChild>
+            <Link href="/candidates/candidate-dashboard/profile-settings">
+              <Edit className="mr-2 h-4 w-4" /> Edit Profile
+            </Link>
+          </Button>
+          <Button variant="outline" asChild>
+            <Link href="//candidate/your-public-profile-slug">
+              {" "}
+              {/* TODO: Link to actual public profile */}
+              <Eye className="mr-2 h-4 w-4" /> View Public Profile
+            </Link>
+          </Button>
+          <Button variant="outline" asChild>
+            <Link href="/candidates/candidate-dashboard/analytics">
+              <BarChart3 className="mr-2 h-4 w-4" /> View Analytics
+            </Link>
+          </Button>
+          <Button variant="outline" asChild>
+            <Link href="/candidates/candidate-dashboard/mailing-lists">
+              <Mail className="mr-2 h-4 w-4" /> Manage Mailing Lists
+            </Link>
+          </Button>
+        </CardContent>
+      </Card>
+
+      {/* Placeholder for Recent Activity or Notifications */}
+      {/* <Card>
+        <CardHeader>
+          <CardTitle>Recent Activity</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="text-sm text-gray-500">
+            No recent activity to display.
+          </p>
+        </CardContent>
+      </Card> */}
+    </div>
   );
 }

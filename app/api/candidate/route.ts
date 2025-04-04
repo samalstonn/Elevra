@@ -48,7 +48,6 @@ export async function GET(request: Request) {
         { status: 404 }
       );
     }
-
     return NextResponse.json(candidate);
   } catch (error: unknown) {
     if (error instanceof Error) {
