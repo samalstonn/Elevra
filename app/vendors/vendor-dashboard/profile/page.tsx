@@ -2,13 +2,7 @@ import { redirect } from "next/navigation";
 import { currentUser } from "@clerk/nextjs/server";
 import prisma from "@/prisma/prisma";
 import VendorDashboardLayout from "../VendorDashboardLayout";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import VendorProfileForm from "./VendorProfileForm";
 import { ServiceCategoryType } from "@prisma/client";
 

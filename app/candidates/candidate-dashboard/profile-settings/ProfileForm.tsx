@@ -460,7 +460,8 @@ export function ProfileForm({
               Link to Election (Optional)
             </Label>
             <p className="text-sm text-gray-500">
-              If you're not currently running in an election, leave this blank.
+              If you&rsquo;re not currently running in an election, leave this
+              blank.
             </p>
 
             {/* Display the selected election */}

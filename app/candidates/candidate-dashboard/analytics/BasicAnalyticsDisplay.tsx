@@ -11,19 +11,19 @@ import { Button } from "@/components/ui/button";
 const basicStats = [
   {
     label: "Profile Views (Last 30d)",
-    value: "1,234",
+    value: 1234,
     change: 10.5,
     icon: Eye,
   },
   {
     label: "Unique Visitors (Last 30d)",
-    value: "876",
+    value: 876,
     change: 5.2,
     icon: Users,
   },
   {
     label: "Mailing List Signups (Last 30d)",
-    value: "23",
+    value: 23,
     change: -2.1,
     icon: Mail,
   },
@@ -32,7 +32,7 @@ const basicStats = [
 // Define types for our analytics data
 interface AnalyticsStat {
   label: string;
-  value: string;
+  value: number;
   change: number;
   icon: React.ForwardRefExoticComponent<
     Omit<LucideProps, "ref"> & React.RefAttributes<SVGSVGElement>

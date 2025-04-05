@@ -98,8 +98,8 @@ export function MailingListTable({ lists }: MailingListTableProps) {
                     <AlertDialogTitle>Are you sure?</AlertDialogTitle>
                     <AlertDialogDescription>
                       This action cannot be undone. This will permanently delete
-                      the mailing list "{list.name}" and remove your data from
-                      our servers.
+                      the mailing list &quot;{list.name}&quot; and remove your
+                      data from our system.
                     </AlertDialogDescription>
                   </AlertDialogHeader>
                   <AlertDialogFooter>

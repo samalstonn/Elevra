@@ -453,7 +453,7 @@ export default function VendorProfileForm({
         <FormField
           control={form.control}
           name="serviceCategories"
-          render={({ field }) => (
+          render={() => (
             <FormItem>
               <FormLabel className="text-base">Service Categories</FormLabel>
               <FormDescription className="mt-1 mb-4">
