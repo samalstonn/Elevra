@@ -13,12 +13,12 @@ import { useState, useEffect } from "react";
 import { Button } from "../components/ui/button";
 import { Inter } from "next/font/google";
 import Link from "next/link";
-import "./globals.css";
 import { Analytics } from "@vercel/analytics/react";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { usePathname } from "next/navigation";
 import SearchBar from "../components/ResultsSearchBar";
 import AddressButton from "../components/AddressButton";
+import { Toaster } from "@/components/ui/toaster";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -93,6 +93,7 @@ export default function RootLayout({
               {children}
               <Analytics />
               <SpeedInsights />
+              <Toaster />
             </main>
 
             {/* Footer Section */}

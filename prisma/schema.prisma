@@ -29,6 +29,7 @@ model Candidate {
   policies        String[]
   website         String?
   electionId      Int?
+  photoUrl        String?
   createdAt       DateTime         @default(now())
   updatedAt       DateTime         @updatedAt
   additionalNotes String?
@@ -115,7 +116,11 @@ model Vendor {
   phone             String?
   city              String
   state             String
+  latitude          Float?
+  longitude         Float?
   verified          Boolean           @default(false)
+  slug              String            @unique
+  photoUrl          String?
   subscription      VendorTier        @default(FREE)
   clerkUserId       String            @unique
   createdAt         DateTime          @default(now())

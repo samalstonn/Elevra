@@ -1,8 +1,18 @@
+// app/api/vendor/route.ts (Updated POST handler with fixes)
 import { NextResponse } from "next/server";
 import prisma from "@/prisma/prisma";
+// Import Prisma namespace along with client types
 import { auth, currentUser } from "@clerk/nextjs/server";
-import { ServiceCategoryType } from "@prisma/client";
+import {
+  ServiceCategoryType,
+  SubmissionStatus,
+  VendorTier,
+  Prisma,
+} from "@prisma/client"; // FIXED: Import Prisma namespace
+// Import the slug generation functions
+import { generateUniqueSlug } from "@/lib/functions"; // Adjust path if you put it elsewhere
 
+// GET handler remains the same...
 export async function GET(request: Request) {
   try {
     // Get auth session to verify the request
@@ -37,6 +47,9 @@ export async function GET(request: Request) {
         status: true,
         subscription: true,
         website: true,
+        slug: true, // Select slug if needed elsewhere
+        photoUrl: true, // Select photoUrl if needed
+        createdAt: true, // Select createdAt if needed
         // Add other fields you want to return
       },
     });
@@ -48,12 +61,18 @@ export async function GET(request: Request) {
     return NextResponse.json(vendor);
   } catch (error: unknown) {
     if (error instanceof Error) {
-      console.error("Error updating candidate:", error);
+      console.error("Error fetching vendor:", error);
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
+    console.error("Unknown error fetching vendor:", error);
+    return NextResponse.json(
+      { error: "Internal server error" },
+      { status: 500 }
+    );
   }
 }
 
+// --- UPDATED POST HANDLER ---
 export async function POST(request: Request) {
   try {
     // Get the authenticated user
@@ -80,6 +99,21 @@ export async function POST(request: Request) {
       );
     }
 
+    // --- Basic Validation ---
+    if (
+      !requestData.name ||
+      !requestData.bio ||
+      !requestData.email ||
+      !requestData.city ||
+      !requestData.state ||
+      !requestData.serviceCategory
+    ) {
+      return NextResponse.json(
+        { error: "Missing required fields" },
+        { status: 400 }
+      );
+    }
+
     // Check if vendor already exists
     const existingVendor = await prisma.vendor.findUnique({
       where: { clerkUserId: userId },
@@ -92,8 +126,7 @@ export async function POST(request: Request) {
       );
     }
 
-    // Extract service category data
-    // Check if the provided service category is valid
+    // Extract and validate service category
     const validServiceCategories = Object.values(ServiceCategoryType);
     if (!validServiceCategories.includes(requestData.serviceCategory)) {
       return NextResponse.json(
@@ -101,34 +134,44 @@ export async function POST(request: Request) {
         { status: 400 }
       );
     }
-    const serviceCategory = requestData.serviceCategory as ServiceCategoryType;
+    const serviceCategoryType =
+      requestData.serviceCategory as ServiceCategoryType;
 
-    // Create vendor record
+    // --- Generate Unique Slug ---
+    const uniqueSlug = await generateUniqueSlug(requestData.name);
+    console.info("Generated unique slug:", uniqueSlug);
+
+    // Create vendor record including the slug
     const newVendor = await prisma.vendor.create({
       data: {
         name: requestData.name,
+        slug: uniqueSlug, // Save the generated slug
         bio: requestData.bio,
         email: requestData.email,
         phone: requestData.phone || null,
         website: requestData.website || null,
         city: requestData.city,
         state: requestData.state,
+        photoUrl: requestData.photoUrl || null, // Save photoUrl if provided
         clerkUserId: userId,
-        // Default values will be set by Prisma schema
-        // status: SubmissionStatus.PENDING
-        // subscription: VendorTier.FREE
+        status: SubmissionStatus.PENDING, // Explicitly set default status
+        subscription: VendorTier.FREE, // Explicitly set default tier
+        verified: false, // Explicitly set default verification
       },
     });
     console.info("New vendor created with id:", newVendor.id);
 
-    // Create service category relation if it doesn't exist
+    // Find or create the service category record
+    // (Assuming category name should match the type for simplicity here)
     const serviceCategoryRecord = await prisma.serviceCategory.upsert({
-      where: { type: serviceCategory as ServiceCategoryType },
-      update: {},
+      where: { type: serviceCategoryType },
+      update: {}, // No update needed if it exists
       create: {
-        name: serviceCategory,
-        type: serviceCategory as ServiceCategoryType,
-        description: requestData.serviceDescription,
+        name: serviceCategoryType
+          .replace(/_/g, " ")
+          .replace(/\b\w/g, (l) => l.toUpperCase()), // Simple name generation
+        type: serviceCategoryType,
+        description: requestData.serviceDescription || null, // Add description if provided
       },
     });
     console.info("Service category record upserted:", serviceCategoryRecord);
@@ -138,6 +181,7 @@ export async function POST(request: Request) {
       "Connecting vendor to service category with id:",
       serviceCategoryRecord.id
     );
+    // Use a separate update for clarity, or include in create if preferred
     await prisma.vendor.update({
       where: { id: newVendor.id },
       data: {
@@ -147,14 +191,43 @@ export async function POST(request: Request) {
       },
     });
 
+    // Return the created vendor (excluding sensitive info if needed)
+    const { clerkUserId: _, ...safeVendorData } = newVendor;
+
     return NextResponse.json(
-      { success: true, vendor: newVendor },
+      { success: true, vendor: safeVendorData },
       { status: 201 }
     );
   } catch (error: unknown) {
+    // --- FIXED Error Handling ---
+    console.error("Error creating vendor:", error);
+    // Check specifically for Prisma Known Request Errors first
+    if (error instanceof Prisma.PrismaClientKnownRequestError) {
+      // Check for unique constraint violation (e.g., on slug or email)
+      if (error.code === "P2002") {
+        // Access error.code safely here
+        return NextResponse.json(
+          {
+            error:
+              "A vendor with this identifier (possibly slug or email) already exists.",
+          },
+          { status: 409 }
+        );
+      }
+      // Handle other known Prisma errors if needed
+      return NextResponse.json(
+        { error: `Database error: ${error.message}` },
+        { status: 500 }
+      );
+    }
+    // Handle generic JavaScript errors
     if (error instanceof Error) {
-      console.error("Error updating candidate:", error);
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
+    // Handle any other unknown errors
+    return NextResponse.json(
+      { error: "An unknown error occurred during vendor creation." },
+      { status: 500 }
+    );
   }
 }

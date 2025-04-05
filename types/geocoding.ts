@@ -53,4 +53,4 @@ export interface AutocompleteSuggestion {
   city?: string;
   state?: string; // State abbreviation
   stateName?: string; // Full state name
-} 
+}
