@@ -12,13 +12,19 @@ import CandidateSection from "./CandidateResultsSection";
 
 export type ElectionWithCandidates = Election & { candidates: Candidate[] };
 
-export default function ElectionResultsClient({ elections }: { elections: ElectionWithCandidates[] }) {
+export default function ElectionResultsClient({
+  elections,
+}: {
+  elections: ElectionWithCandidates[];
+}) {
   // Check if there are any elections
   const hasElections = Array.isArray(elections) && elections.length > 0;
 
   const sortedElections = useMemo(() => {
     if (Array.isArray(elections)) {
-      return [...elections].sort((a, b) => b.candidates.length - a.candidates.length);
+      return [...elections].sort(
+        (a, b) => b.candidates.length - a.candidates.length
+      );
     }
     return [];
   }, [elections]);
@@ -64,13 +70,13 @@ export default function ElectionResultsClient({ elections }: { elections: Electi
 
   const scrollLeft = () => {
     if (scrollRef.current) {
-      scrollRef.current.scrollBy({ left: -200, behavior: 'smooth' });
+      scrollRef.current.scrollBy({ left: -200, behavior: "smooth" });
     }
   };
 
   const scrollRight = () => {
     if (scrollRef.current) {
-      scrollRef.current.scrollBy({ left: 200, behavior: 'smooth' });
+      scrollRef.current.scrollBy({ left: 200, behavior: "smooth" });
     }
   };
 
@@ -95,9 +101,14 @@ export default function ElectionResultsClient({ elections }: { elections: Electi
         variants={fadeInVariants}
       >
         <div className="max-w-3xl text-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-4">No Elections Found</h1>
-          <p className="text-gray-600 mb-8">There are no elections available for the selected location. Would you like to submit information about an upcoming election?</p>
-          
+          <h1 className="text-3xl font-bold text-gray-900 mb-4">
+            No Elections Found
+          </h1>
+          <p className="text-gray-600 mb-8">
+            There are no elections available for the selected location. Would
+            you like to submit information about an upcoming election?
+          </p>
+
           <div className="flex justify-center">
             <motion.div
               whileHover={{ scale: 1.05 }}
@@ -115,7 +126,10 @@ export default function ElectionResultsClient({ elections }: { elections: Electi
                     Help us keep the community informed
                   </p>
                   <Link href="/submit" className="mt-auto mb-4">
-                    <Button variant="purple" className="flex items-center gap-2">
+                    <Button
+                      variant="purple"
+                      className="flex items-center gap-2"
+                    >
                       <span>Submit Election Information</span>
                     </Button>
                   </Link>
@@ -141,33 +155,40 @@ export default function ElectionResultsClient({ elections }: { elections: Electi
           animate="visible"
           variants={fadeInVariants}
         >
-          {/* Mobile Filters Header */}
           <div className="relative">
-            <motion.div ref={scrollRef} variants={fadeInVariants} className="flex flex-nowrap overflow-x-auto gap-4 bg-white p-4 no-scrollbar">
+            <motion.div
+              ref={scrollRef}
+              variants={fadeInVariants}
+              className="flex flex-nowrap overflow-x-auto gap-4 bg-white p-4 no-scrollbar"
+            >
               {sortedElections.map((elec) => (
                 <Button
                   key={elec.id}
                   onClick={() => setSelectedElection(elec.id)}
-                  variant={selectedElection === elec.id ? "purple" : "secondary"}
+                  variant={
+                    selectedElection === elec.id ? "purple" : "secondary"
+                  }
                   size="sm"
                 >
                   <span className="font-medium">{elec.position}</span>
                 </Button>
               ))}
             </motion.div>
-          {canScrollLeft && (
-            <div
-              className="pointer-events-none absolute top-0 left-0 h-full w-24 z-0"
-              style={{
-                background: "linear-gradient(to right, rgba(255,255,255,1) 0%, rgba(255,255,255,0.9) 20%, rgba(255,255,255,0.7) 40%, rgba(255,255,255,0.5) 60%, rgba(255,255,255,0.3) 80%, rgba(255,255,255,0) 100%)"
-              }}
-            />
-          )}
+            {canScrollLeft && (
+              <div
+                className="pointer-events-none absolute top-0 left-0 h-full w-24 z-0"
+                style={{
+                  background:
+                    "linear-gradient(to right, rgba(255,255,255,1) 0%, rgba(255,255,255,0.9) 20%, rgba(255,255,255,0.7) 40%, rgba(255,255,255,0.5) 60%, rgba(255,255,255,0.3) 80%, rgba(255,255,255,0) 100%)",
+                }}
+              />
+            )}
             {canScrollRight && (
               <div
                 className="pointer-events-none absolute top-0 right-0 h-full w-24 z-0"
                 style={{
-                  background: "linear-gradient(to left, rgba(255,255,255,1) 0%, rgba(255,255,255,0.9) 20%, rgba(255,255,255,0.7) 40%, rgba(255,255,255,0.5) 60%, rgba(255,255,255,0.3) 80%, rgba(255,255,255,0) 100%)"
+                  background:
+                    "linear-gradient(to left, rgba(255,255,255,1) 0%, rgba(255,255,255,0.9) 20%, rgba(255,255,255,0.7) 40%, rgba(255,255,255,0.5) 60%, rgba(255,255,255,0.3) 80%, rgba(255,255,255,0) 100%)",
                 }}
               />
             )}
@@ -195,11 +216,22 @@ export default function ElectionResultsClient({ elections }: { elections: Electi
 
           <div className="mt-4">
             {/* Candidate Sections */}
-            <motion.div variants={fadeInVariants} className="grid grid-cols-1 gap-6">
+            <motion.div
+              variants={fadeInVariants}
+              className="grid grid-cols-1 gap-6"
+            >
               {(filteredElections || []).map((elec) => (
-                <motion.div key={elec.id} variants={fadeInVariants} className="mt-4 flex flex-col">
+                <motion.div
+                  key={elec.id}
+                  variants={fadeInVariants}
+                  className="mt-4 flex flex-col"
+                >
                   <div className="flex-1">
-                    <CandidateSection candidates={elec.candidates} election={elec} fallbackElections={[]}/>
+                    <CandidateSection
+                      candidates={elec.candidates}
+                      election={elec}
+                      fallbackElections={[]}
+                    />
                   </div>
                 </motion.div>
               ))}

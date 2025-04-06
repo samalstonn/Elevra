@@ -1,185 +1,239 @@
-// app/(candidate_features)/vendors/VendorLocationSelector.tsx
 "use client";
-
-import React, { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Loader2, X } from "lucide-react";
-import { NormalizedLocation, AutocompleteSuggestion } from "@/types/geocoding";
-import { getLocationSuggestions, normalizeLocation } from "@/lib/geocoding"; // Assuming geocoding functions are here
-import { debounce } from "@/lib/debounce"; // Assuming debounce is here
+import { getLocationSuggestions, normalizeLocation } from "@/lib/geocoding";
+import { debounce } from "@/lib/debounce";
+import Autocomplete from "@/components/ui/Autocomplete";
+import ErrorPopup from "@/components/ui/ErrorPopup";
+import { AutocompleteSuggestion, NormalizedLocation } from "@/types/geocoding";
+import { Loader2 } from "lucide-react";
 
 interface VendorLocationSelectorProps {
   onLocationChange: (location: NormalizedLocation | null) => void;
-  defaultLocation?: NormalizedLocation | null; // Optional default location
+  defaultLocation?: NormalizedLocation | null;
 }
 
-export function VendorLocationSelector({
+export default function VendorLocationSelector({
   onLocationChange,
   defaultLocation = null,
 }: VendorLocationSelectorProps) {
-  // State for input value, suggestions, loading, selected location, and dropdown visibility
-  const [inputValue, setInputValue] = useState<string>(
-    defaultLocation ? `${defaultLocation.city}, ${defaultLocation.state}` : ""
-  );
+  const [searchTerm, setSearchTerm] = useState("");
   const [suggestions, setSuggestions] = useState<AutocompleteSuggestion[]>([]);
-  const [isLoading, setIsLoading] = useState<boolean>(false);
-  const [isSuggestionsVisible, setIsSuggestionsVisible] =
-    useState<boolean>(false);
-  const containerRef = useRef<HTMLDivElement>(null); // Ref for detecting clicks outside
+  const [isLoading, setIsLoading] = useState(false);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
+  const [showError, setShowError] = useState(false);
+  const [highlightedIndex, setHighlightedIndex] = useState(-1);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Debounced function to fetch suggestions
-  // Fixed: Using a properly memoized callback with inline function and dependencies
-  const fetchSuggestions = useCallback(
-    (searchTerm: string) => {
-      const debouncedFetch = debounce(async (term: string) => {
-        if (term.length < 2) {
-          setSuggestions([]);
-          setIsSuggestionsVisible(false);
-          return;
-        }
-        setIsLoading(true);
-        try {
-          const results = await getLocationSuggestions(term);
-          setSuggestions(results);
-          setIsSuggestionsVisible(results.length > 0);
-        } catch (error) {
-          console.error("Error fetching suggestions:", error);
-          setSuggestions([]);
-          setIsSuggestionsVisible(false);
-        } finally {
-          setIsLoading(false);
-        }
-      }, 300);
+  const searchContainerRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
 
-      debouncedFetch(searchTerm);
-    },
-    [setSuggestions, setIsSuggestionsVisible, setIsLoading] // Proper dependencies
-  );
-
-  // Handle input changes
-  const handleInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const value = event.target.value;
-    setInputValue(value);
-    if (value === "") {
-      // If input is cleared, clear the location filter
-      onLocationChange(null);
-      setSuggestions([]);
-      setIsSuggestionsVisible(false);
-    } else {
-      // Fetch suggestions based on input
-      fetchSuggestions(value);
-    }
-  };
-
-  // Handle selecting a suggestion
-  const handleSuggestionClick = async (suggestion: AutocompleteSuggestion) => {
-    setInputValue(suggestion.placeName); // Update input field
-    setSuggestions([]); // Clear suggestions
-    setIsSuggestionsVisible(false); // Hide dropdown
-    setIsLoading(true);
-    // Normalize the selected location to get city/state/coords
-    const result = await normalizeLocation(suggestion.placeName);
-    setIsLoading(false);
-    if ("city" in result && "state" in result) {
-      // Pass the normalized location up
-      onLocationChange(result);
-    } else {
-      // Handle normalization error (e.g., show a toast)
-      console.error("Normalization error:", result.message);
-      onLocationChange(null); // Clear location if normalization fails
-    }
-  };
-
-  // Clear the input and location filter
-  const handleClearInput = () => {
-    setInputValue("");
-    setSuggestions([]);
-    setIsSuggestionsVisible(false);
-    onLocationChange(null); // Notify parent component
-  };
-
-  // Effect to handle clicks outside the component to close suggestions
+  // Set default location if provided
   useEffect(() => {
-    function handleClickOutside(event: MouseEvent) {
-      if (
-        containerRef.current &&
-        !containerRef.current.contains(event.target as Node)
-      ) {
-        setIsSuggestionsVisible(false);
-      }
+    if (defaultLocation) {
+      setSearchTerm(
+        defaultLocation.fullAddress ||
+          `${defaultLocation.city}, ${defaultLocation.state}`
+      );
     }
+  }, [defaultLocation]);
+
+  // Close suggestions when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        searchContainerRef.current &&
+        !searchContainerRef.current.contains(event.target as Node)
+      ) {
+        setShowSuggestions(false);
+      }
+    };
+
     document.addEventListener("mousedown", handleClickOutside);
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
     };
-  }, [containerRef]);
+  }, []);
 
-  // Effect to set initial location if defaultLocation changes
-  useEffect(() => {
-    if (defaultLocation) {
-      setInputValue(`${defaultLocation.city}, ${defaultLocation.state}`);
-      // Optionally trigger onLocationChange if needed on initial load
-      // onLocationChange(defaultLocation);
+  const debouncedFetchSuggestions = debounce(async (input: string) => {
+    if (input.trim().length < 2) {
+      setSuggestions([]);
+      setIsLoading(false);
+      return;
     }
-  }, [defaultLocation]); // Removed onLocationChange from deps to avoid loop
+
+    try {
+      const results = await getLocationSuggestions(input);
+      setSuggestions(results);
+    } catch (error) {
+      console.error("Error fetching suggestions:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  }, 300);
+
+  // Handle input changes
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setSearchTerm(value);
+
+    if (value.trim() === "") {
+      // Clear location if search term is empty
+      onLocationChange(null);
+    }
+
+    if (value.trim().length >= 2) {
+      setIsLoading(true);
+      setShowSuggestions(true);
+      debouncedFetchSuggestions(value);
+    } else {
+      setShowSuggestions(false);
+      setSuggestions([]);
+    }
+
+    setHighlightedIndex(-1);
+  };
+
+  // Handle suggestion selection
+  const handleSelectSuggestion = (suggestion: AutocompleteSuggestion) => {
+    if (suggestion.city && suggestion.state && suggestion.stateName) {
+      setSearchTerm(suggestion.placeName);
+      setShowSuggestions(false);
+      onLocationChange({
+        city: suggestion.city,
+        state: suggestion.state,
+        stateName: suggestion.stateName,
+        fullAddress: suggestion.placeName,
+      });
+    } else {
+      setErrorMessage("Could not determine city and state from selection.");
+      setShowError(true);
+    }
+  };
+
+  // Handle search submission
+  const handleSearch = async () => {
+    if (searchTerm.trim() === "") {
+      onLocationChange(null);
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    try {
+      const result = await normalizeLocation(searchTerm);
+
+      if ("message" in result) {
+        // It's an error
+        setErrorMessage(result.message);
+        setShowError(true);
+      } else {
+        // Success - valid location with city and state
+        onLocationChange(result);
+      }
+    } catch (error) {
+      console.error(error);
+      setErrorMessage("Error processing location. Please try again.");
+      setShowError(true);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  // Handle keyboard navigation
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (!showSuggestions) {
+      if (e.key === "Enter") {
+        handleSearch();
+      }
+      return;
+    }
+
+    switch (e.key) {
+      case "ArrowDown":
+        e.preventDefault();
+        setHighlightedIndex((prev) =>
+          prev < suggestions.length - 1 ? prev + 1 : prev
+        );
+        break;
+      case "ArrowUp":
+        e.preventDefault();
+        setHighlightedIndex((prev) => (prev > 0 ? prev - 1 : 0));
+        break;
+      case "Enter":
+        e.preventDefault();
+        if (highlightedIndex >= 0 && highlightedIndex < suggestions.length) {
+          handleSelectSuggestion(suggestions[highlightedIndex]);
+        } else {
+          handleSearch();
+        }
+        break;
+      case "Escape":
+        setShowSuggestions(false);
+        break;
+      default:
+        break;
+    }
+  };
 
   return (
-    <div className="relative w-full" ref={containerRef}>
-      <label
-        htmlFor="location-search"
-        className="block text-sm font-medium text-gray-700 mb-1"
-      >
-        Location
-      </label>
-      <div className="relative">
-        <Input
-          id="location-search"
-          type="text"
-          placeholder="City, State, or ZIP Code"
-          value={inputValue}
-          onChange={handleInputChange}
-          style={{ width: "100%" }} // Ensure full width
-          onFocus={() =>
-            setIsSuggestionsVisible(
-              suggestions.length > 0 && inputValue.length > 0
-            )
-          }
-          className="pr-16 rounded-xl border-gray" // Add padding for icons
-        />
-        {/* Loading indicator */}
-        {isLoading && (
-          <Loader2 className="absolute right-10 top-1/2 h-4 w-4 -translate-y-1/2 animate-spin text-gray-500" />
-        )}
-        {/* Clear button */}
-        {inputValue && !isLoading && (
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={handleClearInput}
-            className="absolute right-1 top-1/2 h-7 w-7 -translate-y-1/2 p-0 text-gray-500 hover:text-gray-700"
-            aria-label="Clear location input"
-          >
-            <X className="h-4 w-4" />
-          </Button>
-        )}
-      </div>
-      {/* Suggestions dropdown */}
-      {isSuggestionsVisible && suggestions.length > 0 && (
-        <div className="absolute z-10 mt-1 w-full rounded-md border border-gray-200 bg-white shadow-lg max-h-60 overflow-y-auto">
-          <ul>
-            {suggestions.map((suggestion) => (
-              <li
-                key={suggestion.id}
-                onClick={() => handleSuggestionClick(suggestion)}
-                className="cursor-pointer px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-              >
-                {suggestion.placeName}
-              </li>
-            ))}
-          </ul>
+    <div className="w-full">
+      <div ref={searchContainerRef} className="relative w-full">
+        <div className="flex w-full h-12 items-stretch rounded-xl">
+          <div className="flex border-none bg-[#f2f0f4] items-center justify-center pl-4 rounded-l-xl border-r-0 text-[#756388]">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="24"
+              height="24"
+              fill="currentColor"
+              viewBox="0 0 256 256"
+            >
+              <path d="M229.66,218.34l-50.07-50.06a88.11,88.11,0,1,0-11.31,11.31l50.06,50.07a8,8,0,0,0,11.32-11.32ZM40,112a72,72,0,1,1,72,72A72.08,72.08,0,0,1,40,112Z"></path>
+            </svg>
+          </div>
+          <Input
+            ref={inputRef}
+            type="text"
+            placeholder="Search vendors by location"
+            value={searchTerm}
+            onChange={handleInputChange}
+            onKeyDown={handleKeyDown}
+            onFocus={() => {
+              if (searchTerm.trim().length >= 2) {
+                setShowSuggestions(true);
+              }
+            }}
+            className="flex w-full min-w-0 flex-1 resize-none overflow-hidden rounded-xl text-[#141118] focus:outline-0 focus:ring-0 border-none bg-[#f2f0f4] focus:border-none h-full placeholder:text-[#756388] px-4 rounded-l-none border-l-0 pl-2 text-base font-normal leading-normal"
+            aria-autocomplete="list"
+            aria-expanded={showSuggestions}
+            aria-owns="location-suggestions"
+            aria-controls="location-suggestions"
+            aria-activedescendant={
+              highlightedIndex >= 0
+                ? `suggestion-${highlightedIndex}`
+                : undefined
+            }
+            disabled={isSubmitting}
+          />
         </div>
-      )}
+
+        <Autocomplete
+          suggestions={suggestions}
+          isLoading={isLoading}
+          visible={showSuggestions}
+          onSelect={handleSelectSuggestion}
+          highlightedIndex={highlightedIndex}
+          setHighlightedIndex={setHighlightedIndex}
+        />
+      </div>
+
+      {/* Error Popup */}
+      <ErrorPopup
+        message={errorMessage}
+        isVisible={showError}
+        onClose={() => setShowError(false)}
+      />
     </div>
   );
 }

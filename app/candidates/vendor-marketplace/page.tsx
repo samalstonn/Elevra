@@ -2,28 +2,20 @@
 "use client";
 
 import React, { useState, useEffect, useCallback } from "react";
-import { VendorCategoryFilter } from "./VendorCategoryFilter";
-import { useRouter } from "next/navigation";
-import { VendorLocationSelector } from "./VendorLocationSelector";
-import { VendorList } from "./VendorList";
-import { Button } from "@/components/ui/button";
-import { FaArrowLeft } from "react-icons/fa";
 import {
   ServiceCategoryFilterItem,
   DiscoveryVendor,
   VendorDiscoveryResponse,
 } from "@/types/vendor";
 import { NormalizedLocation } from "@/types/geocoding";
-import { useAuth } from "@clerk/nextjs"; // To potentially get candidate's default location
+import { useAuth } from "@clerk/nextjs";
+import VendorLocationSelector from "./VendorLocationSelector";
+import { VendorCategoryFilter } from "./VendorCategoryFilters";
+import { VendorGrid } from "./VendorGrid";
 
-// Debounce function (assuming it's correctly imported or defined)
-// import { debounce } from "@/lib/debounce";
-import { Candidate } from "@prisma/client";
-
-// Main component for the Vendor Discovery page
-export default function VendorDiscoveryPage() {
-  // State variables for filters, vendors, loading, pagination, and errors
-  const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(
+const VendorDiscoveryPage = () => {
+  // State for single category selection
+  const [selectedCategoryId, setSelectedCategoryId] = useState<number | null>(
     null
   );
   const [location, setLocation] = useState<NormalizedLocation | null>(null);
@@ -34,9 +26,9 @@ export default function VendorDiscoveryPage() {
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [totalPages, setTotalPages] = useState<number>(1);
 
-  const router = useRouter();
-
   const { userId } = useAuth();
+
+  // Fetch candidate's location on component mount
   useEffect(() => {
     if (!userId) return;
     fetch(`/api/candidate?clerkUserId=${userId}`)
@@ -46,13 +38,14 @@ export default function VendorDiscoveryPage() {
         }
         return res.json();
       })
-      .then((candidate: Candidate) => {
+      .then((candidate) => {
         if (candidate && candidate.city && candidate.state) {
-          //   setLocation({
-          //     city: candidate.city,
-          //     state: candidate.state,
-          //     stateName: candidate.state,
-          //   });
+          // Uncomment to set default location
+          // setLocation({
+          //   city: candidate.city,
+          //   state: candidate.state,
+          //   stateName: candidate.state,
+          // });
         }
       })
       .catch((err) => console.error("Error fetching candidate:", err));
@@ -65,9 +58,12 @@ export default function VendorDiscoveryPage() {
       setError(null);
       // Construct query parameters based on current state
       const params = new URLSearchParams();
-      if (selectedCategoryId) {
-        params.append("categoryId", selectedCategoryId);
+
+      // Add category ID if selected
+      if (selectedCategoryId !== null) {
+        params.append("categoryId", selectedCategoryId.toString());
       }
+
       if (location?.city) {
         params.append("city", location.city);
       }
@@ -75,7 +71,8 @@ export default function VendorDiscoveryPage() {
         params.append("state", location.state);
       }
       params.append("page", page.toString());
-      params.append("limit", "12"); // Or make this configurable
+      params.append("limit", "12"); // 12 items per page (3 rows of 4)
+      params.append("orderBy", "proximity"); // Order by proximity to location
 
       try {
         // Fetch data from the discovery API endpoint
@@ -87,9 +84,9 @@ export default function VendorDiscoveryPage() {
         }
         const data: VendorDiscoveryResponse = await response.json();
         // Update state with fetched data
-        setVendors(data.vendors);
-        setCurrentPage(data.page);
-        setTotalPages(data.totalPages);
+        setVendors(data.vendors || []);
+        setCurrentPage(data.page || 1);
+        setTotalPages(data.totalPages || 1);
       } catch (err: unknown) {
         // Handle errors during fetch
         console.error(err);
@@ -103,12 +100,7 @@ export default function VendorDiscoveryPage() {
       }
     },
     [selectedCategoryId, location]
-  ); // Dependencies for useCallback
-
-  // Debounced version of fetchVendors for location changes
-  // const debouncedFetchVendors = useCallback(debounce(fetchVendors, 500), [
-  //   fetchVendors,
-  // ]);
+  );
 
   // Fetch categories on initial component mount
   useEffect(() => {
@@ -122,140 +114,80 @@ export default function VendorDiscoveryPage() {
         setCategories(data);
       } catch (err) {
         console.error(err);
-        // Handle category fetch error (e.g., show a message)
+        // Handle category fetch error
       }
     };
     fetchCategories();
-  }, []); // Empty dependency array ensures this runs only once
+  }, []);
 
   // Fetch vendors when filters or page change
   useEffect(() => {
     fetchVendors(currentPage);
-  }, [selectedCategoryId, location, currentPage, fetchVendors]); // Include fetchVendors in dependency array
+  }, [selectedCategoryId, location, currentPage, fetchVendors]);
 
-  // Handlers for filter changes
-  const handleCategoryChange = (categoryId: string | null) => {
+  // Handler for category filter changes
+  const handleCategoryChange = (categoryId: number | null) => {
     setSelectedCategoryId(categoryId);
     setCurrentPage(1); // Reset to first page on filter change
-    // fetchVendors(1); // Fetch immediately
   };
 
+  // Handler for location search change
   const handleLocationChange = (newLocation: NormalizedLocation | null) => {
     setLocation(newLocation);
     setCurrentPage(1); // Reset to first page on filter change
-    // debouncedFetchVendors(1); // Fetch after debounce
-  };
-
-  // Handlers for pagination
-  const handleNextPage = () => {
-    if (currentPage < totalPages) {
-      setCurrentPage(currentPage + 1);
-    }
-  };
-
-  const handlePreviousPage = () => {
-    if (currentPage > 1) {
-      setCurrentPage(currentPage - 1);
-    }
   };
 
   return (
-    <div className="container mx-auto p-4 md:p-6 lg:p-8">
-      <div className="mb-6">
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => router.back()}
-          className="text-purple-600 hover:text-purple-800 flex items-center gap-2"
-        >
-          <FaArrowLeft /> Back
-        </Button>
-      </div>
-      <h1 className="text-3xl font-bold mb-6 text-gray-800">
+    <div className="container mx-auto px-4 py-5">
+      {/* Page Title */}
+      <h1 className="text-3xl font-bold text-[#141118] tracking-[-0.015em] mb-6">
         Vendor Marketplace
       </h1>
 
-      {/* Filter Section */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8 p-4">
-        {/* Location Selector */}
-        <div className="md:col-span-2">
-          <VendorLocationSelector
-            onLocationChange={handleLocationChange}
-            // Pass defaultLocation if fetched: defaultLocation={candidateLocation}
-          />
-          <p className="text-xs text-gray-500 mt-1">
-            Enter City, State, or ZIP Code. Results matching State/City are
-            prioritized.
-          </p>
-        </div>
-
-        {/* Category Filter */}
-        <div>
-          <VendorCategoryFilter
-            categories={categories}
-            selectedCategoryId={selectedCategoryId}
-            onCategoryChange={handleCategoryChange}
-          />
-        </div>
+      {/* Search Location Bar */}
+      <div className="mb-4">
+        <VendorLocationSelector onLocationChange={handleLocationChange} />
       </div>
 
-      {/* Vendor List Section */}
-      {isLoading ? (
-        // Loading state display
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {/* Skeleton loaders */}
-          {Array.from({ length: 6 }).map((_, index) => (
-            <div
-              key={index}
-              className="border border-gray-200 rounded-lg p-4 shadow animate-pulse"
-            >
-              <div className="h-8 bg-gray-200 rounded w-3/4 mb-4"></div>
-              <div className="h-4 bg-gray-200 rounded w-1/2 mb-2"></div>
-              <div className="h-4 bg-gray-200 rounded w-full mb-2"></div>
-              <div className="h-4 bg-gray-200 rounded w-full mb-4"></div>
-              <div className="flex space-x-2">
-                <div className="h-6 bg-gray-200 rounded w-1/4"></div>
-                <div className="h-6 bg-gray-200 rounded w-1/4"></div>
-              </div>
-            </div>
-          ))}
+      {/* Category Filters */}
+      <div className="mb-6">
+        <VendorCategoryFilter
+          categories={categories}
+          selectedCategoryId={selectedCategoryId}
+          onCategoryChange={handleCategoryChange}
+        />
+      </div>
+
+      {/* Vendor Grid */}
+      <VendorGrid vendors={vendors} isLoading={isLoading} error={error} />
+
+      {/* Pagination - if needed */}
+      {!isLoading && !error && totalPages > 1 && (
+        <div className="flex justify-center items-center space-x-4 mt-8">
+          <button
+            onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+            disabled={currentPage <= 1}
+            className="px-4 py-2 border border-gray-300 rounded-md disabled:opacity-50"
+          >
+            Previous
+          </button>
+          <span className="text-gray-700">
+            Page {currentPage} of {totalPages}
+          </span>
+          <button
+            onClick={() =>
+              setCurrentPage(Math.min(totalPages, currentPage + 1))
+            }
+            disabled={currentPage >= totalPages}
+            className="px-4 py-2 border border-gray-300 rounded-md disabled:opacity-50"
+          >
+            Next
+          </button>
         </div>
-      ) : error ? (
-        // Error message display
-        <p className="text-red-600 text-center">{error}</p>
-      ) : vendors.length === 0 ? (
-        // No results message
-        <p className="text-gray-600 text-center py-10">
-          No vendors found matching your criteria.
-        </p>
-      ) : (
-        // Display vendor list and pagination
-        <>
-          <VendorList vendors={vendors} />
-          {/* Pagination Controls */}
-          {totalPages > 1 && (
-            <div className="flex justify-center items-center space-x-4 mt-8">
-              <Button
-                onClick={handlePreviousPage}
-                disabled={currentPage <= 1}
-                variant="outline"
-              >
-                Previous
-              </Button>
-              <span className="text-gray-700">
-                Page {currentPage} of {totalPages}
-              </span>
-              <Button
-                onClick={handleNextPage}
-                disabled={currentPage >= totalPages}
-                variant="outline"
-              >
-                Next
-              </Button>
-            </div>
-          )}
-        </>
       )}
     </div>
   );
-}
+};
+
+// Make sure to export the component as default
+export default VendorDiscoveryPage;
