@@ -234,20 +234,11 @@ export default function VendorContactFormDialog({
           <DialogFooter>
             {/* Add a Close button */}
             <DialogClose asChild>
-              <Button
-                type="button"
-                variant="outline"
-                className="bg-[#f2f0f4] text-[#141118]"
-                disabled={isSubmitting}
-              >
+              <Button type="button" disabled={isSubmitting}>
                 Cancel
               </Button>
             </DialogClose>
-            <Button
-              type="submit"
-              className="bg-[#8019e6] text-white hover:bg-[#6714b8]"
-              disabled={isSubmitting}
-            >
+            <Button type="submit" variant="purple" disabled={isSubmitting}>
               {isSubmitting ? "Sending..." : "Send Message"}
             </Button>
           </DialogFooter>

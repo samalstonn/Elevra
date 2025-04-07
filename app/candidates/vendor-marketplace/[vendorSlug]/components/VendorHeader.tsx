@@ -57,7 +57,10 @@ export default function VendorHeader({ vendor }: VendorHeaderProps) {
             }
           </h1>
           <p className="text-sm text-muted-foreground sm:text-base">
-            {vendor.city}, {vendor.state} • Verified • Joined: {joinDate}
+            {vendor.city}, {vendor.state}
+          </p>
+          <p className="text-sm text-muted-foreground sm:text-base">
+            Joined {joinDate}
           </p>
         </div>
       </div>
@@ -65,17 +68,13 @@ export default function VendorHeader({ vendor }: VendorHeaderProps) {
       {/* Right Side: Action Buttons */}
       <div className="flex w-full flex-shrink-0 gap-2 sm:w-auto">
         <Button
-          variant="outline"
           className="flex-1 bg-[#f2f0f4] text-[#141118] sm:flex-none"
           onClick={() => setIsContactDialogOpen(true)}
         >
           <MessageSquare className="mr-2 h-4 w-4" />
           Send Message
         </Button>
-        <Button
-          className="flex-1 bg-[#8019e6] text-white hover:bg-[#6714b8] sm:flex-none"
-          onClick={handleAddToFavorites}
-        >
+        <Button variant="purple" onClick={handleAddToFavorites}>
           <Heart className="mr-2 h-4 w-4" />
           Add to Favorites
         </Button>

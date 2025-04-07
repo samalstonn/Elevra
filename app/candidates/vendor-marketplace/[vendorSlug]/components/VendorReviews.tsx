@@ -26,22 +26,6 @@ export default function VendorReviews({ vendor }: VendorReviewsProps) {
         Reviews
       </h2>
 
-      {/* Overall review stats - thumbs up/down counts */}
-      <div className="flex flex-wrap gap-4 px-4 py-2">
-        <div className="flex items-center justify-center gap-2 px-3 py-2">
-          <ThumbsUp className="h-6 w-6 text-[#756388]" />
-          <p className="text-[#756388] text-[13px] font-bold leading-normal tracking-[0.015em]">
-            10
-          </p>
-        </div>
-        <div className="flex items-center justify-center gap-2 px-3 py-2">
-          <ThumbsDown className="h-6 w-6 text-[#756388]" />
-          <p className="text-[#756388] text-[13px] font-bold leading-normal tracking-[0.015em]">
-            2
-          </p>
-        </div>
-      </div>
-
       {testimonials.length > 0 ? (
         <div className="flex flex-col gap-8 overflow-x-hidden p-4">
           {/* List of Review Cards */}
