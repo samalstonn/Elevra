@@ -1,27 +1,20 @@
-// app/(main)/vendors/[vendorSlug]/components/VendorAbout.tsx
-import React from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import * as React from "react";
+import { PublicVendorProfileData } from "@/types/vendor";
 
+// Define props for the VendorAbout component
 interface VendorAboutProps {
-  bio: string | null;
+  vendor: PublicVendorProfileData;
 }
 
-export function VendorAbout({ bio }: VendorAboutProps) {
-  if (!bio) {
-    return null; // Don't render the section if there's no bio
-  }
-
+export default function VendorAbout({ vendor }: VendorAboutProps) {
   return (
-    <Card className="shadow-sm border border-gray-200">
-      <CardHeader>
-        <CardTitle className="text-xl font-semibold text-gray-800">
-          About
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        {/* Render bio text, preserving whitespace and line breaks */}
-        <p className="text-sm text-gray-700 whitespace-pre-wrap">{bio}</p>
-      </CardContent>
-    </Card>
+    <div>
+      <h2 className="text-[#141118] tracking-light text-[28px] font-bold leading-tight px-4 text-left pb-3 pt-5">
+        Welcome to {vendor.name}
+      </h2>
+      <p className="text-[#141118] text-base font-normal leading-normal pb-3 pt-1 px-4 whitespace-pre-wrap">
+        {vendor.bio || "No detailed information available."}
+      </p>
+    </div>
   );
 }

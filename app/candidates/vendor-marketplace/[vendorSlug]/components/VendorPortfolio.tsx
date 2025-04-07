@@ -1,33 +1,33 @@
-// app/(main)/vendors/[vendorSlug]/components/VendorPortfolio.tsx
-import React from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { PortfolioItemCard } from "./PortfolioItemCard";
-import { VendorProfilePortfolioItem } from "@/types/vendor";
+import * as React from "react";
+import { PublicVendorProfileData } from "@/types/vendor";
+import PortfolioItemCard from "./PortfolioItemCard"; // Import the card component
 
+// Define props for the VendorPortfolio component
 interface VendorPortfolioProps {
-  items: VendorProfilePortfolioItem[];
+  vendor: PublicVendorProfileData;
 }
 
-export function VendorPortfolio({ items }: VendorPortfolioProps) {
-  if (!items || items.length === 0) {
-    return null; // Don't render if no items
-  }
+export default function VendorPortfolio({ vendor }: VendorPortfolioProps) {
+  const portfolioItems = vendor.portfolio || []; // Ensure portfolioItems is an array
 
   return (
-    <Card className="shadow-sm border border-gray-200">
-      <CardHeader>
-        <CardTitle className="text-xl font-semibold text-gray-800">
-          Portfolio
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        {/* Grid layout for portfolio items */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {items.map((item) => (
+    <div>
+      <h2 className="text-[#141118] text-[22px] font-bold leading-tight tracking-[-0.015em] px-4 pb-3 pt-5">
+        Portfolio
+      </h2>
+      {portfolioItems.length > 0 ? (
+        // Grid layout matching the mockup
+        <div className="grid grid-cols-[repeat(auto-fit,minmax(158px,1fr))] gap-3 p-4">
+          {portfolioItems.map((item) => (
             <PortfolioItemCard key={item.id} item={item} />
           ))}
         </div>
-      </CardContent>
-    </Card>
+      ) : (
+        // Message shown when there are no portfolio items
+        <p className="text-muted-foreground px-4">
+          This vendor hasn&apos;t added any portfolio items yet.
+        </p>
+      )}
+    </div>
   );
 }
