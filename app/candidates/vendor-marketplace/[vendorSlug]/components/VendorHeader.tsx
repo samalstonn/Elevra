@@ -39,7 +39,7 @@ export default function VendorHeader({ vendor }: VendorHeaderProps) {
   };
 
   return (
-    <div className="mb-6 flex flex-col items-start gap-4 p-6 shadow-sm sm:flex-row sm:items-center sm:justify-between">
+    <div className="mb-6 flex flex-col items-start gap-4 p-6 sm:flex-row sm:items-center sm:justify-between">
       {/* Left Side: Avatar and Info */}
       <div className="flex items-center gap-4">
         <Avatar className="h-16 w-16 sm:h-20 sm:w-20">

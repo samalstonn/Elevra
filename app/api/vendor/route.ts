@@ -11,6 +11,7 @@ import {
 } from "@prisma/client"; // FIXED: Import Prisma namespace
 // Import the slug generation functions
 import { generateUniqueSlug } from "@/lib/functions"; // Adjust path if you put it elsewhere
+import nodemailer from "nodemailer";
 
 // GET handler remains the same...
 export async function GET(request: Request) {
@@ -182,7 +183,7 @@ export async function POST(request: Request) {
       serviceCategoryRecord.id
     );
     // Use a separate update for clarity, or include in create if preferred
-    await prisma.vendor.update({
+    const vendor = await prisma.vendor.update({
       where: { id: newVendor.id },
       data: {
         serviceCategories: {
@@ -193,6 +194,26 @@ export async function POST(request: Request) {
 
     // Return the created vendor (excluding sensitive info if needed)
     const { clerkUserId: _, ...safeVendorData } = newVendor;
+
+    // Set up nodemailer transporter using your email service credentials
+    const transporter = nodemailer.createTransport({
+      service: "gmail", // or another service
+      auth: {
+        user: process.env.EMAIL_USER, // your email address
+        pass: process.env.EMAIL_PASS, // your email password or app password
+      },
+    });
+
+    // Define email options
+    const mailOptions = {
+      from: process.env.EMAIL_USER,
+      to: process.env.MY_EMAIL, // your email address to receive notifications
+      subject: `New Vendor Signup: ${vendor.name}`,
+      text: `A new vendor has signed up.\n\nName: ${vendor.name}\nEmail: ${vendor.email}\nPhone: ${vendor.phone}\nBio: ${vendor.bio}`,
+    };
+
+    // Send the email
+    await transporter.sendMail(mailOptions);
 
     return NextResponse.json(
       { success: true, vendor: safeVendorData },

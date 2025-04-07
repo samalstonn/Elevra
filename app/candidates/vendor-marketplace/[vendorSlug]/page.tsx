@@ -114,7 +114,7 @@ export async function generateMetadata({
 export default async function VendorProfilePage({
   params,
 }: VendorProfilePageProps) {
-  const vendorSlug = params.vendorSlug;
+  const vendorSlug = await params.vendorSlug;
 
   // --- Data Fetching using direct Prisma access ---
   const vendorData = await getVendorProfile(vendorSlug);

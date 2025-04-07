@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import prisma from "@/prisma/prisma";
 import { auth } from "@clerk/nextjs/server";
 import { Prisma } from "@prisma/client";
+import nodemailer from "nodemailer";
 
 export async function GET(request: Request) {
   try {
@@ -14,6 +15,7 @@ export async function GET(request: Request) {
     // Get the clerkUserId from query parameters
     const url = new URL(request.url);
     const clerkUserId = url.searchParams.get("clerkUserId");
+    console.log("clerkUserId", clerkUserId);
 
     // Ensure the requested clerkUserId matches the authenticated user
     if (!clerkUserId || clerkUserId !== userId) {
@@ -141,6 +143,25 @@ export async function POST(request: Request) {
       const candidate = await prisma.candidate.create({
         data: createData,
       });
+      // Set up nodemailer transporter using your email service credentials
+      const transporter = nodemailer.createTransport({
+        service: "gmail", // or another service
+        auth: {
+          user: process.env.EMAIL_USER, // your email address
+          pass: process.env.EMAIL_PASS, // your email password or app password
+        },
+      });
+
+      // Define email options
+      const mailOptions = {
+        from: process.env.EMAIL_USER,
+        to: process.env.MY_EMAIL, // your email address to receive notifications
+        subject: `New Candidate Signup: ${candidate.name}`,
+        text: `A new candidate has signed up.\n\nName: ${candidate.name}\Location: ${candidate.city}, ${candidate.state}`,
+      };
+
+      // Send the email
+      await transporter.sendMail(mailOptions);
       return NextResponse.json(candidate);
     } catch (error: unknown) {
       if (error instanceof Error) {

@@ -5,8 +5,8 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { TabButton } from "@/components/ui/tab-button";
 import { FeatureCard } from "@/components/ui/feature-card";
-import VendorSignupForm from "@/components/auth/VendorSignUpForm";
-import VendorLoginForm from "@/components/auth/VendorLoginForm";
+import VendorSignupForm from "@/app/vendors/VendorSignUpForm";
+import VendorLoginForm from "@/app/vendors/VendorLoginForm";
 
 export default function VendorsPage() {
   const [activeTab, setActiveTab] = useState("home");
