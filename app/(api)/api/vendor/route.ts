@@ -158,7 +158,6 @@ export async function POST(request: Request) {
         status: SubmissionStatus.PENDING, // Explicitly set default status
         subscription: VendorTier.FREE, // Explicitly set default tier
         verified: false, // Explicitly set default verification
-        slug: requestData.name.replace(/\s+/g, "-").toLowerCase(),
         // Default values will be set by Prisma schema
         // status: SubmissionStatus.PENDING
         // subscription: VendorTier.FREE
