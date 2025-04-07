@@ -117,7 +117,7 @@ export function VendorCategoryFilter({
       {canScrollLeft && (
         <Button
           onClick={scrollLeft}
-          className="absolute left-0 top-1/2 -translate-y-1/2 z-10 hover:bg-0"
+          className="absolute left-0 top-1/2 -translate-y-1/2 z-10 hover:bg-transparent"
           variant="ghost"
           size="sm"
         >
@@ -128,7 +128,7 @@ export function VendorCategoryFilter({
       {canScrollRight && (
         <Button
           onClick={scrollRight}
-          className="absolute right-0 top-1/2 -translate-y-1/2 z-10 hover:bg-0"
+          className="absolute right-0 top-1/2 -translate-y-1/2 z-10 hover:bg-transparent"
           variant="ghost"
           size="sm"
         >

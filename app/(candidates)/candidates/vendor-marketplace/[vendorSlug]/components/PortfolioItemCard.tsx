@@ -10,7 +10,7 @@ interface PortfolioItemCardProps {
 export default function PortfolioItemCard({ item }: PortfolioItemCardProps) {
   return (
     <div className="flex flex-col gap-3 pb-3">
-      <div className="w-full aspect-square relative">
+      <div className="w-36 h-36 relative">
         <Image
           src={
             item.imageUrl ||

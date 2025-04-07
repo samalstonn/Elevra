@@ -38,38 +38,39 @@ export default function VendorProfileClient({
       <VendorHeader vendor={vendor} />
 
       {/* Tab Navigation Area */}
-      <div className="pb-3">
-        <div
-          className="flex border-b border-[#e0dce5] justify-between"
-          aria-label="Vendor profile sections"
-        >
-          {tabs.map((tab) => (
-            <div
-              key={tab.value}
-              className={`flex flex-col items-center justify-center border-b-[3px] pb-[13px] pt-4 flex-1 cursor-pointer ${
-                activeTab === tab.value
-                  ? "border-b-[#141118] text-[#141118]"
-                  : "border-b-transparent text-[#756388]"
+      <div
+        className="flex border-b border-[#e0dce5] justify-between"
+        aria-label="Vendor profile sections"
+      >
+        {tabs.map((tab) => (
+          <div
+            key={tab.value}
+            className={`flex flex-col items-center justify-center border-b-[3px] pb-[13px] pt-4 flex-1 cursor-pointer ${
+              activeTab === tab.value
+                ? "border-b-[#141118] text-[#141118]"
+                : "border-b-transparent text-[#756388]"
+            }`}
+            onClick={() => setActiveTab(tab.value)}
+          >
+            <p
+              className={`text-sm font-bold leading-normal tracking-[0.015em] ${
+                activeTab === tab.value ? "text-[#141118]" : "text-[#756388]"
               }`}
-              onClick={() => setActiveTab(tab.value)}
             >
-              <p
-                className={`text-sm font-bold leading-normal tracking-[0.015em] ${
-                  activeTab === tab.value ? "text-[#141118]" : "text-[#756388]"
-                }`}
-              >
-                {tab.label}
-              </p>
-            </div>
-          ))}
-        </div>
+              {tab.label}
+            </p>
+          </div>
+        ))}
       </div>
+      <VendorAbout vendor={vendor} />
+      <VendorPortfolio vendor={vendor} />
+      <VendorReviews vendor={vendor} />
 
       {/* Conditionally Rendered Content Area */}
       <div className="mt-6">
-        {activeTab === "about" && <VendorAbout vendor={vendor} />}
+        {/* {activeTab === "about" && <VendorAbout vendor={vendor} />}
         {activeTab === "portfolio" && <VendorPortfolio vendor={vendor} />}
-        {activeTab === "reviews" && <VendorReviews vendor={vendor} />}
+        {activeTab === "reviews" && <VendorReviews vendor={vendor} />} */}
       </div>
     </div>
   );

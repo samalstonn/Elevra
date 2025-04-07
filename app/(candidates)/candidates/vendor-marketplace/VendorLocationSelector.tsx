@@ -67,6 +67,11 @@ export default function VendorLocationSelector({
       setSuggestions(results);
     } catch (error) {
       console.error("Error fetching suggestions:", error);
+      setErrorMessage(
+        "Unable to fetch location suggestions. Please try again."
+      );
+      setShowError(true);
+      setSuggestions([]);
     } finally {
       setIsLoading(false);
     }

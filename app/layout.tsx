@@ -34,6 +34,12 @@ export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   const pathname = usePathname();
+  let dashboardLink = "/dashboard";
+  if (pathname.startsWith("/candidates")) {
+    dashboardLink = "/candidates/candidate-dashboard";
+  } else if (pathname.startsWith("/vendors")) {
+    dashboardLink = "/vendors/vendor-dashboard";
+  }
   const [isMobile, setIsMobile] = useState<boolean>(false);
   useEffect(() => {
     const mediaQuery = window.matchMedia("(max-width: 768px)");
@@ -74,14 +80,14 @@ export default function RootLayout({
               <div className="flex items-center gap-4 shrink-0">
                 <SignedIn>
                   <Button asChild>
-                    <Link href="/dashboard">My Dashboard</Link>
+                    <Link href={dashboardLink}>My Dashboard</Link>
                   </Button>
                   <UserButton />
                 </SignedIn>
 
                 <SignedOut>
                   <Button asChild>
-                    <Link href="/dashboard">My Dashboard</Link>
+                    <Link href={dashboardLink}>My Dashboard</Link>
                   </Button>
                   <SignInButton></SignInButton>
                 </SignedOut>

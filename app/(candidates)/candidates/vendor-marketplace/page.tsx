@@ -1,5 +1,6 @@
-// app/(candidate_features)/vendors/page.tsx
 "use client";
+
+// TODO: Add Vercel's geo headers
 
 import React, { useState, useEffect, useCallback } from "react";
 import {
@@ -39,8 +40,7 @@ const VendorDiscoveryPage = () => {
         return res.json();
       })
       .then((candidate) => {
-        if (candidate && candidate.city && candidate.state) {
-          // Uncomment to set default location
+        if (candidate?.city && candidate?.state) {
           // setLocation({
           //   city: candidate.city,
           //   state: candidate.state,
@@ -105,6 +105,7 @@ const VendorDiscoveryPage = () => {
   // Fetch categories on initial component mount
   useEffect(() => {
     const fetchCategories = async () => {
+      setIsLoading(true);
       try {
         const response = await fetch("/api/vendors/categories");
         if (!response.ok) {
@@ -114,7 +115,9 @@ const VendorDiscoveryPage = () => {
         setCategories(data);
       } catch (err) {
         console.error(err);
-        // Handle category fetch error
+        setError("Failed to load categories. Please try again later.");
+      } finally {
+        setIsLoading(false);
       }
     };
     fetchCategories();
@@ -163,15 +166,23 @@ const VendorDiscoveryPage = () => {
 
       {/* Pagination - if needed */}
       {!isLoading && !error && totalPages > 1 && (
-        <div className="flex justify-center items-center space-x-4 mt-8">
+        <nav
+          aria-label="Vendor pagination"
+          className="flex justify-center items-center space-x-4 mt-8"
+        >
           <button
             onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
             disabled={currentPage <= 1}
+            aria-label="Go to previous page"
             className="px-4 py-2 border border-gray-300 rounded-md disabled:opacity-50"
           >
             Previous
           </button>
-          <span className="text-gray-700">
+          <span
+            className="text-gray-700"
+            aria-current="page"
+            aria-label={`Page ${currentPage} of ${totalPages}`}
+          >
             Page {currentPage} of {totalPages}
           </span>
           <button
@@ -179,11 +190,12 @@ const VendorDiscoveryPage = () => {
               setCurrentPage(Math.min(totalPages, currentPage + 1))
             }
             disabled={currentPage >= totalPages}
+            aria-label="Go to next page"
             className="px-4 py-2 border border-gray-300 rounded-md disabled:opacity-50"
           >
             Next
           </button>
-        </div>
+        </nav>
       )}
     </div>
   );
