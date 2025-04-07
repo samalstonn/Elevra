@@ -90,7 +90,7 @@ export async function POST(request: Request) {
 
     // Parse the request body
     const requestData = await request.json();
-    console.info("Received vendor creation request:", requestData);
+    console.info("Received vendor creation request.");
 
     // Ensure clerkUserId matches authenticated user
     if (requestData.clerkUserId !== userId) {
@@ -158,6 +158,10 @@ export async function POST(request: Request) {
         status: SubmissionStatus.PENDING, // Explicitly set default status
         subscription: VendorTier.FREE, // Explicitly set default tier
         verified: false, // Explicitly set default verification
+        slug: requestData.name.replace(/\s+/g, "-").toLowerCase(),
+        // Default values will be set by Prisma schema
+        // status: SubmissionStatus.PENDING
+        // subscription: VendorTier.FREE
       },
     });
     console.info("New vendor created with id:", newVendor.id);
