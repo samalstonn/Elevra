@@ -15,7 +15,7 @@ import {
 } from "react-icons/fa";
 import { MdEdit } from "react-icons/md";
 import CheckoutButton from "@/components/DonateButton";
-import { Button } from "../../../components/ui/button";
+import { Button } from "../../../../components/ui/button";
 import { Candidate, Election } from "@prisma/client";
 import { normalizeSlug } from "@/lib/functions";
 

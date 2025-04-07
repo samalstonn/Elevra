@@ -5,8 +5,8 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { TabButton } from "@/components/ui/tab-button";
 import { FeatureCard } from "@/components/ui/feature-card";
-import CandidateSignupForm from "@/app/candidates/CandidateSignUpForm";
-import CandidateLoginForm from "@/app/candidates/CandidateLoginForm";
+import CandidateSignupForm from "@/app/(candidates)/candidates/CandidateSignUpForm";
+import CandidateLoginForm from "@/app/(candidates)/candidates/CandidateLoginForm";
 import { useRouter } from "next/navigation";
 
 export default function CandidatesPage() {
