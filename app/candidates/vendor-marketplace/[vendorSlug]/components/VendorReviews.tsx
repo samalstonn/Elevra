@@ -2,7 +2,6 @@ import * as React from "react";
 import { PublicVendorProfileData } from "@/types/vendor";
 import ReviewCard from "./ReviewCard"; // Import the card component
 import { Button } from "@/components/ui/button";
-import { ThumbsUp, ThumbsDown } from "lucide-react"; // Import icons for the stats section
 
 // Define props for the VendorReviews component
 interface VendorReviewsProps {

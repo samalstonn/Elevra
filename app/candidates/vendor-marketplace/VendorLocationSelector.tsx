@@ -6,7 +6,6 @@ import { debounce } from "@/lib/debounce";
 import Autocomplete from "@/components/ui/Autocomplete";
 import ErrorPopup from "@/components/ui/ErrorPopup";
 import { AutocompleteSuggestion, NormalizedLocation } from "@/types/geocoding";
-import { Loader2 } from "lucide-react";
 
 interface VendorLocationSelectorProps {
   onLocationChange: (location: NormalizedLocation | null) => void;

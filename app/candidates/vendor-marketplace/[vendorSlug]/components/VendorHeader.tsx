@@ -5,7 +5,6 @@ import { Button } from "@/components/ui/button";
 import { BadgeCheck, Heart, MessageSquare } from "lucide-react"; // Icons
 import { format } from "date-fns"; // For formatting the join date
 import VendorContactFormDialog from "./VendorContactFormDialog"; // Import the dialog component
-import { Badge } from "@/components/ui/badge"; // Added badge component
 
 // Define props for the VendorHeader component
 interface VendorHeaderProps {

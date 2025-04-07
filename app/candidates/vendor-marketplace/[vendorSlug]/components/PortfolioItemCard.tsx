@@ -1,7 +1,6 @@
 import * as React from "react";
 import Image from "next/image";
 import { VendorProfilePortfolioItem } from "@/types/vendor"; // Type for portfolio item data
-import { AspectRatio } from "@/components/ui/aspect-ratio"; // Use AspectRatio for consistent image sizing
 
 // Define props for the PortfolioItemCard component
 interface PortfolioItemCardProps {

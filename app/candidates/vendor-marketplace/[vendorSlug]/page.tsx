@@ -3,13 +3,10 @@ import VendorProfileClient from "./VendorProfileClient"; // Client component for
 import type { PublicVendorProfileData } from "@/types/vendor"; // Import the type for vendor data
 import { Metadata } from "next";
 import prisma from "@/prisma/prisma"; // Import Prisma client
-import { Prisma } from "@prisma/client"; // Import Prisma types if needed for query
 
 // Define props for the page component, including params for the dynamic route
 interface VendorProfilePageProps {
-  params: {
-    vendorSlug: string;
-  };
+  params: Promise<{ vendorSlug: string }>;
 }
 
 // --- Function to Fetch Vendor Data Directly ---
@@ -92,8 +89,8 @@ async function getVendorProfile(
 export async function generateMetadata({
   params,
 }: VendorProfilePageProps): Promise<Metadata> {
-  const vendorSlug = params.vendorSlug;
-  const vendor = await getVendorProfile(vendorSlug); // Use direct fetch
+  const vendorSlug = await params;
+  const vendor = await getVendorProfile(vendorSlug.vendorSlug); // Use direct fetch
 
   if (vendor) {
     return {
@@ -114,7 +111,8 @@ export async function generateMetadata({
 export default async function VendorProfilePage({
   params,
 }: VendorProfilePageProps) {
-  const vendorSlug = await params.vendorSlug;
+  const resolvedParams = await params;
+  const vendorSlug = resolvedParams.vendorSlug;
 
   // --- Data Fetching using direct Prisma access ---
   const vendorData = await getVendorProfile(vendorSlug);
