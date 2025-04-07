@@ -70,7 +70,7 @@ export async function POST(request: Request) {
 
     // Parse the request body
     const requestData = await request.json();
-    console.info("Received vendor creation request:", requestData);
+    console.info("Received vendor creation request.");
 
     // Ensure clerkUserId matches authenticated user
     if (requestData.clerkUserId !== userId) {
@@ -114,6 +114,7 @@ export async function POST(request: Request) {
         city: requestData.city,
         state: requestData.state,
         clerkUserId: userId,
+        slug: requestData.name.replace(/\s+/g, "-").toLowerCase(),
         // Default values will be set by Prisma schema
         // status: SubmissionStatus.PENDING
         // subscription: VendorTier.FREE
