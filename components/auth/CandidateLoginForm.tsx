@@ -178,7 +178,7 @@ export default function CandidateLoginForm() {
                 </h3>
                 <p className="text-gray-600 mb-4">
                   Your candidate account is still under review. Once approved,
-                  you`&apos;`ll have full access to the candidate dashboard.
+                  you&apos;ll have full access to the candidate dashboard.
                 </p>
                 <p className="text-gray-600">
                   Thank you for your patience! Please look out for an email from

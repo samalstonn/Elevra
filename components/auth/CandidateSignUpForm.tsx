@@ -644,7 +644,7 @@ export default function CandidateSignupForm() {
           Election (Optional)
         </label>
         <p className="text-sm text-gray-500">
-          If you`&apos;`re not currently running in an election, leave this
+          If you&apos;re not currently running in an election, leave this
           blank. You can add an election later from your dashboard.
         </p>
 

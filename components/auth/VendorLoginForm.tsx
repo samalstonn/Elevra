@@ -177,7 +177,7 @@ export default function VendorLoginForm() {
                 </h3>
                 <p className="text-gray-600 mb-4">
                   Your vendor account is still under review. Once approved,
-                  you`&apos;`ll have full access to the vendor dashboard.
+                  you&apos;ll have full access to the vendor dashboard.
                 </p>
                 <p className="text-gray-600">
                   Thank you for your patience! Please look out for an email from

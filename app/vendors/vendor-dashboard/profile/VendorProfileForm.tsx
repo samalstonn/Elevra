@@ -350,6 +350,7 @@ export default function VendorProfileForm({
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Phone Number (Optional)</FormLabel>
+                <br />
                 <FormControl>
                   <Input placeholder="(123) 456-7890" {...field} />
                 </FormControl>

@@ -162,7 +162,7 @@ export default function TestimonialRequestForm({
                 </SelectContent>
               </Select>
               <FormDescription>
-                Choose a candidate you`&apos;`ve worked with to request a
+                Choose a candidate you&apos;ve worked with to request a
                 testimonial
               </FormDescription>
               <FormMessage />

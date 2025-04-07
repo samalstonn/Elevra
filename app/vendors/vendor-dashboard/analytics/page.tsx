@@ -56,7 +56,7 @@ export default async function VendorAnalyticsPage() {
             Analytics Dashboard
           </h1>
           <p className="text-muted-foreground">
-            Monitor your profile`&apos;`s performance and engagement
+            Monitor your profile&apos;s performance and engagement
           </p>
         </div>
 
