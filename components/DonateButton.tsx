@@ -10,6 +10,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "../components/ui/tooltip";
+import Link from "next/link";
 
 interface CheckoutButtonProps {
   cartItems: { name: string; price: number; quantity: number }[];
@@ -45,26 +46,14 @@ const CheckoutButton: React.FC<CheckoutButtonProps> = ({}) => {
   // };
 
   return (
-    <TooltipProvider>
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <div>
-            <Button
-              variant="outline"
-              size="xl"
-              disabled={true}
-              className="flex items-center gap-2 opacity-50 cursor-not-allowed"
-            >
-              <FaDonate />
-              <span>Donate</span>
-            </Button>
-          </div>
-        </TooltipTrigger>
-        <TooltipContent>
-          <p>This candidate does not support donations yet.</p>
-        </TooltipContent>
-      </Tooltip>
-    </TooltipProvider>
+    <div>
+      <Button variant="green" size="xl" className="flex items-center gap-2">
+        <FaDonate />
+        <Link href={`${window.location.pathname}/donate`}>
+          <span>Donate</span>
+        </Link>
+      </Button>
+    </div>
   );
 };
 

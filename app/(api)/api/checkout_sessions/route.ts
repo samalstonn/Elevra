@@ -1,42 +1,98 @@
-import { NextRequest, NextResponse } from 'next/server';
-import Stripe from 'stripe';
+// app/api/checkout_sessions/route.ts
+import { NextRequest, NextResponse } from "next/server";
+import Stripe from "stripe";
+import prisma from "@/prisma/prisma";
+import { auth } from "@clerk/nextjs/server";
 
+// Initialize Stripe with your secret key
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2025-02-24.acacia',
+  apiVersion: "2025-02-24.acacia",
 });
 
 export async function POST(req: NextRequest) {
   try {
-    const { cartItems } = await req.json();
+    const { userId } = await auth();
+    const body = await req.json();
+    const { cartItems, donationDetails } = body;
 
-    // Capture the page the user was just on
-    const referer = req.headers.get('referer') || req.nextUrl.origin;
+    if (!cartItems || !cartItems.length || !donationDetails) {
+      return NextResponse.json(
+        { error: "Missing required parameters" },
+        { status: 400 }
+      );
+    }
 
-    const lineItems = cartItems.map((item: { name: string; price: number; quantity: number }) => ({
-      price_data: {
-        currency: 'usd',
-        product_data: {
-          name: item.name,
+    const { candidateId, donorInfo } = donationDetails;
+
+    // Create line items for Stripe
+    const lineItems = cartItems.map((item: any) => {
+      return {
+        price_data: {
+          currency: "usd",
+          product_data: {
+            name: item.name,
+          },
+          unit_amount: Math.round(item.price * 100), // Convert to cents for Stripe
         },
-        unit_amount: item.price * 100, // Amount in cents
-      },
-      quantity: item.quantity,
-    }));
-
-    // Redirect the user back to the page they came from for both success and cancel
-    const session = await stripe.checkout.sessions.create({
-      payment_method_types: ['card'],
-      line_items: lineItems,
-      mode: 'payment',
-      success_url: `${referer}?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${referer}?cancel=true`,
+        quantity: item.quantity,
+      };
     });
 
-    return NextResponse.json({ sessionId: session.id });
-  } catch (err: unknown) {
-    if (err instanceof Error) {
-      return NextResponse.json({ error: err.message }, { status: 500 });
-    }
-    return NextResponse.json({ error: 'An unknown error occurred' }, { status: 500 });
+    // Save donation intent to database first
+    const donationIntent = await prisma.donationIntent.create({
+      data: {
+        amount: donorInfo.amount,
+        processingFee: donorInfo.coverFee
+          ? Math.round(donorInfo.amount * 0.029 + 0.3 * 100) / 100
+          : 0,
+        candidateId: candidateId,
+        userId: userId || undefined, // Only include if user is logged in
+        donorName: donorInfo.fullName,
+        donorEmail: donorInfo.email,
+        donorAddress: donorInfo.address,
+        donorCity: donorInfo.city,
+        donorState: donorInfo.state,
+        donorZip: donorInfo.zip,
+        donorCountry: donorInfo.country || "USA",
+        donorPhone: donorInfo.phone || undefined,
+        isRetiredOrUnemployed: donorInfo.isRetiredOrUnemployed,
+        occupation: donorInfo.isRetiredOrUnemployed
+          ? "Retired/Unemployed"
+          : donorInfo.occupation,
+        employer: donorInfo.isRetiredOrUnemployed ? "N/A" : donorInfo.employer,
+        status: "PENDING",
+      },
+    });
+
+    // Make sure we have a valid base URL
+    const baseUrl =
+      process.env.NEXT_PUBLIC_APP_URL ||
+      req.headers.get("origin") ||
+      "http://localhost:3000";
+
+    // Create checkout session
+    const session = await stripe.checkout.sessions.create({
+      payment_method_types: ["card"],
+      line_items: lineItems,
+      mode: "payment",
+      success_url: `${baseUrl}/candidate/${body.candidateSlug}/donate/success?session_id={CHECKOUT_SESSION_ID}&candidate=${body.candidateSlug}`,
+      cancel_url: `${baseUrl}/candidate/${body.candidateSlug}`,
+      metadata: {
+        donationType: "campaign",
+        candidateId: donationDetails.candidateId.toString(),
+        userClerkId: userId || "",
+      },
+    });
+
+    return NextResponse.json({
+      sessionId: session.id,
+      success_url: session.success_url,
+    });
+  } catch (error: any) {
+    console.error("Error creating checkout session:", error);
+    return NextResponse.json(
+      { error: "Error creating checkout session: " + error.message },
+      { status: 500 }
+    );
   }
 }
