@@ -141,11 +141,7 @@ export default function OverviewPage() {
           </Button>
           <Button variant="outline" asChild>
             <Link
-              href={
-                candidate
-                  ? `/candidate/${candidate.slug}?candidateID=${candidate.id}&electionID=${candidate.electionId}`
-                  : "/candidates"
-              }
+              href={candidate ? `/candidate/${candidate.slug}` : "/candidates"}
             >
               <Eye className="mr-2 h-4 w-4" /> View Public Profile
             </Link>

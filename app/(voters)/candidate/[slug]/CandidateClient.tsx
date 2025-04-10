@@ -316,7 +316,7 @@ export default function CandidateClient({
                 {relatedCandidates.map((relatedCandidate: Candidate) => (
                   <Link
                     key={relatedCandidate.name}
-                    href={`/candidate/${relatedCandidate.slug}?candidateID=${relatedCandidate.id}&electionID=${relatedCandidate.electionId}`}
+                    href={`/candidate/${relatedCandidate.slug}`}
                     className="block"
                   >
                     <motion.div
@@ -390,7 +390,7 @@ export default function CandidateClient({
                     className="flex items-center justify-between "
                   >
                     <Link
-                      href={`/candidate/${rc.slug}?candidateID=${rc.id}&electionID=${rc.electionId}`}
+                      href={`/candidate/${rc.slug}`}
                       className="flex items-center gap-3 "
                     >
                       <CandidateImage
