@@ -50,27 +50,23 @@ export default function AddressButton({
 
       if (city && state) {
         setSelectedLocation({ city, state });
-      } else if (electionID) {
-        // Get location info from electionID
+      } else if (electionID && electionID !== "null") {
         try {
-          // Fetch the location associated with this election ID
-          // Replace this with your actual API call to get election data
           const response = await fetch(`/api/elections/${electionID}`);
           const data = await response.json();
 
           if (data.city && data.state) {
             setSelectedLocation({ city: data.city, state: data.state });
           } else {
-            // Fallback to default
-            setSelectedLocation({ city: "Dryden", state: "NY" });
+            setSelectedLocation({ city: "", state: "" });
           }
         } catch (error) {
           console.error("Error fetching election location:", error);
-          setSelectedLocation({ city: "Dryden", state: "NY" });
+          setSelectedLocation({ city: "", state: "" });
         }
       } else {
         // Default location if nothing specified
-        setSelectedLocation({ city: "Dryden", state: "NY" });
+        setSelectedLocation({ city: "", state: "" });
       }
     };
 

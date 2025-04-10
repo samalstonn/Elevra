@@ -1,6 +1,5 @@
-"use client";
-
 // import type { Metadata } from "next";
+"use client";
 import {
   ClerkProvider,
   SignedIn,
@@ -13,17 +12,20 @@ import { useState, useEffect } from "react";
 import { Button } from "../components/ui/button";
 import { Inter } from "next/font/google";
 import Link from "next/link";
-import "./globals.css";
 import { Analytics } from "@vercel/analytics/react";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { usePathname } from "next/navigation";
 import SearchBar from "../components/ResultsSearchBar";
 import AddressButton from "../components/AddressButton";
+import { Toaster } from "@/components/ui/toaster";
 
 const inter = Inter({ subsets: ["latin"] });
 
 // export const metadata: Metadata = {
 //   title: "Elevra",
+//   icons: {
+//     icon: "/favicon.ico",
+//   },
 // };
 
 export const dynamic = "force-dynamic";
@@ -34,6 +36,12 @@ export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   const pathname = usePathname();
+  let dashboardLink = "/dashboard";
+  if (pathname.startsWith("/candidates")) {
+    dashboardLink = "/candidates/candidate-dashboard";
+  } else if (pathname.startsWith("/vendors")) {
+    dashboardLink = "/vendors/vendor-dashboard";
+  }
   const [isMobile, setIsMobile] = useState<boolean>(false);
   useEffect(() => {
     const mediaQuery = window.matchMedia("(max-width: 768px)");
@@ -74,14 +82,14 @@ export default function RootLayout({
               <div className="flex items-center gap-4 shrink-0">
                 <SignedIn>
                   <Button asChild>
-                    <Link href="/dashboard">My Dashboard</Link>
+                    <Link href={dashboardLink}>My Dashboard</Link>
                   </Button>
                   <UserButton />
                 </SignedIn>
 
                 <SignedOut>
                   <Button asChild>
-                    <Link href="/dashboard">My Dashboard</Link>
+                    <Link href={dashboardLink}>My Dashboard</Link>
                   </Button>
                   <SignInButton></SignInButton>
                 </SignedOut>
@@ -93,6 +101,7 @@ export default function RootLayout({
               {children}
               <Analytics />
               <SpeedInsights />
+              <Toaster />
             </main>
 
             {/* Footer Section */}

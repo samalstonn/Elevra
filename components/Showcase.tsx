@@ -49,6 +49,17 @@ const Showcase: React.FC<ShowcaseProps> = ({}) => {
 
   return (
     <section className="w-screen py-12 bg-gray-100">
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.8, ease: "easeInOut" }}
+        viewport={{ once: true }}
+        className="max-w-5xl mx-auto text-center mb-16 mt-16"
+      >
+        <h2 className="text-2xl sm:text-3xl font-extrabold text-gray-900">
+          How Elevra Works
+        </h2>
+      </motion.div>
       <div className="container mx-auto px-4">
         <motion.div
           initial="hidden"
@@ -75,6 +86,7 @@ const Showcase: React.FC<ShowcaseProps> = ({}) => {
                     height={706}
                     src={showcaseContent[activeContent].imageUrl}
                     alt={showcaseContent[activeContent].title}
+                    style={{ width: "1160px", height: "auto" }}
                     className="rounded-lg shadow-[0_0_10px_rgba(0,0,0,0.3)] object-contain"
                     onError={() => handleImageError(activeContent)}
                   />
