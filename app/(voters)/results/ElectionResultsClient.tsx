@@ -3,10 +3,10 @@
 import { Election, Candidate } from "@prisma/client";
 import { motion } from "framer-motion";
 import { useState, useMemo, useEffect, useRef } from "react";
-import { Button } from "../../components/ui/button";
+import { Button } from "@/components/ui/button";
 import { FaVoteYea, FaChevronLeft, FaChevronRight } from "react-icons/fa"; // Import all needed icons
 import Link from "next/link";
-import { Card, CardContent } from "../../components/Card";
+import { Card, CardContent } from "@/components/Card";
 
 import CandidateSection from "./CandidateResultsSection";
 

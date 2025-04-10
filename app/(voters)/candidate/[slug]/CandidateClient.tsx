@@ -13,7 +13,7 @@ import {
   FaChevronUp,
   FaQuestionCircle,
 } from "react-icons/fa";
-import { MdEdit } from "react-icons/md";
+import { Edit } from "lucide-react"; // Icons
 import CheckoutButton from "@/components/DonateButton";
 import { Button } from "../../../../components/ui/button";
 import { Candidate, Election } from "@prisma/client";
@@ -28,7 +28,7 @@ export default function CandidateClient({
   isEditable,
 }: {
   candidate: Candidate;
-  election: ElectionWithCandidates;
+  election: ElectionWithCandidates | null;
   suggestedCandidates: Candidate[];
   isEditable: boolean;
 }) {
@@ -44,8 +44,8 @@ export default function CandidateClient({
   const [showSources, setShowSources] = useState(false);
 
   const decodedName = candidate.name ? normalizeSlug(candidate.name) : "";
-  const relatedCandidates = election.candidates
-    ? election.candidates
+  const relatedCandidates = election?.candidates
+    ? election?.candidates
         .filter((c: Candidate) => normalizeSlug(c.name) !== decodedName)
         .slice(0, 3)
     : [];
@@ -71,14 +71,6 @@ export default function CandidateClient({
     const hasCancel = decodedUrl.includes("cancel=true");
     const hasSessionId = decodedUrl.includes("session_id");
     const hasError = decodedUrl.includes("error");
-
-    console.log("URL Analysis:", {
-      hasCancel,
-      hasSessionId,
-      hasError,
-      decodedUrl,
-      originalUrl: currentUrl.toString(),
-    });
 
     if (hasSessionId) {
       console.log("Setting success message");
@@ -228,17 +220,10 @@ export default function CandidateClient({
         {/* Buttons */}
         <div className="mt-4 flex justify-start gap-4">
           {isEditable ? (
-            <Button
-              variant="purple"
-              size="xl"
-              onClick={() =>
-                router.push(
-                  `/candidate/edit?candidateID=${candidate.id}&electionID=${election.id}`
-                )
-              }
-            >
-              <MdEdit />
-              <span>Edit Profile</span>
+            <Button variant="outline" asChild>
+              <Link href="/candidates/candidate-dashboard/profile-settings">
+                <Edit className="mr-2 h-4 w-4" /> Edit Profile
+              </Link>
             </Button>
           ) : null}
           <CheckoutButton
@@ -256,9 +241,7 @@ export default function CandidateClient({
               size="xl"
               onClick={() =>
                 router.push(
-                  `/candidate/verify?candidate=${normalizeSlug(
-                    candidate.name
-                  )}&candidateID=${candidate.id}&electionID=${election.id}`
+                  `/candidate/verify?candidate=${candidate.slug}&candidateID=${candidate.id}&electionID=${election?.id}`
                 )
               }
               className="flex items-center gap-2"
@@ -311,7 +294,7 @@ export default function CandidateClient({
         )}
       </motion.div>
 
-      {/* Suggested candidates sidebar */}
+      {/* Related candidates sidebar */}
       <motion.div
         initial={{ opacity: 0, x: 10 }}
         animate={{ opacity: 1, x: 0 }}
@@ -321,7 +304,9 @@ export default function CandidateClient({
         <div className="bg-white">
           <div className="text-gray-90 mb-4">
             <h2 className="text-xl text-center font-semibold">
-              {election.position}
+              {election?.type === "STATE"
+                ? `${election?.position} in ${election?.state}`
+                : `${election?.position} in ${election?.city}, ${election?.state}`}
             </h2>
           </div>
 
@@ -331,11 +316,7 @@ export default function CandidateClient({
                 {relatedCandidates.map((relatedCandidate: Candidate) => (
                   <Link
                     key={relatedCandidate.name}
-                    href={`/candidate/${normalizeSlug(
-                      relatedCandidate.name
-                    )}?candidateID=${relatedCandidate.id}&electionID=${
-                      election.id
-                    }`}
+                    href={`/candidate/${relatedCandidate.slug}?candidateID=${relatedCandidate.id}&electionID=${relatedCandidate.electionId}`}
                     className="block"
                   >
                     <motion.div
@@ -370,22 +351,24 @@ export default function CandidateClient({
               </p>
             )}
 
-            <Button
-              variant="outline"
-              size="sm"
-              className="w-full mt-4 text-purple-600 border-purple-300 hover:bg-purple-50"
-              onClick={() => {
-                if (candidate.city && candidate.state) {
-                  router.push(
-                    `/results?city=${election.city}&state=${election.state}`
-                  );
-                } else {
-                  console.error("Candidate city or state is missing.");
-                }
-              }}
-            >
-              View Election
-            </Button>
+            {election && (
+              <Button
+                variant="outline"
+                size="sm"
+                className="w-full mt-4 text-purple-600 border-purple-300 hover:bg-purple-50"
+                onClick={() => {
+                  if (candidate.city && candidate.state) {
+                    router.push(
+                      `/results?city=${election?.city}&state=${election?.state}`
+                    );
+                  } else {
+                    console.error("Candidate city or state is missing.");
+                  }
+                }}
+              >
+                View Election
+              </Button>
+            )}
           </div>
           {/* Suggested candidates sidebar */}
           <motion.div
@@ -407,9 +390,7 @@ export default function CandidateClient({
                     className="flex items-center justify-between "
                   >
                     <Link
-                      href={`/candidate/${normalizeSlug(
-                        rc.name
-                      )}/?candidateID=${rc.id}&electionID=${rc.electionId}`}
+                      href={`/candidate/${rc.slug}?candidateID=${rc.id}&electionID=${rc.electionId}`}
                       className="flex items-center gap-3 "
                     >
                       <CandidateImage

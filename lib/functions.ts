@@ -10,19 +10,20 @@ export function normalizeSlug(str: string): string {
 }
 
 /**
- * Generates a unique slug for a vendor based on their name.
+ * Generates a unique slug for a vendor or candidate based on their name.
  * Checks the database for existing slugs and appends a number if necessary.
- * @param name - The vendor name to base the slug on.
- * @param vendorIdToExclude - Optional. If updating an existing vendor, provide their ID to exclude it from the uniqueness check.
+ * @param name - The vendor or candidate name to base the slug on.
+ * @param IdToExclude - Optional. If updating an existing vendor or candidate, provide their ID to exclude it from the uniqueness check.
+ * @param entity - The type of entity for which to generate the slug, either "vendor" or "candidate". Defaults to "vendor".
  * @returns A unique slug string.
  */
 export async function generateUniqueSlug(
   name: string,
-  vendorIdToExclude?: number
+  IdToExclude?: number,
+  entity: "vendor" | "candidate" = "vendor"
 ): Promise<string> {
   if (!name) {
-    // Fallback for empty names, though validation should prevent this
-    return `vendor-${Date.now()}`;
+    throw new Error("Name is required to generate a unique slug.");
   }
 
   const slug = normalizeSlug(name);
@@ -32,17 +33,25 @@ export async function generateUniqueSlug(
   // Loop to find a unique slug
   while (true) {
     // Check if the current slug exists in the database
-    const existingVendor = await prisma.vendor.findFirst({
-      where: {
-        slug: uniqueSlug,
-        // If updating, exclude the current vendor's ID from the check
-        NOT: vendorIdToExclude ? { id: vendorIdToExclude } : undefined,
-      },
-      select: { id: true }, // Only select ID for efficiency
-    });
+    const existingRecord =
+      entity === "vendor"
+        ? await prisma.vendor.findFirst({
+            where: {
+              slug: uniqueSlug,
+              NOT: IdToExclude ? { id: IdToExclude } : undefined,
+            },
+            select: { id: true }, // Only select ID for efficiency
+          })
+        : await prisma.candidate.findFirst({
+            where: {
+              slug: uniqueSlug,
+              NOT: IdToExclude ? { id: IdToExclude } : undefined,
+            },
+            select: { id: true }, // Only select ID for efficiency
+          });
 
-    // If no vendor with this slug exists (or it's the vendor being updated), the slug is unique
-    if (!existingVendor) {
+    // If no vendor or candidate with this slug exists (or it's the vendor or candidate being updated), the slug is unique
+    if (!existingRecord) {
       break; // Exit the loop
     }
 

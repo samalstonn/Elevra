@@ -1,28 +1,37 @@
 import { NextRequest, NextResponse } from "next/server";
-import prisma from "@/prisma/prisma"; 
+import prisma from "@/prisma/prisma";
 
 export async function GET(request: NextRequest) {
+  console.log("GET request received");
   try {
     const { searchParams, pathname } = new URL(request.url);
     const _ = searchParams.get("search");
-    const parts = pathname.split('/');
+    const parts = pathname.split("/");
     const idStr = parts[parts.length - 1];
+    if (!idStr) {
+      return NextResponse.json(
+        { message: "Election ID is required" },
+        { status: 400 }
+      );
+    }
     const electionId = parseInt(idStr);
-    
-    // Get the election by ID
+
+    console.log("Election ID:", electionId);
+
     const election = await prisma.election.findUnique({
       where: {
-        id: electionId
-      }
+        id: electionId,
+      },
     });
-    
+
+    // Get the election by ID
     if (!election) {
       return NextResponse.json(
-        { message: 'Election not found' },
+        { message: "Election not found" },
         { status: 404 }
       );
     }
-    
+
     // Return the election data including city and state
     return NextResponse.json({
       id: election.id,
@@ -30,9 +39,9 @@ export async function GET(request: NextRequest) {
       state: election.state,
     });
   } catch (error) {
-    console.error('Error fetching election:', error);
+    console.error("Error fetching election:", error);
     return NextResponse.json(
-      { message: 'Error fetching election data' },
+      { message: "Error fetching election data" },
       { status: 500 }
     );
   }

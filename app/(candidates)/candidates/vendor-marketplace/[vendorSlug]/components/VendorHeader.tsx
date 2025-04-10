@@ -1,8 +1,7 @@
 import * as React from "react";
 import { PublicVendorProfileData } from "@/types/vendor";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Button } from "@/components/ui/button";
-import { BadgeCheck, Heart, MessageSquare } from "lucide-react"; // Icons
+import { BadgeCheck } from "lucide-react"; // Icons
 import { format } from "date-fns"; // For formatting the join date
 import VendorContactFormDialog from "./VendorContactFormDialog"; // Import the dialog component
 
@@ -30,12 +29,12 @@ export default function VendorHeader({ vendor }: VendorHeaderProps) {
     : "N/A";
 
   // Placeholder function for Add to Favorites
-  const handleAddToFavorites = () => {
-    // TODO: Implement actual Add to Favorites logic (e.g., API call, state update)
-    console.log("Add to Favorites clicked for vendor:", vendor.id);
-    // Example: Show a toast notification
-    // toast({ title: "Added to Favorites!" });
-  };
+  // const handleAddToFavorites = () => {
+  //   // TODO: Implement actual Add to Favorites logic (e.g., API call, state update)
+  //   console.log("Add to Favorites clicked for vendor:", vendor.id);
+  //   // Example: Show a toast notification
+  //   // toast({ title: "Added to Favorites!" });
+  // };
 
   return (
     <div className="mb-6 flex flex-col items-start gap-4 p-6 sm:flex-row sm:items-center sm:justify-between">
@@ -65,7 +64,7 @@ export default function VendorHeader({ vendor }: VendorHeaderProps) {
       </div>
 
       {/* Right Side: Action Buttons */}
-      <div className="flex w-full flex-shrink-0 gap-2 sm:w-auto">
+      {/* <div className="flex w-full flex-shrink-0 gap-2 sm:w-auto">
         <Button
           className="flex-1 bg-[#f2f0f4] text-[#141118] sm:flex-none"
           onClick={() => setIsContactDialogOpen(true)}
@@ -77,7 +76,7 @@ export default function VendorHeader({ vendor }: VendorHeaderProps) {
           <Heart className="mr-2 h-4 w-4" />
           Add to Favorites
         </Button>
-      </div>
+      </div> */}
 
       {/* Contact Form Dialog */}
       <VendorContactFormDialog

@@ -21,16 +21,16 @@ const freeFeatures = [
   "Dashboard Overview",
   "Basic Profile Settings",
   "Basic Analytics",
-  "Mailing List Management (Limited)",
   "1 Profile Photo",
-  "Vendor Discovery Access",
 ];
 
 const premiumFeatures = [
   ...freeFeatures.filter(
     (f) =>
       f !== "1 Profile Photo" &&
+      f !== "Dashboard Overview" &&
       f !== "Basic Analytics" &&
+      f !== "Basic Profile Settings" &&
       !f.includes("Limited")
   ), // Inherit non-limited free features
   "Advanced Analytics",
@@ -39,6 +39,8 @@ const premiumFeatures = [
   "Verified Endorsement Management",
   "Multiple Profile Photos",
   "Priority Support",
+  "Vendor Discovery Access",
+  "Mailing List Management",
 ];
 
 // Define Plan structure (replace placeholder priceId with your actual Stripe Price ID)
@@ -231,13 +233,6 @@ export default function UpgradePage() {
           </Card>
         ))}
       </div>
-
-      {plans.some((p) => p.stripePriceId?.includes("placeholder")) && (
-        <p className="text-center text-xs text-yellow-600 mt-8">
-          Note: Stripe integration requires replacing placeholder Price IDs with
-          actual IDs from your Stripe account.
-        </p>
-      )}
     </div>
   );
 }

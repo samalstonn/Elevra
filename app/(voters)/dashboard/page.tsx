@@ -1,20 +1,19 @@
 "use client";
 import { useUser } from "@clerk/nextjs";
-import { Button } from "../../../components/ui/button";
 const DashboardPage = () => {
   const { user } = useUser();
 
   const stats = [
-    { label: "Total Contributions", value: "$12,450" },
-    { label: "Candidates Supported", value: "24" },
-    { label: "Local Impact Score", value: "89%" },
+    { label: "Total Contributions", value: "$0" },
+    { label: "Candidates Supported", value: "0" },
+    { label: "Local Impact Score", value: "0.00%" },
   ];
 
-  const actions = [
-    { label: "View Impact", link: "#" },
-    { label: "Donate Again", link: "#" },
-    { label: "Manage Preferences", link: "#" },
-  ];
+  // const actions = [
+  //   { label: "View Impact", link: "#" },
+  //   { label: "Donate Again", link: "#" },
+  //   { label: "Manage Preferences", link: "#" },
+  // ];
 
   return (
     <div className="min-h-screen p-6">
@@ -26,7 +25,6 @@ const DashboardPage = () => {
           contributions and maximize your impact.
         </p>
       </header>
-
       {/* Stats Section */}
       <section className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
         {stats.map((stat, index) => (
@@ -42,7 +40,7 @@ const DashboardPage = () => {
         ))}
       </section>
 
-      {/* Quick Actions Section */}
+      {/* Quick Actions Section
       <section className="mb-12">
         <h2 className="text-2xl font-semibold text-gray-900 mb-6">
           Quick Actions
@@ -58,7 +56,7 @@ const DashboardPage = () => {
             </a>
           ))}
         </div>
-      </section>
+      </section> */}
 
       {/* Recent Contributions Section */}
       <section>
@@ -67,16 +65,14 @@ const DashboardPage = () => {
         </h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           <div className="p-6 bg-gray-100 border rounded-xl shadow-md">
-            <h3 className="text-xl font-bold mb-2">
-              Jane Doe for City Council
-            </h3>
+            <h3 className="text-xl font-bold mb-2">No Donations Found</h3>
             <p className="text-gray-600 text-sm mb-4">
-              Donated $250 to support Jane&apos;s campaign for better public
-              transportation.
+              Support Candidates and campaigns by donating to their causes. Your
+              contributions make a difference in local elections.
             </p>
-            <Button variant="purple">View Details</Button>
+            {/* <Button variant="purple">View Details</Button> */}
           </div>
-          <div className="p-6 bg-gray-100 border rounded-xl shadow-md">
+          {/* <div className="p-6 bg-gray-100 border rounded-xl shadow-md">
             <h3 className="text-xl font-bold mb-2">John Smith for Mayor</h3>
             <p className="text-gray-600 text-sm mb-4">
               Contributed $500 to help John&apos;s campaign focus on affordable
@@ -93,7 +89,7 @@ const DashboardPage = () => {
               local education policies.
             </p>
             <Button variant="purple">View Details</Button>
-          </div>
+          </div> */}
         </div>
       </section>
     </div>

@@ -1,5 +1,6 @@
 export const dynamic = "force-dynamic";
 import { notFound, redirect } from "next/navigation";
+import { headers } from "next/headers";
 import prisma from "@/prisma/prisma";
 import CandidateClient from "./CandidateClient";
 import { currentUser } from "@clerk/nextjs/server";
@@ -22,18 +23,27 @@ export default async function CandidatePage({
   const candidateID = Array.isArray(candidateIDParam)
     ? candidateIDParam[0].split("?")[0]
     : candidateIDParam.split("?")[0];
-  const electionID = Array.isArray(electionIDParam)
-    ? electionIDParam[0].split("?")[0]
-    : electionIDParam.split("?")[0];
 
-  // Proceed with the query after ensuring the parameters are present:
-  const election = await prisma.election.findUnique({
-    where: { id: Number(electionID) },
-    include: { candidates: true },
-  });
-  if (!election) {
-    notFound();
-  }
+  const electionID = electionIDParam
+    ? Array.isArray(electionIDParam)
+      ? electionIDParam[0].split("?")[0]
+      : electionIDParam.split("?")[0]
+    : null;
+  console.log(
+    "Election ID:",
+    electionID === "null" ? electionID : "No election ID provided"
+  );
+  const election =
+    electionID === "null"
+      ? null
+      : await prisma.election.findFirst({
+          where: {
+            id: Number(electionID),
+          },
+          include: {
+            candidates: true,
+          },
+        });
 
   const candidate = await prisma.candidate.findFirst({
     where: {
@@ -45,9 +55,24 @@ export default async function CandidatePage({
     notFound();
   }
 
+  const reqHeaders = await headers();
+  const viewerIp = reqHeaders.get("x-forwarded-for") || undefined;
+  const userAgent = reqHeaders.get("user-agent") || undefined;
+  const referrer = reqHeaders.get("referer") || undefined;
+
+  await prisma.candidateProfileView.create({
+    data: {
+      candidateId: candidate.id,
+      viewerIp,
+      userAgent,
+      referrerUrl: referrer,
+    },
+  });
+
   const suggestedCandidates = await prisma.candidate.findMany({
     where: {
-      NOT: { id: candidate.id, electionId: candidate.electionId }, // Exclude the current candidate and election
+      NOT: { id: candidate.id,  }, // Exclude the current candidate and election
+      hidden: false
     },
     include: {
       election: true,

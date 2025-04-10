@@ -54,6 +54,7 @@ export async function GET(request: NextRequest) {
     const whereClause: Prisma.VendorWhereInput = {
       // Only fetch vendors with APPROVED status
       status: "APPROVED",
+      hidden: false, // Exclude hidden vendors
     };
 
     // Add category filter if categoryId is provided

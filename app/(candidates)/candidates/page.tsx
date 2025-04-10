@@ -7,11 +7,9 @@ import { TabButton } from "@/components/ui/tab-button";
 import { FeatureCard } from "@/components/ui/feature-card";
 import CandidateSignupForm from "@/app/(candidates)/candidates/CandidateSignUpForm";
 import CandidateLoginForm from "@/app/(candidates)/candidates/CandidateLoginForm";
-import { useRouter } from "next/navigation";
 
 export default function CandidatesPage() {
   const [activeTab, setActiveTab] = useState("home");
-  const router = useRouter();
 
   return (
     <div className="min-h-screen flex flex-col items-center w-full overflow-x-hidden mx-auto mb-8">
@@ -52,12 +50,12 @@ export default function CandidatesPage() {
             >
               Candidate Login
             </TabButton>
-            <TabButton
-              onClick={() => router.push("/candidates/vendor-marketplace")}
+            {/* <TabButton
+              onClick={() => router.push("/candidates")}
               active={false}
             >
               Vendor Marketplace
-            </TabButton>
+            </TabButton> */}
           </div>
         </div>
 
@@ -91,26 +89,6 @@ export default function CandidatesPage() {
               Join our platform to connect with expert vendors and resources to
               empower your campaign.
             </motion.p>
-
-            <motion.div
-              variants={{
-                hidden: { opacity: 0, y: 20 },
-                visible: {
-                  opacity: 1,
-                  y: 0,
-                  transition: { duration: 0.6, ease: "easeOut", delay: 0.3 },
-                },
-              }}
-              className="flex flex-col sm:flex-row mt-2"
-            >
-              <Button
-                variant="purple"
-                size="lg"
-                onClick={() => router.push("/candidates/vendor-marketplace")}
-              >
-                Explore Vendors
-              </Button>
-            </motion.div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8 w-full my-12">
               <FeatureCard

@@ -17,7 +17,6 @@ import { Candidate, Election } from "@prisma/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { normalizeSlug } from "@/lib/functions";
 
 type ElectionWithCandidates = Election & { candidates: Candidate[] };
 
@@ -122,9 +121,7 @@ export default function EditCandidateForm({
       // Redirect after a delay to allow user to see success message
       setTimeout(() => {
         router.push(
-          `/candidate/${normalizeSlug(formData.name)}?candidateID=${
-            candidate.id
-          }&electionID=${candidate.electionId}`
+          `/candidate/${candidate.slug}?candidateID=${candidate.id}&electionID=${candidate.electionId}`
         );
         router.refresh();
       }, 2000);

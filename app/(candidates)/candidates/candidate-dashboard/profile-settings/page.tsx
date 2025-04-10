@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { ProfileForm } from "./ProfileForm";
-import { PhotoUpload } from "./PhotoUpload";
+// import { PhotoUpload } from "./PhotoUpload";
 import { CandidateDashboardData } from "@/types/candidate";
 import { useAuth } from "@clerk/nextjs";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -109,14 +109,14 @@ export default function ProfileSettingsPage() {
           />
         </div>
         {/* Photo Upload */}
-        <div>
+        {/* <div>
           <PhotoUpload
             currentPhotoUrl={candidateData.photoUrl}
             candidateId={candidateData.id}
             // TODO: Add isPremium flag based on subscription
             isPremium={false} // Placeholder
           />
-        </div>
+        </div> */}
       </div>
     </div>
   );

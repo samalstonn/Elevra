@@ -1,6 +1,5 @@
-"use client";
-
 // import type { Metadata } from "next";
+"use client";
 import {
   ClerkProvider,
   SignedIn,
@@ -24,6 +23,9 @@ const inter = Inter({ subsets: ["latin"] });
 
 // export const metadata: Metadata = {
 //   title: "Elevra",
+//   icons: {
+//     icon: "/favicon.ico",
+//   },
 // };
 
 export const dynamic = "force-dynamic";

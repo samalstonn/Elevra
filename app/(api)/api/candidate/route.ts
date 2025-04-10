@@ -5,6 +5,7 @@ import { Prisma } from "@prisma/client";
 import nodemailer from "nodemailer";
 
 export async function GET(request: Request) {
+  console.log("GET request to /api/candidate");
   try {
     // Get auth session to verify the request
     const { userId } = await auth();
@@ -41,6 +42,7 @@ export async function GET(request: Request) {
         linkedin: true,
         electionId: true,
         policies: true,
+        slug: true,
       },
     });
 
@@ -64,6 +66,25 @@ export async function GET(request: Request) {
   }
 }
 
+/**
+ * Handles the POST request to create a new candidate.
+ *
+ * This function performs the following steps:
+ * 1. Verifies the authentication session to ensure the user is authorized.
+ * 2. Parses and validates the request body to ensure all required fields are present.
+ * 3. Checks if the `clerkUserId` in the request matches the authenticated user's ID.
+ * 4. Ensures that a candidate with the same `clerkUserId` does not already exist in the database.
+ * 5. Creates a new candidate record in the database using the provided data.
+ * 6. Sends an email notification about the new candidate signup using Nodemailer.
+ *
+ * @param request - The incoming HTTP request object.
+ * @returns A JSON response indicating success or failure, with appropriate HTTP status codes:
+ * - 401: Unauthorized if the user is not authenticated.
+ * - 400: Bad Request if required fields are missing.
+ * - 403: Forbidden if the `clerkUserId` does not match the authenticated user.
+ * - 409: Conflict if a candidate with the same `clerkUserId` already exists.
+ * - 500: Internal Server Error for database or other unexpected errors.
+ */
 export async function POST(request: Request) {
   try {
     // Get auth session to verify the request

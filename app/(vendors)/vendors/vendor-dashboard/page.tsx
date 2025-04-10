@@ -17,12 +17,10 @@ import {
   BadgeCheck,
   User,
   Images,
-  MessageSquare,
-  CreditCard,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
-import VendorAnalyticsChart from "./VendorAnalyticsChart";
+import AnalyticsChart from "@/components/AnalyticsChart";
 import {
   Vendor,
   Testimonial,
@@ -182,7 +180,7 @@ export default async function VendorDashboard() {
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="opacity-50 bg-gray-50">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm font-medium">
                 Subscription
@@ -195,11 +193,7 @@ export default async function VendorDashboard() {
               </div>
               <p className="text-xs text-muted-foreground">
                 {vendor.subscription === "FREE" ? (
-                  <Link href="/vendors/vendor-dashboard/subscription">
-                    <span className="text-purple-600 hover:underline">
-                      Upgrade now
-                    </span>
-                  </Link>
+                  <span className="text-purple-600">Coming soon...</span>
                 ) : (
                   "Active plan"
                 )}
@@ -217,11 +211,11 @@ export default async function VendorDashboard() {
               </CardDescription>
             </CardHeader>
             <CardContent className="pl-2">
-              <VendorAnalyticsChart />
+              <AnalyticsChart />
             </CardContent>
           </Card>
 
-          <Card className="col-span-3">
+          <Card className="col-span-3 opacity-50 bg-gray-50">
             <CardHeader>
               <CardTitle>Recent Testimonials</CardTitle>
               <CardDescription>
@@ -265,14 +259,12 @@ export default async function VendorDashboard() {
               ) : (
                 <div className="flex flex-col items-center justify-center py-6">
                   <Star className="h-8 w-8 text-gray-300 mb-2" />
-                  <p className="text-sm text-gray-500 mb-3">
-                    No testimonials yet
-                  </p>
-                  <Link href="/vendors/vendor-dashboard/testimonials">
+                  <p className="text-sm text-gray-500 mb-3">Coming soon...</p>
+                  {/* <Link href="/vendors/vendor-dashboard/testimonials">
                     <Button variant="outline" size="sm">
                       Request Testimonials
                     </Button>
-                  </Link>
+                  </Link> */}
                 </div>
               )}
             </CardContent>
@@ -335,18 +327,18 @@ export default async function VendorDashboard() {
                     Add Portfolio Item
                   </Button>
                 </Link>
-                <Link href="/vendors/vendor-dashboard/testimonials">
+                {/* <Link href="/vendors/vendor-dashboard/testimonials">
                   <Button variant="outline" className="w-full justify-start">
                     <MessageSquare className="mr-2 h-4 w-4" />
                     Request Testimonial
                   </Button>
-                </Link>
-                <Link href="/vendors/vendor-dashboard/subscription">
+                </Link> */}
+                {/* <Link href="/vendors/vendor-dashboard/subscription">
                   <Button variant="outline" className="w-full justify-start">
                     <CreditCard className="mr-2 h-4 w-4" />
                     Upgrade Plan
                   </Button>
-                </Link>
+                </Link> */}
               </div>
             </CardContent>
           </Card>

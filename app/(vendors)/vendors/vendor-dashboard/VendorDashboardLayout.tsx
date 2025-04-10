@@ -1,9 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Vendor } from "@prisma/client";
 import {
@@ -11,45 +8,49 @@ import {
   User,
   Images,
   MessageSquare,
-  CreditCard,
   BarChart,
   Menu,
   X,
 } from "lucide-react";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Badge } from "@/components/ui/badge";
+import { DashboardNav } from "@/components/DashboardNav";
 
 interface VendorDashboardLayoutProps {
   children: React.ReactNode;
   vendor: Vendor;
 }
 
-const navigation = [
+const navItems = [
   {
-    name: "Overview",
+    label: "Overview",
     href: "/vendors/vendor-dashboard",
     icon: LayoutDashboard,
+    premium: false,
   },
-  { name: "Profile", href: "/vendors/vendor-dashboard/profile", icon: User },
   {
-    name: "Portfolio",
+    label: "Profile",
+    href: "/vendors/vendor-dashboard/profile",
+    icon: User,
+    premium: false,
+  },
+  {
+    label: "Portfolio",
     href: "/vendors/vendor-dashboard/portfolio",
     icon: Images,
+    premium: false,
   },
   {
-    name: "Testimonials",
+    label: "Testimonials",
     href: "/vendors/vendor-dashboard/testimonials",
     icon: MessageSquare,
+    premium: true,
   },
   {
-    name: "Subscription",
-    href: "/vendors/vendor-dashboard/subscription",
-    icon: CreditCard,
-  },
-  {
-    name: "Analytics",
+    label: "Analytics",
     href: "/vendors/vendor-dashboard/analytics",
     icon: BarChart,
+    premium: true,
   },
 ];
 
@@ -57,7 +58,6 @@ export default function VendorDashboardLayout({
   children,
   vendor,
 }: VendorDashboardLayoutProps) {
-  const pathname = usePathname();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   return (
@@ -100,27 +100,7 @@ export default function VendorDashboardLayout({
                 </div>
               </div>
             </div>
-            <nav className="flex-1 p-4">
-              <ul className="space-y-1">
-                {navigation.map((item) => (
-                  <li key={item.name}>
-                    <Link
-                      href={item.href}
-                      className={cn(
-                        "flex items-center rounded-md px-3 py-2 text-sm font-medium",
-                        pathname === item.href
-                          ? "bg-purple-100 text-purple-700"
-                          : "text-gray-700 hover:bg-gray-100"
-                      )}
-                      onClick={() => setIsMobileMenuOpen(false)}
-                    >
-                      <item.icon className="mr-3 h-5 w-5 flex-shrink-0" />
-                      {item.name}
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            </nav>
+            <DashboardNav navItems={navItems} person={"vendor"} />
           </div>
         </SheetContent>
       </Sheet>
@@ -140,26 +120,7 @@ export default function VendorDashboardLayout({
                 </Badge>
               </div>
             </div>
-            <nav className="mt-8 flex-1 px-2">
-              <ul className="space-y-1">
-                {navigation.map((item) => (
-                  <li key={item.name}>
-                    <Link
-                      href={item.href}
-                      className={cn(
-                        "group flex items-center rounded-md px-3 py-2 text-sm font-medium",
-                        pathname === item.href
-                          ? "bg-purple-100 text-purple-700"
-                          : "text-gray-700 hover:bg-gray-100"
-                      )}
-                    >
-                      <item.icon className="mr-3 h-5 w-5 flex-shrink-0" />
-                      {item.name}
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            </nav>
+            <DashboardNav navItems={navItems} person={"vendor"} />
           </div>
         </div>
       </div>

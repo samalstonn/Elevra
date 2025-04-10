@@ -4,8 +4,8 @@ import { NextResponse } from "next/server";
 // Define protected routes
 const isPrivateRoute = createRouteMatcher([
   "/candidate/verify(.*)", // Verification page
-  "/candidate-dashboard(.*)", // Candidate dashboard
-  "/vendor-dashboard(.*)", // Vendor dashboard
+  "/candidates/candidate-dashboard(.*)", // Candidate dashboard
+  "/vendors/vendor-dashboard(.*)", // Vendor dashboard
   "/admin(.*)", // All admin routes
 ]);
 
@@ -30,24 +30,7 @@ export default clerkMiddleware(async (auth, req) => {
     const metadata =
       (sessionClaims?.metadata as { userType?: string; isAdmin?: boolean }) ||
       {};
-    const userType = metadata.userType;
     const isAdmin = metadata.isAdmin === true;
-
-    // Protect candidate dashboard - only for candidate users
-    if (
-      req.nextUrl.pathname.startsWith("/candidate-dashboard") &&
-      userType !== "candidate"
-    ) {
-      return NextResponse.redirect(new URL("/", req.url));
-    }
-
-    // Protect vendor dashboard - only for vendor users
-    if (
-      req.nextUrl.pathname.startsWith("/vendor-dashboard") &&
-      userType !== "vendor"
-    ) {
-      return NextResponse.redirect(new URL("/", req.url));
-    }
 
     // Protect admin routes - only for admin users
     // But skip the protection check for the debug and setup pages

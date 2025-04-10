@@ -1,11 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { Card, CardContent } from "../../components/Card";
+import { Card, CardContent } from "@/components/Card";
 import { Candidate, Election } from "@prisma/client";
 import { motion } from "framer-motion";
-import { Button } from "../../components/ui/button";
-import { CandidateImage } from "../../components/CandidateImage"; // Adjust the path as needed
+import { Button } from "@/components/ui/button";
+import { CandidateImage } from "@/components/CandidateImage"; // Adjust the path as needed
 import { FaUserPlus } from "react-icons/fa"; // Import the user-plus icon from react-icons
 
 interface CandidateSectionProps {
@@ -242,9 +242,7 @@ export default function CandidateSection({
             >
               <Link
                 href={{
-                  pathname: `/candidate/${candidate.name
-                    .replace(/\s+/g, "-")
-                    .toLowerCase()}`,
+                  pathname: `/candidate/${candidate.slug}`,
                   query: { candidateID: candidate.id, electionID: election.id },
                 }}
               >
@@ -280,7 +278,6 @@ export default function CandidateSection({
                         {candidate.bio}
                       </p>
 
-                      {/* Donate Button */}
                       <motion.div
                         className="absolute bottom-0"
                         whileHover={{ scale: 1.02 }}

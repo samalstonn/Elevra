@@ -73,7 +73,7 @@ export default function VendorLoginForm() {
           // Vendor not found - user needs to sign up
           setVendor(null);
           setError(
-            "You haven't registered as a vendor yet. Please sign up first."
+            "You haven't registered as a vendor yet. Please join as a vendor."
           );
         } else {
           const data = await response.json();
@@ -137,15 +137,6 @@ export default function VendorLoginForm() {
               <div>
                 <h3 className="font-semibold text-red-700 mb-2">Error</h3>
                 <p className="text-gray-700">{error}</p>
-                {error.includes("haven't registered") && (
-                  <Button
-                    variant="purple"
-                    className="mt-4"
-                    onClick={() => router.push("/vendors?tab=signup")}
-                  >
-                    Register as a Vendor
-                  </Button>
-                )}
               </div>
             </div>
           </div>

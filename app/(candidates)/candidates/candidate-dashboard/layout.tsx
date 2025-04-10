@@ -1,7 +1,70 @@
 "use client";
 import React from "react";
-import { DashboardNav } from "./components/DashboardNav";
+import { DashboardNav } from "../../../../components/DashboardNav";
 import { useUser } from "@clerk/nextjs";
+import {
+  LayoutDashboard, // Overview
+  User, // Profile Settings
+  BarChart3, // Analytics
+  Mail, // Mailing Lists
+  HandCoins, // Donations (Premium)
+  Video, // Videos (Premium)
+  Award, // Endorsements (Premium)
+  Users, // Vendor Marketplace
+} from "lucide-react";
+
+const navItems = [
+  // --- Free Tabs ---
+  {
+    href: "/candidates/candidate-dashboard",
+    label: "Overview",
+    icon: LayoutDashboard,
+    premium: false,
+  },
+  {
+    href: "/candidates/candidate-dashboard/profile-settings",
+    label: "My Profile",
+    icon: User,
+    premium: false,
+  },
+  // --- Premium Tabs ---
+  {
+    href: "/candidates/vendor-marketplace",
+    label: "Vendor Marketplace",
+    icon: Users,
+    premium: true,
+  },
+  {
+    href: "/candidates/candidate-dashboard/analytics",
+    label: "Analytics",
+    icon: BarChart3,
+    premium: true,
+  },
+  {
+    href: "/candidates/candidate-dashboard/mailing-lists",
+    label: "Mailing Lists",
+    icon: Mail,
+    premium: true,
+  },
+  {
+    href: "/candidates/candidate-dashboard/donations",
+    label: "Donations",
+    icon: HandCoins,
+    premium: true,
+  },
+  {
+    href: "/candidates/candidate-dashboard/videos",
+    label: "Videos",
+    icon: Video,
+    premium: true,
+  },
+  {
+    href: "/candidates/candidate-dashboard/endorsements",
+    label: "Endorsements",
+    icon: Award,
+    premium: true,
+  },
+];
 
 // Define the structure of the dashboard layout
 export default function CandidateDashboardLayout({
@@ -21,7 +84,7 @@ export default function CandidateDashboardLayout({
           {/* Maybe add user name/avatar here later */}
         </div>
         <div className="flex-1 overflow-y-auto">
-          <DashboardNav />
+          <DashboardNav navItems={navItems} person={"candidate"} />
         </div>
       </aside>
 

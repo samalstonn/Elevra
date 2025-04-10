@@ -21,6 +21,7 @@ model Election {
   state       String
   type        ElectionType
   candidates  Candidate[]
+  hidden      Boolean      @default(false)
 }
 
 model Candidate {
@@ -49,6 +50,9 @@ model Candidate {
   election        Election?        @relation(fields: [electionId], references: [id])
   Testimonial     Testimonial[]
   Vendors         Vendor[]         @relation("CandidateToVendor")
+  slug            String?          @unique
+  hidden          Boolean          @default(false)
+  profileViews    CandidateProfileView[]
 }
 
 model UserValidationRequest {
@@ -130,6 +134,7 @@ model Vendor {
   testimonials      Testimonial[]
   candidate         Candidate[]       @relation("CandidateToVendor")
   serviceCategories ServiceCategory[] @relation("VendorServices")
+  hidden            Boolean           @default(false)
 }
 
 model ServiceCategory {
@@ -158,6 +163,18 @@ model Testimonial {
   createdAt   DateTime  @default(now())
   candidate   Candidate @relation(fields: [candidateId], references: [id])
   vendor      Vendor    @relation(fields: [vendorId], references: [id])
+}
+
+model CandidateProfileView {
+  id           Int       @id @default(autoincrement())
+  candidateId  Int
+  viewedAt     DateTime  @default(now())
+  viewerIp     String?   // Optional: the viewer's IP address
+  userAgent    String?   // Optional: user agent string from the viewer's browser
+  referrerUrl  String?   // Optional: URL referrer if available
+  
+  // Establish relation to the Candidate model
+  Candidate    Candidate @relation(fields: [candidateId], references: [id])
 }
 
 enum ElectionType {

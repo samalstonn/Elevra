@@ -337,13 +337,6 @@ export default function VendorSignupForm() {
       newErrors.website = "Please enter a valid URL";
     }
 
-    if (!formData.serviceDescription.trim()) {
-      newErrors.serviceDescription = "Service description is required";
-    } else if (formData.serviceDescription.length > 1000) {
-      newErrors.serviceDescription =
-        "Service description must be less than 1000 characters";
-    }
-
     return newErrors;
   };
 
@@ -656,7 +649,7 @@ export default function VendorSignupForm() {
           htmlFor="serviceDescription"
           className="block text-sm font-medium text-gray-700 text-left"
         >
-          Detailed Service Description*
+          Additional Notes
         </label>
         <Textarea
           id="serviceDescription"

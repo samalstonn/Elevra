@@ -74,7 +74,7 @@ export default function CandidateLoginForm() {
           // Candidate not found - user needs to sign up
           setCandidate(null);
           setError(
-            "You haven't registered as a candidate yet. Please sign up first."
+            "You haven't registered as a candidate yet. Please join as a candidate."
           );
         } else {
           const data = await response.json();
@@ -138,15 +138,6 @@ export default function CandidateLoginForm() {
               <div>
                 <h3 className="font-semibold text-red-700 mb-2">Error</h3>
                 <p className="text-gray-700">{error}</p>
-                {error.includes("haven't registered") && (
-                  <Button
-                    variant="purple"
-                    className="mt-4"
-                    onClick={() => router.push("/candidates?tab=signup")}
-                  >
-                    Register as a Candidate
-                  </Button>
-                )}
               </div>
             </div>
           </div>

@@ -39,7 +39,7 @@ const generateData = () => {
 
 const sampleData = generateData();
 
-export default function VendorAnalyticsChart() {
+export default function AnalyticsChart() {
   const [data, setData] = useState<DataPoint[] | []>([]);
 
   useEffect(() => {
