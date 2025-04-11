@@ -240,12 +240,7 @@ export default function CandidateSection({
               variants={cardVariants}
               className="flex-shrink-0"
             >
-              <Link
-                href={{
-                  pathname: `/candidate/${candidate.slug}`,
-                  query: { candidateID: candidate.id, electionID: election.id },
-                }}
-              >
+              <Link href={`/candidate/${candidate.slug}`}>
                 <motion.div
                   whileHover={{ scale: 1.05 }}
                   transition={{ duration: 0.2, ease: "easeOut" }}

@@ -54,14 +54,14 @@ model Candidate {
   hidden          Boolean                @default(false)
   profileViews    CandidateProfileView[]
   donationCount   Int                    @default(0)
-  donationIntents DonationIntent[]
 }
 
 model Donation {
-  id        Int       @id @default(autoincrement())
-  amount    Decimal   @db.Decimal(10, 2)
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
+  id        Int              @id @default(autoincrement())
+  amount    Decimal          @db.Decimal(10, 2)
+  createdAt DateTime         @default(now())
+  updatedAt DateTime         @updatedAt
+  status    SubmissionStatus @default(PENDING)
   paidAt    DateTime?
 
   // Donor information
@@ -80,39 +80,13 @@ model Donation {
   employer              String?
 
   // Transaction details
-  transactionId String? // Stripe transaction ID
+  transactionId String?  @unique
   processingFee Decimal? @db.Decimal(10, 2)
   coverFee      Boolean  @default(false)
 
   // Relation to Candidate
   candidateId Int
   candidate   Candidate @relation(fields: [candidateId], references: [id])
-}
-
-model DonationIntent {
-  id                    String    @id @default(cuid())
-  amount                Float
-  processingFee         Float     @default(0)
-  candidateId           Int
-  candidate             Candidate @relation(fields: [candidateId], references: [id], onDelete: Cascade)
-  userId                String? // Optional relation to a user if they're signed in
-  donorName             String
-  donorEmail            String
-  donorAddress          String
-  donorCity             String
-  donorState            String
-  donorZip              String
-  donorCountry          String    @default("USA")
-  donorPhone            String?
-  isRetiredOrUnemployed Boolean   @default(false)
-  occupation            String
-  employer              String
-  status                String    @default("PENDING") // PENDING, COMPLETED, FAILED
-  createdAt             DateTime  @default(now())
-  updatedAt             DateTime  @updatedAt
-
-  @@index([candidateId])
-  @@index([userId])
 }
 
 model UserValidationRequest {

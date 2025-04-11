@@ -121,16 +121,18 @@ export default function DonationSuccessPage() {
           )}
 
           {donationInfo && (
-            <div className="bg-purple-50 p-4 rounded-lg mb-6">
+            <div className="bg-purple-50 rounded-xl p-4 mb-6">
               <h2 className="text-lg font-semibold text-gray-800 mb-2">
                 Donation Details
               </h2>
-              <div className="flex justify-between border-b border-purple-100 py-2">
-                <span className="font-medium">Amount:</span>
-                <span>${Number(donationInfo.amount).toFixed(2)}</span>
-              </div>
               {donationInfo.processingFee > 0 && (
-                <div className="flex justify-between border-b border-purple-100 py-2">
+                <div className="flex justify-between py-2">
+                  <span className="font-medium">Amount:</span>
+                  <span>${Number(donationInfo.amount).toFixed(2)}</span>
+                </div>
+              )}
+              {donationInfo.processingFee > 0 && (
+                <div className="flex justify-between py-2">
                   <span className="font-medium">Processing Fee:</span>
                   <span>${Number(donationInfo.processingFee).toFixed(2)}</span>
                 </div>

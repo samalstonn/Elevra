@@ -4,10 +4,10 @@ import React, { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
 import { Search } from "lucide-react";
 import Link from "next/link";
-import { normalizeSlug } from "@/lib/functions";
 
 export type SearchResult = {
   id: string;
+  slug: string;
   name?: string;
   electionId?: string;
   position?: string;
@@ -193,11 +193,7 @@ export default function SearchBar({
                 </div>
               ) : (
                 // Default behavior for candidates
-                <Link
-                  href={`/candidate/${normalizeSlug(
-                    item.name || ""
-                  )}?candidateID=${item.id}&electionID=${item.electionId}`}
-                >
+                <Link href={`/candidate/${item.slug}`}>
                   {renderResult(item)}
                 </Link>
               )}

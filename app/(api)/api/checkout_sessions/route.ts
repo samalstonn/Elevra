@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import Stripe from "stripe";
 import prisma from "@/prisma/prisma";
 import { auth } from "@clerk/nextjs/server";
+import { SubmissionStatus } from "@prisma/client";
 
 // Initialize Stripe with your secret key
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
@@ -11,6 +12,7 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
 
 export async function POST(req: NextRequest) {
   try {
+    console.log("Creating checkout session");
     const { userId } = await auth();
     const body = await req.json();
     const { cartItems, donationDetails } = body;
@@ -38,32 +40,6 @@ export async function POST(req: NextRequest) {
       };
     });
 
-    // Save donation intent to database first
-    const donationIntent = await prisma.donationIntent.create({
-      data: {
-        amount: donorInfo.amount,
-        processingFee: donorInfo.coverFee
-          ? Math.round(donorInfo.amount * 0.029 + 0.3 * 100) / 100
-          : 0,
-        candidateId: candidateId,
-        userId: userId || undefined, // Only include if user is logged in
-        donorName: donorInfo.fullName,
-        donorEmail: donorInfo.email,
-        donorAddress: donorInfo.address,
-        donorCity: donorInfo.city,
-        donorState: donorInfo.state,
-        donorZip: donorInfo.zip,
-        donorCountry: donorInfo.country || "USA",
-        donorPhone: donorInfo.phone || undefined,
-        isRetiredOrUnemployed: donorInfo.isRetiredOrUnemployed,
-        occupation: donorInfo.isRetiredOrUnemployed
-          ? "Retired/Unemployed"
-          : donorInfo.occupation,
-        employer: donorInfo.isRetiredOrUnemployed ? "N/A" : donorInfo.employer,
-        status: "PENDING",
-      },
-    });
-
     // Make sure we have a valid base URL
     const baseUrl =
       process.env.NEXT_PUBLIC_APP_URL ||
@@ -81,8 +57,53 @@ export async function POST(req: NextRequest) {
         donationType: "campaign",
         candidateId: donationDetails.candidateId.toString(),
         userClerkId: userId || "",
+        donorName: donorInfo.fullName,
+        donorEmail: donorInfo.email,
       },
     });
+
+    console.log("Created Stripe session:", session.id);
+
+    // Calculate processing fee
+    const processingFee = donorInfo.coverFee
+      ? Math.round(donorInfo.amount * 0.029 + 0.3 * 100) / 100
+      : 0;
+
+    // Save donation record directly with PENDING status
+    try {
+      const donation = await prisma.donation.create({
+        data: {
+          amount: donorInfo.amount,
+          processingFee: processingFee,
+          candidateId: candidateId,
+          status: SubmissionStatus.PENDING, // Use the enum value
+          clerkUserId: userId || null,
+          donorName: donorInfo.fullName,
+          donorEmail: donorInfo.email,
+          donorAddress: donorInfo.address,
+          donorCity: donorInfo.city,
+          donorState: donorInfo.state,
+          donorZip: donorInfo.zip,
+          donorPhone: donorInfo.phone || null,
+          isRetiredOrUnemployed: donorInfo.isRetiredOrUnemployed,
+          occupation: donorInfo.isRetiredOrUnemployed
+            ? "Retired/Unemployed"
+            : donorInfo.occupation,
+          employer: donorInfo.isRetiredOrUnemployed
+            ? "N/A"
+            : donorInfo.employer,
+          transactionId: session.id, // Save the session ID to find this record later
+          coverFee: donorInfo.coverFee,
+          paidAt: null,
+        },
+      });
+
+      console.log("Created pending donation record:", donation.id);
+    } catch (err) {
+      console.error("Error creating donation record:", err);
+      // Continue with checkout even if donation creation fails
+      // Webhook handler will create donation if needed
+    }
 
     return NextResponse.json({
       sessionId: session.id,

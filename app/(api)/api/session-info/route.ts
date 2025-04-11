@@ -36,7 +36,7 @@ export async function GET(req: NextRequest) {
     }
 
     // Fetch donation information from our database
-    const donation = await prisma.donation.findFirst({
+    const donation = await prisma.donation.findUnique({
       where: {
         transactionId: sessionId,
       },
