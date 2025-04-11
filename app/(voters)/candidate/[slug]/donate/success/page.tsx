@@ -102,11 +102,9 @@ export default function DonationSuccessPage() {
               <FaCheckCircle className="text-green-600 text-5xl" />
             </div>
           </div>
-
           <h1 className="text-3xl font-bold text-gray-900 mb-4">
             Thank You for Your Support!
           </h1>
-
           {candidateInfo ? (
             <p className="text-lg text-gray-700 mb-6">
               Your donation to {candidateInfo.name}'s campaign has been
@@ -119,39 +117,35 @@ export default function DonationSuccessPage() {
               a difference in your local community.
             </p>
           )}
-
           {donationInfo && (
             <div className="bg-purple-50 rounded-xl p-4 mb-6">
               <h2 className="text-lg font-semibold text-gray-800 mb-2">
                 Donation Details
               </h2>
-              {donationInfo.processingFee > 0 && (
-                <div className="flex justify-between py-2">
-                  <span className="font-medium">Amount:</span>
-                  <span>${Number(donationInfo.amount).toFixed(2)}</span>
-                </div>
-              )}
+              <div className="flex justify-between py-2">
+                <span className="font-medium">Amount:</span>
+                <span>${Number(donationInfo.amount).toFixed(2)}</span>
+              </div>
               {donationInfo.processingFee > 0 && (
                 <div className="flex justify-between py-2">
                   <span className="font-medium">Processing Fee:</span>
                   <span>${Number(donationInfo.processingFee).toFixed(2)}</span>
                 </div>
               )}
-              <div className="flex justify-between py-2 font-semibold">
-                <span>Total:</span>
-                <span>
-                  $
-                  {(
-                    Number(donationInfo.amount) +
-                    (donationInfo.processingFee
-                      ? Number(donationInfo.processingFee)
-                      : 0)
-                  ).toFixed(2)}
-                </span>
-              </div>
+              {donationInfo.processingFee > 0 && (
+                <div className="flex justify-between py-2 font-semibold">
+                  <span>Total:</span>
+                  <span>
+                    $
+                    {(
+                      Number(donationInfo.amount) +
+                      Number(donationInfo.processingFee)
+                    ).toFixed(2)}
+                  </span>
+                </div>
+              )}
             </div>
           )}
-
           <div className=" p-4 mb-6">
             <h2 className="text-lg font-semibold text-gray-800 mb-2">
               What's Next?
@@ -159,7 +153,8 @@ export default function DonationSuccessPage() {
             <ul className="text-gray-700 text-left space-y-2">
               <li className="flex items-start">
                 <span className="mr-2">•</span> You'll receive a confirmation
-                email with details of your contribution.
+                email with details of your contribution. (Check your spam
+                folder!)
               </li>
               <li className="flex items-start">
                 <span className="mr-2">•</span> Your donation will help fund
@@ -171,7 +166,6 @@ export default function DonationSuccessPage() {
               </li>
             </ul>
           </div>
-
           <div className="flex flex-col sm:flex-row justify-center gap-4 mb-6">
             {candidateSlug && (
               <Button
@@ -190,7 +184,6 @@ export default function DonationSuccessPage() {
               <FaShare /> Share This Campaign
             </Button>
           </div>
-
           <Button
             variant="ghost"
             asChild

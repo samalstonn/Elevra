@@ -4,6 +4,7 @@ import Stripe from "stripe";
 import prisma from "@/prisma/prisma";
 import { auth } from "@clerk/nextjs/server";
 import { SubmissionStatus } from "@prisma/client";
+import { calculateFee } from "@/lib/functions";
 
 // Initialize Stripe with your secret key
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
@@ -25,6 +26,11 @@ export async function POST(req: NextRequest) {
     }
 
     const { candidateId, donorInfo } = donationDetails;
+
+    // Calculate processing fee with the corrected formula
+    const processingFee = donorInfo.coverFee
+      ? calculateFee(donorInfo.amount)
+      : 0;
 
     // Create line items for Stripe
     const lineItems = cartItems.map((item: any) => {
@@ -59,15 +65,12 @@ export async function POST(req: NextRequest) {
         userClerkId: userId || "",
         donorName: donorInfo.fullName,
         donorEmail: donorInfo.email,
+        coverFee: donorInfo.coverFee.toString(),
+        amount: donorInfo.amount.toString(),
       },
     });
 
     console.log("Created Stripe session:", session.id);
-
-    // Calculate processing fee
-    const processingFee = donorInfo.coverFee
-      ? Math.round(donorInfo.amount * 0.029 + 0.3 * 100) / 100
-      : 0;
 
     // Save donation record directly with PENDING status
     try {

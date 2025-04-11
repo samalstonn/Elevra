@@ -4,6 +4,7 @@ import prisma from "@/prisma/prisma";
 import { headers } from "next/headers";
 import nodemailer from "nodemailer";
 import { SubmissionStatus } from "@prisma/client";
+import { calculateFee } from "@/lib/functions";
 
 // Initialize Stripe
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
@@ -27,9 +28,10 @@ const transporter = nodemailer.createTransport({
 
 // Function to send confirmation email
 async function sendConfirmationEmail(donationDetails: any, candidate: any) {
-  console.log("Attempting to send confirmation email", {
+  console.log("Attempting to send confirmation emails", {
     from: process.env.EMAIL_USER,
-    to: process.env.MY_EMAIL,
+    toAdmin: process.env.MY_EMAIL,
+    toDonor: donationDetails.donorEmail,
     subject: `New Donation: ${donationDetails.donorName} to ${candidate.name}`,
     emailUser: Boolean(process.env.EMAIL_USER),
     emailPass: Boolean(process.env.EMAIL_PASS),
@@ -37,48 +39,115 @@ async function sendConfirmationEmail(donationDetails: any, candidate: any) {
   });
 
   try {
-    const emailResult = await transporter.sendMail({
+    // 1. Send email to admin
+    const adminEmailResult = await transporter.sendMail({
       from: `"Elevra Donations" <${process.env.EMAIL_USER}>`,
       to: process.env.MY_EMAIL,
       subject: `New Donation Received: ${donationDetails.donorName} donated to ${candidate.name}`,
       html: `
-        <div style="font-family: Arial, sans-serif; padding: 20px; max-width: 600px;">
-          <h2 style="color: #6200ee;">New Donation Received</h2>
-          <p>A new donation has been successfully processed:</p>
-          
-          <div style="background-color: #f5f5f5; padding: 15px; border-radius: 5px; margin: 15px 0;">
-            <p><strong>Donor:</strong> ${donationDetails.donorName}</p>
-            <p><strong>Email:</strong> ${donationDetails.donorEmail}</p>
-            <p><strong>Amount:</strong> $${Number(
-              donationDetails.amount
+          <div style="font-family: Arial, sans-serif; padding: 20px; max-width: 600px;">
+            <h2 style="color: #6200ee;">New Donation Received</h2>
+            <p>A new donation has been successfully processed:</p>
+            
+            <div style="background-color: #f5f5f5; padding: 15px; border-radius: 5px; margin: 15px 0;">
+              <p><strong>Donor:</strong> ${donationDetails.donorName}</p>
+              <p><strong>Email:</strong> ${donationDetails.donorEmail}</p>
+              <p><strong>Amount:</strong> $${Number(
+                donationDetails.amount
+              ).toFixed(2)}</p>
+            <p><strong>Processing Fee:</strong> $${Number(
+              donationDetails.processingFee
             ).toFixed(2)}</p>
-            <p><strong>Candidate:</strong> ${candidate.name} (${
+              <p><strong>Candidate:</strong> ${candidate.name} (${
         candidate.position || "Candidate"
       })</p>
-            <p><strong>Transaction ID:</strong> ${
-              donationDetails.transactionId
-            }</p>
-            <p><strong>Date:</strong> ${new Date(
-              donationDetails.updatedAt || new Date()
-            ).toLocaleString()}</p>
+              <p><strong>Transaction ID:</strong> ${
+                donationDetails.transactionId
+              }</p>
+              <p><strong>Date:</strong> ${new Date(
+                donationDetails.updatedAt || new Date()
+              ).toLocaleString()}</p>
+            </div>
+            
+            <p>This donation has been confirmed by Stripe and recorded in the database.</p>
+            
+            <hr style="border: 1px solid #eee; margin: 20px 0;" />
+            <p style="font-size: 12px; color: #888;">This is an automated message from Elevra Community.</p>
           </div>
-          
-          <p>This donation has been confirmed by Stripe and recorded in the database.</p>
-          
-          <hr style="border: 1px solid #eee; margin: 20px 0;" />
-          <p style="font-size: 12px; color: #888;">This is an automated message from Elevra Community.</p>
-        </div>
-      `,
+        `,
     });
 
-    console.log("Confirmation email sent successfully", {
-      messageId: emailResult.messageId,
-      response: emailResult.response,
+    console.log("Admin confirmation email sent successfully", {
+      messageId: adminEmailResult.messageId,
+      response: adminEmailResult.response,
     });
+
+    // 2. Send receipt email to donor
+    if (donationDetails.donorEmail) {
+      const donorEmailResult = await transporter.sendMail({
+        from: `"Elevra Community" <${process.env.EMAIL_USER}>`,
+        to: donationDetails.donorEmail,
+        subject: `Thank you for supporting ${candidate.name}`, // Less spammy subject
+        headers: {
+          "X-Priority": "1", // Mark as important
+          Precedence: "Bulk",
+          "List-Unsubscribe": `<mailto:unsubscribe@elevracommunity.com?subject=Unsubscribe>`,
+        },
+        html: `
+              <div style="font-family: Arial, sans-serif; padding: 20px; max-width: 600px;">
+              <h2 style="color: #6200ee;">Thank You for Your Support!</h2>
+              <p>Dear ${donationDetails.donorName},</p>
+              
+              <p>Thank you for your generous donation to ${
+                candidate.name
+              }'s campaign. Your support makes a real difference in your local community.</p>
+              
+              <div style="background-color: #f5f5f5; padding: 15px; border-radius: 5px; margin: 15px 0;">
+                <h3 style="margin-top: 0;">Donation Receipt</h3>
+                <p><strong>Amount:</strong> $${Number(
+                  donationDetails.amount
+                ).toFixed(2)}</p>
+                <p><strong>Processing Fee:</strong> $${Number(
+                  donationDetails.processingFee
+                ).toFixed(2)}</p>
+                <p><strong>Date:</strong> ${new Date(
+                  donationDetails.updatedAt || new Date()
+                ).toLocaleString()}</p>
+                <p><strong>Candidate:</strong> ${candidate.name} (${
+          candidate.position || "Candidate"
+        })</p>
+                <p><strong>Transaction ID:</strong> ${
+                  donationDetails.transactionId
+                }</p>
+              </div>
+              
+              <p>Your donation will help fund campaign activities and community outreach efforts. We're grateful for your commitment to local politics.</p>
+              
+              <p>You can view the campaign page at any time by visiting: <a href="${
+                process.env.NEXT_PUBLIC_APP_URL
+              }/candidate/${candidate.slug}">${
+          candidate.name
+        }'s Campaign</a></p>
+              
+              <p>Thank you again for your support!</p>
+              
+              <p>Sincerely,<br>The Elevra Community Team</p>
+              
+              <hr style="border: 1px solid #eee; margin: 20px 0;" />
+              <p style="font-size: 12px; color: #888;">This is an automated message from Elevra Community. Political donations are not tax deductible.</p>
+            </div>
+          `,
+      });
+
+      console.log("Donor receipt email sent successfully", {
+        messageId: donorEmailResult.messageId,
+        response: donorEmailResult.response,
+      });
+    }
 
     return true;
   } catch (error) {
-    console.error("Error sending confirmation email:", error);
+    console.error("Error sending confirmation emails:", error);
     return false;
   }
 }
@@ -274,6 +343,11 @@ export async function POST(req: NextRequest) {
             const newDonation = await prisma.donation.create({
               data: {
                 amount: (session.amount_total || 0) / 100, // Convert from cents
+                // Calculate processing fee if coverFee was true
+                processingFee:
+                  session.metadata?.coverFee === "true"
+                    ? calculateFee(parseFloat(session.metadata.amount || "0"))
+                    : 0,
                 candidateId: parseInt(session.metadata.candidateId),
                 donorName: session.metadata.donorName || "Unknown",
                 donorEmail:
@@ -286,6 +360,7 @@ export async function POST(req: NextRequest) {
                 transactionId: session.id,
                 paidAt: new Date(), // Mark as paid immediately
                 clerkUserId: session.metadata.userClerkId || null,
+                coverFee: session.metadata?.coverFee === "true",
               },
             });
 

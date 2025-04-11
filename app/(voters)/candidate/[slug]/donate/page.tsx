@@ -11,6 +11,7 @@ import Link from "next/link";
 import DonationAmountTab from "./DonationAmountTab";
 import DonorInfoTab from "./DonorInfoTab";
 import getStripe from "@/lib/get-stripe";
+import { calculateFee } from "@/lib/functions";
 
 export default function DonatePage() {
   const { slug } = useParams();
@@ -123,12 +124,10 @@ export default function DonatePage() {
     try {
       setLoading(true);
 
-      // Calculate processing fee if it's being covered
-      const processingFee = formState.coverFee
-        ? parseFloat((formState.amount * 0.029 + 0.3).toFixed(2))
-        : 0;
-
-      const totalAmount = formState.amount + processingFee;
+      const processingFee = calculateFee(formState.amount);
+      const totalAmount = formState.coverFee
+        ? formState.amount + processingFee
+        : formState.amount;
 
       // Create cart item for Stripe checkout
       const cartItems = [

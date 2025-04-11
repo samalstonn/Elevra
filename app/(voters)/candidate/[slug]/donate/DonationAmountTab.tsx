@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { FaArrowRight, FaInfoCircle } from "react-icons/fa";
+import { calculateFee } from "@/lib/functions";
 
 const SUGGESTED_AMOUNTS = [10, 25, 50, 100, 250];
 
@@ -28,11 +29,6 @@ export default function DonationAmountTab({
   );
   const [coverFee, setCoverFee] = useState<boolean>(initialCoverFee);
   const [error, setError] = useState<string | null>(null);
-
-  // Calculate the processing fee (2.9% + $0.30)
-  const calculateFee = (amt: number): number => {
-    return amt > 0 ? parseFloat((amt * 0.029 + 0.3).toFixed(2)) : 0;
-  };
 
   const processingFee = calculateFee(amount);
   const totalAmount = coverFee ? amount + processingFee : amount;
@@ -127,17 +123,17 @@ export default function DonationAmountTab({
               htmlFor="coverFee"
               className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
             >
-              Cover the{" "}
-              {processingFee > 0 ? `$${processingFee.toFixed(2)}` : ""}{" "}
-              processing fee
+              Cover the processing fee (
+              {processingFee > 0 ? `$${processingFee.toFixed(2)}` : ""})
             </label>
             <p className="text-sm text-gray-500 mt-1">
               Add{" "}
               {processingFee > 0
                 ? `$${processingFee.toFixed(2)}`
                 : "the processing fee"}{" "}
-              to your donation to ensure 100% of your contribution goes to the
-              campaign.
+              to ensure 100% of your intended donation goes to the campaign.
+              Without this, the campaign receives your donation minus Stripe's
+              fee.
             </p>
           </div>
         </div>
@@ -155,6 +151,18 @@ export default function DonationAmountTab({
       </div>
 
       <div className="pt-4 border-t border-gray-200">
+        {coverFee && (
+          <div className="mb-2 text-sm text-gray-600">
+            <div className="flex justify-between">
+              <span>Base donation:</span>
+              <span>${amount.toFixed(2)}</span>
+            </div>
+            <div className="flex justify-between">
+              <span>Processing fee:</span>
+              <span>${processingFee.toFixed(2)}</span>
+            </div>
+          </div>
+        )}
         <div className="flex justify-between text-lg font-semibold mb-4">
           <span>Total Amount:</span>
           <span>${totalAmount.toFixed(2)}</span>
