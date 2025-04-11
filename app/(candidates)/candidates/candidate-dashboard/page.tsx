@@ -104,7 +104,7 @@ export default function OverviewPage() {
             {/* Placeholder change */}
           </CardContent>
         </Card>
-        <Card className="opacity-50 bg-gray-50">
+        <Card>
           {" "}
           {/* Placeholder for locked feature */}
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -116,15 +116,18 @@ export default function OverviewPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              ${donationTotal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              $
+              {donationTotal.toLocaleString(undefined, {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2,
+              })}
             </div>
-            <p className="text-xs text-muted-foreground">Coming soon...</p>{" "}
-            {/* <Link
-              href="/candidates/candidate-dashboard/upgrade"
+            <Link
+              href="/candidates/candidate-dashboard/donations"
               className="text-xs text-blue-600 hover:underline"
             >
-              Upgrade to track donations
-            </Link> */}
+              View Donations
+            </Link>
           </CardContent>
         </Card>
       </div>

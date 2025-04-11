@@ -2,6 +2,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/prisma/prisma"; // Adjust this import based on your project structure
+import { calculateFee } from "@/lib/functions";
 
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
@@ -23,7 +24,10 @@ export async function GET(req: NextRequest) {
     });
 
     const totalDonations = donations.reduce((sum, donation) => {
-      return sum + Number(donation.amount);
+      const netAmount = donation.coverFee
+        ? Number(donation.amount)
+        : Number(donation.amount) - calculateFee(Number(donation.amount));
+      return sum + netAmount;
     }, 0);
 
     const candidateIds = new Set(donations.map((d) => d.candidateId));
@@ -31,7 +35,9 @@ export async function GET(req: NextRequest) {
 
     const donationDetails = donations.map((d) => ({
       id: d.id,
-      amount: d.amount,
+      amount: d.coverFee
+        ? Number(d.amount)
+        : Number(d.amount) - calculateFee(Number(d.amount)),
       paidAt: d.paidAt,
       candidate: d.candidate,
     }));
