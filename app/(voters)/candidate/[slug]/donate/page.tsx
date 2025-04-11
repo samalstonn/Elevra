@@ -45,6 +45,35 @@ export default function DonatePage() {
   const [isAmountTabComplete, setIsAmountTabComplete] = useState(false);
 
   useEffect(() => {
+    // Only run this after auth is loaded and user is logged in
+    if (isLoaded && userId) {
+      const savedState = localStorage.getItem("donationFormState");
+      if (savedState) {
+        try {
+          const parsedState = JSON.parse(savedState);
+          setFormState((prev) => ({
+            ...prev,
+            ...parsedState,
+          }));
+
+          if (parsedState.amount > 0) {
+            setIsAmountTabComplete(true);
+          }
+        } catch (e) {
+          console.error("Error parsing saved form state:", e);
+        }
+
+        // Clear after using
+        localStorage.removeItem("donationFormState");
+      }
+      // Auto-switch to Donor Info tab if amount is already set
+      if (formState.amount > 0) {
+        setActiveTab("info");
+      }
+    }
+  }, [isLoaded, userId]);
+
+  useEffect(() => {
     const fetchCandidate = async () => {
       try {
         const response = await fetch(`/api/candidate/slug?slug=${slug}`);
@@ -236,10 +265,12 @@ export default function DonatePage() {
                 active={activeTab === "amount"}
                 onClick={() => setActiveTab("amount")}
               >
-                <span>Donation Amount</span>
-                {isAmountTabComplete && (
-                  <FaCheckCircle className="mt-1 text-green-500" />
-                )}
+                <span className="flex items-center gap-1">
+                  Donation Amount
+                  {isAmountTabComplete && (
+                    <FaCheckCircle className="ml-2 text-green-500" />
+                  )}
+                </span>
               </TabButton>
             </div>
             <div

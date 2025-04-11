@@ -4,7 +4,13 @@ import { useEffect, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { FaCheckCircle, FaArrowLeft, FaUser, FaShare } from "react-icons/fa";
+import {
+  FaCheckCircle,
+  FaArrowLeft,
+  FaUser,
+  FaShare,
+  FaArrowRight,
+} from "react-icons/fa";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 
@@ -184,15 +190,27 @@ export default function DonationSuccessPage() {
               <FaShare /> Share This Campaign
             </Button>
           </div>
-          <Button
-            variant="ghost"
-            asChild
-            className="text-purple-600 hover:text-purple-800"
-          >
-            <Link href="/" className="flex items-center gap-2">
+            <div className="flex justify-between">
+            <Button
+              variant="ghost"
+              asChild
+              className="text-purple-600 hover:text-purple-800"
+            >
+              <Link href="/" className="flex items-center gap-2">
               <FaArrowLeft /> Return to Homepage
-            </Link>
-          </Button>
+              </Link>
+            </Button>
+            <Button
+              variant="ghost"
+              asChild
+              className="text-purple-600 hover:text-purple-800"
+            >
+              <Link href="/dashboard" className="flex items-center gap-2">
+              See your Impact
+              <FaArrowRight />
+              </Link>
+            </Button>
+            </div>
         </Card>
       </motion.div>
     </div>

@@ -18,6 +18,7 @@ import { Candidate } from "@prisma/client";
 export default function OverviewPage() {
   const [candidate, setCandidate] = useState<Candidate | null>(null);
   const [profileViews, setProfileViews] = useState<number>(0);
+  const [donationTotal, setDonationTotal] = useState<number>(0);
   // Placeholder data - replace with actual fetched data later
   const { userId } = useAuth();
 
@@ -34,6 +35,17 @@ export default function OverviewPage() {
       })
       .then((data: Candidate) => {
         setCandidate(data);
+        fetch(`/api/candidate/donations?clerkUserId=${userId}`)
+          .then((res) => {
+            if (!res.ok) {
+              throw new Error("Failed to fetch donation data");
+            }
+            return res.json();
+          })
+          .then((donationData) => {
+            setDonationTotal(donationData.totalDonations);
+          })
+          .catch((err) => console.error("Error fetching donation data:", err));
       })
       .catch((err) => console.error("Error fetching candidate:", err));
   }, [userId]);
@@ -103,7 +115,9 @@ export default function OverviewPage() {
             {/* Use correct icon */}
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">$0</div>
+            <div className="text-2xl font-bold">
+              ${donationTotal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            </div>
             <p className="text-xs text-muted-foreground">Coming soon...</p>{" "}
             {/* <Link
               href="/candidates/candidate-dashboard/upgrade"

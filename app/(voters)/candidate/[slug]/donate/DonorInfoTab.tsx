@@ -129,10 +129,17 @@ export default function DonorInfoTab({
               </h3>
               <p className="text-sm text-blue-600 mt-1">
                 <Link
-                  href={`/sign-in?redirect=/candidate/${new URLSearchParams(
-                    window.location.search
-                  ).get("slug")}/donate`}
+                  href={`/sign-in?redirect_url=${encodeURIComponent(
+                    window.location.pathname
+                  )}`}
                   className="underline"
+                  onClick={() => {
+                    // Store form state in localStorage before redirecting
+                    localStorage.setItem(
+                      "donationFormState",
+                      JSON.stringify(formState)
+                    );
+                  }}
                 >
                   Sign in
                 </Link>{" "}

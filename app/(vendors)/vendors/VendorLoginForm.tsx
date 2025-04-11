@@ -105,7 +105,13 @@ export default function VendorLoginForm() {
         <p className="mb-4">Please sign in to access your vendor account.</p>
         <Button
           variant="purple"
-          onClick={() => router.push("/sign-in?redirect=/vendors")}
+          onClick={() =>
+            router.push(
+              `/sign-in?redirect_url=${encodeURIComponent(
+                window.location.pathname
+              )}`
+            )
+          }
         >
           Sign In
         </Button>

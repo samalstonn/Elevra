@@ -369,7 +369,11 @@ export function ProfileForm({
           <div>
             <Label htmlFor="position">Current Position</Label>
             <br />
-            <Input id="position" {...register("position")} />
+            <Input
+              id="position"
+              {...register("position")}
+              style={{ width: "100%" }}
+            />
             {errors.position && (
               <p className="text-xs text-red-600 mt-1">
                 {errors.position.message}
@@ -563,6 +567,7 @@ export function ProfileForm({
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <Label htmlFor="website">Website URL (Optional)</Label>
+              <br />
               <Input
                 id="website"
                 type="url"
@@ -577,6 +582,7 @@ export function ProfileForm({
             </div>
             <div>
               <Label htmlFor="linkedin">LinkedIn URL (Optional)</Label>
+              <br />
               <Input
                 id="linkedin"
                 type="url"
