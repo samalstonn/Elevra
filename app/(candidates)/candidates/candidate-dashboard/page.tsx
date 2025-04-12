@@ -17,8 +17,12 @@ import { Candidate } from "@prisma/client";
 
 export default function OverviewPage() {
   const [candidate, setCandidate] = useState<Candidate | null>(null);
-  const [profileViews, setProfileViews] = useState<number>(0);
-  const [donationTotal, setDonationTotal] = useState<number>(0);
+  const [profileViews, setProfileViews] = useState<number | string>(
+    "Loading..."
+  );
+  const [donationTotal, setDonationTotal] = useState<number | string>(
+    "Loading..."
+  );
   // Placeholder data - replace with actual fetched data later
   const { userId } = useAuth();
 
@@ -106,7 +110,6 @@ export default function OverviewPage() {
         </Card>
         <Card>
           {" "}
-          {/* Placeholder for locked feature */}
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">
               Total Donations
@@ -117,10 +120,12 @@ export default function OverviewPage() {
           <CardContent>
             <div className="text-2xl font-bold">
               $
-              {donationTotal.toLocaleString(undefined, {
-                minimumFractionDigits: 2,
-                maximumFractionDigits: 2,
-              })}
+              {typeof donationTotal === "number"
+                ? donationTotal.toLocaleString(undefined, {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2,
+                  })
+                : donationTotal}
             </div>
             <Link
               href="/candidates/candidate-dashboard/donations"

@@ -30,6 +30,7 @@ export default function DonatePage() {
     email: "",
     fullName: "",
     address: "",
+    aptNumber: "", // Added aptNumber to formState
     city: "",
     state: "",
     zip: "",

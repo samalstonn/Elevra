@@ -39,6 +39,7 @@ export default function DonorInfoTab({
   isUserSignedIn,
 }: DonorInfoTabProps) {
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [aptNumber, setAptNumber] = useState<string>("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Validate the form before submission
@@ -89,6 +90,14 @@ export default function DonorInfoTab({
 
     if (!validateForm()) {
       return;
+    }
+
+    if (aptNumber.trim()) {
+      const newAddress = aptNumber + ", " + formState.address;
+      console.log("Updated address:", newAddress);
+      onChange("address", newAddress);
+      // Directly update the formState address so that subsequent logic uses the updated value
+      formState.address = newAddress;
     }
 
     setIsSubmitting(true);
@@ -192,6 +201,24 @@ export default function DonorInfoTab({
           )}
         </div>
 
+        <div>
+          <label
+            htmlFor="aptNumber"
+            className="block text-sm font-medium text-gray-700"
+          >
+            Apartment/House Number (Optional)
+          </label>
+          <Input
+            id="aptNumber"
+            name="aptNumber"
+            type="text"
+            value={aptNumber}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+              setAptNumber(e.target.value)
+            }
+            style={{ width: "100%" }}
+          />
+        </div>
         <div>
           <label
             htmlFor="address"
