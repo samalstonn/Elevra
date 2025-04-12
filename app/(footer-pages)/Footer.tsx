@@ -15,7 +15,7 @@ export default function Footer() {
             Privacy Policy
           </Link>
           <Link href="/feedback" className="hover:underline">
-            Feedback
+            Contact Us
           </Link>
         </div>
       </div>
