@@ -12,9 +12,9 @@ import {
   FaUserPlus,
   FaChevronUp,
   FaQuestionCircle,
+  FaDonate,
 } from "react-icons/fa";
 import { Edit } from "lucide-react"; // Icons
-import CheckoutButton from "@/components/DonateButton";
 import { Button } from "../../../../components/ui/button";
 import { Candidate, Election } from "@prisma/client";
 import { normalizeSlug } from "@/lib/functions";
@@ -226,15 +226,19 @@ export default function CandidateClient({
               </Link>
             </Button>
           ) : null}
-          <CheckoutButton
-            cartItems={[
-              {
-                name: `Donation to ${candidate.name}'s Campaign`,
-                price: 10,
-                quantity: 1,
-              },
-            ]}
-          />
+          <Link href={`/candidate/${candidate.slug}/donate`} passHref>
+            <Button
+              asChild
+              variant="green"
+              size="xl"
+              className="flex items-center gap-2"
+            >
+              <span className="flex items-center gap-2">
+                <FaDonate />
+                <span>Donate</span>
+              </span>
+            </Button>
+          </Link>
           {!verified && (
             <Button
               variant="purple"
@@ -316,7 +320,7 @@ export default function CandidateClient({
                 {relatedCandidates.map((relatedCandidate: Candidate) => (
                   <Link
                     key={relatedCandidate.name}
-                    href={`/candidate/${relatedCandidate.slug}?candidateID=${relatedCandidate.id}&electionID=${relatedCandidate.electionId}`}
+                    href={`/candidate/${relatedCandidate.slug}`}
                     className="block"
                   >
                     <motion.div
@@ -390,7 +394,7 @@ export default function CandidateClient({
                     className="flex items-center justify-between "
                   >
                     <Link
-                      href={`/candidate/${rc.slug}?candidateID=${rc.id}&electionID=${rc.electionId}`}
+                      href={`/candidate/${rc.slug}`}
                       className="flex items-center gap-3 "
                     >
                       <CandidateImage

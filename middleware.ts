@@ -7,6 +7,7 @@ const isPrivateRoute = createRouteMatcher([
   "/candidates/candidate-dashboard(.*)", // Candidate dashboard
   "/vendors/vendor-dashboard(.*)", // Vendor dashboard
   "/admin(.*)", // All admin routes
+  "/dashboard(.*)", // All dashboard routes
 ]);
 
 export default clerkMiddleware(async (auth, req) => {

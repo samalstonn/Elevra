@@ -6,8 +6,7 @@ import { Candidate, Election } from "@prisma/client";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { CandidateImage } from "@/components/CandidateImage"; // Adjust the path as needed
-import { FaUserPlus } from "react-icons/fa"; // Import the user-plus icon from react-icons
-
+import { FaUserPlus, FaDonate } from "react-icons/fa"; // Import icons from react-icons
 interface CandidateSectionProps {
   candidates: Candidate[];
   election: Election;
@@ -240,12 +239,7 @@ export default function CandidateSection({
               variants={cardVariants}
               className="flex-shrink-0"
             >
-              <Link
-                href={{
-                  pathname: `/candidate/${candidate.slug}`,
-                  query: { candidateID: candidate.id, electionID: election.id },
-                }}
-              >
+              <Link href={`/candidate/${candidate.slug}`}>
                 <motion.div
                   whileHover={{ scale: 1.05 }}
                   transition={{ duration: 0.2, ease: "easeOut" }}
@@ -283,16 +277,22 @@ export default function CandidateSection({
                         whileHover={{ scale: 1.02 }}
                         transition={{ duration: 0.2, ease: "easeOut" }}
                       >
-                        <Button
-                          variant="purple"
-                          size="sm"
-                          onClick={() => {
-                            /* placeholder function */
-                          }}
-                          className="flex items-center gap-2"
+                        <Link
+                          href={`/candidate/${candidate.slug}/donate`}
+                          passHref
                         >
-                          <span>Learn More</span>
-                        </Button>
+                          <Button
+                            asChild
+                            variant="green"
+                            size="sm"
+                            className="flex items-center gap-2 mt-2"
+                          >
+                            <span className="flex items-center gap-2">
+                              <FaDonate />
+                              <span>Donate</span>
+                            </span>
+                          </Button>
+                        </Link>
                       </motion.div>
                     </CardContent>
                   </Card>

@@ -40,9 +40,7 @@ export default async function EditCandidatePage({
   if (candidate.clerkUserId !== user.id) {
     // Redirect if not the owner
     if (user?.primaryEmailAddress?.emailAddress !== "sza6@cornell.edu") {
-      redirect(
-        `/candidate/${candidate.slug}?candidateID=${candidate.id}&electionID=${candidate.electionId}`
-      );
+      redirect(`/candidate/${candidate.slug}`);
     }
   }
 

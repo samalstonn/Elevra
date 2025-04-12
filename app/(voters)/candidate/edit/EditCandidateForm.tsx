@@ -120,9 +120,7 @@ export default function EditCandidateForm({
 
       // Redirect after a delay to allow user to see success message
       setTimeout(() => {
-        router.push(
-          `/candidate/${candidate.slug}?candidateID=${candidate.id}&electionID=${candidate.electionId}`
-        );
+        router.push(`/candidate/${candidate.slug}`);
         router.refresh();
       }, 2000);
     } catch (err) {

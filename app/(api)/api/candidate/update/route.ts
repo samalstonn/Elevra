@@ -86,7 +86,6 @@ export async function POST(request: NextRequest) {
         photo: candidate.photo,
         status: candidate.status,
         sources: candidate.sources,
-        donations: candidate.donations,
         history: candidate.history,
       },
     });
@@ -101,6 +100,9 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
     console.error("Error updating candidate:", error);
-    return NextResponse.json({ error: "Failed to update candidate" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Failed to update candidate" },
+      { status: 500 }
+    );
   }
 }

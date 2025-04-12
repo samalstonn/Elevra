@@ -480,7 +480,13 @@ export default function CandidateSignupForm() {
         </p>
         <Button
           variant="purple"
-          onClick={() => router.push("/sign-in?redirect=/candidates")}
+          onClick={() =>
+            router.push(
+              `/sign-in?redirect_url=${encodeURIComponent(
+                window.location.pathname
+              )}`
+            )
+          }
         >
           Sign In
         </Button>
@@ -644,8 +650,8 @@ export default function CandidateSignupForm() {
           Election (Optional)
         </label>
         <p className="text-sm text-gray-500">
-          If you&apos;re not currently running in an election, leave this
-          blank. You can add an election later from your dashboard.
+          If you&apos;re not currently running in an election, leave this blank.
+          You can add an election later from your dashboard.
         </p>
 
         {/* Display the selected election */}

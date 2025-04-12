@@ -106,7 +106,13 @@ export default function CandidateLoginForm() {
         <p className="mb-4">Please sign in to access your candidate account.</p>
         <Button
           variant="purple"
-          onClick={() => router.push("/sign-in?redirect=/candidates")}
+          onClick={() =>
+            router.push(
+              `/sign-in?redirect_url=${encodeURIComponent(
+                window.location.pathname
+              )}`
+            )
+          }
         >
           Sign In
         </Button>

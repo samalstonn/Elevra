@@ -62,3 +62,33 @@ export async function generateUniqueSlug(
 
   return uniqueSlug;
 }
+
+//prettier-ignore
+const STRIPE_FIXED_FEE = 0.30; // $0.30 per transaction
+const STRIPE_PERCENTAGE_FEE = 0.029; // 2.9%
+
+/**
+ * Calculates the Stripe processing fee based on the base amount.
+ * The formula is:
+ * 1. Add fixed fee
+ * 2. Divide by (1 - percentage)
+ * 3. Subtract base amount to get fee
+ * 4. Round to 2 decimal places
+ * @param baseAmount - The base amount in dollars.
+ * @returns The calculated fee in dollars.
+ */
+export const calculateFee = (baseAmount: number): number => {
+  if (baseAmount <= 0) return 0;
+
+  // Step 1: Add fixed fee
+  const amountPlusFixed = baseAmount + STRIPE_FIXED_FEE;
+
+  // Step 2: Divide by (1 - percentage)
+  const grossAmount = amountPlusFixed / (1 - STRIPE_PERCENTAGE_FEE);
+
+  // Step 3: Subtract base amount to get fee
+  const fee = grossAmount - baseAmount;
+
+  // Step 4: Round to 2 decimal places
+  return Math.round(fee * 100) / 100;
+};

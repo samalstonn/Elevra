@@ -27,6 +27,12 @@ const navItems = [
     icon: User,
     premium: false,
   },
+  {
+    href: "/candidates/candidate-dashboard/donations",
+    label: "Donations",
+    icon: HandCoins,
+    premium: false,
+  },
   // --- Premium Tabs ---
   {
     href: "/candidates/vendor-marketplace",
@@ -46,12 +52,7 @@ const navItems = [
     icon: Mail,
     premium: true,
   },
-  {
-    href: "/candidates/candidate-dashboard/donations",
-    label: "Donations",
-    icon: HandCoins,
-    premium: true,
-  },
+
   {
     href: "/candidates/candidate-dashboard/videos",
     label: "Videos",

@@ -17,7 +17,12 @@ import { Candidate } from "@prisma/client";
 
 export default function OverviewPage() {
   const [candidate, setCandidate] = useState<Candidate | null>(null);
-  const [profileViews, setProfileViews] = useState<number>(0);
+  const [profileViews, setProfileViews] = useState<number | string>(
+    "Loading..."
+  );
+  const [donationTotal, setDonationTotal] = useState<number | string>(
+    "Loading..."
+  );
   // Placeholder data - replace with actual fetched data later
   const { userId } = useAuth();
 
@@ -34,6 +39,17 @@ export default function OverviewPage() {
       })
       .then((data: Candidate) => {
         setCandidate(data);
+        fetch(`/api/candidate/donations?clerkUserId=${userId}`)
+          .then((res) => {
+            if (!res.ok) {
+              throw new Error("Failed to fetch donation data");
+            }
+            return res.json();
+          })
+          .then((donationData) => {
+            setDonationTotal(donationData.totalDonations);
+          })
+          .catch((err) => console.error("Error fetching donation data:", err));
       })
       .catch((err) => console.error("Error fetching candidate:", err));
   }, [userId]);
@@ -92,9 +108,8 @@ export default function OverviewPage() {
             {/* Placeholder change */}
           </CardContent>
         </Card>
-        <Card className="opacity-50 bg-gray-50">
+        <Card>
           {" "}
-          {/* Placeholder for locked feature */}
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">
               Total Donations
@@ -103,14 +118,21 @@ export default function OverviewPage() {
             {/* Use correct icon */}
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">$0</div>
-            <p className="text-xs text-muted-foreground">Coming soon...</p>{" "}
-            {/* <Link
-              href="/candidates/candidate-dashboard/upgrade"
+            <div className="text-2xl font-bold">
+              $
+              {typeof donationTotal === "number"
+                ? donationTotal.toLocaleString(undefined, {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2,
+                  })
+                : donationTotal}
+            </div>
+            <Link
+              href="/candidates/candidate-dashboard/donations"
               className="text-xs text-blue-600 hover:underline"
             >
-              Upgrade to track donations
-            </Link> */}
+              View Donations
+            </Link>
           </CardContent>
         </Card>
       </div>
@@ -141,11 +163,7 @@ export default function OverviewPage() {
           </Button>
           <Button variant="outline" asChild>
             <Link
-              href={
-                candidate
-                  ? `/candidate/${candidate.slug}?candidateID=${candidate.id}&electionID=${candidate.electionId}`
-                  : "/candidates"
-              }
+              href={candidate ? `/candidate/${candidate.slug}` : "/candidates"}
             >
               <Eye className="mr-2 h-4 w-4" /> View Public Profile
             </Link>

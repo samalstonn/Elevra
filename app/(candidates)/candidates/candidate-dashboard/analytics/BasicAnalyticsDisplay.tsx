@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { StatsCard } from "./StatsCard";
+import { StatsCard } from "../../../../../components/StatsCard";
 import { EngagementChart } from "./EngagementChart";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Eye, Users, Mail, LucideProps } from "lucide-react";

@@ -31,28 +31,62 @@ model Candidate {
   website         String?
   electionId      Int?
   photoUrl        String?
-  createdAt       DateTime         @default(now())
-  updatedAt       DateTime         @updatedAt
+  createdAt       DateTime               @default(now())
+  updatedAt       DateTime               @updatedAt
   additionalNotes String?
   city            String?
   linkedin        String?
   photo           String?
   position        String
   sources         String[]
-  verified        Boolean          @default(false)
+  verified        Boolean                @default(false)
   state           String?
-  donations       String[]
-  bio             String           @default("")
-  clerkUserId     String?          @unique
+  donations       Donation[]
+  bio             String                 @default("")
+  clerkUserId     String?                @unique
   history         String[]
-  id              Int              @id @default(autoincrement())
-  status          SubmissionStatus @default(PENDING)
-  election        Election?        @relation(fields: [electionId], references: [id])
+  id              Int                    @id @default(autoincrement())
+  status          SubmissionStatus       @default(PENDING)
+  election        Election?              @relation(fields: [electionId], references: [id])
   Testimonial     Testimonial[]
-  Vendors         Vendor[]         @relation("CandidateToVendor")
-  slug            String?          @unique
-  hidden          Boolean          @default(false)
+  Vendors         Vendor[]               @relation("CandidateToVendor")
+  slug            String?                @unique
+  hidden          Boolean                @default(false)
   profileViews    CandidateProfileView[]
+  donationCount   Int                    @default(0)
+}
+
+model Donation {
+  id        Int              @id @default(autoincrement())
+  amount    Decimal          @db.Decimal(10, 2)
+  createdAt DateTime         @default(now())
+  updatedAt DateTime         @updatedAt
+  status    SubmissionStatus @default(PENDING)
+  paidAt    DateTime?
+
+  // Donor information
+  donorName    String
+  donorEmail   String
+  donorAddress String
+  donorCity    String
+  donorState   String
+  donorZip     String
+  donorPhone   String?
+  clerkUserId  String?
+
+  // Employment information
+  isRetiredOrUnemployed Boolean @default(false)
+  occupation            String?
+  employer              String?
+
+  // Transaction details
+  transactionId String?  @unique
+  processingFee Decimal? @db.Decimal(10, 2)
+  coverFee      Boolean  @default(false)
+
+  // Relation to Candidate
+  candidateId Int
+  candidate   Candidate @relation(fields: [candidateId], references: [id])
 }
 
 model UserValidationRequest {
@@ -166,15 +200,15 @@ model Testimonial {
 }
 
 model CandidateProfileView {
-  id           Int       @id @default(autoincrement())
-  candidateId  Int
-  viewedAt     DateTime  @default(now())
-  viewerIp     String?   // Optional: the viewer's IP address
-  userAgent    String?   // Optional: user agent string from the viewer's browser
-  referrerUrl  String?   // Optional: URL referrer if available
-  
+  id          Int      @id @default(autoincrement())
+  candidateId Int
+  viewedAt    DateTime @default(now())
+  viewerIp    String? // Optional: the viewer's IP address
+  userAgent   String? // Optional: user agent string from the viewer's browser
+  referrerUrl String? // Optional: URL referrer if available
+
   // Establish relation to the Candidate model
-  Candidate    Candidate @relation(fields: [candidateId], references: [id])
+  Candidate Candidate @relation(fields: [candidateId], references: [id])
 }
 
 enum ElectionType {

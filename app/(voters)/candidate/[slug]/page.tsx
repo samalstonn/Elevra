@@ -1,64 +1,49 @@
 export const dynamic = "force-dynamic";
-import { notFound, redirect } from "next/navigation";
+import { notFound } from "next/navigation";
 import { headers } from "next/headers";
 import prisma from "@/prisma/prisma";
 import CandidateClient from "./CandidateClient";
 import { currentUser } from "@clerk/nextjs/server";
 
-export default async function CandidatePage({
-  searchParams,
-}: {
-  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
-}) {
-  const resolvedSearchParams = await searchParams;
-  const candidateIDParam = resolvedSearchParams.candidateID;
-  const electionIDParam = resolvedSearchParams.electionID;
+interface CandidatePageProps {
+  params: Promise<{ slug: string }>;
+}
 
-  if (!candidateIDParam || !electionIDParam) {
-    // Redirect the user to the homepage if parameters are missing.
-    redirect("/");
-  }
+export default async function CandidatePage({ params }: CandidatePageProps) {
+  const resolvedParams = await params;
+  const { slug } = resolvedParams;
 
-  // Remove any extra query parameters from the candidateID and electionID values
-  const candidateID = Array.isArray(candidateIDParam)
-    ? candidateIDParam[0].split("?")[0]
-    : candidateIDParam.split("?")[0];
-
-  const electionID = electionIDParam
-    ? Array.isArray(electionIDParam)
-      ? electionIDParam[0].split("?")[0]
-      : electionIDParam.split("?")[0]
-    : null;
-  console.log(
-    "Election ID:",
-    electionID === "null" ? electionID : "No election ID provided"
-  );
-  const election =
-    electionID === "null"
-      ? null
-      : await prisma.election.findFirst({
-          where: {
-            id: Number(electionID),
-          },
-          include: {
-            candidates: true,
-          },
-        });
-
-  const candidate = await prisma.candidate.findFirst({
+  // Fetch candidate by slug
+  const candidate = await prisma.candidate.findUnique({
     where: {
-      id: Number(candidateID),
-      electionId: Number(electionID),
+      slug: slug,
     },
   });
+
   if (!candidate) {
     notFound();
   }
 
-  const reqHeaders = await headers();
-  const viewerIp = reqHeaders.get("x-forwarded-for") || undefined;
-  const userAgent = reqHeaders.get("user-agent") || undefined;
-  const referrer = reqHeaders.get("referer") || undefined;
+  const candidateID = candidate.id;
+  const electionID = candidate.electionId;
+
+  // Fetch election details if available
+  const election = electionID
+    ? await prisma.election.findFirst({
+        where: {
+          id: electionID,
+        },
+        include: {
+          candidates: true,
+        },
+      })
+    : null;
+
+  // Track page view
+  const reqHeaders = headers();
+  const viewerIp = (await reqHeaders).get("x-forwarded-for") || undefined;
+  const userAgent = (await reqHeaders).get("user-agent") || undefined;
+  const referrer = (await reqHeaders).get("referer") || undefined;
 
   await prisma.candidateProfileView.create({
     data: {
@@ -69,16 +54,19 @@ export default async function CandidatePage({
     },
   });
 
+  // Get suggested candidates
   const suggestedCandidates = await prisma.candidate.findMany({
     where: {
-      NOT: { id: candidate.id,  }, // Exclude the current candidate and election
-      hidden: false
+      NOT: { id: candidateID },
+      hidden: false,
     },
     include: {
       election: true,
     },
+    take: 3, // Limit to 3 suggestions
   });
 
+  // Check if current user can edit this candidate profile
   const user = await currentUser();
   const currentUserId = user ? user.id : null;
   const isEditable =
