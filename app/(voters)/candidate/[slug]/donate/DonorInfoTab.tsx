@@ -206,7 +206,7 @@ export default function DonorInfoTab({
             htmlFor="aptNumber"
             className="block text-sm font-medium text-gray-700"
           >
-            Apartment/House Number (Optional)
+            Apartment, Unit, or Other (Optional)
           </label>
           <Input
             id="aptNumber"
