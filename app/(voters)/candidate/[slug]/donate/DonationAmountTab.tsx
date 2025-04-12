@@ -132,8 +132,8 @@ export default function DonationAmountTab({
                 ? `$${processingFee.toFixed(2)}`
                 : "the processing fee"}{" "}
               to ensure 100% of your intended donation goes to the campaign.
-              Without this, the campaign receives your donation minus Stripe's
-              fee.
+              Without this, the campaign receives your donation minus
+              Stripe&apos;s fee.
             </p>
           </div>
         </div>

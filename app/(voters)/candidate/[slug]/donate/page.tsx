@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useParams } from "next/navigation";
 import { useAuth, useUser } from "@clerk/nextjs";
 import { motion } from "framer-motion";
 import { TabButton } from "@/components/ui/tab-button";
@@ -13,13 +13,17 @@ import DonorInfoTab from "./DonorInfoTab";
 import getStripe from "@/lib/get-stripe";
 import { calculateFee } from "@/lib/functions";
 
+interface Candidate {
+  id: number;
+  name: string;
+}
+
 export default function DonatePage() {
   const { slug } = useParams();
-  const router = useRouter();
   const { isLoaded, userId } = useAuth();
   const { user } = useUser();
   const [activeTab, setActiveTab] = useState<"amount" | "info">("amount");
-  const [candidate, setCandidate] = useState<any>(null);
+  const [candidate, setCandidate] = useState<Candidate | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -72,7 +76,7 @@ export default function DonatePage() {
         setActiveTab("info");
       }
     }
-  }, [isLoaded, userId]);
+  }, [isLoaded, userId, formState.amount]);
 
   useEffect(() => {
     const fetchCandidate = async () => {
@@ -162,7 +166,7 @@ export default function DonatePage() {
       // Create cart item for Stripe checkout
       const cartItems = [
         {
-          name: `Donation to ${candidate.name}'s Campaign`,
+          name: `Donation to ${candidate?.name}'s Campaign`,
           price: totalAmount,
           quantity: 1,
         },
@@ -177,7 +181,7 @@ export default function DonatePage() {
         body: JSON.stringify({
           cartItems,
           donationDetails: {
-            candidateId: candidate.id,
+            candidateId: candidate?.id,
             donorInfo: {
               ...formState,
               processingFee: processingFee,
@@ -192,7 +196,7 @@ export default function DonatePage() {
         throw new Error(errorData.error || "Failed to create checkout session");
       }
 
-      const { sessionId, success_url } = await response.json();
+      const { sessionId } = await response.json();
 
       // Redirect to Stripe checkout
       const stripe = await getStripe();
@@ -257,7 +261,7 @@ export default function DonatePage() {
 
         <div className="bg-white p-6 rounded-lg shadow-sm">
           <h1 className="text-2xl sm:text-3xl font-bold text-center text-gray-900 mb-6">
-            Support {candidate.name}'s Campaign
+            Support {candidate.name}&apos;s Campaign
           </h1>
 
           <div className="flex justify-center space-x-4 mb-8">

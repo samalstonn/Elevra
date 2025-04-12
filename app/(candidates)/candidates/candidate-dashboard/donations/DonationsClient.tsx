@@ -36,7 +36,10 @@ export default function CandidateDonationsClient({ user, data }: Props) {
   const stats = [
     {
       label: "Total Donations Received",
-      value: `$${data.totalDonations.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
+      value: `$${data.totalDonations.toLocaleString(undefined, {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+      })}`,
     },
     {
       label: "Individual Contributions",
@@ -46,7 +49,10 @@ export default function CandidateDonationsClient({ user, data }: Props) {
       label: "Average Donation Size",
       value:
         data.totalContributions > 0
-          ? `$${(data.totalDonations / data.totalContributions).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+          ? `$${(data.totalDonations / data.totalContributions).toLocaleString(
+              undefined,
+              { minimumFractionDigits: 2, maximumFractionDigits: 2 }
+            )}`
           : "$0.00",
     },
   ];
@@ -56,8 +62,8 @@ export default function CandidateDonationsClient({ user, data }: Props) {
       <header className="space-y-2">
         <h1 className="text-3xl font-bold text-gray-900">Donations Overview</h1>
         <p className="text-gray-600">
-          Welcome, {user.firstName || user.username || "Candidate"}! Here's a
-          summary of your campaign's contributions.
+          Welcome, {user.firstName || user.username || "Candidate"}! Here&apos;s
+          a summary of your campaign&apos;s contributions.
         </p>
       </header>
 
@@ -97,7 +103,11 @@ export default function CandidateDonationsClient({ user, data }: Props) {
                 </div>
                 <div className="text-right">
                   <p className="text-lg font-semibold text-purple-600">
-                    ${Number(donation.amount).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    $
+                    {Number(donation.amount).toLocaleString(undefined, {
+                      minimumFractionDigits: 2,
+                      maximumFractionDigits: 2,
+                    })}
                   </p>
                   <p className="text-xs text-gray-400">
                     {donation.paidAt

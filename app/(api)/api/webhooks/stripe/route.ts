@@ -3,7 +3,7 @@ import Stripe from "stripe";
 import prisma from "@/prisma/prisma";
 import { headers } from "next/headers";
 import nodemailer from "nodemailer";
-import { SubmissionStatus } from "@prisma/client";
+import { SubmissionStatus, Donation, Candidate } from "@prisma/client";
 import { calculateFee } from "@/lib/functions";
 
 // Initialize Stripe
@@ -27,7 +27,10 @@ const transporter = nodemailer.createTransport({
 });
 
 // Function to send confirmation email
-async function sendConfirmationEmail(donationDetails: any, candidate: any) {
+async function sendConfirmationEmail(
+  donationDetails: Donation,
+  candidate: Candidate
+) {
   console.log("Attempting to send confirmation emails", {
     from: process.env.EMAIL_USER,
     toAdmin: process.env.MY_EMAIL,
@@ -198,10 +201,10 @@ export async function POST(req: NextRequest) {
         "Event ID:",
         event.id
       );
-    } catch (err: any) {
-      console.error(`Webhook signature verification failed: ${err.message}`);
+    } catch (err: unknown) {
+      console.error(`Webhook signature verification failed: ${err}`);
       return NextResponse.json(
-        { error: `Webhook Error: ${err.message}` },
+        { error: `Webhook Error: ${err}` },
         { status: 400 }
       );
     }
@@ -413,10 +416,10 @@ export async function POST(req: NextRequest) {
     }
 
     return NextResponse.json({ received: true });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Webhook error:", error);
     return NextResponse.json(
-      { error: "Webhook handler failed: " + error.message },
+      { error: "Webhook handler failed: " + error },
       { status: 500 }
     );
   }

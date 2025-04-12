@@ -5,12 +5,13 @@ import prisma from "@/prisma/prisma";
 import CandidateClient from "./CandidateClient";
 import { currentUser } from "@clerk/nextjs/server";
 
-export default async function CandidatePage({
-  params,
-}: {
-  params: { slug: string };
-}) {
-  const { slug } = await params;
+interface CandidatePageProps {
+  params: Promise<{ slug: string }>;
+}
+
+export default async function CandidatePage({ params }: CandidatePageProps) {
+  const resolvedParams = await params;
+  const { slug } = resolvedParams;
 
   // Fetch candidate by slug
   const candidate = await prisma.candidate.findUnique({

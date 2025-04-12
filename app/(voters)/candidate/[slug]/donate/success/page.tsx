@@ -14,13 +14,23 @@ import {
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 
+interface CandidateInfo {
+  name: string;
+  slug: string;
+}
+
+interface DonationInfo {
+  amount: number;
+  processingFee: number;
+}
+
 export default function DonationSuccessPage() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const sessionId = searchParams.get("session_id");
   const candidateSlug = searchParams.get("candidate");
-  const [candidateInfo, setCandidateInfo] = useState<any>(null);
-  const [donationInfo, setDonationInfo] = useState<any>(null);
+  const [candidateInfo, setCandidateInfo] = useState<CandidateInfo | null>(null);
+  const [donationInfo, setDonationInfo] = useState<DonationInfo | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -113,7 +123,7 @@ export default function DonationSuccessPage() {
           </h1>
           {candidateInfo ? (
             <p className="text-lg text-gray-700 mb-6">
-              Your donation to {candidateInfo.name}'s campaign has been
+              Your donation to {candidateInfo.name}&apos;s campaign has been
               successfully processed. Your support makes a difference in your
               local community.
             </p>
@@ -154,13 +164,13 @@ export default function DonationSuccessPage() {
           )}
           <div className=" p-4 mb-6">
             <h2 className="text-lg font-semibold text-gray-800 mb-2">
-              What's Next?
+              What&apos;s Next?
             </h2>
             <ul className="text-gray-700 text-left space-y-2">
               <li className="flex items-start">
-                <span className="mr-2">•</span> You'll receive a confirmation
-                email with details of your contribution. (Check your spam
-                folder!)
+                <span className="mr-2">•</span> You&apos;ll receive a
+                confirmation email with details of your contribution. (Check
+                your spam folder!)
               </li>
               <li className="flex items-start">
                 <span className="mr-2">•</span> Your donation will help fund
@@ -190,14 +200,14 @@ export default function DonationSuccessPage() {
               <FaShare /> Share This Campaign
             </Button>
           </div>
-            <div className="flex justify-between">
+          <div className="flex justify-between">
             <Button
               variant="ghost"
               asChild
               className="text-purple-600 hover:text-purple-800"
             >
               <Link href="/" className="flex items-center gap-2">
-              <FaArrowLeft /> Return to Homepage
+                <FaArrowLeft /> Return to Homepage
               </Link>
             </Button>
             <Button
@@ -206,11 +216,11 @@ export default function DonationSuccessPage() {
               className="text-purple-600 hover:text-purple-800"
             >
               <Link href="/dashboard" className="flex items-center gap-2">
-              See your Impact
-              <FaArrowRight />
+                See your Impact
+                <FaArrowRight />
               </Link>
             </Button>
-            </div>
+          </div>
         </Card>
       </motion.div>
     </div>

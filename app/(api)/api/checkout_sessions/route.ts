@@ -1,4 +1,3 @@
-// app/api/checkout_sessions/route.ts
 import { NextRequest, NextResponse } from "next/server";
 import Stripe from "stripe";
 import prisma from "@/prisma/prisma";
@@ -33,18 +32,20 @@ export async function POST(req: NextRequest) {
       : 0;
 
     // Create line items for Stripe
-    const lineItems = cartItems.map((item: any) => {
-      return {
-        price_data: {
-          currency: "usd",
-          product_data: {
-            name: item.name,
+    const lineItems = cartItems.map(
+      (item: { name: string; price: number; quantity: number }) => {
+        return {
+          price_data: {
+            currency: "usd",
+            product_data: {
+              name: item.name,
+            },
+            unit_amount: Math.round(item.price * 100), // Convert to cents for Stripe
           },
-          unit_amount: Math.round(item.price * 100), // Convert to cents for Stripe
-        },
-        quantity: item.quantity,
-      };
-    });
+          quantity: item.quantity,
+        };
+      }
+    );
 
     // Make sure we have a valid base URL
     const baseUrl =
@@ -102,7 +103,7 @@ export async function POST(req: NextRequest) {
       });
 
       console.log("Created pending donation record:", donation.id);
-    } catch (err) {
+    } catch (err: unknown) {
       console.error("Error creating donation record:", err);
       // Continue with checkout even if donation creation fails
       // Webhook handler will create donation if needed
@@ -112,10 +113,14 @@ export async function POST(req: NextRequest) {
       sessionId: session.id,
       success_url: session.success_url,
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
+    let message = "Unknown error";
+    if (error instanceof Error) {
+      message = error.message;
+    }
     console.error("Error creating checkout session:", error);
     return NextResponse.json(
-      { error: "Error creating checkout session: " + error.message },
+      { error: "Error creating checkout session: " + message },
       { status: 500 }
     );
   }

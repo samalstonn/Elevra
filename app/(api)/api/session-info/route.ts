@@ -81,10 +81,10 @@ export async function GET(req: NextRequest) {
       donation,
       candidate,
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Error retrieving session:", error);
     return NextResponse.json(
-      { error: "Error retrieving session information: " + error.message },
+      { error: "Error retrieving session information: " + error },
       { status: 500 }
     );
   }
