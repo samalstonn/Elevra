@@ -3,14 +3,14 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 
-type Election = {
+type GroupedElection = {
   city: string | null;
   state: string;
   positions: string[];
 };
 
 export default function LiveElectionsPage() {
-  const [elections, setElections] = useState<Election[]>([]);
+  const [elections, setElections] = useState<GroupedElection[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -47,9 +47,9 @@ export default function LiveElectionsPage() {
           return placeA.localeCompare(placeB);
         });
 
-        setElections(sorted as any); // cast to Election[] to match state type
-      } catch (err: any) {
-        setError(err.message);
+        setElections(sorted as GroupedElection[]); // cast to GroupedElection[] to match state type
+      } catch (err: unknown) {
+        setError(err as string);
       } finally {
         setLoading(false);
       }
@@ -85,7 +85,7 @@ export default function LiveElectionsPage() {
                 <div>
                   <h2 className="text-lg font-bold mb-2">{location}</h2>
                   <ul className="list-disc list-inside text-sm text-gray-700 grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-1">
-                    {election.positions.map((pos, idx) => (
+                    {election.positions.map((pos: string, idx: number) => (
                       <li key={idx}>{pos}</li>
                     ))}
                   </ul>
