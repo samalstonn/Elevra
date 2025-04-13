@@ -4,7 +4,12 @@ import { Election, Candidate } from "@prisma/client";
 import { motion } from "framer-motion";
 import { useState, useMemo, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
-import { FaVoteYea, FaChevronLeft, FaChevronRight } from "react-icons/fa"; // Import all needed icons
+import {
+  FaVoteYea,
+  FaChevronLeft,
+  FaChevronRight,
+  FaDonate,
+} from "react-icons/fa"; // Import all needed icons
 import Link from "next/link";
 import { Card, CardContent } from "@/components/Card";
 
@@ -131,6 +136,32 @@ export default function ElectionResultsClient({
                       className="flex items-center gap-2"
                     >
                       <span>Submit Election Information</span>
+                    </Button>
+                  </Link>
+                </CardContent>
+              </Card>
+            </motion.div>
+            <motion.div
+              whileHover={{ scale: 1.05 }}
+              transition={{ duration: 0.2, ease: "easeOut" }}
+            >
+              <Card className="group transition-all rounded-lg cursor-pointer h-[315px] w-[350px] flex flex-col relative">
+                <CardContent className="flex flex-col items-center justify-center gap-4 h-full">
+                  <div className="w-16 h-16 rounded-full bg-purple-100 flex items-center justify-center">
+                    <FaDonate size={28} className="text-purple-600" />
+                  </div>
+                  <h2 className="text-xl font-semibold text-gray-900 text-center">
+                    See Live Elections
+                  </h2>
+                  <p className="text-gray-500 text-sm text-center mb-4">
+                    Browse currently active elections across the U.S.
+                  </p>
+                  <Link href="/live-elections" className="mt-auto mb-4">
+                    <Button
+                      variant="purple"
+                      className="flex items-center gap-2"
+                    >
+                      <span>Browse Elections</span>
                     </Button>
                   </Link>
                 </CardContent>

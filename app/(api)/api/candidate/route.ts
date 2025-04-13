@@ -178,11 +178,19 @@ export async function POST(request: Request) {
         from: process.env.EMAIL_USER,
         to: process.env.MY_EMAIL, // your email address to receive notifications
         subject: `New Candidate Signup: ${candidate.name}`,
-        text: `A new candidate has signed up.\n\nName: ${candidate.name}\Location: ${candidate.city}, ${candidate.state}`,
+        text: `A new candidate has signed up.\n\nName: ${candidate.name}\nLocation: ${candidate.city}, ${candidate.state}`,
       };
 
-      // Send the email
-      await transporter.sendMail(mailOptions);
+      // Attempt to send the email
+      try {
+        await transporter.sendMail(mailOptions);
+      } catch (emailError: unknown) {
+        if (emailError instanceof Error) {
+          console.error("Error sending notification email:", emailError.message);
+        } else {
+          console.error("Error sending notification email:", emailError);
+        }
+      }
       return NextResponse.json(candidate);
     } catch (error: unknown) {
       if (error instanceof Error) {

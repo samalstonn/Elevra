@@ -553,7 +553,7 @@ export default function CandidateSignupForm() {
           name="position"
           value={formData.position}
           onChange={handleInputChange}
-          placeholder="e.g., Mayor, City Council, State Representative"
+          placeholder="e.g., Mayor, City Council, School Board"
           className={errors.position ? "border-red-500" : ""}
           style={{ width: "100%" }}
         />
@@ -722,6 +722,7 @@ export default function CandidateSignupForm() {
         <label className="block text-sm font-medium text-gray-700">
           Policies* ({formData.policies.length}/5)
         </label>
+        <p className="text-sm text-gray-500">Please add at least one.</p>
         <div className="flex gap-2">
           <Input
             id="newPolicy"

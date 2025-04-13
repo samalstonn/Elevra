@@ -1,11 +1,15 @@
 import { NextResponse } from "next/server";
 import prisma from "@/prisma/prisma"; // Adjust the import path to match your project structure
 import { normalizeState } from "@/lib/stateMapping";
-import { Election } from "@prisma/client";
+
+type Election = {
+  city: string | null;
+  state: string;
+  positions: string[];
+};
 
 export async function GET(request: Request) {
   try {
-    console.log(`City:`);
     const { searchParams } = new URL(request.url);
     const city = searchParams.get("city");
     const rawState = searchParams.get("state");
@@ -23,22 +27,32 @@ export async function GET(request: Request) {
     // If city is 'all', return all elections (for dropdown lists)
     if (city === "all" && normalizedState === "all") {
       const allElections = await prisma.election.findMany({
+        where: {
+          hidden: false,
+          NOT: {
+            OR: [{ city: { equals: "" } }, { state: { equals: "" } }],
+          },
+        },
         select: {
           id: true,
-          position: true,
-          date: true,
           city: true,
           state: true,
+          position: true,
         },
-        orderBy: {
-          date: "asc",
-        },
+        orderBy: [
+          {
+            city: "asc",
+          },
+          {
+            state: "asc",
+          },
+        ],
       });
 
       return NextResponse.json(allElections);
     }
 
-    let elections: string | Election[] = [];
+    let elections: any[] = [];
 
     if (normalizedState) {
       elections = await prisma.election.findMany({
