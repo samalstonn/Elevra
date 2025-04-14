@@ -8,18 +8,12 @@ export default async function CandidateDonationsPage() {
     return null;
   }
 
-  const baseUrl =
-    process.env.NEXT_PUBLIC_SITE_URL ||
-    (process.env.VERCEL_URL && `https://${process.env.VERCEL_URL}`) ||
-    "http://localhost:3000";
-
   const res = await fetch(
-    `${baseUrl}/api/candidate/donations?clerkUserId=${user.id}`,
-    {
-      cache: "no-store",
-    }
+    `${process.env.NEXT_PUBLIC_APP_URL}/api/candidate/donations?clerkUserId=${user.id}`
   );
-
+  console.log(
+    `${process.env.NEXT_PUBLIC_APP_URL}/api/candidate/donations?clerkUserId=${user.id}`
+  );
   const data = await res.json();
 
   return (
