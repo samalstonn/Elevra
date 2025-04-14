@@ -23,9 +23,9 @@ const AboutUs = () => {
         </h2>
         <p className="mt-6 text-lg text-gray-600">
           Elevra was founded by students and faculty at Cornell University to
-          put power in the hands of local communities. We make it easy to
-          discover and support verified local candidates with objective
-          information and seamless donations—all in one place.
+          put power in the hands of local communities. We are a nonpartisan,
+          focused solution for voters to engage with local elections and for
+          candidates to manage their campaigns from one place.
         </p>
       </motion.div>
 
