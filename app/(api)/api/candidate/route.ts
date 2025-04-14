@@ -158,6 +158,7 @@ export async function POST(request: Request) {
     body.website = website || null;
     body.linkedin = linkedin || null;
     body.additionalNotes = additionalNotes || null;
+    body.hidden = true;
 
     const createData: Omit<Prisma.CandidateUncheckedCreateInput, "id"> = body;
 

@@ -7,6 +7,8 @@ import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { CandidateImage } from "@/components/CandidateImage"; // Adjust the path as needed
 import { FaUserPlus, FaDonate } from "react-icons/fa"; // Import icons from react-icons
+import { useRouter } from "next/navigation";
+
 interface CandidateSectionProps {
   candidates: Candidate[];
   election: Election;
@@ -28,6 +30,7 @@ export default function CandidateSection({
   election,
   fallbackElections,
 }: CandidateSectionProps) {
+  const router = useRouter();
   const electionIsActive = new Date(election.date) >= new Date();
 
   // If no election data is available
@@ -277,22 +280,20 @@ export default function CandidateSection({
                         whileHover={{ scale: 1.02 }}
                         transition={{ duration: 0.2, ease: "easeOut" }}
                       >
-                        <Link
-                          href={`/candidate/${candidate.slug}/donate`}
-                          passHref
+                        <Button
+                          variant="green"
+                          size="sm"
+                          className="flex items-center gap-2 mt-2"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            router.push(`/candidate/${candidate.slug}/donate`);
+                          }}
                         >
-                          <Button
-                            asChild
-                            variant="green"
-                            size="sm"
-                            className="flex items-center gap-2 mt-2"
-                          >
-                            <span className="flex items-center gap-2">
-                              <FaDonate />
-                              <span>Donate</span>
-                            </span>
-                          </Button>
-                        </Link>
+                          <span className="flex items-center gap-2">
+                            <FaDonate />
+                            <span>Donate</span>
+                          </span>
+                        </Button>
                       </motion.div>
                     </CardContent>
                   </Card>
