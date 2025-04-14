@@ -11,9 +11,6 @@ export default async function CandidateDonationsPage() {
   const res = await fetch(
     `${process.env.NEXT_PUBLIC_APP_URL}/api/candidate/donations?clerkUserId=${user.id}`
   );
-  console.log(
-    `${process.env.NEXT_PUBLIC_APP_URL}/api/candidate/donations?clerkUserId=${user.id}`
-  );
   const data = await res.json();
 
   return (
