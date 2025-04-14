@@ -8,7 +8,7 @@ export default async function DashboardPage() {
     return null;
   }
   const res = await fetch(
-    `${process.env.NEXT_PUBLIC_APP_URL}/api/candidate/donations?clerkUserId=${user.id}`
+    `${process.env.NEXT_PUBLIC_APP_URL}/api/voter/donations?clerkUserId=${user.id}`
   )
     .then((res) => {
       if (!res.ok) {
