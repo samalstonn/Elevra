@@ -76,7 +76,7 @@ export default function LiveElectionsPage() {
           return (
             <Link
               key={`${election.city}-${election.state}`}
-              href={`https://www.elevracommunity.com/results?city=${encodeURIComponent(
+              href={`/results?city=${encodeURIComponent(
                 election.city || ""
               )}&state=${encodeURIComponent(election.state)}`}
               className="block border-l-2 border-purple-600 bg-white rounded-lg px-6 py-4 shadow-lg hover:shadow-xl hover:bg-purple-50 transition w-full"

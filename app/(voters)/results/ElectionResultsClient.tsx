@@ -156,14 +156,15 @@ export default function ElectionResultsClient({
                   <p className="text-gray-500 text-sm text-center mb-4">
                     Browse currently active elections across the U.S.
                   </p>
-                  <Link href="/live-elections" className="mt-auto mb-4">
-                    <Button
-                      variant="purple"
+
+                  <Button variant="purple">
+                    <Link
+                      href={`${process.env.NEXT_PUBLIC_APP_URL}/live-elections`}
                       className="flex items-center gap-2"
                     >
                       <span>Browse Elections</span>
-                    </Button>
-                  </Link>
+                    </Link>
+                  </Button>
                 </CardContent>
               </Card>
             </motion.div>

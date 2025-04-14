@@ -63,7 +63,6 @@ export default async function CandidatePage({ params }: CandidatePageProps) {
     include: {
       election: true,
     },
-    take: 3, // Limit to 3 suggestions
   });
 
   // Check if current user can edit this candidate profile
