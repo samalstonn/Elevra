@@ -27,7 +27,7 @@ type Props = {
   };
   data: {
     totalDonations: number;
-    totalContributions: number;
+    totalDonationsNumber: number;
     donations: Donation[];
   };
 };
@@ -43,16 +43,18 @@ export default function CandidateDonationsClient({ user, data }: Props) {
     },
     {
       label: "Individual Contributions",
-      value: data.totalContributions.toLocaleString(),
+      value: data.totalDonationsNumber.toLocaleString(),
     },
     {
       label: "Average Donation Size",
       value:
-        data.totalContributions > 0
-          ? `$${(data.totalDonations / data.totalContributions).toLocaleString(
-              undefined,
-              { minimumFractionDigits: 2, maximumFractionDigits: 2 }
-            )}`
+        data.totalDonationsNumber > 0
+          ? `$${(
+              data.totalDonations / data.totalDonationsNumber
+            ).toLocaleString(undefined, {
+              minimumFractionDigits: 2,
+              maximumFractionDigits: 2,
+            })}`
           : "$0.00",
     },
   ];

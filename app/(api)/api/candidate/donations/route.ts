@@ -25,7 +25,9 @@ export async function GET(req: NextRequest) {
                 name: true,
                 party: true,
                 position: true,
+                city: true,
                 state: true,
+                slug: true,
               },
             },
           },
@@ -47,10 +49,10 @@ export async function GET(req: NextRequest) {
       return sum + netAmount;
     }, 0);
 
-    return NextResponse.json({
+    const res = NextResponse.json({
       clerkUserId,
       totalDonations,
-      totalContributions: candidate.donations.length,
+      totalDonationsNumber: candidate.donations.length,
       donations: candidate.donations.map((d) => ({
         id: d.id,
         amount: d.coverFee
@@ -63,6 +65,8 @@ export async function GET(req: NextRequest) {
         candidate: d.candidate,
       })),
     });
+    console.log(res);
+    return res;
   } catch (error) {
     console.error("[GET_CANDIDATE_DONATIONS_ERROR]", error);
     return NextResponse.json(

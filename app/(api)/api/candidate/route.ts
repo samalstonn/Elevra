@@ -1,8 +1,9 @@
 import { NextResponse } from "next/server";
 import prisma from "@/prisma/prisma";
 import { auth } from "@clerk/nextjs/server";
-import { Prisma } from "@prisma/client";
+import { Prisma, SubmissionStatus } from "@prisma/client";
 import nodemailer from "nodemailer";
+import { generateUniqueSlug } from "@/lib/functions";
 
 export async function GET(request: Request) {
   console.log("GET request to /api/candidate");
@@ -107,6 +108,7 @@ export async function POST(request: Request) {
       policies,
       clerkUserId,
       additionalNotes,
+      electionId,
     } = body;
 
     // Validate required fields
@@ -146,19 +148,18 @@ export async function POST(request: Request) {
       );
     }
 
-    const createData: Omit<Prisma.CandidateCreateInput, "id"> = {
-      name,
-      party,
-      position,
-      city,
-      state,
-      bio,
-      website: website || null,
-      linkedin: linkedin || null,
-      policies,
-      clerkUserId,
-      additionalNotes: additionalNotes || null,
-    };
+    const uniqueSlug = await generateUniqueSlug(name, undefined, "candidate");
+    console.info("Generated unique slug:", uniqueSlug);
+
+    body.status = "APPROVED" as SubmissionStatus;
+    body.slug = uniqueSlug;
+    body.electionId = electionId || null;
+    body.verified = true;
+    body.website = website || null;
+    body.linkedin = linkedin || null;
+    body.additionalNotes = additionalNotes || null;
+
+    const createData: Omit<Prisma.CandidateUncheckedCreateInput, "id"> = body;
 
     try {
       const candidate = await prisma.candidate.create({
@@ -178,7 +179,8 @@ export async function POST(request: Request) {
         from: process.env.EMAIL_USER,
         to: process.env.MY_EMAIL, // your email address to receive notifications
         subject: `New Candidate Signup: ${candidate.name}`,
-        text: `A new candidate has signed up.\n\nName: ${candidate.name}\nLocation: ${candidate.city}, ${candidate.state}`,
+        text: `A new candidate has signed up.\n\nName: ${candidate.name}\nLocation: ${candidate.city}, ${candidate.state}
+        : ${body}`,
       };
 
       // Attempt to send the email
@@ -186,7 +188,10 @@ export async function POST(request: Request) {
         await transporter.sendMail(mailOptions);
       } catch (emailError: unknown) {
         if (emailError instanceof Error) {
-          console.error("Error sending notification email:", emailError.message);
+          console.error(
+            "Error sending notification email:",
+            emailError.message
+          );
         } else {
           console.error("Error sending notification email:", emailError);
         }
