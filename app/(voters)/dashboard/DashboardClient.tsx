@@ -2,7 +2,7 @@
 
 import { Button } from "@/components/ui/button";
 import { Decimal } from "@prisma/client/runtime/library";
-import router from "next/router";
+import Link from "next/link";
 
 type Donation = {
   id: number;
@@ -36,15 +36,21 @@ const DashboardPageClient = ({ user, data }: Props) => {
   const stats = [
     {
       label: "Total Contributions",
-      value: `$${data.totalDonations.toFixed(2)}`,
+      value: `$${data.totalDonations.toLocaleString(undefined, {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+      })}`,
     },
     {
       label: "Candidates Supported",
-      value: `${data.totalCandidatesSupported}`,
+      value: `${data.totalCandidatesSupported.toLocaleString()}`,
     },
     {
       label: "Local Impact Score",
-      value: `${(data.totalDonations * 0.01).toFixed(2)}%`,
+      value: `${(data.totalDonations * 0.01).toLocaleString(undefined, {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+      })}%`,
     },
   ];
 
@@ -95,8 +101,12 @@ const DashboardPageClient = ({ user, data }: Props) => {
                   {donation.candidate.name}
                 </h3>
                 <p className="text-gray-600 text-sm mb-2">
-                  Contributed ${Number(donation.amount).toFixed(2)} to{" "}
-                  {donation.candidate.position} in {donation.candidate.city},{" "}
+                  Contributed $
+                  {Number(donation.amount).toLocaleString(undefined, {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2,
+                  })}{" "}
+                  to {donation.candidate.position} in {donation.candidate.city},{" "}
                   {donation.candidate.state}.
                 </p>
                 <p className="text-gray-500 text-xs mb-4">
@@ -107,13 +117,13 @@ const DashboardPageClient = ({ user, data }: Props) => {
                       ).toLocaleDateString()}`
                     : "Pending"}
                 </p>
-                <Button
-                  variant="purple"
-                  onClick={() =>
-                    router.push(`/candidate/${donation.candidate.slug}`)
-                  }
-                >
-                  Visit Campaign
+                <Button variant="purple">
+                  <Link
+                    href={`/candidate/${donation.candidate.slug}`}
+                    className="block"
+                  >
+                    Visit Campaign
+                  </Link>
                 </Button>
               </div>
             ))

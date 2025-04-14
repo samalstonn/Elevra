@@ -7,7 +7,6 @@ export default async function DashboardPage() {
   if (!user?.id) {
     return null;
   }
-
   const res = await fetch(
     `${process.env.NEXT_PUBLIC_APP_URL}/api/candidate/donations?clerkUserId=${user.id}`
   )
@@ -19,7 +18,7 @@ export default async function DashboardPage() {
     })
     .catch((error) => {
       console.error("Error fetching donations:", error);
-      return { totalDonations: 0, totalCandidatesSupported: 0, donations: [] };
+      return { totalDonations: 0, totalDonationsNumber: 0, donations: [] };
     });
 
   return (
