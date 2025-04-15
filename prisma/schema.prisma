@@ -36,8 +36,11 @@ model Candidate {
   additionalNotes String?
   city            String?
   linkedin        String?
+  email           String?
+  phone           String?
   photo           String?
   position        String
+  votinglink      String?
   sources         String[]
   verified        Boolean                @default(false)
   state           String?

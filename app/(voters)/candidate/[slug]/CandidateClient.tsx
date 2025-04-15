@@ -14,6 +14,7 @@ import {
   FaQuestionCircle,
   FaDonate,
 } from "react-icons/fa";
+import { MdHowToVote } from "react-icons/md";
 import { Edit } from "lucide-react"; // Icons
 import { Button } from "../../../../components/ui/button";
 import { Candidate, Election } from "@prisma/client";
@@ -225,6 +226,22 @@ export default function CandidateClient({
                 <Edit className="mr-2 h-4 w-4" /> Edit Profile
               </Link>
             </Button>
+          ) : null}
+          {candidate.votinglink ? (
+            <Link href={candidate.votinglink} passHref target="_blank">
+              <Button
+                asChild
+                variant="purple"
+                size="xl"
+                className="flex items-center gap-2"
+                rel="noopener noreferrer"
+              >
+                <span className="flex items-center gap-2">
+                  <MdHowToVote />
+                  <span>Vote</span>
+                </span>
+              </Button>
+            </Link>
           ) : null}
           <Link href={`/candidate/${candidate.slug}/donate`} passHref>
             <Button

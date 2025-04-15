@@ -45,6 +45,11 @@ const profileSchema = z.object({
     .url({ message: "Please enter a valid LinkedIn URL." })
     .optional()
     .or(z.literal("")),
+  votinglink: z
+    .string()
+    .url({ message: "Please enter a valid voting link URL." })
+    .optional()
+    .or(z.literal("")),
   city: z.string().min(1, { message: "City is required." }),
   state: z.string().min(2, { message: "State is required." }), // Assuming 2-letter state code
   // Define as non-optional array - this is the key change
@@ -118,6 +123,7 @@ export function ProfileForm({
       bio: candidateData.bio || "",
       website: candidateData.website || "",
       linkedin: candidateData.linkedin || "",
+      votinglink: candidateData.votinglink || "",
       city: candidateData.city || "",
       state: candidateData.state || "",
       // This is required by the ProfileFormData type
@@ -160,6 +166,7 @@ export function ProfileForm({
       bio: candidateData.bio || "",
       website: candidateData.website || "",
       linkedin: candidateData.linkedin || "",
+      votinglink: candidateData.votinglink || "",
       city: candidateData.city || "",
       state: candidateData.state || "",
       // Always provide an array
@@ -595,6 +602,21 @@ export function ProfileForm({
                 </p>
               )}
             </div>
+          </div>
+          <div>
+            <Label htmlFor="votinglink">Voting Link (Optional)</Label>
+            <br />
+            <Input
+              id="votinglink"
+              type="url"
+              {...register("votinglink")}
+              placeholder="https://..."
+            />
+            {errors.votinglink && (
+              <p className="text-xs text-red-600 mt-1">
+                {errors.votinglink.message}
+              </p>
+            )}
           </div>
 
           {/* Additional Notes */}

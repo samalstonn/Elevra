@@ -15,6 +15,7 @@ export type CandidateDashboardData = Pick<
   | "bio"
   | "website"
   | "linkedin"
+  | "votinglink"
   | "additionalNotes"
   | "city"
   | "state"
