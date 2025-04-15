@@ -260,7 +260,7 @@ export default function ElectionResultsClient({
                 >
                   <div className="flex-1">
                     <CandidateSection
-                      candidates={elec.candidates}
+                      candidates={[...elec.candidates].sort((a, b) => (b.verified ? 1 : 0) - (a.verified ? 1 : 0))}
                       election={elec}
                       fallbackElections={[]}
                     />
