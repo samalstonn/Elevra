@@ -11,6 +11,7 @@ import {
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { Eye, Edit, Mail, HandCoins } from "lucide-react"; // Icons
+import { FaShare } from "react-icons/fa"; // Importing FaShare
 import { useAuth } from "@clerk/nextjs";
 import { Candidate } from "@prisma/client";
 // import AnalyticsChart from "@/components/AnalyticsChart";
@@ -161,12 +162,35 @@ export default function OverviewPage() {
               <Edit className="mr-2 h-4 w-4" /> Edit Profile
             </Link>
           </Button>
-          <Button variant="outline" asChild>
+          <Button variant="purple" asChild>
             <Link
               href={candidate ? `/candidate/${candidate.slug}` : "/candidates"}
             >
               <Eye className="mr-2 h-4 w-4" /> View Public Profile
             </Link>
+          </Button>
+          <Button
+            variant="purple"
+            onClick={async () => {
+              if (!candidate) return;
+
+              const url = `${window.location.origin}/candidate/${candidate.slug}`;
+              if (navigator.share) {
+                try {
+                  await navigator.share({
+                    title: `Check out ${candidate.name}'s campaign on Elevra!`,
+                    url,
+                  });
+                } catch (error) {
+                  console.error("Error sharing:", error);
+                }
+              } else {
+                navigator.clipboard.writeText(url);
+                alert("Profile link copied to clipboard!");
+              }
+            }}
+          >
+            <FaShare className="mr-2 h-4 w-4" /> Share My Profile
           </Button>
           {/* <Button variant="outline" asChild>
             <Link href="/candidates/candidate-dashboard/analytics">

@@ -23,6 +23,7 @@ export type CandidateDashboardData = Pick<
   | "photoUrl" // Assuming you add photoUrl to Candidate model like Vendor
   | "status"
   | "electionId"
+  | "slug"
   // Add any other fields relevant to the dashboard view
 > & {
   election?: Pick<PrismaElection, "id" | "position" | "date"> | null; // Optional election details
@@ -30,7 +31,7 @@ export type CandidateDashboardData = Pick<
   // subscriptionTier?: string;
 };
 
-// types for Analytics data points and Mailing Lists 
+// types for Analytics data points and Mailing Lists
 export interface AnalyticsStat {
   label: string;
   value: string | number;
