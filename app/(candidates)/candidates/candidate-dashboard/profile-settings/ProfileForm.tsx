@@ -54,8 +54,9 @@ const profileSchema = z.object({
   state: z.string().min(2, { message: "State is required." }), // Assuming 2-letter state code
   // Define as non-optional array - this is the key change
   policies: z
-    .array(z.string().min(1, { message: "Policy cannot be empty" }))
-    .max(5, { message: "Maximum 5 policies allowed." }),
+    .array(z.string().min(0, { message: "Policy cannot be empty" }))
+    .max(5, { message: "Maximum 5 policies allowed." })
+    .optional(),
   additionalNotes: z
     .string()
     .max(500, { message: "Notes cannot exceed 500 characters." })
@@ -309,7 +310,7 @@ export function ProfileForm({
           candidateId: candidateData.id,
           ...data,
           // Ensure policies is an array of non-empty strings
-          policies: data.policies.filter((policy) => policy.trim() !== ""),
+          policies: (data.policies || []).filter((policy) => policy.trim() !== ""),
           electionId: data.electionId ? Number(data.electionId) : null,
         }),
       });
@@ -543,7 +544,7 @@ export function ProfileForm({
                 <Textarea
                   id="policies"
                   rows={5}
-                  value={field.value.join("\n")}
+                  value={(field.value || []).join("\n")}
                   onChange={(e) => {
                     const valueText = e.target.value;
                     // Split by newlines and filter out empty lines
@@ -634,7 +635,7 @@ export function ProfileForm({
             )}
           </div>
 
-          {/* Submit Button */}
+          {/* Submit and Public Profile Button */}
           <div className="flex justify-end gap-3 items-center">
             <Button variant="purple" asChild>
               <a
