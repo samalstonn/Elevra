@@ -169,6 +169,11 @@ export default function CandidateClient({
           <p className="text-sm font-medium text-gray-600">
             {candidate.position}
           </p>
+          {candidate.city && candidate.state ? (
+            <p className="text-sm font-medium text-gray-500">
+              {candidate.city}, {candidate.state}
+            </p>
+          ) : null}
         </div>
 
         {/* Social Links Inline */}
