@@ -13,6 +13,7 @@ import {
   FaChevronUp,
   FaQuestionCircle,
   FaDonate,
+  FaShare,
 } from "react-icons/fa";
 import { MdHowToVote } from "react-icons/md";
 import { Edit } from "lucide-react"; // Icons
@@ -256,6 +257,27 @@ export default function CandidateClient({
               </span>
             </Button>
           </Link>
+          <Button
+            variant="purple"
+            onClick={async () => {
+              const url = `${window.location.origin}/candidate/${candidate.slug}`;
+              if (navigator.share) {
+                try {
+                  await navigator.share({
+                    title: `Check out ${candidate.name}'s campaign on Elevra!`,
+                    url,
+                  });
+                } catch (error) {
+                  console.error("Error sharing:", error);
+                }
+              } else {
+                navigator.clipboard.writeText(url);
+                alert("Profile link copied to clipboard!");
+              }
+            }}
+          >
+            <FaShare className="mr-2 h-4 w-4" /> Share My Profile
+          </Button>
           {!verified && (
             <Button
               variant="purple"
@@ -351,8 +373,13 @@ export default function CandidateClient({
                         height={50}
                       />
                       <div className="flex-1">
-                        <h3 className="font-medium text-gray-900">
+                        <h3 className="font-medium text-gray-900 flex items-center gap-2">
                           {relatedCandidate.name}
+                          {relatedCandidate.verified ? (
+                            <FaCheckCircle className="text-blue-500" />
+                          ) : (
+                            <FaCheckCircle className="text-gray-400" />
+                          )}
                         </h3>
                         <p className="text-xs text-gray-600">
                           {relatedCandidate.position}
@@ -421,8 +448,13 @@ export default function CandidateClient({
                         height={40}
                       />
                       <div className="flex flex-col">
-                        <span className="text-sm font-semibold text-gray-900">
+                        <span className="text-sm font-semibold text-gray-900 flex items-center gap-2">
                           {rc.name}
+                          {rc.verified ? (
+                            <FaCheckCircle className="text-blue-500" />
+                          ) : (
+                            <FaCheckCircle className="text-gray-400" />
+                          )}
                         </span>
                         <p className="text-xs text-gray-600">{rc.position}</p>
                         <span className="text-xs text-purple-600 line-clamp-1">

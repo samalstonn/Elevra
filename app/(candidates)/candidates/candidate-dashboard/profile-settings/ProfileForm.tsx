@@ -34,7 +34,7 @@ const profileSchema = z.object({
   bio: z
     .string()
     .min(10, { message: "Bio must be at least 10 characters." })
-    .max(1000, { message: "Bio cannot exceed 1000 characters." }),
+    .max(10000, { message: "Bio cannot exceed 10000 characters." }),
   website: z
     .string()
     .url({ message: "Please enter a valid URL." })
@@ -635,7 +635,16 @@ export function ProfileForm({
           </div>
 
           {/* Submit Button */}
-          <div className="flex justify-end">
+          <div className="flex justify-end gap-3 items-center">
+            <Button variant="purple" asChild>
+              <a
+                href={`/candidate/${candidateData.slug}`}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                View Public Profile
+              </a>
+            </Button>
             <Button type="submit" disabled={isSubmitting}>
               {isSubmitting && (
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
