@@ -301,7 +301,8 @@ function CandidateVerificationForm() {
                     htmlFor="position"
                     className="block text-sm font-medium text-gray-700 mb-1"
                   >
-                    Position Running For*
+                    Current Position* (Eg. Running for Mayor, Incumbent Mayor,
+                    Business Owner, etc.)
                   </label>
                   <input
                     type="text"

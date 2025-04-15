@@ -6,7 +6,11 @@ dotenv.config();
 const prisma = new PrismaClient();
 
 async function main() {
-  const validationRequests = await prisma.userValidationRequest.findMany();
+  const validationRequests = await prisma.userValidationRequest.findMany({
+    where: {
+      status: "PENDING" as SubmissionStatus,
+    },
+  });
 
   for (const request of validationRequests) {
     const candidate = await prisma.candidate.findUnique({
@@ -46,6 +50,17 @@ async function main() {
 
     console.log(
       `Updated candidate ${updatedCandidate.name} (ID ${updatedCandidate.id})`
+    );
+
+    // Update the validation request status
+    await prisma.userValidationRequest.update({
+      where: { id: request.id },
+      data: {
+        status: SubmissionStatus.APPROVED,
+      },
+    });
+    console.log(
+      `Updated validation request ${request.id} to APPROVED for candidate ${updatedCandidate.name}`
     );
 
     // Send confirmation email
