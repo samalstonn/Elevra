@@ -361,7 +361,7 @@ export default function CandidateClient({
                 size="sm"
                 className="w-full mt-4 text-purple-600 border-purple-300 hover:bg-purple-50"
                 onClick={() => {
-                  if (candidate.city && candidate.state) {
+                  if (election.city && election.state) {
                     router.push(
                       `/results?city=${election?.city}&state=${election?.state}`
                     );

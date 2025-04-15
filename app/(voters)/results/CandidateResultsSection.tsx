@@ -6,7 +6,7 @@ import { Candidate, Election } from "@prisma/client";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { CandidateImage } from "@/components/CandidateImage"; // Adjust the path as needed
-import { FaUserPlus, FaDonate } from "react-icons/fa"; // Import icons from react-icons
+import { FaUserPlus, FaDonate, FaCheckCircle } from "react-icons/fa"; // Import icons from react-icons
 import { useRouter } from "next/navigation";
 
 interface CandidateSectionProps {
@@ -255,9 +255,14 @@ export default function CandidateSection({
                         width={64}
                         height={64}
                       />
-                      <h2 className="text-xl font-semibold text-gray-900 mt-2 line-clamp-2">
+                        <h2 className="text-xl font-semibold text-gray-900 mt-2 line-clamp-2 flex items-center">
                         {candidate.name}
-                      </h2>
+                        {candidate.verified ? (
+                          <FaCheckCircle className="text-blue-500 ml-1 inline" />
+                        ) : (
+                          <FaCheckCircle className="text-gray-400 ml-1 inline" />
+                        )}
+                        </h2>
                       <p className="w-[85%] text-purple-700 text-sm ">
                         {candidate.position}
                       </p>
