@@ -104,6 +104,7 @@ model UserValidationRequest {
   additionalInfo String?
   city           String
   state          String
+  status         SubmissionStatus @default(PENDING)
   candidateId    Int
   clerkUserId    String   @unique
   electionId     Int

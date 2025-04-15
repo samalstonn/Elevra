@@ -87,8 +87,8 @@ const DashboardPageClient = ({ user, data }: Props) => {
             <div className="p-6 bg-gray-100 border rounded-xl shadow-md">
               <h3 className="text-xl font-bold mb-2">No Donations Found</h3>
               <p className="text-gray-600 text-sm mb-4">
-                Support Candidates and campaigns by donating to their causes.
-                Your contributions make a difference in local elections.
+                Support candidates and campaigns by donating to their causes.
+                Your contributions make a huge difference in local elections!
               </p>
             </div>
           ) : (
@@ -130,6 +130,14 @@ const DashboardPageClient = ({ user, data }: Props) => {
           )}
         </div>
       </section>
+      <div className="mt-12 flex items-center justify-center gap-4">
+        <p className="text-sm text-gray-600">In the wrong place?</p>
+        <Button asChild variant="purple">
+          <Link href="/candidates/candidate-dashboard">
+            Go to Candidate Dashboard
+          </Link>
+        </Button>
+      </div>
     </div>
   );
 };
