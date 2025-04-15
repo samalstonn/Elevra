@@ -50,7 +50,7 @@ model Candidate {
   election        Election?              @relation(fields: [electionId], references: [id])
   Testimonial     Testimonial[]
   Vendors         Vendor[]               @relation("CandidateToVendor")
-  slug            String?                @unique
+  slug            String                 @unique
   hidden          Boolean                @default(false)
   profileViews    CandidateProfileView[]
   donationCount   Int                    @default(0)
