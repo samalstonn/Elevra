@@ -54,8 +54,9 @@ const profileSchema = z.object({
   state: z.string().min(2, { message: "State is required." }), // Assuming 2-letter state code
   // Define as non-optional array - this is the key change
   policies: z
-    .array(z.string().min(1, { message: "Policy cannot be empty" }))
-    .max(5, { message: "Maximum 5 policies allowed." }),
+    .array(z.string().min(0, { message: "Policy cannot be empty" }))
+    .max(5, { message: "Maximum 5 policies allowed." })
+    .optional(),
   additionalNotes: z
     .string()
     .max(500, { message: "Notes cannot exceed 500 characters." })
@@ -634,7 +635,7 @@ export function ProfileForm({
             )}
           </div>
 
-          {/* Submit Button */}
+          {/* Submit and Public Profile Button */}
           <div className="flex justify-end gap-3 items-center">
             <Button variant="purple" asChild>
               <a
