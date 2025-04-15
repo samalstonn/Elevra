@@ -259,6 +259,7 @@ export default function CandidateClient({
           </Link>
           <Button
             variant="purple"
+            className="flex items-center gap-2"
             onClick={async () => {
               const url = `${window.location.origin}/candidate/${candidate.slug}`;
               if (navigator.share) {
@@ -276,7 +277,7 @@ export default function CandidateClient({
               }
             }}
           >
-            <FaShare className="mr-2 h-4 w-4" /> Share My Profile
+            <FaShare /> Share Profile
           </Button>
           {!verified && (
             <Button
