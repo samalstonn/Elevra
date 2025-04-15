@@ -1,4 +1,9 @@
-import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
+import {
+  clerkClient,
+  clerkMiddleware,
+  createRouteMatcher,
+} from "@clerk/nextjs/server";
+import { m } from "framer-motion";
 import { NextResponse } from "next/server";
 
 // Define protected routes
@@ -13,12 +18,6 @@ const isPrivateRoute = createRouteMatcher([
 export default clerkMiddleware(async (auth, req) => {
   const { userId, sessionClaims } = await auth();
 
-  // Special case for admin-debug and setup-admin
-  // if (req.nextUrl.pathname === '/admin-debug' ||
-  //     req.nextUrl.pathname === '/setup-admin') {
-  //   return NextResponse.next();
-  // }
-
   // Protect private routes - require authentication
   if (isPrivateRoute(req)) {
     if (!userId) {
@@ -27,47 +26,20 @@ export default clerkMiddleware(async (auth, req) => {
       return NextResponse.redirect(signInUrl);
     }
 
-    // Get user type from metadata
-    const metadata =
-      (sessionClaims?.metadata as { userType?: string; isAdmin?: boolean }) ||
-      {};
-    const isAdmin = metadata.isAdmin === true;
+    const client = await clerkClient();
 
-    // Protect admin routes - only for admin users
-    // But skip the protection check for the debug and setup pages
-    if (
-      req.nextUrl.pathname.startsWith("/admin") &&
-      req.nextUrl.pathname !== "/admin-debug" &&
-      req.nextUrl.pathname !== "/setup-admin" &&
-      !isAdmin
-    ) {
-      return NextResponse.redirect(new URL("/", req.url));
+    const user = await client.users.getUser(userId);
+
+    const isAdmin = user.privateMetadata?.isAdmin;
+
+    if (!isAdmin) {
+      // redirect to homepage
+      const homeUrl = new URL("/", req.url);
+      return NextResponse.redirect(homeUrl);
     }
+
+    return NextResponse.next();
   }
-
-  // Post-authentication redirection based on user type
-  if (userId && req.nextUrl.pathname === "/") {
-    const metadata =
-      (sessionClaims?.metadata as { userType?: string; isAdmin?: boolean }) ||
-      {};
-    const userType = metadata.userType;
-    const isAdmin = metadata.isAdmin === true;
-
-    // Redirect admin users to admin dashboard
-    if (isAdmin) {
-      return NextResponse.redirect(new URL("/admin", req.url));
-    }
-
-    if (userType === "candidate") {
-      return NextResponse.redirect(new URL("/candidate-dashboard", req.url));
-    }
-
-    if (userType === "vendor") {
-      return NextResponse.redirect(new URL("/vendor-dashboard", req.url));
-    }
-  }
-
-  return NextResponse.next();
 });
 
 export const config = {
