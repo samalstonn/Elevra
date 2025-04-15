@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { CandidateImage } from "@/components/CandidateImage"; // Adjust the path as needed
 import { FaUserPlus, FaDonate, FaCheckCircle } from "react-icons/fa"; // Import icons from react-icons
 import { useRouter } from "next/navigation";
+import { MdHowToVote } from "react-icons/md";
 
 interface CandidateSectionProps {
   candidates: Candidate[];
@@ -255,14 +256,14 @@ export default function CandidateSection({
                         width={64}
                         height={64}
                       />
-                        <h2 className="text-xl font-semibold text-gray-900 mt-2 line-clamp-2 flex items-center">
+                      <h2 className="text-xl font-semibold text-gray-900 mt-2 line-clamp-2 flex items-center">
                         {candidate.name}
                         {candidate.verified ? (
                           <FaCheckCircle className="text-blue-500 ml-1 inline" />
                         ) : (
                           <FaCheckCircle className="text-gray-400 ml-1 inline" />
                         )}
-                        </h2>
+                      </h2>
                       <p className="w-[85%] text-purple-700 text-sm ">
                         {candidate.position}
                       </p>
@@ -281,10 +282,28 @@ export default function CandidateSection({
                       </p>
 
                       <motion.div
-                        className="absolute bottom-0"
+                        className="absolute bottom-0 mt-4 flex justify-start gap-4"
                         whileHover={{ scale: 1.02 }}
                         transition={{ duration: 0.2, ease: "easeOut" }}
                       >
+                        {candidate.votinglink ? (
+                          <Button
+                            variant="purple"
+                            size="sm"
+                            className="flex items-center gap-2 mt-2"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              if (candidate.votinglink) {
+                                window.open(candidate.votinglink, "_blank");
+                              }
+                            }}
+                          >
+                            <span className="flex items-center gap-2">
+                              <MdHowToVote />
+                              <span>Vote</span>
+                            </span>
+                          </Button>
+                        ) : null}
                         <Button
                           variant="green"
                           size="sm"
