@@ -310,7 +310,7 @@ export function ProfileForm({
           candidateId: candidateData.id,
           ...data,
           // Ensure policies is an array of non-empty strings
-          policies: data.policies.filter((policy) => policy.trim() !== ""),
+          policies: (data.policies || []).filter((policy) => policy.trim() !== ""),
           electionId: data.electionId ? Number(data.electionId) : null,
         }),
       });
@@ -544,7 +544,7 @@ export function ProfileForm({
                 <Textarea
                   id="policies"
                   rows={5}
-                  value={field.value.join("\n")}
+                  value={(field.value || []).join("\n")}
                   onChange={(e) => {
                     const valueText = e.target.value;
                     // Split by newlines and filter out empty lines
