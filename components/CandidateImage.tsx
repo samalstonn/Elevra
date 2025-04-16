@@ -30,7 +30,8 @@ export function CandidateImage({
       alt={`${name}'s photo`}
       width={width}
       height={height}
-      className="rounded-full object-cover shadow-md"
+      className="rounded-full object-cover shadow-md aspect-square"
+      style={{ aspectRatio: "1 / 1" }}
       onError={() => {
         if (imgSrc !== "/default-profile.png") {
           setImgSrc("/default-profile.png");
