@@ -27,9 +27,20 @@ export default function ElectionResultsClient({
 
   const sortedElections = useMemo(() => {
     if (Array.isArray(elections)) {
-      return [...elections].sort(
-        (a, b) => b.candidates.length - a.candidates.length
-      );
+      const sorted = [...elections];
+      sorted.sort((a, b) => {
+        const aHasVerified = a.candidates.some((c) => c.verified);
+        const bHasVerified = b.candidates.some((c) => c.verified);
+
+        if (aHasVerified && !bHasVerified) {
+          return -1;
+        }
+        if (!aHasVerified && bHasVerified) {
+          return 1;
+        }
+        return b.candidates.length - a.candidates.length;
+      });
+      return sorted;
     }
     return [];
   }, [elections]);
@@ -75,13 +86,13 @@ export default function ElectionResultsClient({
 
   const scrollLeft = () => {
     if (scrollRef.current) {
-      scrollRef.current.scrollBy({ left: -200, behavior: "smooth" });
+      scrollRef.current.scrollBy({ left: -1000, behavior: "smooth" });
     }
   };
 
   const scrollRight = () => {
     if (scrollRef.current) {
-      scrollRef.current.scrollBy({ left: 200, behavior: "smooth" });
+      scrollRef.current.scrollBy({ left: 1000, behavior: "smooth" });
     }
   };
 
@@ -258,13 +269,19 @@ export default function ElectionResultsClient({
                   variants={fadeInVariants}
                   className="mt-4 flex flex-col"
                 >
-                  <div className="flex-1">
+                    <div className="flex-1">
                     <CandidateSection
-                      candidates={[...elec.candidates].sort((a, b) => (b.verified ? 1 : 0) - (a.verified ? 1 : 0))}
+                      candidates={[...elec.candidates].sort((a, b) => {
+                      if (a.verified && !b.verified) return -1;
+                      if (!a.verified && b.verified) return 1;
+                      if (a.photo && !b.photo) return -1;
+                      if (!a.photo && b.photo) return 1;
+                      return 0;
+                      })}
                       election={elec}
                       fallbackElections={[]}
                     />
-                  </div>
+                    </div>
                 </motion.div>
               ))}
             </motion.div>
