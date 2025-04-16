@@ -412,9 +412,9 @@ export default function CandidateClient({
                 className="w-full mt-4 text-purple-600 border-purple-300 hover:bg-purple-50"
                 onClick={() => {
                   if (election.city && election.state) {
-                    router.push(
-                      `/results?city=${election?.city}&state=${election?.state}`
-                    );
+                  router.push(
+                    `/results?city=${election?.city}&state=${election?.state}&electionID=${election?.id}`
+                  );
                   } else {
                     console.error("Candidate city or state is missing.");
                   }

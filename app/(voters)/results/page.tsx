@@ -12,6 +12,7 @@ function ElectionResultsPage() {
   const searchParams = useSearchParams();
   const city = searchParams.get("city");
   const state = searchParams.get("state");
+  const electionID = searchParams.get("electionID");
 
   const { data: elections, isLoading } = useSWR<ElectionWithCandidates[]>(
     `/api/elections?city=${city}&state=${state}`,
@@ -25,7 +26,7 @@ function ElectionResultsPage() {
           Loading...
         </div>
       ) : (
-        <ElectionResultsClient elections={elections || []} />
+        <ElectionResultsClient elections={elections || []} initialElectionID={electionID} />
       )}
     </>
   );

@@ -19,8 +19,10 @@ export type ElectionWithCandidates = Election & { candidates: Candidate[] };
 
 export default function ElectionResultsClient({
   elections,
+  initialElectionID,
 }: {
   elections: ElectionWithCandidates[];
+  initialElectionID?: string | null;
 }) {
   // Check if there are any elections
   const hasElections = Array.isArray(elections) && elections.length > 0;
@@ -56,10 +58,15 @@ export default function ElectionResultsClient({
 
   // Set default selected election when data loads
   useEffect(() => {
-    if (sortedElections.length > 0 && !selectedElection) {
-      setSelectedElection(sortedElections[0].id);
+    if (sortedElections.length > 0) {
+      const parsedID = parseInt(initialElectionID || "", 10);
+      if (!isNaN(parsedID) && sortedElections.some((e) => e.id === parsedID)) {
+        setSelectedElection(parsedID);
+      } else {
+        setSelectedElection(sortedElections[0].id);
+      }
     }
-  }, [sortedElections, selectedElection]);
+  }, [sortedElections, initialElectionID]);
 
   // Track the selected election filter: default to first filter
   const filteredElections = selectedElection
