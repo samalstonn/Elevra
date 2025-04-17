@@ -1,0 +1,4 @@
+-- AlterTable
+ALTER TABLE "UserValidationRequest" ALTER COLUMN "phone" DROP NOT NULL,
+ALTER COLUMN "city" DROP NOT NULL,
+ALTER COLUMN "state" DROP NOT NULL;

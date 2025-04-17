@@ -50,11 +50,11 @@ const profileSchema = z.object({
     .url({ message: "Please enter a valid voting link URL." })
     .optional()
     .or(z.literal("")),
-  city: z.string().min(1, { message: "City is required." }),
-  state: z.string().min(2, { message: "State is required." }), // Assuming 2-letter state code
+  city: z.string().optional(),
+  state: z.string().optional(), // Assuming 2-letter state code
   // Define as non-optional array - this is the key change (removed)
   policies: z
-    .array(z.string().min(0, { message: "Policy cannot be empty" }))
+    .array(z.string())
     .max(5, { message: "Maximum 5 policies allowed." })
     .optional(),
   additionalNotes: z
@@ -309,6 +309,9 @@ export function ProfileForm({
         body: JSON.stringify({
           candidateId: candidateData.id,
           ...data,
+          // Default missing location to empty strings
+          city: data.city ?? "",
+          state: data.state ?? "",
           // Ensure policies is an array of non-empty strings
           policies: (data.policies || []).filter(
             (policy) => policy.trim() !== ""
@@ -364,7 +367,7 @@ export function ProfileForm({
               )}
             </div>
             <div>
-              <Label htmlFor="party">Party Affiliation</Label>
+              <Label htmlFor="party">Party/Major Affiliation</Label>
               <br />
               <Input id="party" {...register("party")} />
               {errors.party && (
@@ -474,7 +477,7 @@ export function ProfileForm({
               htmlFor="electionId"
               className="block text-sm font-medium text-gray-700"
             >
-              Link to Election (Optional)
+              Election (Optional)
             </Label>
             <p className="text-sm text-gray-500">
               If you&rsquo;re not currently running in an election, leave this

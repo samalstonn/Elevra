@@ -96,14 +96,14 @@ model UserValidationRequest {
   id             Int              @id @default(autoincrement())
   fullName       String
   email          String
-  phone          String
+  phone          String?
   position       String
   website        String?
   linkedin       String?
   twitter        String?
   additionalInfo String?
-  city           String
-  state          String
+  city           String?
+  state          String?
   status         SubmissionStatus @default(PENDING)
   candidateId    Int
   clerkUserId    String           @unique

@@ -1,3 +1,4 @@
+// /candidate/[slug]/CandidateClient.tsx
 "use client";
 
 import { useSearchParams, useRouter } from "next/navigation";
@@ -17,7 +18,7 @@ import {
 } from "react-icons/fa";
 import { MdHowToVote } from "react-icons/md";
 import { Edit } from "lucide-react"; // Icons
-import { Button } from "../../../../components/ui/button";
+import { Button } from "@/components/ui/button";
 import { Candidate, Election } from "@prisma/client";
 import { normalizeSlug } from "@/lib/functions";
 
@@ -40,6 +41,7 @@ export default function CandidateClient({
     type: "success" | "error";
     message: string;
   } | null>(null);
+
   const [hovered, setHovered] = useState<string | null>(null);
   const [dropdownHovered, setDropdownHovered] = useState(false);
   const [hydrated, setHydrated] = useState(false);
@@ -288,11 +290,11 @@ export default function CandidateClient({
             <Button
               variant="purple"
               size="xl"
-              onClick={() =>
+              onClick={() => {
                 router.push(
                   `/candidate/verify?candidate=${candidate.slug}&candidateID=${candidate.id}&electionID=${election?.id}`
-                )
-              }
+                );
+              }}
               className="flex items-center gap-2"
             >
               <FaCheckCircle />
@@ -412,9 +414,9 @@ export default function CandidateClient({
                 className="w-full mt-4 text-purple-600 border-purple-300 hover:bg-purple-50"
                 onClick={() => {
                   if (election.city && election.state) {
-                  router.push(
-                    `/results?city=${election?.city}&state=${election?.state}&electionID=${election?.id}`
-                  );
+                    router.push(
+                      `/results?city=${election?.city}&state=${election?.state}&electionID=${election?.id}`
+                    );
                   } else {
                     console.error("Candidate city or state is missing.");
                   }
