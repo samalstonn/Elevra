@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, Suspense } from "react";
+import { useState, Suspense, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useUser } from "@clerk/nextjs";
 import Link from "next/link";
@@ -11,7 +11,11 @@ import {
   FaIdCard,
   FaInfoCircle,
 } from "react-icons/fa";
-import { Button } from "../../../../components/ui/button";
+import { Button } from "@/components/ui/button";
+import { getLocationSuggestions, normalizeLocation } from "@/lib/geocoding";
+import { debounce } from "@/lib/debounce";
+import { AutocompleteSuggestion } from "@/types/geocoding";
+import { Candidate } from "@prisma/client";
 
 interface FormErrors {
   fullName?: string;
@@ -28,7 +32,62 @@ function CandidateVerificationForm() {
   const searchParams = useSearchParams();
   const candidateId = searchParams.get("candidateID");
   const electionId = searchParams.get("electionID");
+  const [locationInput, setLocationInput] = useState("");
+  const [locationSuggestions, setLocationSuggestions] = useState<
+    AutocompleteSuggestion[]
+  >([]);
+  const [isLoadingLocations, setIsLoadingLocations] = useState(false);
+  const [showLocationSuggestions, setShowLocationSuggestions] = useState(false);
+  const [locationErrors, setLocationErrors] = useState<string | null>(null);
   const { user } = useUser();
+
+  const handleLocationInputChange = (
+    e: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    const value = e.target.value;
+    setLocationInput(value);
+    if (value.trim().length >= 2) {
+      setIsLoadingLocations(true);
+      setShowLocationSuggestions(true);
+      debouncedFetchLocationSuggestions(value);
+    } else {
+      setShowLocationSuggestions(false);
+      setLocationSuggestions([]);
+    }
+  };
+
+  const debouncedFetchLocationSuggestions = debounce(async (input: string) => {
+    try {
+      const results = await getLocationSuggestions(input);
+      setLocationSuggestions(results);
+    } catch (error) {
+      console.error("Error fetching suggestions:", error);
+    } finally {
+      setIsLoadingLocations(false);
+    }
+  }, 500);
+
+  const handleSelectLocationSuggestion = async (
+    suggestion: AutocompleteSuggestion
+  ) => {
+    setLocationInput(suggestion.placeName);
+    setShowLocationSuggestions(false);
+    try {
+      const normalized = await normalizeLocation(suggestion.placeName);
+      if ("city" in normalized && "state" in normalized) {
+        setFormData((prev) => ({
+          ...prev,
+          city: normalized.city,
+          state: normalized.state,
+        }));
+        setLocationErrors(null); // clear error if successful
+      }
+    } catch (error) {
+      setLocationErrors(
+        "Could not determine city and state from this location"
+      );
+    }
+  };
 
   const [formData, setFormData] = useState<{
     fullName: string;
@@ -53,6 +112,44 @@ function CandidateVerificationForm() {
     city: "",
     state: "",
   });
+
+  useEffect(() => {
+    if (user) {
+      setFormData((prevData) => ({
+        ...prevData,
+
+        email:
+          user.emailAddresses && user.emailAddresses.length > 0
+            ? user.emailAddresses[0].emailAddress
+            : prevData.email,
+      }));
+    }
+  }, [user]);
+
+  useEffect(() => {
+    const slug = searchParams.get("candidate");
+    if (slug) {
+      (async () => {
+        try {
+          const res = await fetch(`/api/candidate/slug?slug=${slug}`);
+          if (res.ok) {
+            const candidateData: Candidate = await res.json();
+            setFormData((prevData) => ({
+              ...prevData,
+              position: candidateData.position || prevData.position,
+              fullName: candidateData.name
+                ? candidateData.name
+                : prevData.fullName,
+            }));
+          } else {
+            console.error(`Failed to fetch candidate data: ${res.status}`);
+          }
+        } catch (error) {
+          console.error("Error fetching candidate data:", error);
+        }
+      })();
+    }
+  }, [searchParams]);
 
   const [errors, setErrors] = useState<FormErrors>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -89,12 +186,12 @@ function CandidateVerificationForm() {
     } else if (!/^\S+@\S+\.\S+$/.test(formData.email)) {
       newErrors.email = "Valid email is required";
     }
-    if (!formData.phone.trim()) newErrors.phone = "Phone number is required";
     if (!formData.position.trim()) newErrors.position = "Position is required";
     if (!formData.agreeToTerms)
       newErrors.agreeToTerms = "You must agree to the terms";
-    if (!formData.city.trim()) newErrors.city = "City is required";
-    if (!formData.state.trim()) newErrors.state = "State is required";
+    if (!formData.city || !formData.state) {
+      newErrors.city = "Please select a valid hometown with city and state";
+    }
 
     return newErrors;
   };
@@ -279,7 +376,7 @@ function CandidateVerificationForm() {
                     htmlFor="phone"
                     className="block text-sm font-medium text-gray-700 mb-1"
                   >
-                    Phone Number*
+                    Phone Number
                   </label>
                   <input
                     type="tel"
@@ -353,46 +450,44 @@ function CandidateVerificationForm() {
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
                   />
                 </div>
-                <div>
-                  <label
-                    htmlFor="city"
-                    className="block text-sm font-medium text-gray-700 mb-1"
-                  >
-                    City*
+                <div className="space-y-2 relative">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Hometown City, State*
                   </label>
                   <input
                     type="text"
-                    id="city"
-                    name="city"
-                    value={formData.city}
-                    onChange={handleInputChange}
+                    value={locationInput}
+                    onChange={handleLocationInputChange}
+                    placeholder="Enter your hometown (e.g., Ithaca, NY)"
                     className={`w-full px-3 py-2 border ${
-                      errors.city ? "border-red-500" : "border-gray-300"
+                      errors.city || locationErrors ? "border-red-500" : "border-gray-300"
                     } rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500`}
                   />
-                  {errors.city && (
-                    <p className="mt-1 text-sm text-red-600">{errors.city}</p>
+                  {(errors.city || locationErrors) && (
+                    <p className="text-xs text-red-600 mt-1">
+                      {errors.city || locationErrors}
+                    </p>
                   )}
-                </div>
-                <div>
-                  <label
-                    htmlFor="state"
-                    className="block text-sm font-medium text-gray-700 mb-1"
-                  >
-                    State*
-                  </label>
-                  <input
-                    type="text"
-                    id="state"
-                    name="state"
-                    value={formData.state}
-                    onChange={handleInputChange}
-                    className={`w-full px-3 py-2 border ${
-                      errors.state ? "border-red-500" : "border-gray-300"
-                    } rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500`}
-                  />
-                  {errors.state && (
-                    <p className="mt-1 text-sm text-red-600">{errors.state}</p>
+                  {showLocationSuggestions && locationSuggestions.length > 0 && (
+                    <ul className="absolute z-10 w-full mt-1 bg-white shadow-lg rounded-md border border-gray-200 max-h-60 overflow-y-auto">
+                      {locationSuggestions.map((s, index) => (
+                        <li
+                          key={index}
+                          className="px-4 py-2 hover:bg-purple-50 cursor-pointer"
+                          onClick={() => handleSelectLocationSuggestion(s)}
+                        >
+                          {s.placeName}
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                  {formData.city && formData.state && (
+                    <div className="flex items-center text-sm text-gray-600 mt-1">
+                      <FaCheckCircle className="text-green-500 mr-2" />
+                      <span>
+                        Selected: {formData.city}, {formData.state}
+                      </span>
+                    </div>
                   )}
                 </div>
               </div>

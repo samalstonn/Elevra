@@ -17,7 +17,7 @@ import {
 } from "react-icons/fa";
 import { MdHowToVote } from "react-icons/md";
 import { Edit } from "lucide-react"; // Icons
-import { Button } from "../../../../components/ui/button";
+import { Button } from "@/components/ui/button";
 import { Candidate, Election } from "@prisma/client";
 import { normalizeSlug } from "@/lib/functions";
 
