@@ -13,7 +13,7 @@ import {
   FaIdCard,
 } from "react-icons/fa";
 import { Button } from "@/components/ui/button";
-import { getLocationSuggestions, normalizeLocation } from "@/lib/geocoding";
+import { getLocationSuggestions } from "@/lib/geocoding";
 import { debounce } from "@/lib/debounce";
 import { AutocompleteSuggestion } from "@/types/geocoding";
 import { Candidate } from "@prisma/client";
@@ -69,24 +69,24 @@ export default function CandidateVerificationForm() {
   }, 500);
 
   const handleSelectLocationSuggestion = async (
-  suggestion: AutocompleteSuggestion
-) => {
-  setLocationInput(`${suggestion.city}, ${suggestion.state}`);
-  setShowLocationSuggestions(false);
-  if (suggestion.city && suggestion.state) {
-    setFormData(prev => ({
-      ...prev,
-      // suggestion.city and suggestion.state are guaranteed non-null here
-      city: suggestion.city!,
-      state: suggestion.state!,
-    }));
-    setLocationErrors(null);
-  } else {
-    setLocationErrors(
-      "Could not determine city and state from this location"
-    );
-  }
-};
+    suggestion: AutocompleteSuggestion
+  ) => {
+    setLocationInput(`${suggestion.city}, ${suggestion.state}`);
+    setShowLocationSuggestions(false);
+    if (suggestion.city && suggestion.state) {
+      setFormData((prev) => ({
+        ...prev,
+        // suggestion.city and suggestion.state are guaranteed non-null here
+        city: suggestion.city!,
+        state: suggestion.state!,
+      }));
+      setLocationErrors(null);
+    } else {
+      setLocationErrors(
+        "Could not determine city and state from this location"
+      );
+    }
+  };
 
   const [formData, setFormData] = useState<{
     fullName: string;

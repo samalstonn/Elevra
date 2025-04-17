@@ -11,7 +11,7 @@ export default function VerifySuccessClient() {
         <div className="flex flex-col items-center mb-8">
           <FaCheckCircle className="text-green-500 text-5xl mb-4" />
           <h1 className="text-3xl font-extrabold text-gray-800 mb-2">
-            🎉 You're Verified on Elevra!
+            🎉 You&apos;re Verified on Elevra!
           </h1>
           <p className="text-md text-gray-600 max-w-lg">
             Your candidate profile is live and discoverable to voters. Welcome
@@ -21,7 +21,7 @@ export default function VerifySuccessClient() {
 
         <div className="text-left text-gray-700 text-sm space-y-5 mb-8 leading-relaxed">
           <p>
-            ✏️ <strong>Edit your candidate profile</strong> to ensure it's
+            ✏️ <strong>Edit your candidate profile</strong> to ensure it&apos;s
             up-to-date and compelling.
             <br />
             <strong>Add a voting link</strong> to enable a prominent{" "}
@@ -41,9 +41,10 @@ export default function VerifySuccessClient() {
           </p>
 
           <p>
-            🙋 We’d love your feedback - reply to your onboarding email or
-            contact us anytime with ideas or questions. We're building Elevra
-            for candidates like you, and your input helps shape the platform.
+            🙋 We&apos;d love your feedback - reply to your onboarding email or
+            contact us anytime with ideas or questions. We&apos;re building
+            Elevra for candidates like you, and your input helps shape the
+            platform.
           </p>
         </div>
 
