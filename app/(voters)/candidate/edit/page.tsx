@@ -7,11 +7,10 @@ import EditCandidateForm from "./EditCandidateForm";
 export default async function EditCandidatePage({
   searchParams,
 }: {
-  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
+  searchParams: { candidateID?: string; electionID?: string };
 }) {
-  const resolvedSearchParams = await searchParams;
-  const candidateID = resolvedSearchParams.candidateID;
-  const electionID = resolvedSearchParams.electionID;
+  const candidateID = searchParams.candidateID;
+  const electionID = searchParams.electionID;
 
   if (!candidateID || !electionID) {
     redirect("/");

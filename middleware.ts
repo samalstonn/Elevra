@@ -8,7 +8,6 @@ import { NextResponse } from "next/server";
 
 // Define protected routes
 const isPrivateRoute = createRouteMatcher([
-  "/candidate/verify(.*)", // Verification page
   "/candidates/candidate-dashboard(.*)", // Candidate dashboard
   "/vendors/vendor-dashboard(.*)", // Vendor dashboard
   "/admin(.*)", // All admin routes
@@ -32,7 +31,7 @@ export default clerkMiddleware(async (auth, req) => {
 
     const isAdmin = user.privateMetadata?.isAdmin;
 
-    if (!isAdmin) {
+    if (req.url.includes("/admin") && !isAdmin) {
       // redirect to homepage
       const homeUrl = new URL("/", req.url);
       return NextResponse.redirect(homeUrl);
