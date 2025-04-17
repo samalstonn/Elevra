@@ -69,26 +69,24 @@ export default function CandidateVerificationForm() {
   }, 500);
 
   const handleSelectLocationSuggestion = async (
-    suggestion: AutocompleteSuggestion
-  ) => {
-    setLocationInput(suggestion.placeName);
-    setShowLocationSuggestions(false);
-    try {
-      const normalized = await normalizeLocation(suggestion.placeName);
-      if ("city" in normalized && "state" in normalized) {
-        setFormData((prev) => ({
-          ...prev,
-          city: normalized.city,
-          state: normalized.state,
-        }));
-        setLocationErrors(null); // clear error if successful
-      }
-    } catch (error) {
-      setLocationErrors(
-        "Could not determine city and state from this location"
-      );
-    }
-  };
+  suggestion: AutocompleteSuggestion
+) => {
+  setLocationInput(`${suggestion.city}, ${suggestion.state}`);
+  setShowLocationSuggestions(false);
+  if (suggestion.city && suggestion.state) {
+    setFormData(prev => ({
+      ...prev,
+      // suggestion.city and suggestion.state are guaranteed non-null here
+      city: suggestion.city!,
+      state: suggestion.state!,
+    }));
+    setLocationErrors(null);
+  } else {
+    setLocationErrors(
+      "Could not determine city and state from this location"
+    );
+  }
+};
 
   const [formData, setFormData] = useState<{
     fullName: string;
