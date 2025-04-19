@@ -7,8 +7,6 @@ import Link from "next/link";
 import { motion } from "framer-motion";
 import { CandidateImage } from "@/components/CandidateImage";
 import {
-  FaGlobe,
-  FaLinkedin,
   FaCheckCircle,
   FaUserPlus,
   FaChevronUp,
@@ -21,6 +19,9 @@ import { Edit } from "lucide-react"; // Icons
 import { Button } from "@/components/ui/button";
 import { Candidate, Election } from "@prisma/client";
 import { normalizeSlug } from "@/lib/functions";
+import { TabButton } from "@/components/ui/tab-button";
+import { EndorsementTab } from "./EndorsementTab";
+import { ContactTab } from "./ContactTab";
 
 type ElectionWithCandidates = Election & { candidates: Candidate[] };
 
@@ -46,6 +47,9 @@ export default function CandidateClient({
   const [dropdownHovered, setDropdownHovered] = useState(false);
   const [hydrated, setHydrated] = useState(false);
   const [showSources, setShowSources] = useState(false);
+  const [activeTab, setActiveTab] = useState<
+    "about" | "endorsements" | "contact"
+  >("about");
 
   const decodedName = candidate.name ? normalizeSlug(candidate.name) : "";
   const relatedCandidates = election?.candidates
@@ -137,210 +141,231 @@ export default function CandidateClient({
       {/* Main candidate profile card */}
       <motion.div className="w-full md:w-2/3 flex flex-col sm:p-6 bg-white">
         {/* Profile Header */}
-        <div className="flex flex-col items-start text-left">
+        <div className="flex flex-row items-start text-left gap-4">
           <CandidateImage
             photo={candidate.photo}
             name={candidate.name}
             width={150}
             height={150}
           />
-          <h1 className="mt-2 text-xl font-bold text-gray-900 flex items-center gap-2 relative">
-            {candidate.name}
-            <div
-              className="relative cursor-pointer"
-              onMouseEnter={() => setHovered(candidate.name)}
-              onMouseLeave={() => setHovered(null)}
-            >
-              {verified ? (
-                <FaCheckCircle className="text-blue-500" />
-              ) : (
-                <FaCheckCircle className="text-gray-400" />
-              )}
-              {hovered === candidate.name && (
-                <div className="absolute bottom-full mb-2 left-1/2 transform -translate-x-1/2 bg-gray-900 text-white text-xs font-medium px-2 py-1 rounded shadow-md whitespace-nowrap z-10">
-                  {verified
-                    ? "This candidate has verified their information"
-                    : "This candidate has not verified their information"}
-                </div>
+          <div>
+            <h1 className="mt-2 text-xl font-bold text-gray-900 flex items-center gap-2 relative">
+              {candidate.name}
+              <div
+                className="relative cursor-pointer"
+                onMouseEnter={() => setHovered(candidate.name)}
+                onMouseLeave={() => setHovered(null)}
+              >
+                {verified ? (
+                  <FaCheckCircle className="text-blue-500" />
+                ) : (
+                  <FaCheckCircle className="text-gray-400" />
+                )}
+                {hovered === candidate.name && (
+                  <div className="absolute bottom-full mb-2 left-1/2 transform -translate-x-1/2 bg-gray-900 text-white text-xs font-medium px-2 py-1 rounded shadow-md whitespace-nowrap z-10">
+                    {verified
+                      ? "This candidate has verified their information"
+                      : "This candidate has not verified their information"}
+                  </div>
+                )}
+              </div>
+            </h1>
+            <p className="text-sm font-semibold text-purple-600">
+              {candidate.party}
+            </p>
+            <p className="text-sm font-medium text-gray-600">
+              {candidate.position}
+            </p>
+            {candidate.city && candidate.state ? (
+              <p className="text-sm font-medium text-gray-500">
+                {candidate.city}, {candidate.state}
+              </p>
+            ) : null}
+            <div className="mt-4 flex justify-start gap-4">
+              {isEditable ? (
+                <Button variant="outline" asChild>
+                  <Link href="/candidates/candidate-dashboard/profile-settings">
+                    <Edit className="mr-2 h-4 w-4" /> Edit Profile
+                  </Link>
+                </Button>
+              ) : null}
+              {candidate.votinglink ? (
+                <Link href={candidate.votinglink} passHref target="_blank">
+                  <Button
+                    asChild
+                    variant="purple"
+                    size="md"
+                    className="flex items-center gap-2"
+                    rel="noopener noreferrer"
+                  >
+                    <span className="flex items-center gap-2">
+                      <MdHowToVote />
+                      <span>Vote</span>
+                    </span>
+                  </Button>
+                </Link>
+              ) : null}
+              <Link href={`/candidate/${candidate.slug}/donate`} passHref>
+                <Button
+                  asChild
+                  variant="green"
+                  size="md"
+                  className="flex items-center gap-2"
+                >
+                  <span className="flex items-center gap-2">
+                    <FaDonate />
+                    <span>Donate</span>
+                  </span>
+                </Button>
+              </Link>
+              <Button
+                variant="purple"
+                className="flex items-center gap-2"
+                size="md"
+                onClick={async () => {
+                  const url = `${window.location.origin}/candidate/${candidate.slug}`;
+                  if (navigator.share) {
+                    try {
+                      await navigator.share({
+                        title: `Check out ${candidate.name}'s campaign on Elevra!`,
+                        url,
+                      });
+                    } catch (error) {
+                      console.error("Error sharing:", error);
+                    }
+                  } else {
+                    navigator.clipboard.writeText(url);
+                    alert("Profile link copied to clipboard!");
+                  }
+                }}
+              >
+                <FaShare /> Share Profile
+              </Button>
+              {!verified && (
+                <Button
+                  variant="purple"
+                  size="md"
+                  onClick={() => {
+                    router.push(
+                      `/candidate/verify?candidate=${candidate.slug}&candidateID=${candidate.id}&electionID=${election?.id}`
+                    );
+                  }}
+                  className="flex items-center gap-2"
+                >
+                  <FaCheckCircle />
+                  <span>This is me</span>
+                </Button>
               )}
             </div>
-          </h1>
-          <p className="text-sm font-semibold text-purple-600">
-            {candidate.party}
-          </p>
-          <p className="text-sm font-medium text-gray-600">
-            {candidate.position}
-          </p>
-          {candidate.city && candidate.state ? (
-            <p className="text-sm font-medium text-gray-500">
-              {candidate.city}, {candidate.state}
-            </p>
-          ) : null}
+          </div>
         </div>
-
-        {/* Social Links Inline */}
-        <div className="mt-2 flex items-start gap-3">
-          {candidate.website && (
-            <a
-              href={candidate.website}
-              target="_blank"
-              className="text-blue-600 hover:text-blue-800 text-lg"
-            >
-              <FaGlobe />
-            </a>
-          )}
-          {candidate.linkedin && (
-            <a
-              href={candidate.linkedin}
-              className="text-blue-600 hover:text-blue-800 text-xl"
-            >
-              <FaLinkedin />
-            </a>
-          )}
+        <div className="inline-flex space-x-4 mb-4 justify-center w-full">
+          <TabButton
+            active={activeTab === "about"}
+            onClick={() => setActiveTab("about")}
+          >
+            About
+          </TabButton>
+          <TabButton
+            active={activeTab === "endorsements"}
+            onClick={() => setActiveTab("endorsements")}
+          >
+            Endorsements
+          </TabButton>
+          <TabButton
+            active={activeTab === "contact"}
+            onClick={() => setActiveTab("contact")}
+          >
+            Contact
+          </TabButton>
         </div>
+        {/* Candidate Tabs */}
 
-        {/* Candidate Bio */}
-        <div className="mt-4 text-sm text-gray-700">
-          <p>{candidate.bio}</p>
-        </div>
-
-        {/* Policies */}
-        <div className="mt-4">
-          <h2 className="text-lg font-semibold text-gray-900">Policies</h2>
-          <ul className="space-y-1 text-sm">
-            {candidate.policies.map((policy: string, index: number) => (
-              <li key={index}>
-                <span className="font-semibold">{policy}</span>
-              </li>
-            ))}
-          </ul>
-        </div>
-
-        {/* Additional Notes */}
-        {candidate.additionalNotes && (
+        {activeTab === "about" && (
+          <>
+            <div className="mt-4 text-sm text-gray-700">
+              <h2 className="text-lg font-semibold text-gray-900">Biography</h2>
+              <p>{candidate.bio}</p>
+            </div>
+            {candidate.policies && candidate.policies.length > 0 && (
+              <div className="mt-4">
+                <h2 className="text-lg font-semibold text-gray-900">
+                  Policies
+                </h2>
+                <ul className="space-y-1 text-sm">
+                  {candidate.policies.map((policy, index) => (
+                    <li key={index}>
+                      <span className="">{policy}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+            {/* Additional Notes */}
+            {candidate.additionalNotes && (
+              <div className="mt-4">
+                <h2 className="text-lg font-semibold text-gray-900">
+                  Additional Notes
+                </h2>
+                <p className="text-sm">{candidate.additionalNotes}</p>
+              </div>
+            )}
+            {/* Sources Dropdown Section */}
+            {!verified && candidate.sources && candidate.sources.length > 0 && (
+              <div className="mt-6">
+                <div className="relative inline-block">
+                  <button
+                    onClick={() => setShowSources(!showSources)}
+                    className="flex items-center text-sm text-purple-600 hover:underline focus:outline-none"
+                  >
+                    <FaChevronUp
+                      className={`transition-transform duration-200 ${
+                        showSources ? "rotate-180" : "rotate-90"
+                      }`}
+                    />
+                    <span className="ml-2">Sources</span>
+                  </button>
+                  <div className="absolute -top-0 -right-5">
+                    <FaQuestionCircle
+                      className="text-purple-600 cursor-pointer"
+                      onMouseEnter={() => setDropdownHovered(true)}
+                      onMouseLeave={() => setDropdownHovered(false)}
+                    />
+                  </div>
+                  {dropdownHovered && (
+                    <div className="absolute left-2/3 transform -translate-x-1/2 -top-10 bg-gray-900 text-white text-xs px-2 py-1 rounded shadow whitespace-nowrap">
+                      Since this candidate is not yet verified, the Elevra team{" "}
+                      <br /> compiled relevant information using these sources.
+                    </div>
+                  )}
+                </div>
+                {showSources && (
+                  <ul className="list-disc list-inside text-sm text-purple-600 mt-2">
+                    {candidate.sources.map((source: string, index: number) => (
+                      <li key={index}>
+                        <span className="cursor-default">{source}</span>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            )}
+          </>
+        )}
+        {activeTab === "endorsements" && (
           <div className="mt-4">
-            <h2 className="text-lg font-semibold text-gray-900">
-              Additional Notes
-            </h2>
-            <p className="text-sm">{candidate.additionalNotes}</p>
+            <EndorsementTab candidateId={candidate.id} />
           </div>
         )}
-
-        {/* Buttons */}
-        <div className="mt-4 flex justify-start gap-4">
-          {isEditable ? (
-            <Button variant="outline" asChild>
-              <Link href="/candidates/candidate-dashboard/profile-settings">
-                <Edit className="mr-2 h-4 w-4" /> Edit Profile
-              </Link>
-            </Button>
-          ) : null}
-          {candidate.votinglink ? (
-            <Link href={candidate.votinglink} passHref target="_blank">
-              <Button
-                asChild
-                variant="purple"
-                size="xl"
-                className="flex items-center gap-2"
-                rel="noopener noreferrer"
-              >
-                <span className="flex items-center gap-2">
-                  <MdHowToVote />
-                  <span>Vote</span>
-                </span>
-              </Button>
-            </Link>
-          ) : null}
-          <Link href={`/candidate/${candidate.slug}/donate`} passHref>
-            <Button
-              asChild
-              variant="green"
-              size="xl"
-              className="flex items-center gap-2"
-            >
-              <span className="flex items-center gap-2">
-                <FaDonate />
-                <span>Donate</span>
-              </span>
-            </Button>
-          </Link>
-          <Button
-            variant="purple"
-            className="flex items-center gap-2"
-            onClick={async () => {
-              const url = `${window.location.origin}/candidate/${candidate.slug}`;
-              if (navigator.share) {
-                try {
-                  await navigator.share({
-                    title: `Check out ${candidate.name}'s campaign on Elevra!`,
-                    url,
-                  });
-                } catch (error) {
-                  console.error("Error sharing:", error);
-                }
-              } else {
-                navigator.clipboard.writeText(url);
-                alert("Profile link copied to clipboard!");
-              }
-            }}
-          >
-            <FaShare /> Share Profile
-          </Button>
-          {!verified && (
-            <Button
-              variant="purple"
-              size="xl"
-              onClick={() => {
-                router.push(
-                  `/candidate/verify?candidate=${candidate.slug}&candidateID=${candidate.id}&electionID=${election?.id}`
-                );
-              }}
-              className="flex items-center gap-2"
-            >
-              <FaCheckCircle />
-              <span>This is me</span>
-            </Button>
-          )}
-        </div>
-
-        {/* Sources Dropdown Section */}
-        {!verified && candidate.sources && candidate.sources.length > 0 && (
-          <div className="mt-6">
-            <div className="relative inline-block">
-              <button
-                onClick={() => setShowSources(!showSources)}
-                className="flex items-center text-sm text-purple-600 hover:underline focus:outline-none"
-              >
-                <FaChevronUp
-                  className={`transition-transform duration-200 ${
-                    showSources ? "rotate-180" : "rotate-90"
-                  }`}
-                />
-                <span className="ml-2">Sources</span>
-              </button>
-              <div className="absolute -top-0 -right-5">
-                <FaQuestionCircle
-                  className="text-purple-600 cursor-pointer"
-                  onMouseEnter={() => setDropdownHovered(true)}
-                  onMouseLeave={() => setDropdownHovered(false)}
-                />
-              </div>
-              {dropdownHovered && (
-                <div className="absolute left-2/3 transform -translate-x-1/2 -top-10 bg-gray-900 text-white text-xs px-2 py-1 rounded shadow whitespace-nowrap">
-                  Since this candidate is not yet verified, the Elevra team{" "}
-                  <br /> compiled relevant information using these sources.
-                </div>
-              )}
-            </div>
-            {showSources && (
-              <ul className="list-disc list-inside text-sm text-purple-600 mt-2">
-                {candidate.sources.map((source: string, index: number) => (
-                  <li key={index}>
-                    <span className="cursor-default">{source}</span>
-                  </li>
-                ))}
-              </ul>
-            )}
+        {activeTab === "contact" && (
+          <div className="mt-4">
+            <ContactTab
+              email={candidate.email}
+              website={candidate.website}
+              phone={candidate.phone}
+              linkedin={candidate.linkedin}
+              votinglink={candidate.votinglink}
+            />
           </div>
         )}
       </motion.div>
