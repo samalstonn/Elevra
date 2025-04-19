@@ -16,12 +16,16 @@ export function EndorsementTab({ candidateId }: EndorsementTabProps) {
   const [error, setError] = useState<string | null>(null);
   const [showForm, setShowForm] = useState(false);
   const router = useRouter();
-  const { isSignedIn } = useUser();
+  const { isSignedIn, user } = useUser();
 
   useEffect(() => {
     async function fetchEndorsements() {
       try {
-        const res = await fetch(`/api/candidates/${candidateId}/endorsements`);
+        const res = await fetch(`/api/candidates/${candidateId}/endorsements`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ candidateId }),
+        });
         if (!res.ok) throw new Error("Failed to fetch endorsements");
         const data: Endorsement[] = await res.json();
         setEndorsements(data);
@@ -46,7 +50,7 @@ export function EndorsementTab({ candidateId }: EndorsementTabProps) {
         ) : (
           <div className="space-y-6">
             {endorsements.map((endorsement) => (
-              <div key={endorsement.id} className="p-4 border rounded-md">
+              <div key={endorsement.id} className="p-4">
                 <h3 className="font-semibold text-gray-900">
                   {endorsement.endorserName}
                 </h3>
@@ -87,12 +91,13 @@ export function EndorsementTab({ candidateId }: EndorsementTabProps) {
                     const form = e.currentTarget as HTMLFormElement;
                     const formData = new FormData(form);
                     const payload = {
+                      candidateId,
                       endorserName: formData.get("endorserName"),
                       relationshipDescription: formData.get(
                         "relationshipDescription"
                       ),
                       content: formData.get("content"),
-                      clerkUserId: "userId", // Replace with actual userId from context
+                      clerkUserId: user?.id || "", // Use actual userId from context
                     };
                     const res = await fetch(
                       `/api/candidates/${candidateId}/endorsements`,
@@ -118,6 +123,7 @@ export function EndorsementTab({ candidateId }: EndorsementTabProps) {
                     <input
                       name="endorserName"
                       required
+                      defaultValue={user?.fullName || ""}
                       className="mt-1 block w-full border p-2 rounded"
                     />
                   </div>
@@ -127,6 +133,7 @@ export function EndorsementTab({ candidateId }: EndorsementTabProps) {
                     </label>
                     <input
                       name="relationshipDescription"
+                      required
                       className="mt-1 block w-full border p-2 rounded"
                     />
                   </div>
@@ -141,7 +148,10 @@ export function EndorsementTab({ candidateId }: EndorsementTabProps) {
                     />
                   </div>
                   <div className="mt-6 flex justify-end space-x-2">
-                    <Button variant="outline" onClick={() => setShowForm(false)}>
+                    <Button
+                      variant="outline"
+                      onClick={() => setShowForm(false)}
+                    >
                       Cancel
                     </Button>
                     <Button type="submit">Submit</Button>

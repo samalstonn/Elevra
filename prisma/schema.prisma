@@ -1,6 +1,6 @@
 generator client {
   provider = "prisma-client-js"
-  output = "./node_modules/@prisma/client"
+  output   = "./node_modules/@prisma/client"
 }
 
 datasource db {
@@ -56,7 +56,7 @@ model Candidate {
   Vendors         Vendor[]               @relation("CandidateToVendor")
   slug            String                 @unique
   hidden          Boolean                @default(false)
-  endorsements     Endorsement[]
+  endorsements    Endorsement[]
   profileViews    CandidateProfileView[]
   donationCount   Int                    @default(0)
 }
@@ -218,15 +218,15 @@ model CandidateProfileView {
 }
 
 model Endorsement {
-  id            Int       @id @default(autoincrement())
-  candidate     Candidate @relation(fields: [candidateId], references: [id])
-  candidateId   Int
-  endorserName  String
+  id                      Int       @id @default(autoincrement())
+  candidate               Candidate @relation(fields: [candidateId], references: [id])
+  candidateId             Int
+  endorserName            String
   relationshipDescription String? // description of the relationship between the endorser and the candidate
-  clerkUserId        String    // Clerk user ID of the signed-in endorser
-  content       String
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  clerkUserId             String // Clerk user ID of the signed-in endorser
+  content                 String
+  createdAt               DateTime  @default(now())
+  updatedAt               DateTime  @updatedAt
 }
 
 enum ElectionType {

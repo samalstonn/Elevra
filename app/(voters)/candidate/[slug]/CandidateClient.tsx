@@ -23,6 +23,7 @@ import { Candidate, Election } from "@prisma/client";
 import { normalizeSlug } from "@/lib/functions";
 import { TabButton } from "@/components/ui/tab-button";
 import { EndorsementTab } from "./EndorsementTab";
+import { ContactTab } from "./ContactTab";
 
 type ElectionWithCandidates = Election & { candidates: Candidate[] };
 
@@ -285,6 +286,7 @@ export default function CandidateClient({
         {activeTab === "about" && (
           <>
             <div className="mt-4 text-sm text-gray-700">
+              <h2 className="text-lg font-semibold text-gray-900">Biography</h2>
               <p>{candidate.bio}</p>
             </div>
             {candidate.policies && candidate.policies.length > 0 && (
@@ -358,8 +360,14 @@ export default function CandidateClient({
           </div>
         )}
         {activeTab === "contact" && (
-          <div className="mt-4 text-sm text-gray-700">
-            {/* Contact content goes here */}
+          <div className="mt-4">
+            <ContactTab
+              email={candidate.email}
+              website={candidate.website}
+              phone={candidate.phone}
+              linkedin={candidate.linkedin}
+              votinglink={candidate.votinglink}
+            />
           </div>
         )}
       </motion.div>
