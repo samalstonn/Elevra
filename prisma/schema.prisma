@@ -223,7 +223,7 @@ model Endorsement {
   candidateId   Int
   endorserName  String
   relationshipDescription String? // description of the relationship between the endorser and the candidate
-  endorserType        EndorserType @default(ANONYMOUS) // type of endorser: candidate, user, or anonymous
+  clerkUserId        String    // Clerk user ID of the signed-in endorser
   content       String
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
@@ -254,9 +254,4 @@ enum ServiceCategoryType {
   PHYSICAL_MEDIA
   CONSULTING_PR
   OTHER
-}
-enum EndorserType {
-  CANDIDATE
-  USER
-  ANONYMOUS
 }

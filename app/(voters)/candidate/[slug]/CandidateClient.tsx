@@ -22,6 +22,7 @@ import { Button } from "@/components/ui/button";
 import { Candidate, Election } from "@prisma/client";
 import { normalizeSlug } from "@/lib/functions";
 import { TabButton } from "@/components/ui/tab-button";
+import { EndorsementTab } from "./EndorsementTab";
 
 type ElectionWithCandidates = Election & { candidates: Candidate[] };
 
@@ -259,7 +260,7 @@ export default function CandidateClient({
             </div>
           </div>
         </div>
-        <div className="inline-flex space-x-4 border-b border-gray-200 mb-4">
+        <div className="inline-flex space-x-4 mb-4 justify-center w-full">
           <TabButton
             active={activeTab === "about"}
             onClick={() => setActiveTab("about")}
@@ -286,16 +287,20 @@ export default function CandidateClient({
             <div className="mt-4 text-sm text-gray-700">
               <p>{candidate.bio}</p>
             </div>
-            <div className="mt-4">
-              <h2 className="text-lg font-semibold text-gray-900">Policies</h2>
-              <ul className="space-y-1 text-sm">
-                {candidate.policies.map((policy, index) => (
-                  <li key={index}>
-                    <span className="">{policy}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
+            {candidate.policies && candidate.policies.length > 0 && (
+              <div className="mt-4">
+                <h2 className="text-lg font-semibold text-gray-900">
+                  Policies
+                </h2>
+                <ul className="space-y-1 text-sm">
+                  {candidate.policies.map((policy, index) => (
+                    <li key={index}>
+                      <span className="">{policy}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
             {/* Additional Notes */}
             {candidate.additionalNotes && (
               <div className="mt-4">
@@ -305,57 +310,56 @@ export default function CandidateClient({
                 <p className="text-sm">{candidate.additionalNotes}</p>
               </div>
             )}
+            {/* Sources Dropdown Section */}
+            {!verified && candidate.sources && candidate.sources.length > 0 && (
+              <div className="mt-6">
+                <div className="relative inline-block">
+                  <button
+                    onClick={() => setShowSources(!showSources)}
+                    className="flex items-center text-sm text-purple-600 hover:underline focus:outline-none"
+                  >
+                    <FaChevronUp
+                      className={`transition-transform duration-200 ${
+                        showSources ? "rotate-180" : "rotate-90"
+                      }`}
+                    />
+                    <span className="ml-2">Sources</span>
+                  </button>
+                  <div className="absolute -top-0 -right-5">
+                    <FaQuestionCircle
+                      className="text-purple-600 cursor-pointer"
+                      onMouseEnter={() => setDropdownHovered(true)}
+                      onMouseLeave={() => setDropdownHovered(false)}
+                    />
+                  </div>
+                  {dropdownHovered && (
+                    <div className="absolute left-2/3 transform -translate-x-1/2 -top-10 bg-gray-900 text-white text-xs px-2 py-1 rounded shadow whitespace-nowrap">
+                      Since this candidate is not yet verified, the Elevra team{" "}
+                      <br /> compiled relevant information using these sources.
+                    </div>
+                  )}
+                </div>
+                {showSources && (
+                  <ul className="list-disc list-inside text-sm text-purple-600 mt-2">
+                    {candidate.sources.map((source: string, index: number) => (
+                      <li key={index}>
+                        <span className="cursor-default">{source}</span>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            )}
           </>
         )}
         {activeTab === "endorsements" && (
-          <div className="mt-4 text-sm text-gray-700">
-            {/* Endorsements content goes here */}
+          <div className="mt-4">
+            <EndorsementTab candidateId={candidate.id} />
           </div>
         )}
         {activeTab === "contact" && (
           <div className="mt-4 text-sm text-gray-700">
             {/* Contact content goes here */}
-          </div>
-        )}
-
-        {/* Sources Dropdown Section */}
-        {!verified && candidate.sources && candidate.sources.length > 0 && (
-          <div className="mt-6">
-            <div className="relative inline-block">
-              <button
-                onClick={() => setShowSources(!showSources)}
-                className="flex items-center text-sm text-purple-600 hover:underline focus:outline-none"
-              >
-                <FaChevronUp
-                  className={`transition-transform duration-200 ${
-                    showSources ? "rotate-180" : "rotate-90"
-                  }`}
-                />
-                <span className="ml-2">Sources</span>
-              </button>
-              <div className="absolute -top-0 -right-5">
-                <FaQuestionCircle
-                  className="text-purple-600 cursor-pointer"
-                  onMouseEnter={() => setDropdownHovered(true)}
-                  onMouseLeave={() => setDropdownHovered(false)}
-                />
-              </div>
-              {dropdownHovered && (
-                <div className="absolute left-2/3 transform -translate-x-1/2 -top-10 bg-gray-900 text-white text-xs px-2 py-1 rounded shadow whitespace-nowrap">
-                  Since this candidate is not yet verified, the Elevra team{" "}
-                  <br /> compiled relevant information using these sources.
-                </div>
-              )}
-            </div>
-            {showSources && (
-              <ul className="list-disc list-inside text-sm text-purple-600 mt-2">
-                {candidate.sources.map((source: string, index: number) => (
-                  <li key={index}>
-                    <span className="cursor-default">{source}</span>
-                  </li>
-                ))}
-              </ul>
-            )}
           </div>
         )}
       </motion.div>
