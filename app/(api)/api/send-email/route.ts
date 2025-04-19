@@ -16,11 +16,8 @@ export async function POST(req: NextRequest) {
     });
 
     return NextResponse.json({ success: true });
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error("Postmark Error:", err);
-    return NextResponse.json(
-      { success: false, error: err.message },
-      { status: 500 }
-    );
+    return NextResponse.json({ success: false, error: err }, { status: 500 });
   }
 }

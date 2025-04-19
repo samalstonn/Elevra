@@ -7,8 +7,6 @@ import Link from "next/link";
 import { motion } from "framer-motion";
 import { CandidateImage } from "@/components/CandidateImage";
 import {
-  FaGlobe,
-  FaLinkedin,
   FaCheckCircle,
   FaUserPlus,
   FaChevronUp,

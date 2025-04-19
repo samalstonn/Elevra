@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Endorsement } from "@prisma/client";
 import { Button } from "@/components/ui/button";
 import { useUser, SignInButton } from "@clerk/nextjs";
+import { UserCircle2 } from "lucide-react";
 
 interface EndorsementTabProps {
   candidateId: number;
@@ -29,8 +30,8 @@ export function EndorsementTab({ candidateId }: EndorsementTabProps) {
         if (!res.ok) throw new Error("Failed to fetch endorsements");
         const data: Endorsement[] = await res.json();
         setEndorsements(data);
-      } catch (err: any) {
-        setError(err.message);
+      } catch (err: unknown) {
+        setError(err as string);
       } finally {
         setLoading(false);
       }
@@ -50,19 +51,27 @@ export function EndorsementTab({ candidateId }: EndorsementTabProps) {
         ) : (
           <div className="space-y-6">
             {endorsements.map((endorsement) => (
-              <div key={endorsement.id} className="p-4">
-                <h3 className="font-semibold text-gray-900">
-                  {endorsement.endorserName}
-                </h3>
-                {endorsement.relationshipDescription && (
-                  <p className="text-sm text-gray-500">
-                    {endorsement.relationshipDescription}
+              <div
+                key={endorsement.id}
+                className="p-4 rounded-xl flex items-start gap-4 bg-white "
+              >
+                <div className="rounded-full bg-gray-100 p-2">
+                  <UserCircle2 className="h-6 w-6 text-gray-500" />
+                </div>
+                <div className="flex-1">
+                  <h3 className="font-semibold text-gray-900">
+                    {endorsement.endorserName}
+                  </h3>
+                  {endorsement.relationshipDescription && (
+                    <p className="text-sm text-gray-500">
+                      {endorsement.relationshipDescription}
+                    </p>
+                  )}
+                  <p className="mt-2 text-gray-700">{endorsement.content}</p>
+                  <p className="mt-2 text-xs text-gray-400">
+                    {new Date(endorsement.createdAt).toLocaleDateString()}
                   </p>
-                )}
-                <p className="mt-2 text-gray-700">{endorsement.content}</p>
-                <p className="mt-2 text-xs text-gray-400">
-                  {new Date(endorsement.createdAt).toLocaleDateString()}
-                </p>
+                </div>
               </div>
             ))}
           </div>
