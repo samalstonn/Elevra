@@ -2,7 +2,7 @@
 
 import React from "react";
 import { StatsCard } from "@/components/StatsCard";
-import { UserButton } from "@clerk/nextjs";
+import { UserCircle2 } from "lucide-react";
 
 export type Endorsement = {
   id: number;
@@ -10,7 +10,6 @@ export type Endorsement = {
   relationshipDescription?: string | null;
   content: string;
   createdAt: string;
-  clerkUserId: string;
 };
 
 type Props = {
@@ -66,13 +65,9 @@ export default function CandidateEndorsementsClient({ user, data }: Props) {
                 key={endorsement.id}
                 className="p-4 border border-gray-200 rounded-xl flex items-start gap-4 bg-white shadow-sm"
               >
-                <UserButton
-                  userId={endorsement.clerkUserId}
-                  appearance={{
-                    userAvatarAvatarBox: { width: 32, height: 32 },
-                  }}
-                  className="rounded-full"
-                />
+                <div className="rounded-full bg-gray-100 p-2">
+                  <UserCircle2 className="h-6 w-6 text-gray-500" />
+                </div>
                 <div className="flex-1">
                   <p className="font-medium text-gray-800">
                     {endorsement.endorserName}
