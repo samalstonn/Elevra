@@ -2,22 +2,47 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Endorsement } from "@prisma/client";
 import { Button } from "@/components/ui/button";
 import { useUser, SignInButton } from "@clerk/nextjs";
 import { UserCircle2 } from "lucide-react";
+
+interface EndorsementData {
+  id: number;
+  endorserName: string;
+  relationshipDescription: string | null;
+  content: string;
+  createdAt: string;
+  clerkUserId: string;
+}
 
 interface EndorsementTabProps {
   candidateId: number;
 }
 
 export function EndorsementTab({ candidateId }: EndorsementTabProps) {
-  const [endorsements, setEndorsements] = useState<Endorsement[]>([]);
+  const [endorsements, setEndorsements] = useState<EndorsementData[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showForm, setShowForm] = useState(false);
   const router = useRouter();
   const { isSignedIn, user } = useUser();
+  console.log("User:", user);
+
+  const handleDelete = async (endorsementId: number) => {
+    if (!confirm("Are you sure you want to delete your endorsement?")) return;
+    try {
+      const res = await fetch(`/api/candidates/${candidateId}/endorsements`, {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ endorsementId, clerkUserId: user?.id }),
+      });
+      if (!res.ok) throw new Error("Delete failed");
+      setEndorsements((prev) => prev.filter((e) => e.id !== endorsementId));
+    } catch (err) {
+      console.error(err);
+      alert("Failed to delete endorsement");
+    }
+  };
 
   useEffect(() => {
     async function fetchEndorsements() {
@@ -28,7 +53,7 @@ export function EndorsementTab({ candidateId }: EndorsementTabProps) {
           body: JSON.stringify({ candidateId }),
         });
         if (!res.ok) throw new Error("Failed to fetch endorsements");
-        const data: Endorsement[] = await res.json();
+        const data: EndorsementData[] = await res.json();
         setEndorsements(data);
       } catch (err: unknown) {
         setError(err as string);
@@ -71,6 +96,16 @@ export function EndorsementTab({ candidateId }: EndorsementTabProps) {
                   <p className="mt-2 text-xs text-gray-400">
                     {new Date(endorsement.createdAt).toLocaleDateString()}
                   </p>
+                  {user?.id === endorsement.clerkUserId && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="mt-2"
+                      onClick={() => handleDelete(endorsement.id)}
+                    >
+                      Delete
+                    </Button>
+                  )}
                 </div>
               </div>
             ))}

@@ -1,4 +1,3 @@
-// app/(api)/api/candidate/endorsements/route.ts
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/prisma/prisma";
 
@@ -58,4 +57,23 @@ export async function GET(req: NextRequest) {
       { status: 500 }
     );
   }
+}
+
+export async function DELETE(request: Request) {
+  const { endorsementId, clerkUserId } = await request.json();
+  if (!endorsementId || !clerkUserId) {
+    return NextResponse.json({ error: "Missing fields" }, { status: 400 });
+  }
+  // Verify ownership
+  const existing = await prisma.endorsement.findUnique({
+    where: { id: endorsementId },
+  });
+  if (!existing || existing.clerkUserId !== clerkUserId) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+  await prisma.endorsement.update({
+    where: { id: endorsementId },
+    data: { hidden: true },
+  });
+  return NextResponse.json({ success: true });
 }

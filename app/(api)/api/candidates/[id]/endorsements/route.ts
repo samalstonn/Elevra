@@ -20,7 +20,7 @@ export async function POST(request: Request) {
 
   if (endorserName === undefined) {
     const endorsements = await prisma.endorsement.findMany({
-      where: { candidateId: Number(candidateId) },
+      where: { candidateId: Number(candidateId), hidden: false },
       orderBy: { createdAt: "desc" },
     });
     return NextResponse.json(endorsements);
@@ -57,4 +57,23 @@ export async function POST(request: Request) {
       );
     }
   }
+}
+
+export async function DELETE(request: Request) {
+  const { endorsementId, clerkUserId } = await request.json();
+  if (!endorsementId || !clerkUserId) {
+    return NextResponse.json({ error: "Missing fields" }, { status: 400 });
+  }
+  // Verify ownership
+  const existing = await prisma.endorsement.findUnique({
+    where: { id: endorsementId },
+  });
+  if (!existing || existing.clerkUserId !== clerkUserId) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+  await prisma.endorsement.update({
+    where: { id: endorsementId },
+    data: { hidden: true },
+  });
+  return NextResponse.json({ success: true });
 }
