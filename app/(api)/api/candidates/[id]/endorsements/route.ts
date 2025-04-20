@@ -19,7 +19,7 @@ export async function POST(request: Request) {
   }
 
   if (endorserName === undefined) {
-    const endorsements = await prisma.endorsement.findMany({
+    const endorsements = prisma.endorsement.findMany({
       where: { candidateId: Number(candidateId), hidden: false },
       orderBy: { createdAt: "desc" },
     });

@@ -1,6 +1,13 @@
+// prisma/prisma.ts
 import { PrismaClient } from "@prisma/client";
 
-const prismaClientSingleton = () =>
+declare global {
+  // inform TS that `global.prisma` exists and is a PrismaClient
+  var prisma: PrismaClient | undefined;
+}
+
+const prisma =
+  global.prisma ??
   new PrismaClient({
     datasources: {
       db: {
@@ -12,10 +19,8 @@ const prismaClientSingleton = () =>
     },
   });
 
-const prisma = globalThis.prisma ?? prismaClientSingleton();
-
 if (process.env.NODE_ENV !== "production") {
-  globalThis.prisma = prisma as any;
+  global.prisma = prisma as PrismaClient;
 }
 
 export default prisma;
