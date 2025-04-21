@@ -93,7 +93,7 @@ export function PhotoUploader({
         title: "Upload failed",
         description: e as string,
       });
-      setError(e.message || "Upload failed");
+      setError((e as string) || "Upload failed");
     } finally {
       setUploading(false);
       setFile(null);
