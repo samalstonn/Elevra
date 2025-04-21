@@ -1,36 +1,49 @@
 import CandidateEndorsementsClient from "./EndorsementsClient";
 import { currentUser } from "@clerk/nextjs/server";
+import prisma from "@/prisma/prisma";
 
 export default async function CandidateEndorsementsPage() {
   const user = await currentUser();
   if (!user?.id) return null;
 
-  const res = await fetch(
-    `${process.env.NEXT_PUBLIC_APP_URL}/api/candidate/endorsements?clerkUserId=${user.id}`
-  );
-  if (!res.ok) {
-    console.error("Failed to fetch endorsements:", res.statusText);
+  // Look up this user's candidate record
+  const candidate = await prisma.candidate.findUnique({
+    where: { clerkUserId: user.id },
+    select: { id: true },
+  });
+  if (!candidate) {
+    // No candidate record – render empty state
     return (
       <CandidateEndorsementsClient
         user={{
+          id: user.id,
           firstName: user.firstName,
           username: user.username,
-          imageUrl: user.imageUrl,
+          imageUrl: user.imageUrl || "",
         }}
-        data={{ totalEndorsements: 0, endorsements: [] }}
+        data={{ endorsements: [], totalEndorsements: 0 }}
       />
     );
   }
-  const data = await res.json();
+
+  // Fetch endorsements directly from the database
+  const endorsementsList = await prisma.endorsement.findMany({
+    where: { candidateId: candidate.id, hidden: false },
+    orderBy: { createdAt: "desc" },
+  });
 
   return (
     <CandidateEndorsementsClient
       user={{
+        id: user.id,
         firstName: user.firstName,
         username: user.username,
         imageUrl: user.imageUrl || "",
       }}
-      data={data}
+      data={{
+        endorsements: endorsementsList,
+        totalEndorsements: endorsementsList.length,
+      }}
     />
   );
 }

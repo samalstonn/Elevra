@@ -1,3 +1,5 @@
+// app/(api)/api/candidate/route.ts
+//
 import { NextResponse } from "next/server";
 import prisma from "@/prisma/prisma";
 import { auth } from "@clerk/nextjs/server";

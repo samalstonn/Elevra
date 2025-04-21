@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import { StatsCard } from "@/components/StatsCard";
 import { UserCircle2 } from "lucide-react";
 
@@ -14,6 +14,7 @@ export type Endorsement = {
 
 type Props = {
   user: {
+    id: string;
     firstName: string | null;
     username: string | null;
     imageUrl: string;
@@ -25,10 +26,34 @@ type Props = {
 };
 
 export default function CandidateEndorsementsClient({ user, data }: Props) {
+  const [endorsements, setEndorsements] = useState<Endorsement[]>(
+    data.endorsements
+  );
+  console.log(data.totalEndorsements);
+  const [total, setTotal] = useState<number>(data.totalEndorsements);
+
+  const handleDelete = async (endorsementId: number) => {
+    try {
+      const res = await fetch("/api/endorsement", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ endorsementId, clerkUserId: user.id }),
+      });
+      if (res.ok) {
+        setEndorsements((prev) => prev.filter((e) => e.id !== endorsementId));
+        setTotal((prev) => prev - 1);
+      } else {
+        console.error("Failed to delete endorsement", await res.json());
+      }
+    } catch (err) {
+      console.error("Error deleting endorsement", err);
+    }
+  };
+
   const stats = [
     {
       label: "Total Endorsements Received",
-      value: data.totalEndorsements.toString(),
+      value: total.toString(),
     },
   ];
 
@@ -54,17 +79,24 @@ export default function CandidateEndorsementsClient({ user, data }: Props) {
         <h2 className="text-2xl font-semibold text-gray-900 mb-4">
           Recent Endorsements
         </h2>
-        {data.endorsements.length === 0 ? (
+        {endorsements.length === 0 ? (
           <div className="p-6 border border-gray-200 rounded-xl text-center text-gray-500">
             No endorsements yet.
           </div>
         ) : (
           <ul className="space-y-4">
-            {data.endorsements.map((endorsement) => (
+            {endorsements.map((endorsement) => (
               <li
                 key={endorsement.id}
-                className="p-4 border border-gray-200 rounded-xl flex items-start gap-4 bg-white shadow-sm"
+                className="relative p-4 border border-gray-200 rounded-xl flex items-start gap-4 bg-white shadow-sm"
               >
+                <button
+                  onClick={() => handleDelete(endorsement.id)}
+                  className="absolute top-2 right-2 text-red-500 hover:text-red-700"
+                  aria-label="Delete endorsement"
+                >
+                  &times;
+                </button>
                 <div className="rounded-full bg-gray-100 p-2">
                   <UserCircle2 className="h-6 w-6 text-gray-500" />
                 </div>

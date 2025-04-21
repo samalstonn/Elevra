@@ -1,5 +1,4 @@
-"use client";
-
+import React from "react";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
@@ -31,7 +30,7 @@ export function EndorsementTab({ candidateId }: EndorsementTabProps) {
   const handleDelete = async (endorsementId: number) => {
     if (!confirm("Are you sure you want to delete your endorsement?")) return;
     try {
-      const res = await fetch(`/api/candidates/${candidateId}/endorsements`, {
+      const res = await fetch(`/api/endorsement`, {
         method: "DELETE",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ endorsementId, clerkUserId: user?.id }),
@@ -47,16 +46,25 @@ export function EndorsementTab({ candidateId }: EndorsementTabProps) {
   useEffect(() => {
     async function fetchEndorsements() {
       try {
-        const res = await fetch(`/api/candidates/${candidateId}/endorsements`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ candidateId }),
-        });
+        const res = await fetch(`/api/endorsement?candidateId=${candidateId}`);
+        if (res.status === 404) {
+          // No endorsements found
+          setEndorsements([]);
+          setError(null);
+          return;
+        }
         if (!res.ok) throw new Error("Failed to fetch endorsements");
-        const data: EndorsementData[] = await res.json();
-        setEndorsements(data);
+        const json = await res.json();
+        const list: EndorsementData[] = Array.isArray(json)
+          ? json
+          : json.endorsements ?? [];
+        setEndorsements(list);
       } catch (err: unknown) {
-        setError(err as string);
+        if (err instanceof Error) {
+          setError(err.message);
+        } else {
+          setError(String(err));
+        }
       } finally {
         setLoading(false);
       }
@@ -78,7 +86,7 @@ export function EndorsementTab({ candidateId }: EndorsementTabProps) {
             {endorsements.map((endorsement) => (
               <div
                 key={endorsement.id}
-                className="p-4 rounded-xl flex items-start gap-4 bg-white "
+                className="relative p-4 rounded-xl flex items-start gap-4 bg-white "
               >
                 <div className="rounded-full bg-gray-100 p-2">
                   <UserCircle2 className="h-6 w-6 text-gray-500" />
@@ -97,14 +105,13 @@ export function EndorsementTab({ candidateId }: EndorsementTabProps) {
                     {new Date(endorsement.createdAt).toLocaleDateString()}
                   </p>
                   {user?.id === endorsement.clerkUserId && (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="mt-2"
+                    <button
                       onClick={() => handleDelete(endorsement.id)}
+                      className="absolute top-2 right-2 text-red-500 hover:text-red-700"
+                      aria-label="Delete endorsement"
                     >
-                      Delete
-                    </Button>
+                      &times;
+                    </button>
                   )}
                 </div>
               </div>
@@ -144,7 +151,7 @@ export function EndorsementTab({ candidateId }: EndorsementTabProps) {
                       clerkUserId: user?.id || "", // Use actual userId from context
                     };
                     const res = await fetch(
-                      `/api/candidates/${candidateId}/endorsements`,
+                      `/api/endorsement`,
                       {
                         method: "POST",
                         headers: { "Content-Type": "application/json" },
