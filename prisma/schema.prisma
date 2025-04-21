@@ -20,8 +20,8 @@ model Election {
   positions   Int
   state       String
   type        ElectionType
-  candidates  Candidate[]
   hidden      Boolean      @default(false)
+  candidates  Candidate[]
 }
 
 model Candidate {
@@ -30,66 +30,59 @@ model Candidate {
   policies        String[]
   website         String?
   electionId      Int?
-  photoUrl        String?
   createdAt       DateTime               @default(now())
   updatedAt       DateTime               @updatedAt
   additionalNotes String?
   city            String?
   linkedin        String?
-  email           String?
-  phone           String?
   photo           String?
   position        String
-  votinglink      String?
   sources         String[]
-  verified        Boolean                @default(false)
   state           String?
-  donations       Donation[]
   bio             String                 @default("")
   clerkUserId     String?                @unique
   history         String[]
   id              Int                    @id @default(autoincrement())
   status          SubmissionStatus       @default(PENDING)
+  verified        Boolean                @default(false)
+  photoUrl        String?
+  hidden          Boolean                @default(false)
+  slug            String                 @unique
+  donationCount   Int                    @default(0)
+  email           String?
+  phone           String?
+  votinglink      String?
   election        Election?              @relation(fields: [electionId], references: [id])
+  profileViews    CandidateProfileView[]
+  donations       Donation[]
+  endorsements    Endorsement[]
   Testimonial     Testimonial[]
   Vendors         Vendor[]               @relation("CandidateToVendor")
-  slug            String                 @unique
-  hidden          Boolean                @default(false)
-  profileViews    CandidateProfileView[]
-  donationCount   Int                    @default(0)
 }
 
 model Donation {
-  id        Int              @id @default(autoincrement())
-  amount    Decimal          @db.Decimal(10, 2)
-  createdAt DateTime         @default(now())
-  updatedAt DateTime         @updatedAt
-  status    SubmissionStatus @default(PENDING)
-  paidAt    DateTime?
-
-  // Donor information
-  donorName    String
-  donorEmail   String
-  donorAddress String
-  donorCity    String
-  donorState   String
-  donorZip     String
-  donorPhone   String?
-  clerkUserId  String?
-
-  // Employment information
-  isRetiredOrUnemployed Boolean @default(false)
+  id                    Int              @id @default(autoincrement())
+  amount                Decimal          @db.Decimal(10, 2)
+  createdAt             DateTime         @default(now())
+  updatedAt             DateTime         @updatedAt
+  donorName             String
+  donorEmail            String
+  donorAddress          String
+  donorCity             String
+  donorState            String
+  donorZip              String
+  donorPhone            String?
+  isRetiredOrUnemployed Boolean          @default(false)
   occupation            String?
   employer              String?
-
-  // Transaction details
-  transactionId String?  @unique
-  processingFee Decimal? @db.Decimal(10, 2)
-  coverFee      Boolean  @default(false)
-
-  // Relation to Candidate
-  candidateId Int
-  candidate   Candidate @relation(fields: [candidateId], references: [id])
+  transactionId         String?          @unique
+  processingFee         Decimal?         @db.Decimal(10, 2)
+  coverFee              Boolean          @default(false)
+  candidateId           Int
+  clerkUserId           String?
+  paidAt                DateTime?
+  status                SubmissionStatus @default(PENDING)
+  candidate             Candidate        @relation(fields: [candidateId], references: [id])
 }
 
 model UserValidationRequest {
@@ -104,12 +97,12 @@ model UserValidationRequest {
   additionalInfo String?
   city           String?
   state          String?
-  status         SubmissionStatus @default(PENDING)
   candidateId    Int
   clerkUserId    String           @unique
   electionId     Int
   createdAt      DateTime         @default(now())
   updatedAt      DateTime         @updatedAt
+  status         SubmissionStatus @default(PENDING)
 }
 
 model ElectionSubmission {
@@ -158,21 +151,21 @@ model Vendor {
   phone             String?
   city              String
   state             String
-  latitude          Float?
-  longitude         Float?
-  verified          Boolean           @default(false)
-  slug              String            @unique
-  photoUrl          String?
   subscription      VendorTier        @default(FREE)
   clerkUserId       String            @unique
   createdAt         DateTime          @default(now())
   updatedAt         DateTime          @updatedAt
   status            SubmissionStatus  @default(PENDING)
+  verified          Boolean           @default(false)
+  latitude          Float?
+  longitude         Float?
+  photoUrl          String?
+  slug              String            @unique
+  hidden            Boolean           @default(false)
   portfolio         PortfolioItem[]
   testimonials      Testimonial[]
   candidate         Candidate[]       @relation("CandidateToVendor")
   serviceCategories ServiceCategory[] @relation("VendorServices")
-  hidden            Boolean           @default(false)
 }
 
 model ServiceCategory {
@@ -204,15 +197,26 @@ model Testimonial {
 }
 
 model CandidateProfileView {
-  id          Int      @id @default(autoincrement())
+  id          Int       @id @default(autoincrement())
   candidateId Int
-  viewedAt    DateTime @default(now())
-  viewerIp    String? // Optional: the viewer's IP address
-  userAgent   String? // Optional: user agent string from the viewer's browser
-  referrerUrl String? // Optional: URL referrer if available
+  viewedAt    DateTime  @default(now())
+  viewerIp    String?
+  userAgent   String?
+  referrerUrl String?
+  Candidate   Candidate @relation(fields: [candidateId], references: [id])
+}
 
-  // Establish relation to the Candidate model
-  Candidate Candidate @relation(fields: [candidateId], references: [id])
+model Endorsement {
+  id                      Int       @id @default(autoincrement())
+  candidateId             Int
+  endorserName            String
+  relationshipDescription String?
+  content                 String
+  createdAt               DateTime  @default(now())
+  updatedAt               DateTime  @updatedAt
+  clerkUserId             String
+  hidden                  Boolean   @default(false)
+  candidate               Candidate @relation(fields: [candidateId], references: [id])
 }
 
 enum ElectionType {

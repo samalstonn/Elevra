@@ -19,12 +19,18 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Invalid slug" }, { status: 400 });
     }
     if (!clerkUserId || typeof clerkUserId !== "string") {
-      return NextResponse.json({ error: "Invalid clerkUserId" }, { status: 400 });
+      return NextResponse.json(
+        { error: "Invalid clerkUserId" },
+        { status: 400 }
+      );
     }
 
     const candidate = await prisma.candidate.findUnique({ where: { slug } });
     if (!candidate) {
-      return NextResponse.json({ error: "Candidate not found" }, { status: 404 });
+      return NextResponse.json(
+        { error: "Candidate not found" },
+        { status: 404 }
+      );
     }
 
     // Update candidate record
@@ -48,6 +54,9 @@ export async function POST(req: Request) {
     return NextResponse.json({ success: true });
   } catch (err) {
     console.error("Error in auto-approve:", err);
-    return NextResponse.json({ error: (err as Error).message }, { status: 500 });
+    return NextResponse.json(
+      { error: (err as Error).message },
+      { status: 500 }
+    );
   }
 }

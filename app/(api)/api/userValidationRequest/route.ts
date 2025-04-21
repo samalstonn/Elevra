@@ -1,3 +1,4 @@
+// /api/userValidationRequest/route.ts
 import { NextResponse } from "next/server";
 import prisma from "@/prisma/prisma";
 
