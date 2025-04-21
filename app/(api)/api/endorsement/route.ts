@@ -10,7 +10,8 @@ export async function GET(req: NextRequest) {
   const clerkUserId = searchParams.get("clerkUserId");
 
   // build Prisma where‑clause
-  const where: any = { hidden: false };
+  const where: { hidden: boolean; candidateId?: number; clerkUserId?: string } =
+    { hidden: false };
   if (candidateId && !isNaN(+candidateId)) {
     where.candidateId = +candidateId;
   }

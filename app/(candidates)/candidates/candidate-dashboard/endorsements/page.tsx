@@ -32,6 +32,15 @@ export default async function CandidateEndorsementsPage() {
     orderBy: { createdAt: "desc" },
   });
 
+  // Convert Prisma Dates to strings for the client
+  const clientEndorsements = endorsementsList.map((e) => ({
+    id: e.id,
+    endorserName: e.endorserName,
+    relationshipDescription: e.relationshipDescription,
+    content: e.content,
+    createdAt: e.createdAt.toISOString(),
+  }));
+
   return (
     <CandidateEndorsementsClient
       user={{
@@ -41,8 +50,8 @@ export default async function CandidateEndorsementsPage() {
         imageUrl: user.imageUrl || "",
       }}
       data={{
-        endorsements: endorsementsList,
-        totalEndorsements: endorsementsList.length,
+        endorsements: clientEndorsements,
+        totalEndorsements: clientEndorsements.length,
       }}
     />
   );
