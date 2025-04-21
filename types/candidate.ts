@@ -24,7 +24,6 @@ export type CandidateDashboardData = Pick<
   | "status"
   | "electionId"
   | "slug"
-  | "photoUrl"
   // Add any other fields relevant to the dashboard view
 > & {
   election?: Pick<PrismaElection, "id" | "position" | "date"> | null; // Optional election details

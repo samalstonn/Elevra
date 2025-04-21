@@ -36,6 +36,16 @@ export function PhotoUploader({
     setPreviewUrl(currentPhotoUrl);
   }, [currentPhotoUrl]);
 
+  useEffect(() => {
+    // Cleanup function to revoke object URLs when component unmounts
+    // or when previewUrl changes
+    return () => {
+      if (previewUrl && previewUrl !== currentPhotoUrl) {
+        URL.revokeObjectURL(previewUrl);
+      }
+    };
+  }, [previewUrl, currentPhotoUrl]);
+
   const handleSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     setError("");
     if (e.target.files?.[0]) {
@@ -52,6 +62,11 @@ export function PhotoUploader({
     }
     setUploading(true);
     setError("");
+
+    // Revoke the preview URL to prevent memory leaks
+    if (previewUrl && previewUrl !== currentPhotoUrl) {
+      URL.revokeObjectURL(previewUrl);
+    }
 
     try {
       // Upload file via serverless function
@@ -91,12 +106,13 @@ export function PhotoUploader({
       toast({
         variant: "destructive",
         title: "Upload failed",
-        description: e as string,
+        description: e instanceof Error ? e.message : String(e),
       });
       setError((e as string) || "Upload failed");
     } finally {
       setUploading(false);
       setFile(null);
+      setPreviewUrl(currentPhotoUrl);
     }
   };
 

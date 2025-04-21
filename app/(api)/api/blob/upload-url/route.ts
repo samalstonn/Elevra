@@ -12,6 +12,23 @@ export async function PUT(req: NextRequest) {
     );
   }
 
+  // Validate file type
+  if (!file.type.startsWith("image/")) {
+    return NextResponse.json(
+      { error: "Only image files are allowed" },
+      { status: 400 }
+    );
+  }
+
+  // Validate file size (5MB limit)
+  const maxSize = 5 * 1024 * 1024; // 5MB
+  if (file.size > maxSize) {
+    return NextResponse.json(
+      { error: "File size exceeds the 5MB limit" },
+      { status: 400 }
+    );
+  }
+
   const key = `uploads/${Date.now()}_${file.name}`;
   try {
     const blob = await put(key, file, {

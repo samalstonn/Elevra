@@ -24,6 +24,7 @@ export function CandidateImage({
 
   useEffect(() => {
     async function loadPhoto() {
+      if (!clerkUserId) return;
       try {
         const res = await fetch(`/api/photos?uploadedBy=${clerkUserId}`);
         if (res.ok) {
