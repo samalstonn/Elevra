@@ -1,28 +1,50 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Image from "next/image";
 
 interface CandidateImageProps {
-  photo?: string | null;
+  clerkUserId: string | null;
+  publicPhoto?: string | null;
   name: string;
   width?: number;
   height?: number;
 }
 
-// Helper function to determine the initial image source
 const getInitialSrc = (photo?: string | null): string => {
-  if (photo && !photo.startsWith("/")) {
-    return "/default-profile.png";
-  }
   return photo || "/default-profile.png";
 };
 
 export function CandidateImage({
-  photo,
+  clerkUserId,
+  publicPhoto = null,
   name,
   width = 64,
   height = 64,
 }: CandidateImageProps) {
-  const [imgSrc, setImgSrc] = useState<string>(getInitialSrc(photo));
+  const [imgSrc, setImgSrc] = useState<string>(getInitialSrc(publicPhoto));
+
+  useEffect(() => {
+    async function loadPhoto() {
+      try {
+        const res = await fetch(`/api/photos?uploadedBy=${clerkUserId}`);
+        if (res.ok) {
+          const list: { url: string }[] = await res.json();
+          if (list.length > 0 && list[0].url) {
+            setImgSrc(getInitialSrc(list[0].url));
+          } else {
+            setImgSrc(getInitialSrc(publicPhoto));
+          }
+        } else {
+          setImgSrc(getInitialSrc(publicPhoto));
+        }
+      } catch {
+        // Handle error silently
+        console.error("Error fetching photo:", clerkUserId);
+        // Fallback to publicPhoto or default image
+        setImgSrc(getInitialSrc(publicPhoto));
+      }
+    }
+    loadPhoto();
+  }, [clerkUserId, publicPhoto]);
 
   return (
     <Image
@@ -30,6 +52,7 @@ export function CandidateImage({
       alt={`${name}'s photo`}
       width={width}
       height={height}
+      unoptimized
       className="rounded-full object-cover shadow-md aspect-square"
       style={{ aspectRatio: "1 / 1" }}
       onError={() => {

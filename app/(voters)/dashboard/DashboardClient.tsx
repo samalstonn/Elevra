@@ -58,10 +58,21 @@ const DashboardPageClient = ({ user, data }: Props) => {
     <div className="min-h-screen p-6">
       <header className="mb-12">
         <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
-        <p className="text-gray-600">
-          Welcome, {user.firstName || user.username || "User"}! Track your
-          contributions and maximize your impact.
-        </p>
+
+        <div className="flex items-center justify-between">
+          <p className="text-gray-600">
+            Welcome, {user.firstName || user.username || "User"}! Track your
+            contributions and maximize your impact.
+          </p>
+          <div className="flex items-center gap-4">
+            <p className="text-sm text-gray-600">In the wrong place?</p>
+            <Button asChild variant="purple">
+              <Link href="/candidates/candidate-dashboard">
+                Go to Candidate Dashboard
+              </Link>
+            </Button>
+          </div>
+        </div>
       </header>
 
       <section className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
@@ -130,14 +141,6 @@ const DashboardPageClient = ({ user, data }: Props) => {
           )}
         </div>
       </section>
-      <div className="mt-12 flex items-center justify-center gap-4">
-        <p className="text-sm text-gray-600">In the wrong place?</p>
-        <Button asChild variant="purple">
-          <Link href="/candidates/candidate-dashboard">
-            Go to Candidate Dashboard
-          </Link>
-        </Button>
-      </div>
     </div>
   );
 };

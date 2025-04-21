@@ -276,19 +276,19 @@ export default function ElectionResultsClient({
                   variants={fadeInVariants}
                   className="mt-4 flex flex-col"
                 >
-                    <div className="flex-1">
+                  <div className="flex-1">
                     <CandidateSection
                       candidates={[...elec.candidates].sort((a, b) => {
-                      if (a.verified && !b.verified) return -1;
-                      if (!a.verified && b.verified) return 1;
-                      if (a.photo && !b.photo) return -1;
-                      if (!a.photo && b.photo) return 1;
-                      return 0;
+                        if (a.verified && !b.verified) return -1;
+                        if (!a.verified && b.verified) return 1;
+                        if (a.photo && !b.photo) return -1;
+                        if (!a.photo && b.photo) return 1;
+                        return 0;
                       })}
                       election={elec}
                       fallbackElections={[]}
                     />
-                    </div>
+                  </div>
                 </motion.div>
               ))}
             </motion.div>

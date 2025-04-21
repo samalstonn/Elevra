@@ -219,6 +219,14 @@ model Endorsement {
   candidate               Candidate @relation(fields: [candidateId], references: [id], onDelete: Cascade)
 }
 
+model Photo {
+  id         Int      @id @default(autoincrement())
+  key        String   @unique
+  url        String
+  uploadedBy String // will store clerkUserId
+  createdAt  DateTime @default(now())
+}
+
 enum ElectionType {
   LOCAL
   STATE

@@ -6,8 +6,7 @@ import { Candidate, Election } from "@prisma/client";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { CandidateImage } from "@/components/CandidateImage"; // Adjust the path as needed
-import { FaUserPlus, FaDonate, FaCheckCircle } from "react-icons/fa"; // Import icons from react-icons
-import { useRouter } from "next/navigation";
+import { FaUserPlus, FaCheckCircle } from "react-icons/fa"; // Import icons from react-icons
 import { MdHowToVote } from "react-icons/md";
 
 interface CandidateSectionProps {
@@ -31,7 +30,6 @@ export default function CandidateSection({
   election,
   fallbackElections,
 }: CandidateSectionProps) {
-  const router = useRouter();
   const electionIsActive = new Date(election.date) >= new Date();
 
   // If no election data is available
@@ -251,7 +249,8 @@ export default function CandidateSection({
                   <Card className="group transition-all rounded-lg cursor-pointer h-[315px] w-[350px] flex flex-col relative">
                     <CardContent className="flex flex-col gap-2">
                       <CandidateImage
-                        photo={candidate.photo}
+                        clerkUserId={candidate.clerkUserId}
+                        publicPhoto={candidate.photo}
                         name={candidate.name}
                         width={64}
                         height={64}
@@ -304,20 +303,6 @@ export default function CandidateSection({
                             </span>
                           </Button>
                         ) : null}
-                        <Button
-                          variant="green"
-                          size="sm"
-                          className="flex items-center gap-2 mt-2"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            router.push(`/candidate/${candidate.slug}/donate`);
-                          }}
-                        >
-                          <span className="flex items-center gap-2">
-                            <FaDonate />
-                            <span>Donate</span>
-                          </span>
-                        </Button>
                       </motion.div>
                     </CardContent>
                   </Card>
