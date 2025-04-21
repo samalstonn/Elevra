@@ -82,7 +82,7 @@ model Donation {
   clerkUserId           String?
   paidAt                DateTime?
   status                SubmissionStatus @default(PENDING)
-  candidate             Candidate        @relation(fields: [candidateId], references: [id])
+  candidate             Candidate        @relation(fields: [candidateId], references: [id], onDelete: Cascade)
 }
 
 model UserValidationRequest {
@@ -192,7 +192,7 @@ model Testimonial {
   content     String
   rating      Int
   createdAt   DateTime  @default(now())
-  candidate   Candidate @relation(fields: [candidateId], references: [id])
+  candidate   Candidate @relation(fields: [candidateId], references: [id], onDelete: Cascade)
   vendor      Vendor    @relation(fields: [vendorId], references: [id])
 }
 
@@ -203,7 +203,7 @@ model CandidateProfileView {
   viewerIp    String?
   userAgent   String?
   referrerUrl String?
-  Candidate   Candidate @relation(fields: [candidateId], references: [id])
+  Candidate   Candidate @relation(fields: [candidateId], references: [id], onDelete: Cascade)
 }
 
 model Endorsement {
@@ -216,7 +216,7 @@ model Endorsement {
   updatedAt               DateTime  @updatedAt
   clerkUserId             String
   hidden                  Boolean   @default(false)
-  candidate               Candidate @relation(fields: [candidateId], references: [id])
+  candidate               Candidate @relation(fields: [candidateId], references: [id], onDelete: Cascade)
 }
 
 enum ElectionType {
