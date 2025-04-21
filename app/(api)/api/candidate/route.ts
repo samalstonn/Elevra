@@ -56,7 +56,15 @@ export async function GET(request: Request) {
         { status: 404 }
       );
     }
-    return NextResponse.json(candidate);
+
+    // new: grab their latest uploaded photo
+    const photoRecord = await prisma.photo.findFirst({
+      where: { uploadedBy: clerkUserId },
+      orderBy: { createdAt: "desc" },
+    });
+    const photoUrl = photoRecord?.url ?? null;
+
+    return NextResponse.json({ ...candidate, photoUrl });
   } catch (error: unknown) {
     if (error instanceof Error) {
       console.error("Error fetching candidate:", error);

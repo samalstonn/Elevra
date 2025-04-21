@@ -143,7 +143,8 @@ export default function CandidateClient({
         {/* Profile Header */}
         <div className="flex flex-row items-start text-left gap-4">
           <CandidateImage
-            photo={candidate.photo}
+            clerkUserId={candidate.clerkUserId}
+            publicPhoto={candidate.photo}
             name={candidate.name}
             width={150}
             height={150}
@@ -400,7 +401,8 @@ export default function CandidateClient({
                       className="flex items-center p-3 rounded-lg transition-colors gap-3"
                     >
                       <CandidateImage
-                        photo={relatedCandidate.photo}
+                        clerkUserId={relatedCandidate.clerkUserId}
+                        publicPhoto={relatedCandidate.photo}
                         name={relatedCandidate.name}
                         width={50}
                         height={50}
@@ -475,7 +477,8 @@ export default function CandidateClient({
                       className="flex items-center gap-3 "
                     >
                       <CandidateImage
-                        photo={rc.photo}
+                        clerkUserId={rc.clerkUserId}
+                        publicPhoto={rc.photo}
                         name={rc.name}
                         width={40}
                         height={40}
