@@ -1,0 +1,83 @@
+[
+  {
+    "id": 1,
+    "name": "Dryden Village Election 2025",
+    "date": "2025-03-18T12:00:00.000Z",
+    "type": "LOCAL",
+    "city": "Various",
+    "state": "New York",
+    "description": ""
+  },
+  {
+    "id": 2,
+    "name": "Lansing Village Election 2025",
+    "date": "2025-04-21T12:00:00.000Z",
+    "type": "LOCAL",
+    "city": "Lansing",
+    "state": "New York",
+    "description": ""
+  },
+  {
+    "id": 3,
+    "name": "Wisconsin Statewide Spring General Election 2025",
+    "date": "2025-04-01T12:00:00.000Z",
+    "type": "STATE",
+    "city": "Various",
+    "state": "Wisconsin",
+    "description": ""
+  },
+  {
+    "id": 4,
+    "name": "Jackson General Election 2025",
+    "date": "2025-04-01T12:00:00.000Z",
+    "type": "LOCAL",
+    "city": "Jackson",
+    "state": "Mississippi",
+    "description": ""
+  },
+  {
+    "id": 5,
+    "name": "Oklahoma General Election 2025",
+    "date": "2025-04-01T12:00:00.000Z",
+    "type": "LOCAL",
+    "city": "Various",
+    "state": "Oklahoma",
+    "description": ""
+  },
+  {
+    "id": 6,
+    "name": "South Carolina Special Municipal General Elections 2025",
+    "date": "2025-04-01T12:00:00.000Z",
+    "type": "STATE",
+    "city": "Various",
+    "state": "South Carolina",
+    "description": ""
+  },
+  {
+    "id": 7,
+    "name": "Anchorage General Election 2025",
+    "date": "2025-04-01T21:00:00.000Z",
+    "type": "LOCAL",
+    "city": "Anchorage",
+    "state": "Alaska",
+    "description": ""
+  },
+  {
+    "id": 8,
+    "name": "Colorado Springs General Election 2025",
+    "date": "2025-04-01T21:00:00.000Z",
+    "type": "LOCAL",
+    "city": "Colorado Springs",
+    "state": "Colorado",
+    "description": ""
+  },
+  {
+    "id": 9,
+    "name": "Cornell Student Assembly Election 2025",
+    "date": "2025-04-21T21:00:00.000Z",
+    "type": "LOCAL",
+    "city": "Ithaca",
+    "state": "New York",
+    "description": ""
+  }
+]

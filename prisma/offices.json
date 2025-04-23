@@ -1,0 +1,704 @@
+[
+  {
+    "id": 1,
+    "position": "Town Supervisor (Dryden Town)",
+    "description": "Campaign for Town Supervisor (Dryden Town) elections. Learn more about each candidate's vision.",
+    "positions": 1,
+    "city": "Dryden",
+    "state": "New York",
+    "electionId": 1
+  },
+  {
+    "id": 2,
+    "position": "Town Board – Councilmember (Dryden Town)",
+    "description": "Campaign for Town Board – Councilmember (Dryden Town) elections. Learn more about each candidate's vision.",
+    "positions": 1,
+    "city": "Dryden",
+    "state": "New York",
+    "electionId": 1
+  },
+  {
+    "id": 3,
+    "position": "Town Justice (Dryden Town Court)",
+    "description": "Campaign for Town Justice (Dryden Town Court) elections. Learn more about each candidate's vision.",
+    "positions": 1,
+    "city": "Dryden",
+    "state": "New York",
+    "electionId": 1
+  },
+  {
+    "id": 4,
+    "position": "Highway Superintendent (Dryden Town)",
+    "description": "Campaign for Highway Superintendent (Dryden Town) elections. Learn more about each candidate's vision.",
+    "positions": 1,
+    "city": "Dryden",
+    "state": "New York",
+    "electionId": 1
+  },
+  {
+    "id": 5,
+    "position": "County Legislator – District 14",
+    "description": "Campaign for County Legislator – District 14 elections. Learn more about each candidate's vision.",
+    "positions": 1,
+    "city": "Dryden",
+    "state": "New York",
+    "electionId": 1
+  },
+  {
+    "id": 6,
+    "position": "County Legislator – District 13",
+    "description": "Campaign for County Legislator – District 13 elections. Learn more about each candidate's vision.",
+    "positions": 1,
+    "city": "Dryden",
+    "state": "New York",
+    "electionId": 1
+  },
+  {
+    "id": 7,
+    "position": "County Legislator – District 9",
+    "description": "Campaign for County Legislator – District 9 elections. Learn more about each candidate's vision.",
+    "positions": 1,
+    "city": "Dryden",
+    "state": "New York",
+    "electionId": 1
+  },
+  {
+    "id": 8,
+    "position": "Village Mayor (Dryden Village)",
+    "description": "Campaign for Village Mayor (Dryden Village) elections. Learn more about each candidate's vision.",
+    "positions": 1,
+    "city": "Dryden",
+    "state": "New York",
+    "electionId": 1
+  },
+  {
+    "id": 9,
+    "position": "Village Trustee (Dryden Village)",
+    "description": "Campaign for Village Trustee (Dryden Village) elections. Learn more about each candidate's vision.",
+    "positions": 1,
+    "city": "Dryden",
+    "state": "New York",
+    "electionId": 1
+  },
+  {
+    "id": 10,
+    "position": "Village Mayor (Lansing Village)",
+    "description": "Campaign for Village Mayor (Lansing Village) elections. Learn more about each candidate's vision.",
+    "positions": 1,
+    "city": "Lansing",
+    "state": "New York",
+    "electionId": 2
+  },
+  {
+    "id": 11,
+    "position": "Village Trustee (Lansing Village)",
+    "description": "Campaign for Village Trustee (Lansing Village) elections. Learn more about each candidate's vision.",
+    "positions": 1,
+    "city": "Lansing",
+    "state": "New York",
+    "electionId": 2
+  },
+  {
+    "id": 13,
+    "position": "Sam Test Position",
+    "description": "Test Description",
+    "positions": 1,
+    "city": "Ithaaaaca",
+    "state": "New York1",
+    "electionId": 2
+  },
+  {
+    "id": 14,
+    "position": "State Superintendent of Public Instruction",
+    "description": "Statewide election for the head of the Wisconsin Department of Public Instruction, responsible for overseeing public education across the state. This is a nonpartisan state-level office.",
+    "positions": 1,
+    "city": "Milwaukee",
+    "state": "Wisconsin",
+    "electionId": 3
+  },
+  {
+    "id": 15,
+    "position": "Justice of the Supreme Court",
+    "description": "Statewide election for a seat on the Wisconsin Supreme Court (the state's highest court). The winner will serve a 10-year term as a Wisconsin Supreme Court Justice. The race is officially nonpartisan but carries significant ideological importance.",
+    "positions": 1,
+    "city": "Milwaukee",
+    "state": "Wisconsin",
+    "electionId": 3
+  },
+  {
+    "id": 16,
+    "position": "Milwaukee County Circuit Court Judge - Branch 6",
+    "description": "Election for the judge of Branch 6 in the Milwaukee County Circuit Court. This is a nonpartisan local judicial position (six-year term) at the trial court level in Milwaukee County.",
+    "positions": 1,
+    "city": "Milwaukee",
+    "state": "Wisconsin",
+    "electionId": 3
+  },
+  {
+    "id": 17,
+    "position": "Milwaukee County Circuit Court Judge - Branch 11",
+    "description": "Election for the judge of Branch 11 in the Milwaukee County Circuit Court. This nonpartisan local judicial race is for a six-year term on the Milwaukee County trial court.",
+    "positions": 1,
+    "city": "Milwaukee",
+    "state": "Wisconsin",
+    "electionId": 3
+  },
+  {
+    "id": 18,
+    "position": "Milwaukee County Circuit Court Judge - Branch 26",
+    "description": "Election for the judge of Branch 26 in the Milwaukee County Circuit Court. This is a nonpartisan local judicial office on the Milwaukee County trial court, with a six-year term.",
+    "positions": 1,
+    "city": "Milwaukee",
+    "state": "Wisconsin",
+    "electionId": 3
+  },
+  {
+    "id": 19,
+    "position": "Milwaukee County Circuit Court Judge - Branch 36",
+    "description": "Election for the judge of Branch 36 in the Milwaukee County Circuit Court. This nonpartisan local judicial position carries a six-year term on Milwaukee County's trial court.",
+    "positions": 1,
+    "city": "Milwaukee",
+    "state": "Wisconsin",
+    "electionId": 3
+  },
+  {
+    "id": 20,
+    "position": "Milwaukee County Circuit Court Judge - Branch 40",
+    "description": "Election for the judge of Branch 40 in the Milwaukee County Circuit Court. This is a nonpartisan election for a six-year term on Milwaukee's county trial court.",
+    "positions": 1,
+    "city": "Milwaukee",
+    "state": "Wisconsin",
+    "electionId": 3
+  },
+  {
+    "id": 21,
+    "position": "Milwaukee County Circuit Court Judge - Branch 41",
+    "description": "Election for the judge of Branch 41 in the Milwaukee County Circuit Court. This nonpartisan local judicial race will determine who serves a six-year term for Branch 41.",
+    "positions": 1,
+    "city": "Milwaukee",
+    "state": "Wisconsin",
+    "electionId": 3
+  },
+  {
+    "id": 22,
+    "position": "Milwaukee Municipal Judge - Branch 1",
+    "description": "Election for the judge of Branch 1 in the Milwaukee Municipal Court. This city-level judicial position handles municipal ordinance cases; the race is nonpartisan and the term is four years.",
+    "positions": 1,
+    "city": "Milwaukee",
+    "state": "Wisconsin",
+    "electionId": 3
+  },
+  {
+    "id": 155,
+    "position": "Mayor",
+    "description": "The Mayor is the chief executive officer of the city, responsible for overseeing city departments, proposing the budget, appointing department heads, and representing the city.",
+    "positions": 1,
+    "city": "Jackson",
+    "state": "Mississippi",
+    "electionId": 4
+  },
+  {
+    "id": 156,
+    "position": "City Council Member - Ward 1",
+    "description": "Represents Ward 1 on the City Council, responsible for enacting ordinances, approving the city budget, and providing constituent services.",
+    "positions": 1,
+    "city": "Jackson",
+    "state": "Mississippi",
+    "electionId": 4
+  },
+  {
+    "id": 157,
+    "position": "City Council Member - Ward 2",
+    "description": "Represents Ward 2 on the City Council, responsible for enacting ordinances, approving the city budget, and providing constituent services.",
+    "positions": 1,
+    "city": "Jackson",
+    "state": "Mississippi",
+    "electionId": 4
+  },
+  {
+    "id": 158,
+    "position": "City Council Member - Ward 3",
+    "description": "Represents Ward 3 on the City Council, responsible for enacting ordinances, approving the city budget, and providing constituent services.",
+    "positions": 1,
+    "city": "Jackson",
+    "state": "Mississippi",
+    "electionId": 4
+  },
+  {
+    "id": 159,
+    "position": "City Council Member - Ward 4",
+    "description": "Represents Ward 4 on the City Council, responsible for enacting ordinances, approving the city budget, and providing constituent services.",
+    "positions": 1,
+    "city": "Jackson",
+    "state": "Mississippi",
+    "electionId": 4
+  },
+  {
+    "id": 160,
+    "position": "City Council Member - Ward 5",
+    "description": "Represents Ward 5 on the City Council, responsible for enacting ordinances, approving the city budget, and providing constituent services.",
+    "positions": 1,
+    "city": "Jackson",
+    "state": "Mississippi",
+    "electionId": 4
+  },
+  {
+    "id": 161,
+    "position": "City Council Member - Ward 6",
+    "description": "Represents Ward 6 on the City Council, responsible for enacting ordinances, approving the city budget, and providing constituent services.",
+    "positions": 1,
+    "city": "Jackson",
+    "state": "Mississippi",
+    "electionId": 4
+  },
+  {
+    "id": 162,
+    "position": "City Council Member - Ward 7",
+    "description": "Represents Ward 7 on the City Council, responsible for enacting ordinances, approving the city budget, and providing constituent services.",
+    "positions": 1,
+    "city": "Jackson",
+    "state": "Mississippi",
+    "electionId": 4
+  },
+  {
+    "id": 163,
+    "position": "Board Member - Office No. 2",
+    "description": "Members of the Board of Education are responsible for setting policy, overseeing district finances, adopting curriculum, and hiring the superintendent for the Mooreland Public Schools district.",
+    "positions": 1,
+    "city": "",
+    "state": "Oklahoma",
+    "electionId": 5
+  },
+  {
+    "id": 164,
+    "position": "Board Member - Office No. 5",
+    "description": "Members of the Board of Education are responsible for setting policy, overseeing district finances, adopting curriculum, and hiring the superintendent for the Mooreland Public Schools district.",
+    "positions": 1,
+    "city": "",
+    "state": "Oklahoma",
+    "electionId": 5
+  },
+  {
+    "id": 165,
+    "position": "School Board Member",
+    "description": "Governs the local school district, setting policies, budget, and overseeing the superintendent. General elections are held if a primary was necessary and no candidate received over 50% of the vote, or if only two candidates filed.",
+    "positions": 1,
+    "city": "Various",
+    "state": "Oklahoma",
+    "electionId": 5
+  },
+  {
+    "id": 166,
+    "position": "Municipal Officer (Statutory Municipalities)",
+    "description": "Governs a statutory municipality, responsible for local ordinances, budget, and administration. This is the general election date for these positions.",
+    "positions": 1,
+    "city": "Various",
+    "state": "Oklahoma",
+    "electionId": 5
+  },
+  {
+    "id": 167,
+    "position": "City Council Member (Runoff)",
+    "description": "Represents a specific ward on the Oklahoma City Council. A runoff election is held if no candidate received a majority in the February 11, 2025, general election. Ward 7 is confirmed to have a runoff.",
+    "positions": 1,
+    "city": "Oklahoma City",
+    "state": "Oklahoma",
+    "electionId": 5
+  },
+  {
+    "id": 168,
+    "position": "Mayor (Runoff)",
+    "description": "Serves as the chief executive officer of the City of Norman. A runoff election is held if no candidate received a majority in the February 11, 2025, general election.",
+    "positions": 1,
+    "city": "Norman",
+    "state": "Oklahoma",
+    "electionId": 5
+  },
+  {
+    "id": 169,
+    "position": "City Council Member (Runoff)",
+    "description": "Represents a specific ward on the Norman City Council. A runoff election is held if no candidate received a majority in the February 11, 2025, general election for Wards 1, 3, 5, and 7.",
+    "positions": 1,
+    "city": "Norman",
+    "state": "Oklahoma",
+    "electionId": 5
+  },
+  {
+    "id": 170,
+    "position": "Mayor",
+    "description": "Serves as the chief executive officer of the City of Edmond. This is the general election date.",
+    "positions": 1,
+    "city": "Edmond",
+    "state": "Oklahoma",
+    "electionId": 5
+  },
+  {
+    "id": 171,
+    "position": "County Commissioner District 1 (Special General Election)",
+    "description": "Represents District 1 on the Oklahoma County Board of Commissioners. This is a special general election.",
+    "positions": 1,
+    "city": "",
+    "state": "Oklahoma",
+    "electionId": 5
+  },
+  {
+    "id": 172,
+    "position": "State Representative District 71 (Special Primary Election)",
+    "description": "Represents District 71 in the Oklahoma House of Representatives. This is a special primary election to fill a vacancy.",
+    "positions": 1,
+    "city": "",
+    "state": "Oklahoma",
+    "electionId": 5
+  },
+  {
+    "id": 173,
+    "position": "State Representative District 74 (Special Primary Election)",
+    "description": "Represents District 74 in the Oklahoma House of Representatives. This is a special primary election to fill a vacancy.",
+    "positions": 1,
+    "city": "",
+    "state": "Oklahoma",
+    "electionId": 5
+  },
+  {
+    "id": 174,
+    "position": "State Senator District 8 (Special Runoff Primary Election)",
+    "description": "Represents District 8 in the Oklahoma State Senate. This is a special runoff primary election, if necessary, following the March 4, 2025 primary.",
+    "positions": 1,
+    "city": "",
+    "state": "Oklahoma",
+    "electionId": 5
+  },
+  {
+    "id": 175,
+    "position": "State House Representative District 50",
+    "description": "Represents District 50 (parts of Kershaw, Lee, and Sumter counties) in the South Carolina House of Representatives. Responsibilities include creating state laws and budgets. This is a primary election.",
+    "positions": 1,
+    "city": "",
+    "state": "South Carolina",
+    "electionId": 6
+  },
+  {
+    "id": 176,
+    "position": "Council Member At Large",
+    "description": "Serves on the Florence City Council, responsible for setting city policy, adopting budgets, and passing ordinances.",
+    "positions": 1,
+    "city": "Florence",
+    "state": "South Carolina",
+    "electionId": 6
+  },
+  {
+    "id": 177,
+    "position": "Mayor",
+    "description": "Chief executive officer of the City of Winnsboro, presides over council meetings, and represents the city.",
+    "positions": 1,
+    "city": "Winnsboro",
+    "state": "South Carolina",
+    "electionId": 6
+  },
+  {
+    "id": 178,
+    "position": "Council Member",
+    "description": "Member of the Winnsboro City Council, responsible for setting city policy, adopting budgets, and passing ordinances.",
+    "positions": 1,
+    "city": "Winnsboro",
+    "state": "South Carolina",
+    "electionId": 6
+  },
+  {
+    "id": 179,
+    "position": "Council Member",
+    "description": "Member of the Ware Shoals Town Council, responsible for setting town policy, adopting budgets, and passing ordinances. This is a special election.",
+    "positions": 1,
+    "city": "Ware Shoals",
+    "state": "South Carolina",
+    "electionId": 6
+  },
+  {
+    "id": 180,
+    "position": "Council Member",
+    "description": "Member of the Bennettsville City Council, responsible for setting city policy, adopting budgets, and passing ordinances. This is a special election.",
+    "positions": 1,
+    "city": "Bennettsville",
+    "state": "South Carolina",
+    "electionId": 6
+  },
+  {
+    "id": 181,
+    "position": "Anchorage Assembly District 1",
+    "description": "The Anchorage Assembly is the legislative body for the Municipality of Anchorage. Members create and approve the city's budget, appropriate funds, and manage elections.",
+    "positions": 1,
+    "city": "Anchorage",
+    "state": "Alaska",
+    "electionId": 7
+  },
+  {
+    "id": 182,
+    "position": "Anchorage Assembly District 2",
+    "description": "The Anchorage Assembly is the legislative body for the Municipality of Anchorage. Members create and approve the city's budget, appropriate funds, and manage elections.",
+    "positions": 1,
+    "city": "Anchorage",
+    "state": "Alaska",
+    "electionId": 7
+  },
+  {
+    "id": 183,
+    "position": "Anchorage Assembly District 3",
+    "description": "The Anchorage Assembly is the legislative body for the Municipality of Anchorage. Members create and approve the city's budget, appropriate funds, and manage elections.",
+    "positions": 1,
+    "city": "Anchorage",
+    "state": "Alaska",
+    "electionId": 7
+  },
+  {
+    "id": 184,
+    "position": "Anchorage Assembly District 4",
+    "description": "The Anchorage Assembly is the legislative body for the Municipality of Anchorage. Members create and approve the city's budget, appropriate funds, and manage elections.",
+    "positions": 1,
+    "city": "Anchorage",
+    "state": "Alaska",
+    "electionId": 7
+  },
+  {
+    "id": 185,
+    "position": "Anchorage Assembly District 5",
+    "description": "The Anchorage Assembly is the legislative body for the Municipality of Anchorage. Members create and approve the city's budget, appropriate funds, and manage elections.",
+    "positions": 1,
+    "city": "Anchorage",
+    "state": "Alaska",
+    "electionId": 7
+  },
+  {
+    "id": 186,
+    "position": "Anchorage Assembly District 6",
+    "description": "The Anchorage Assembly is the legislative body for the Municipality of Anchorage. Members create and approve the city's budget, appropriate funds, and manage elections.",
+    "positions": 1,
+    "city": "Anchorage",
+    "state": "Alaska",
+    "electionId": 7
+  },
+  {
+    "id": 187,
+    "position": "Anchorage School Board Seat A",
+    "description": "The Anchorage School Board oversees the Anchorage School District, setting policy, approving the budget, and hiring the superintendent.",
+    "positions": 1,
+    "city": "Anchorage",
+    "state": "Alaska",
+    "electionId": 7
+  },
+  {
+    "id": 188,
+    "position": "Anchorage School Board Seat B",
+    "description": "The Anchorage School Board oversees the Anchorage School District, setting policy, approving the budget, and hiring the superintendent.",
+    "positions": 1,
+    "city": "Anchorage",
+    "state": "Alaska",
+    "electionId": 7
+  },
+  {
+    "id": 189,
+    "position": "Service Area Boards of Supervisors",
+    "description": "Oversee specific service areas within the Municipality of Anchorage, managing local services like roads, fire protection, or parks depending on the specific service area.",
+    "positions": 1,
+    "city": "Anchorage",
+    "state": "Alaska",
+    "electionId": 7
+  },
+  {
+    "id": 190,
+    "position": "City Council Member - District 1",
+    "description": "Represents District 1 on the City Council, responsible for enacting ordinances, adopting budgets, and providing policy direction for the city.",
+    "positions": 1,
+    "city": "Colorado Springs",
+    "state": "Colorado",
+    "electionId": 8
+  },
+  {
+    "id": 191,
+    "position": "City Council Member - District 2",
+    "description": "Represents District 2 on the City Council, responsible for enacting ordinances, adopting budgets, and providing policy direction for the city.",
+    "positions": 1,
+    "city": "Colorado Springs",
+    "state": "Colorado",
+    "electionId": 8
+  },
+  {
+    "id": 192,
+    "position": "City Council Member - District 3",
+    "description": "Represents District 3 on the City Council, responsible for enacting ordinances, adopting budgets, and providing policy direction for the city.",
+    "positions": 1,
+    "city": "Colorado Springs",
+    "state": "Colorado",
+    "electionId": 6
+  },
+  {
+    "id": 193,
+    "position": "City Council Member - District 4",
+    "description": "Represents District 4 on the City Council, responsible for enacting ordinances, adopting budgets, and providing policy direction for the city.",
+    "positions": 1,
+    "city": "Colorado Springs",
+    "state": "Colorado",
+    "electionId": 8
+  },
+  {
+    "id": 194,
+    "position": "City Council Member - District 5",
+    "description": "Represents District 5 on the City Council, responsible for enacting ordinances, adopting budgets, and providing policy direction for the city.",
+    "positions": 1,
+    "city": "Colorado Springs",
+    "state": "Colorado",
+    "electionId": 8
+  },
+  {
+    "id": 195,
+    "position": "City Council Member - District 6",
+    "description": "Represents District 6 on the City Council, responsible for enacting ordinances, adopting budgets, and providing policy direction for the city.",
+    "positions": 1,
+    "city": "Colorado Springs",
+    "state": "Colorado",
+    "electionId": 8
+  },
+  {
+    "id": 200,
+    "position": "President",
+    "description": "Student Assembly Elections. View all Spring 2025 election information below.",
+    "positions": 1,
+    "city": "Ithaca",
+    "state": "New York",
+    "electionId": 9
+  },
+  {
+    "id": 201,
+    "position": "Executive Vice President",
+    "description": "Student Assembly Elections. View all Spring 2025 election information below.",
+    "positions": 1,
+    "city": "Ithaca",
+    "state": "New York",
+    "electionId": 9
+  },
+  {
+    "id": 202,
+    "position": "College of Agriculture and Life Sciences Representative",
+    "description": "Student Assembly Elections. View all Spring 2025 election information below.",
+    "positions": 1,
+    "city": "Ithaca",
+    "state": "New York",
+    "electionId": 9
+  },
+  {
+    "id": 203,
+    "position": "College of Arts and Sciences Representative",
+    "description": "Student Assembly Elections. View all Spring 2025 election information below.",
+    "positions": 1,
+    "city": "Ithaca",
+    "state": "New York",
+    "electionId": 9
+  },
+  {
+    "id": 204,
+    "position": "Charles H. Dyson School of Business Representative",
+    "description": "Student Assembly Elections. View all Spring 2025 election information below.",
+    "positions": 1,
+    "city": "Ithaca",
+    "state": "New York",
+    "electionId": 9
+  },
+  {
+    "id": 205,
+    "position": "College of Engineering Representative",
+    "description": "Student Assembly Elections. View all Spring 2025 election information below.",
+    "positions": 1,
+    "city": "Ithaca",
+    "state": "New York",
+    "electionId": 9
+  },
+  {
+    "id": 206,
+    "position": "Nolan School of Hotel Administration Representative",
+    "description": "Student Assembly Elections. View all Spring 2025 election information below.",
+    "positions": 1,
+    "city": "Ithaca",
+    "state": "New York",
+    "electionId": 9
+  },
+  {
+    "id": 207,
+    "position": "School of Industrial and Labor Relations Representative",
+    "description": "Student Assembly Elections. View all Spring 2025 election information below.",
+    "positions": 1,
+    "city": "Ithaca",
+    "state": "New York",
+    "electionId": 9
+  },
+  {
+    "id": 208,
+    "position": "Representative At-Large",
+    "description": "Student Assembly Elections. View all Spring 2025 election information below.",
+    "positions": 1,
+    "city": "Ithaca",
+    "state": "New York",
+    "electionId": 9
+  },
+  {
+    "id": 209,
+    "position": "International Students Representative",
+    "description": "Student Assembly Elections. View all Spring 2025 election information below.",
+    "positions": 1,
+    "city": "Ithaca",
+    "state": "New York",
+    "electionId": 9
+  },
+  {
+    "id": 210,
+    "position": "LGBTQIA+ Students Representative",
+    "description": "Student Assembly Elections. View all Spring 2025 election information below.",
+    "positions": 1,
+    "city": "Ithaca",
+    "state": "New York",
+    "electionId": 9
+  },
+  {
+    "id": 211,
+    "position": "Minority Students Representative",
+    "description": "Student Assembly Elections. View all Spring 2025 election information below.",
+    "positions": 1,
+    "city": "Ithaca",
+    "state": "New York",
+    "electionId": 9
+  },
+  {
+    "id": 212,
+    "position": "Students with Disabilities Representative",
+    "description": "Student Assembly Elections. View all Spring 2025 election information below.",
+    "positions": 1,
+    "city": "Ithaca",
+    "state": "New York",
+    "electionId": 9
+  },
+  {
+    "id": 213,
+    "position": "Student Workers Representative",
+    "description": "Student Assembly Elections. View all Spring 2025 election information below.",
+    "positions": 1,
+    "city": "Ithaca",
+    "state": "New York",
+    "electionId": 9
+  },
+  {
+    "id": 214,
+    "position": "Undergraduate Representative to the University Assembly",
+    "description": "Student Assembly Elections. View all Spring 2025 election information below.",
+    "positions": 1,
+    "city": "Ithaca",
+    "state": "New York",
+    "electionId": 9
+  },
+  {
+    "id": 215,
+    "position": "Women's Issues Representative",
+    "description": "Student Assembly Elections. View all Spring 2025 election information below.",
+    "positions": 1,
+    "city": "Ithaca",
+    "state": "New York",
+    "electionId": 9
+  }
+]

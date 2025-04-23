@@ -44,7 +44,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Create the election submission in the database
-    const electionSubmission = await prisma.electionSubmission.create({
+    const officeSubmission = await prisma.officeSubmission.create({
       data: {
         position,
         date: new Date(date),
@@ -70,8 +70,8 @@ export async function POST(request: NextRequest) {
     const mailOptions = {
       from: process.env.EMAIL_USER,
       to: process.env.MY_EMAIL, // your email address to receive notifications
-      subject: `New Election Submission Request: ${electionSubmission.position}`,
-      text: `At: ${electionSubmission.city}, ${electionSubmission.state}\n\nDescription: ${electionSubmission.description}\n\nPositions: ${electionSubmission.positions}\n\nType: ${electionSubmission.type}`,
+      subject: `New Election Submission Request: ${officeSubmission.position}`,
+      text: `At: ${officeSubmission.city}, ${officeSubmission.state}\n\nDescription: ${officeSubmission.description}\n\nPositions: ${electionSubmission.positions}\n\nType: ${electionSubmission.type}`,
     };
 
     // Send the email

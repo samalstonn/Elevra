@@ -8,20 +8,48 @@ datasource db {
   shadowDatabaseUrl = env("SHADOW_DATABASE_URL")
 }
 
+// Represents the overall election event, e.g., "Dryden Village Election 2025"
 model Election {
-  id          Int          @id @default(autoincrement())
-  position    String
-  date        DateTime
-  createdAt   DateTime     @default(now())
-  updatedAt   DateTime     @updatedAt
-  active      Boolean
+  id   Int          @id @default(autoincrement())
+  name String       @default("")
+  date DateTime
+  type ElectionType
+
   city        String
-  description String
-  positions   Int
   state       String
-  type        ElectionType
-  hidden      Boolean      @default(false)
-  candidates  Candidate[]
+  description String?
+
+  // Timestamps & flags
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  active    Boolean  @default(true)
+  hidden    Boolean  @default(false)
+
+  // Relations
+  offices Office[]
+}
+
+// Represents a specific office being contested within an Election, e.g., "Mayor", "School Board"
+model Office {
+  id          Int     @id @default(autoincrement())
+  position    String
+  description String?
+  positions   Int
+
+  city  String
+  state String
+
+  // Election linkage
+  electionId Int
+  election   Election @relation(fields: [electionId], references: [id])
+
+  // Timestamps & flags
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  hidden    Boolean  @default(false)
+
+  // Candidates — keep your existing model unchanged
+  candidates Candidate[]
 }
 
 model Candidate {
@@ -29,7 +57,7 @@ model Candidate {
   party           String
   policies        String[]
   website         String?
-  electionId      Int?
+  officeId        Int? // Changed from electionId
   createdAt       DateTime               @default(now())
   updatedAt       DateTime               @updatedAt
   additionalNotes String?
@@ -52,7 +80,7 @@ model Candidate {
   email           String?
   phone           String?
   votinglink      String?
-  election        Election?              @relation(fields: [electionId], references: [id])
+  office          Office?                @relation(fields: [officeId], references: [id])
   profileViews    CandidateProfileView[]
   donations       Donation[]
   endorsements    Endorsement[]
@@ -95,30 +123,29 @@ model UserValidationRequest {
   linkedin       String?
   twitter        String?
   additionalInfo String?
-  city           String?
-  state          String?
+  city           String? // City/State might be redundant if linked via Office -> Election
+  state          String? // City/State might be redundant if linked via Office -> Election
   candidateId    Int
   clerkUserId    String           @unique
-  electionId     Int
+  officeId       Int              @default(1) // Changed from electionId
   createdAt      DateTime         @default(now())
   updatedAt      DateTime         @updatedAt
   status         SubmissionStatus @default(PENDING)
 }
 
-model ElectionSubmission {
+// Renamed from ElectionSubmission
+model OfficeSubmission {
   id          Int              @id @default(autoincrement())
-  position    String
-  date        DateTime
+  position    String // Office position
+  description String?
+  positions   Int // Number of seats
+  electionId  Int // Link to the parent Election
   createdAt   DateTime         @default(now())
   updatedAt   DateTime         @updatedAt
-  city        String
-  state       String
-  description String
-  positions   Int
-  type        ElectionType
   status      SubmissionStatus @default(PENDING)
   clerkUserId String?
   notes       String?
+  // Removed date, city, state, type as they belong to the Election
 }
 
 model CandidateSubmission {
@@ -127,7 +154,7 @@ model CandidateSubmission {
   party           String
   policies        String[]
   website         String?
-  electionId      Int?
+  officeId        Int? // Changed from electionId
   createdAt       DateTime         @default(now())
   updatedAt       DateTime         @updatedAt
   additionalNotes String?
