@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import prisma from "@/prisma/prisma"; // Adjust the import path to match your project structure
 import { normalizeState } from "@/lib/stateMapping";
-import { Election } from "@prisma/client";
+import { Office } from "@prisma/client";
 
 export async function GET(request: Request) {
   try {
@@ -19,9 +19,9 @@ export async function GET(request: Request) {
     // Normalize the state value (handle both abbreviations and full names)
     const normalizedState = normalizeState(rawState);
 
-    // If city is 'all', return all elections (for dropdown lists)
+    // If city is 'all', return all offices (for dropdown lists)
     if (city === "all" && normalizedState === "all") {
-      const allElections = await prisma.election.findMany({
+      const allOffices = await prisma.office.findMany({
         where: {
           hidden: false,
           NOT: {
@@ -44,13 +44,13 @@ export async function GET(request: Request) {
         ],
       });
 
-      return NextResponse.json(allElections);
+      return NextResponse.json(allOffices);
     }
 
-    let elections: Election[] = [];
+    let offices: Office[] = [];
 
     if (normalizedState) {
-      elections = await prisma.election.findMany({
+      offices = await prisma.office.findMany({
         where: {
           city,
           state: normalizedState,
@@ -62,12 +62,12 @@ export async function GET(request: Request) {
     }
 
     // If no results with normalized state, try with raw state as fallback
-    if (elections.length === 0) {
+    if (offices.length === 0) {
       console.log(
         `No results found with normalized state '${normalizedState}', trying with raw state '${rawState}'`
       );
 
-      elections = await prisma.election.findMany({
+      offices = await prisma.office.findMany({
         where: {
           city,
           state: rawState,
@@ -78,11 +78,11 @@ export async function GET(request: Request) {
       });
     }
 
-    return NextResponse.json(elections);
+    return NextResponse.json(offices);
   } catch (error) {
-    console.error("Error fetching elections:", error);
+    console.error("Error fetching offices:", error);
     return NextResponse.json(
-      { error: "Error fetching elections" },
+      { error: "Error fetching offices" },
       { status: 500 }
     );
   }

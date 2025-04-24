@@ -47,7 +47,6 @@ export async function POST(request: NextRequest) {
     const officeSubmission = await prisma.officeSubmission.create({
       data: {
         position,
-        date: new Date(date),
         city,
         state,
         description,

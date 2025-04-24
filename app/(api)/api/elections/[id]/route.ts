@@ -10,38 +10,38 @@ export async function GET(request: NextRequest) {
     const idStr = parts[parts.length - 1];
     if (!idStr) {
       return NextResponse.json(
-        { message: "Election ID is required" },
+        { message: "Office ID is required" },
         { status: 400 }
       );
     }
-    const electionId = parseInt(idStr);
+    const officeId = parseInt(idStr);
 
-    console.log("Election ID:", electionId);
+    console.log("Office ID:", officeId);
 
-    const election = await prisma.election.findUnique({
+    const office = await prisma.office.findUnique({
       where: {
-        id: electionId,
+        id: officeId,
       },
     });
 
-    // Get the election by ID
-    if (!election) {
+    // Get the office by ID
+    if (!office) {
       return NextResponse.json(
-        { message: "Election not found" },
+        { message: "Office not found" },
         { status: 404 }
       );
     }
 
-    // Return the election data including city and state
+    // Return the office data including city and state
     return NextResponse.json({
-      id: election.id,
-      city: election.city,
-      state: election.state,
+      id: office.id,
+      city: office.city,
+      state: office.state,
     });
   } catch (error) {
-    console.error("Error fetching election:", error);
+    console.error("Error fetching office:", error);
     return NextResponse.json(
-      { message: "Error fetching election data" },
+      { message: "Error fetching office data" },
       { status: 500 }
     );
   }

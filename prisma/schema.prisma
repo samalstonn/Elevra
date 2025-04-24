@@ -44,42 +44,56 @@ model Office {
   election   Election @relation(fields: [electionId], references: [id])
 
   // Timestamps & flags
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  hidden    Boolean  @default(false)
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+  hidden      Boolean          @default(false)
+  clerkUserId String?
+  status      SubmissionStatus @default(PENDING)
 
   // Candidates — keep your existing model unchanged
   candidates Candidate[]
 }
 
 model Candidate {
+  id              Int                    @id @default(autoincrement())
+
+  // Identification & Core Details
   name            String
   party           String
-  policies        String[]
-  website         String?
-  officeId        Int? // Changed from electionId
-  createdAt       DateTime               @default(now())
-  updatedAt       DateTime               @updatedAt
-  additionalNotes String?
-  city            String?
-  linkedin        String?
-  photo           String?
   position        String
-  sources         String[]
-  state           String?
-  bio             String                 @default("")
-  clerkUserId     String?                @unique
-  history         String[]
-  id              Int                    @id @default(autoincrement())
-  status          SubmissionStatus       @default(PENDING)
-  verified        Boolean                @default(false)
-  photoUrl        String?
-  hidden          Boolean                @default(false)
   slug            String                 @unique
-  donationCount   Int                    @default(0)
+  clerkUserId     String?                @unique
+
+  // Biography & Policy
+  bio             String                 @default("")
+  policies        String[]
+  sources         String[]
+  history         String[]
+  additionalNotes String?
+
+  // Contact Information
+  website         String?
+  linkedin        String?
+  photo         String?
+  photoUrl        String?
   email           String?
   phone           String?
   votinglink      String?
+
+  // Location
+  city            String?
+  state           String?
+
+  // Election & Engagement
+  officeId        Int? 
+  donationCount   Int                    @default(0)
+
+  // Timestamps & Status
+  createdAt       DateTime               @default(now())
+  updatedAt       DateTime               @updatedAt
+  status          SubmissionStatus       @default(PENDING)
+  verified        Boolean                @default(false)
+  hidden          Boolean                @default(false)
   office          Office?                @relation(fields: [officeId], references: [id])
   profileViews    CandidateProfileView[]
   donations       Donation[]
@@ -131,42 +145,6 @@ model UserValidationRequest {
   createdAt      DateTime         @default(now())
   updatedAt      DateTime         @updatedAt
   status         SubmissionStatus @default(PENDING)
-}
-
-// Renamed from ElectionSubmission
-model OfficeSubmission {
-  id          Int              @id @default(autoincrement())
-  position    String // Office position
-  description String?
-  positions   Int // Number of seats
-  electionId  Int // Link to the parent Election
-  createdAt   DateTime         @default(now())
-  updatedAt   DateTime         @updatedAt
-  status      SubmissionStatus @default(PENDING)
-  clerkUserId String?
-  notes       String?
-  // Removed date, city, state, type as they belong to the Election
-}
-
-model CandidateSubmission {
-  id              Int              @id @default(autoincrement())
-  name            String
-  party           String
-  policies        String[]
-  website         String?
-  officeId        Int? // Changed from electionId
-  createdAt       DateTime         @default(now())
-  updatedAt       DateTime         @updatedAt
-  additionalNotes String?
-  city            String
-  linkedin        String?
-  photo           String?
-  position        String
-  state           String
-  bio             String
-  clerkUserId     String?
-  status          SubmissionStatus @default(PENDING)
-  notes           String?
 }
 
 model Vendor {
