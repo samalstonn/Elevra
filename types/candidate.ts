@@ -22,11 +22,14 @@ export type CandidateDashboardData = Pick<
   | "policies"
   | "photoUrl" // Assuming you add photoUrl to Candidate model like Vendor
   | "status"
-  | "electionId"
   | "slug"
   // Add any other fields relevant to the dashboard view
 > & {
-  election?: Pick<PrismaElection, "id" | "position" | "date"> | null; // Optional election details
+  /** Profiles vary per election; list of elections this candidate is in */
+  elections?: Pick<
+    PrismaElection,
+    "id" | "position" | "date" | "city" | "state"
+  >[];
   // Add subscription status field when implemented
   // subscriptionTier?: string;
 };

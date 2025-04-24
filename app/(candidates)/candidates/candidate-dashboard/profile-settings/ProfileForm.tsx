@@ -22,8 +22,6 @@ import { FaMapMarkerAlt, FaCheckCircle } from "react-icons/fa";
 import { AutocompleteSuggestion } from "@/types/geocoding";
 import { getLocationSuggestions, normalizeLocation } from "@/lib/geocoding";
 import { debounce } from "@/lib/debounce";
-import SearchBar from "@/components/ResultsSearchBar";
-import { Election } from "@prisma/client";
 
 // Define Zod schema for validation
 // Important: Make policies non-optional since the form expects it as a required field
@@ -52,7 +50,6 @@ const profileSchema = z.object({
     .or(z.literal("")),
   city: z.string().optional(),
   state: z.string().optional(), // Assuming 2-letter state code
-  // Define as non-optional array - this is the key change (removed)
   policies: z
     .array(z.string())
     .max(5, { message: "Maximum 5 policies allowed." })
@@ -61,26 +58,27 @@ const profileSchema = z.object({
     .string()
     .max(500, { message: "Notes cannot exceed 500 characters." })
     .optional(),
-  electionId: z.number().int().positive().optional().nullable(), // Allow null or positive integer
 });
 
 // The inferred type has policies as a required string[]
 type ProfileFormData = z.infer<typeof profileSchema>;
 
 interface ProfileFormProps {
-  candidateData: CandidateDashboardData;
-  onUpdateSuccess: (updatedData: CandidateDashboardData) => void;
+  candidateId: number;
+  electionId: number;
+  profileData: Partial<ProfileFormData>;
+  onUpdateSuccess: () => void;
 }
 
 export function ProfileForm({
-  candidateData,
+  candidateId,
+  electionId,
+  profileData,
   onUpdateSuccess,
 }: ProfileFormProps) {
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [selectedElection, setSelectedElection] = useState<Election | null>(
-    null
-  );
+  // Removed: const [selectedElection, setSelectedElection] = useState<Election | null>(null);
 
   // Location search state
   const [locationInput, setLocationInput] = useState("");
@@ -98,8 +96,8 @@ export function ProfileForm({
   }>({});
 
   // Prepare the policies data - ensure it's a non-empty array
-  const initialPolicies = Array.isArray(candidateData.policies)
-    ? candidateData.policies.filter(Boolean)
+  const initialPolicies = Array.isArray(profileData.policies)
+    ? profileData.policies.filter(Boolean)
     : [];
 
   // If no policies exist but schema requires at least one, provide a default
@@ -116,70 +114,48 @@ export function ProfileForm({
     formState: { errors },
   } = useForm<ProfileFormData>({
     resolver: zodResolver(profileSchema),
-    // Default values must match the expected ProfileFormData type exactly
     defaultValues: {
-      name: candidateData.name || "",
-      party: candidateData.party || "",
-      position: candidateData.position || "",
-      bio: candidateData.bio || "",
-      website: candidateData.website || "",
-      linkedin: candidateData.linkedin || "",
-      votinglink: candidateData.votinglink || "",
-      city: candidateData.city || "",
-      state: candidateData.state || "",
-      // This is required by the ProfileFormData type
+      name: profileData.name || "",
+      party: profileData.party || "",
+      position: profileData.position || "",
+      bio: profileData.bio || "",
+      website: profileData.website || "",
+      linkedin: profileData.linkedin || "",
+      votinglink: profileData.votinglink || "",
+      city: profileData.city || "",
+      state: profileData.state || "",
       policies: policiesWithDefault,
-      additionalNotes: candidateData.additionalNotes || "",
-      electionId: candidateData.electionId || null,
+      additionalNotes: profileData.additionalNotes || "",
     },
   });
 
   // Initialize location input and fetch election when component mounts
   useEffect(() => {
     // Set location input if city and state are available
-    if (candidateData.city && candidateData.state) {
-      setLocationInput(`${candidateData.city}, ${candidateData.state}`);
+    if (profileData.city && profileData.state) {
+      setLocationInput(`${profileData.city}, ${profileData.state}`);
     }
+  }, [profileData.city, profileData.state]);
 
-    // Fetch election details if electionId exists
-    if (candidateData.electionId) {
-      fetch(`/api/elections/${candidateData.electionId}`)
-        .then((res) => {
-          if (!res.ok) {
-            throw new Error("Election not found");
-          }
-          return res.json();
-        })
-        .then((data) => setSelectedElection(data))
-        .catch((err) => {
-          console.error("Error fetching election details:", err);
-          setSelectedElection(null);
-        });
-    }
-  }, [candidateData]);
-
-  // Reset form if candidateData changes
+  // Reset form if profileData changes
   useEffect(() => {
     reset({
-      name: candidateData.name || "",
-      party: candidateData.party || "",
-      position: candidateData.position || "",
-      bio: candidateData.bio || "",
-      website: candidateData.website || "",
-      linkedin: candidateData.linkedin || "",
-      votinglink: candidateData.votinglink || "",
-      city: candidateData.city || "",
-      state: candidateData.state || "",
-      // Always provide an array
+      name: profileData.name || "",
+      party: profileData.party || "",
+      position: profileData.position || "",
+      bio: profileData.bio || "",
+      website: profileData.website || "",
+      linkedin: profileData.linkedin || "",
+      votinglink: profileData.votinglink || "",
+      city: profileData.city || "",
+      state: profileData.state || "",
       policies:
-        Array.isArray(candidateData.policies) &&
-        candidateData.policies.length > 0
-          ? candidateData.policies
+        Array.isArray(profileData.policies) && profileData.policies.length > 0
+          ? profileData.policies
           : [""],
-      additionalNotes: candidateData.additionalNotes || "",
-      electionId: candidateData.electionId || null,
+      additionalNotes: profileData.additionalNotes || "",
     });
-  }, [candidateData, reset]);
+  }, [profileData, reset]);
 
   // Close suggestions when clicking outside
   useEffect(() => {
@@ -303,34 +279,38 @@ export function ProfileForm({
   const onSubmit: SubmitHandler<ProfileFormData> = async (data) => {
     setIsSubmitting(true);
     try {
-      const response = await fetch("/api/candidate/update", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          candidateId: candidateData.id,
-          ...data,
-          // Default missing location to empty strings
-          city: data.city ?? "",
-          state: data.state ?? "",
-          // Ensure policies is an array of non-empty strings
-          policies: (data.policies || []).filter(
-            (policy) => policy.trim() !== ""
-          ),
-          electionId: data.electionId ? Number(data.electionId) : null,
-        }),
-      });
-
-      const result = await response.json();
-
-      if (!response.ok) {
-        throw new Error(result.error || "Failed to update profile.");
+      // Update only the election-specific candidate info via electionLink
+      const updateRes = await fetch(
+        `/api/electionlinks/${candidateId}/${electionId}`,
+        {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            profile: {
+              name: data.name,
+              party: data.party,
+              position: data.position,
+              bio: data.bio,
+              website: data.website ?? "",
+              linkedin: data.linkedin ?? "",
+              votinglink: data.votinglink ?? "",
+              city: data.city ?? "",
+              state: data.state ?? "",
+              policies: (data.policies || []).filter((p) => p.trim() !== ""),
+              additionalNotes: data.additionalNotes ?? "",
+            },
+          }),
+        }
+      );
+      const updateResult = await updateRes.json();
+      if (!updateRes.ok) {
+        throw new Error(updateResult.error || "Failed to update profile.");
       }
-
       toast({
         title: "Profile Updated",
         description: "Your profile information has been saved successfully.",
       });
-      onUpdateSuccess(result.candidate);
+      onUpdateSuccess();
     } catch (error: unknown) {
       console.error("Update error:", error);
       toast({
@@ -471,68 +451,6 @@ export function ProfileForm({
           <input type="hidden" {...register("city")} />
           <input type="hidden" {...register("state")} />
 
-          {/* Election Search */}
-          <div className="space-y-2 text-left">
-            <Label
-              htmlFor="electionId"
-              className="block text-sm font-medium text-gray-700"
-            >
-              Election (Optional)
-            </Label>
-            <p className="text-sm text-gray-500">
-              If you&rsquo;re not currently running in an election, leave this
-              blank.
-            </p>
-
-            {/* Display the selected election */}
-            {selectedElection && (
-              <div className="flex items-center justify-between bg-white border border-gray-300 px-4 py-2 rounded-xl shadow-sm">
-                <div>
-                  <div className="font-medium">{selectedElection.position}</div>
-                  <div className="text-gray-600 text-sm">
-                    {selectedElection.city}, {selectedElection.state}
-                  </div>
-                </div>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => {
-                    setSelectedElection(null);
-                    setValue("electionId", null);
-                  }}
-                  className="text-gray-400 hover:text-gray-600"
-                >
-                  Clear
-                </Button>
-              </div>
-            )}
-
-            {/* Show search if no election is selected */}
-            {!selectedElection && (
-              <SearchBar
-                placeholder="Search for an election..."
-                apiEndpoint="/api/elections/search"
-                shadow={false}
-                onResultSelect={(election) => {
-                  fetch(`/api/elections/${election.id}`)
-                    .then((res) => {
-                      if (!res.ok) {
-                        throw new Error("Election not found");
-                      }
-                      return res.json();
-                    })
-                    .then((electionData) => {
-                      setSelectedElection(electionData);
-                      setValue("electionId", electionData.id);
-                    })
-                    .catch((err) => {
-                      console.error("Error fetching election details:", err);
-                    });
-                }}
-              />
-            )}
-          </div>
-
           {/* Bio */}
           <div>
             <Label htmlFor="bio">Biography</Label>
@@ -645,15 +563,7 @@ export function ProfileForm({
 
           {/* Submit and Public Profile Button */}
           <div className="flex justify-end gap-3 items-center">
-            <Button variant="purple" asChild>
-              <a
-                href={`/candidate/${candidateData.slug}`}
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                View Public Profile
-              </a>
-            </Button>
+            {/* Remove the public profile button for now, or if you still want it, you need to pass slug in profileData */}
             <Button type="submit" disabled={isSubmitting}>
               {isSubmitting && (
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />

@@ -9,10 +9,14 @@ interface ContactTabProps {
   website?: string | null;
   phone?: string | null;
   linkedin?: string | null;
-  votinglink?: string | null;
 }
 
-export function ContactTab({ email, website, phone, linkedin, votinglink }: ContactTabProps) {
+export function ContactTab({
+  email,
+  website,
+  phone,
+  linkedin,
+}: ContactTabProps) {
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
       {email && (
@@ -75,23 +79,7 @@ export function ContactTab({ email, website, phone, linkedin, votinglink }: Cont
           </div>
         </div>
       )}
-      {votinglink && (
-        <div className="flex items-center space-x-3 p-4">
-          <MdHowToVote className="text-gray-500" />
-          <div className="flex-1">
-            <h3 className="text-sm font-semibold text-gray-900">Voting Link</h3>
-            <a
-              href={votinglink}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-sm text-indigo-600 hover:underline"
-            >
-              {votinglink}
-            </a>
-          </div>
-        </div>
-      )}
-      {!email && !website && !phone && !linkedin && !votinglink && (
+      {!email && !website && !phone && !linkedin && (
         <div className="md:col-span-2 text-center text-sm text-gray-500">
           No contact information available.
         </div>

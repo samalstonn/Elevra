@@ -43,10 +43,23 @@ export async function GET(request: Request) {
         bio: true,
         website: true,
         linkedin: true,
-        electionId: true,
+        // electionId removed
         policies: true,
         slug: true,
         votinglink: true,
+        elections: {
+          select: {
+            election: {
+              select: {
+                id: true,
+                position: true,
+                date: true,
+                city: true,
+                state: true,
+              },
+            },
+          },
+        },
       },
     });
 
