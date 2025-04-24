@@ -7,6 +7,10 @@ export const metadata = {
     icon: "/favicon.ico",
   },
 };
+import { validateConfig } from "@/lib/config";
+
+// Validate critical configuration on startup
+validateConfig();
 
 export default function RootLayout({
   children,

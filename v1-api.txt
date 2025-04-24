@@ -1,0 +1,61 @@
+/api
+├── v1                                  # API versioning
+│   ├── auth                            # Authentication endpoints
+│   ├── candidates                      # Candidate resource
+│   │   ├── route.ts                      # GET (list), POST (create)
+│   │   ├── [slug]                        # Specific candidate
+│   │   │   ├── donations               # Donations for specific candidate
+│   │   │   ├── endorsements            # Endorsements for specific candidate
+│   │   |── verification            # Verification requests
+│   │   ├── search                      # Search candidates
+│   │   ├── views                       # View analytics
+│   │   └── discovery                   # Discover candidates
+│   ├── elections
+│   │   ├── route.ts                      # GET (list), POST (create)
+│   │   ├── [id]
+│   │   │   ├── route.ts                  # GET, PUT, DELETE single election
+│   │   │   └── offices
+│   │   │       ├── route.ts              # GET (list offices for election), POST (create office in election)
+│   │   │       └── [officeId]
+│   │   │           ├── route.ts          # GET, PUT, DELETE single office
+│   │   │           └── candidates
+│   │   │               ├── route.ts      # GET (list candidates for office), POST (add candidate to office)
+│   │   │               └── [candidateId]
+│   │   │                   └── route.ts  # GET, PUT, DELETE candidate from office
+│   │   ├── active
+│   │   │   └── route.ts                  # GET active elections
+│   │   ├── upcoming
+│   │   │   └── route.ts                  # GET upcoming elections
+│   │   └── search
+│   │       └── route.ts                  # GET search elections
+│   ├── offices                         # Offices resource
+│   │   ├── [id]                        # Specific office
+│   │   │   └── candidates              # Candidates in an office
+│   │   |-─ search                      # Search offices
+│   ├── vendors                         # Vendor resource
+│   │   ├── [id]                        # Specific vendor
+│   │   │   ├── portfolio               # Vendor portfolio
+│   │   │   ├── testimonials            # Vendor testimonials
+│   │   │   └── services                # Vendor services
+│   │   ├── categories                  # Vendor categories
+│   │   └── discovery                   # Discover vendors
+│   ├── users                           # User resource
+│   │   ├── [id]                        # Specific user
+│   │   │   ├── donations               # User donations
+│   │   │   ├── endorsements            # User endorsements
+│   ├── payments                        # Payment processing
+│   │   ├── checkout_sessions                    # Create checkout sessions
+│   │   ├── session_info               # Session info
+│   ├── submissions                     # User submissions
+│   │   ├── candidates                  # Candidate submissions
+│   │   └── elections                   # Election submissions
+│   ├── media                           # Media uploads
+│   │   ├── photos                      # Photo uploads
+│   │   └── blobs                       # Generic blob storage
+│   └── webhooks                        # External service webhooks
+│       ├── stripe                      # Stripe webhooks
+│       └── clerk                       # Clerk auth webhooks
+└── admin                               # Admin-only endpoints
+    ├── moderation                      # Content moderation
+    │   |── approvals                   # Approval workflows
+    ├── email                      # Email management

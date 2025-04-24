@@ -3,8 +3,10 @@ import {
   clerkMiddleware,
   createRouteMatcher,
 } from "@clerk/nextjs/server";
-import { m } from "framer-motion";
 import { NextResponse } from "next/server";
+import type { NextRequest } from "next/server";
+import { rateLimitRequest } from "./lib/api/rate-limit";
+import { handleApiError } from "./lib/api/errors/error-handler";
 
 // Define protected routes
 const isPrivateRoute = createRouteMatcher([
@@ -16,6 +18,11 @@ const isPrivateRoute = createRouteMatcher([
 
 export default clerkMiddleware(async (auth, req) => {
   const { userId, sessionClaims } = await auth();
+
+  // Only apply to API routes
+  if (req.nextUrl.pathname.startsWith("/api/")) {
+    return middleware(req);
+  }
 
   // Protect private routes - require authentication
   if (isPrivateRoute(req)) {
@@ -49,3 +56,34 @@ export const config = {
     "/(api|trpc)(.*)",
   ],
 };
+
+export async function middleware(request: NextRequest) {
+  try {
+    // Apply rate limiting to API routes
+    if (request.nextUrl.pathname.startsWith("/api/v1/")) {
+      // Public API endpoints
+      const result = await rateLimitRequest(request, {
+        limit: 60, // 60 requests
+        window: 60, // per minute
+      });
+
+      // If rate limit was applied and successful, add headers
+      if (result) {
+        const response = NextResponse.next();
+        response.headers.set("X-RateLimit-Limit", result.limit.toString());
+        response.headers.set(
+          "X-RateLimit-Remaining",
+          result.remaining.toString()
+        );
+        response.headers.set("X-RateLimit-Reset", result.reset.toISOString());
+        return response;
+      }
+    }
+
+    // Continue to the route handler
+    return NextResponse.next();
+  } catch (error) {
+    // Handle any errors (including rate limit errors)
+    return handleApiError(error);
+  }
+}
