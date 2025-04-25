@@ -8,7 +8,7 @@ import { currentUser } from "@clerk/nextjs/server";
 
 interface CandidatePageProps {
   params: Promise<{ slug: string }>;
-  searchParams: { election?: string };
+  searchParams: Promise<{ election?: string }>;
 }
 
 export default async function CandidatePage({
@@ -57,7 +57,9 @@ export default async function CandidatePage({
     ...link,
     election: {
       ...link.election,
-      candidates: link.election.candidates.map((ec: ElectionCandidate) => ec.candidate),
+      candidates: link.election.candidates.map(
+        (ec: ElectionCandidate) => ec.candidate
+      ),
     },
   }));
 

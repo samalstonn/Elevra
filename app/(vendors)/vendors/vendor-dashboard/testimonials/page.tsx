@@ -37,9 +37,9 @@ export default async function VendorTestimonialsPage() {
         select: {
           id: true,
           name: true,
-          position: true,
-          city: true,
-          state: true,
+          currentRole: true,
+          currentCity: true,
+          currentState: true,
         },
       },
     },
@@ -48,6 +48,30 @@ export default async function VendorTestimonialsPage() {
   if (!vendor) {
     redirect("/vendors?tab=signup");
   }
+
+  // Map testimonials to ensure candidate.currentRole is a string
+  const mappedTestimonials = vendor.testimonials.map((t) => ({
+    id: t.id,
+    content: t.content,
+    rating: t.rating,
+    createdAt: t.createdAt,
+    candidate: {
+      id: t.candidate.id,
+      name: t.candidate.name,
+      currentRole: t.candidate.currentRole ?? "",
+      currentCity: t.candidate.currentCity,
+      currentState: t.candidate.currentState,
+    },
+  }));
+
+  // Map candidates for request form to use 'position' and rename fields
+  const mappedCandidates = vendor.candidate.map((c) => ({
+    id: c.id,
+    name: c.name,
+    position: c.currentRole ?? "",
+    city: c.currentCity,
+    state: c.currentState,
+  }));
 
   // Calculate average rating
   const averageRating =
@@ -121,7 +145,7 @@ export default async function VendorTestimonialsPage() {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <TestimonialsList testimonials={vendor.testimonials} />
+                <TestimonialsList testimonials={mappedTestimonials} />
               </CardContent>
             </Card>
           </TabsContent>
@@ -138,7 +162,7 @@ export default async function VendorTestimonialsPage() {
               <CardContent>
                 <TestimonialRequestForm
                   vendorId={vendor.id}
-                  candidates={vendor.candidate}
+                  candidates={mappedCandidates}
                 />
               </CardContent>
             </Card>

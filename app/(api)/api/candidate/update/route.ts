@@ -23,11 +23,8 @@ export async function POST(request: NextRequest) {
       bio,
       website,
       linkedin,
-      votinglink,
-      additionalNotes,
       city,
       state,
-      policies,
       electionId,
     } = body;
 
@@ -64,22 +61,17 @@ export async function POST(request: NextRequest) {
       where: { id: Number(candidateId) },
       data: {
         name,
-        position,
-        party,
         bio,
         website: website || null,
         linkedin: linkedin || null,
-        votinglink: votinglink || null,
-        additionalNotes: additionalNotes || null,
-        city,
-        state,
-        policies: policies || [],
+        currentCity: city,
+        currentState: state,
+        currentRole: position,
         // Only update electionId if provided
         ...(electionId ? { electionId: Number(electionId) } : {}),
         // Keep existing fields
         photo: candidate.photo,
         status: candidate.status,
-        sources: candidate.sources,
         history: candidate.history,
       },
     });

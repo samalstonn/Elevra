@@ -62,7 +62,7 @@ async function sendConfirmationEmail(
               donationDetails.processingFee
             ).toFixed(2)}</p>
               <p><strong>Candidate:</strong> ${candidate.name} (${
-        candidate.position || "Candidate"
+        candidate.currentRole || "Candidate"
       })</p>
               <p><strong>Transaction ID:</strong> ${
                 donationDetails.transactionId
@@ -117,7 +117,7 @@ async function sendConfirmationEmail(
                   donationDetails.updatedAt || new Date()
                 ).toLocaleString()}</p>
                 <p><strong>Candidate:</strong> ${candidate.name} (${
-          candidate.position || "Candidate"
+          candidate.currentRole || "Candidate"
         })</p>
                 <p><strong>Transaction ID:</strong> ${
                   donationDetails.transactionId

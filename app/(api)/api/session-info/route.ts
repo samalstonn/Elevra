@@ -58,8 +58,7 @@ export async function GET(req: NextRequest) {
         id: true,
         name: true,
         slug: true,
-        party: true,
-        position: true,
+        currentRole: true,
         photo: true,
       },
     });

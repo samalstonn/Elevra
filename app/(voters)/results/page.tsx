@@ -4,10 +4,10 @@ import ElectionResultsClient from "./ElectionResultsClient";
 import { Candidate } from "@prisma/client";
 
 interface ElectionResultsPageProps {
-  searchParams: {
+  searchParams: Promise<{
     city?: string;
     state?: string;
-  };
+  }>;
 }
 
 async function ElectionResultsPage({ searchParams }: ElectionResultsPageProps) {

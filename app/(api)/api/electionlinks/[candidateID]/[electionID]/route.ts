@@ -1,15 +1,15 @@
 // app/(api)/api/electionlinks/[candidateID]/[electionID]/route.ts
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
 export async function GET(
-  request: Request,
-  { params }: { params: { candidateID: string; electionID: string } }
+  request: NextRequest,
+  { params }: { params: Promise<{ candidateID: string; electionID: string }> }
 ) {
-  const candidateId = parseInt(params.candidateID, 10);
-  const electionId = parseInt(params.electionID, 10);
+  const candidateId = parseInt((await params).candidateID, 10);
+  const electionId = parseInt((await params).electionID, 10);
   try {
     const link = await prisma.electionLink.findUnique({
       where: { candidateId_electionId: { candidateId, electionId } },
@@ -29,11 +29,11 @@ export async function GET(
 }
 
 export async function PUT(
-  request: Request,
-  { params }: { params: { candidateID: string; electionID: string } }
+  request: NextRequest,
+  { params }: { params: Promise<{ candidateID: string; electionID: string }> }
 ) {
-  const candidateId = parseInt(params.candidateID, 10);
-  const electionId = parseInt(params.electionID, 10);
+  const candidateId = parseInt((await params).candidateID, 10);
+  const electionId = parseInt((await params).electionID, 10);
   try {
     const { profile } = await request.json();
 
@@ -77,11 +77,11 @@ export async function PUT(
 }
 
 export async function DELETE(
-  request: Request,
-  { params }: { params: { candidateID: string; electionID: string } }
+  request: NextRequest,
+  { params }: { params: Promise<{ candidateID: string; electionID: string }> }
 ) {
-  const candidateId = parseInt(params.candidateID, 10);
-  const electionId = parseInt(params.electionID, 10);
+  const candidateId = parseInt((await params).candidateID, 10);
+  const electionId = parseInt((await params).electionID, 10);
   try {
     await prisma.electionLink.delete({
       where: { candidateId_electionId: { candidateId, electionId } },
