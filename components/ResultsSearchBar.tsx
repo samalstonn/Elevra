@@ -5,6 +5,10 @@ import { motion } from "framer-motion";
 import { Search } from "lucide-react";
 import Link from "next/link";
 
+// 2) Add this just after your imports:
+const CHIP_CLASS =
+  "inline-flex items-center bg-gray-200 px-2 py-1 rounded-full mr-2 mb-2 text-sm";
+
 export type SearchResult = {
   id: string;
   slug: string;
@@ -17,19 +21,26 @@ export type SearchResult = {
   party?: string;
 };
 
+// 1) Props
 interface SearchBarProps {
   placeholder?: string;
-  apiEndpoint?: string; // Added to make the endpoint configurable
-  onResultSelect?: (result: SearchResult) => void; // Added callback for selection
+  apiEndpoint?: string;
+  /** Single item or array for multi mode */
+  onResultSelect?: (result: SearchResult | SearchResult[]) => void;
+  /** Enable selecting multiple items */
+  multi?: boolean;
   shadow: boolean;
 }
 
 export default function SearchBar({
-  placeholder = "Search...",
-  apiEndpoint = "/api/candidates", // Default to original endpoint
+  placeholder = "Search...", // Keep defaults here for now, diff didn't explicitly remove them
+  apiEndpoint = "/api/candidates", // Keep defaults here
   onResultSelect,
   shadow,
+  multi, // Add multi here
 }: SearchBarProps) {
+  // 3) Track current selection
+  const [selectedItems, setSelectedItems] = useState<SearchResult[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [results, setResults] = useState<SearchResult[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -159,6 +170,29 @@ export default function SearchBar({
 
   return (
     <div ref={containerRef} className="relative">
+      {/* 4) Render chips if multi mode */}
+      {multi && selectedItems.length > 0 && (
+        <div className="flex flex-wrap mb-2">
+          {selectedItems.map((item) => (
+            <span key={item.id} className={CHIP_CLASS}>
+              {item.name || item.position}
+              <button
+                type="button"
+                className="ml-1 focus:outline-none"
+                onClick={() => {
+                  const filtered = selectedItems.filter(
+                    (i) => i.id !== item.id
+                  );
+                  setSelectedItems(filtered);
+                  onResultSelect?.(filtered); // Pass the updated array
+                }}
+              >
+                ×
+              </button>
+            </span>
+          ))}
+        </div>
+      )}
       <motion.div
         className={`flex items-center bg-white border border-gray-300 px-3 py-2 rounded-full ${
           shadow ? "shadow-md" : ""
@@ -184,15 +218,24 @@ export default function SearchBar({
                 <div
                   className="cursor-pointer"
                   onClick={() => {
-                    onResultSelect(item);
-                    setSearchTerm("");
-                    setResults([]);
+                    if (multi) {
+                      // Check if item is already selected to avoid duplicates
+                      if (!selectedItems.find((i) => i.id === item.id)) {
+                        const newSel = [...selectedItems, item];
+                        setSelectedItems(newSel);
+                        onResultSelect(newSel); // Pass the updated array
+                      }
+                    } else {
+                      onResultSelect(item); // Pass single item
+                    }
+                    setSearchTerm(""); // Clear search term after selection
+                    setResults([]); // Hide results after selection
                   }}
                 >
                   {renderResult(item)}
                 </div>
               ) : (
-                // Default behavior for candidates
+                // Default behavior for candidates (linking)
                 <Link href={`/candidate/${item.slug}`}>
                   {renderResult(item)}
                 </Link>

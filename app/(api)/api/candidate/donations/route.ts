@@ -25,10 +25,9 @@ export async function GET(req: NextRequest) {
               select: {
                 id: true,
                 name: true,
-                party: true,
-                position: true,
-                city: true,
-                state: true,
+                currentRole: true,
+                currentCity: true,
+                currentState: true,
                 slug: true,
               },
             },

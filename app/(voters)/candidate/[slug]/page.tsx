@@ -3,14 +3,20 @@ import { notFound } from "next/navigation";
 import { headers } from "next/headers";
 import prisma from "@/prisma/prisma";
 import CandidateClient from "./CandidateClient";
+import { Candidate } from "@prisma/client";
 import { currentUser } from "@clerk/nextjs/server";
 
 interface CandidatePageProps {
   params: Promise<{ slug: string }>;
+  searchParams: Promise<{ election?: string }>;
 }
 
-export default async function CandidatePage({ params }: CandidatePageProps) {
+export default async function CandidatePage({
+  params,
+  searchParams,
+}: CandidatePageProps) {
   const resolvedParams = await params;
+  const resolvedSearchParams = await searchParams;
   const { slug } = resolvedParams;
 
   // Fetch candidate by slug
@@ -25,19 +31,50 @@ export default async function CandidatePage({ params }: CandidatePageProps) {
   }
 
   const candidateID = candidate.id;
-  const electionID = candidate.electionId;
 
-  // Fetch election details if available
-  const election = electionID
-    ? await prisma.election.findFirst({
-        where: {
-          id: electionID,
-        },
+  // Fetch all election links for this candidate, including election details and full candidate info
+  const links = await prisma.electionLink.findMany({
+    where: { candidateId: candidateID },
+    include: {
+      election: {
         include: {
-          candidates: true,
+          candidates: {
+            include: {
+              candidate: true,
+            },
+          },
         },
-      })
-    : null;
+      },
+    },
+  });
+
+  interface ElectionCandidate {
+    candidate: Candidate;
+  }
+
+  // Map links to include only the full Candidate objects in election.candidates
+  const linksWithFullCandidates = links.map((link) => ({
+    ...link,
+    election: {
+      ...link.election,
+      candidates: link.election.candidates.map(
+        (ec: ElectionCandidate) => ec.candidate
+      ),
+    },
+  }));
+
+  // Pick the active link by query param or default if only one
+  const electionIdParam = resolvedSearchParams.election
+    ? parseInt(resolvedSearchParams.election, 10)
+    : undefined;
+
+  let selectedLink = null;
+  if (electionIdParam != null) {
+    selectedLink = links.find((l) => l.electionId === electionIdParam) ?? null;
+    if (!selectedLink) notFound();
+  } else if (links.length === 1) {
+    selectedLink = links[0];
+  }
 
   // Track page view
   const reqHeaders = headers();
@@ -60,9 +97,7 @@ export default async function CandidatePage({ params }: CandidatePageProps) {
       NOT: { id: candidateID },
       hidden: false,
     },
-    include: {
-      election: true,
-    },
+    // No include necessary here
   });
 
   // Check if current user can edit this candidate profile
@@ -74,7 +109,7 @@ export default async function CandidatePage({ params }: CandidatePageProps) {
   return (
     <CandidateClient
       candidate={candidate}
-      election={election}
+      electionLinks={linksWithFullCandidates}
       suggestedCandidates={suggestedCandidates}
       isEditable={isEditable}
     />

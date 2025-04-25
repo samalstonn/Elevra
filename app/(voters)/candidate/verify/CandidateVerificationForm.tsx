@@ -135,7 +135,7 @@ export default function CandidateVerificationForm() {
             const candidateData: Candidate = await res.json();
             setFormData((prevData) => ({
               ...prevData,
-              position: candidateData.position || prevData.position,
+              position: candidateData.currentRole || prevData.position,
               fullName: candidateData.name
                 ? candidateData.name
                 : prevData.fullName,

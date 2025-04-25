@@ -10,23 +10,23 @@ export type CandidateDashboardData = Pick<
   PrismaCandidate,
   | "id"
   | "name"
-  | "party"
-  | "position"
+  | "currentRole"
+  | "currentCity"
+  | "currentState"
   | "bio"
   | "website"
   | "linkedin"
-  | "votinglink"
-  | "additionalNotes"
-  | "city"
-  | "state"
-  | "policies"
   | "photoUrl" // Assuming you add photoUrl to Candidate model like Vendor
   | "status"
-  | "electionId"
   | "slug"
   // Add any other fields relevant to the dashboard view
 > & {
-  election?: Pick<PrismaElection, "id" | "position" | "date"> | null; // Optional election details
+  party?: string;
+  /** Profiles vary per election; list of elections this candidate is in */
+  elections?: Pick<
+    PrismaElection,
+    "id" | "position" | "date" | "city" | "state"
+  >[];
   // Add subscription status field when implemented
   // subscriptionTier?: string;
 };

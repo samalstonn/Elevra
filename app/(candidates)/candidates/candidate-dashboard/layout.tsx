@@ -23,14 +23,8 @@ const navItems = [
   },
   {
     href: "/candidates/candidate-dashboard/profile-settings",
-    label: "My Profile",
+    label: "My Elections",
     icon: User,
-    premium: false,
-  },
-  {
-    href: "/candidates/candidate-dashboard/donations",
-    label: "Donations",
-    icon: HandCoins,
     premium: false,
   },
   {
@@ -38,6 +32,12 @@ const navItems = [
     label: "Endorsements",
     icon: Award,
     premium: false,
+  },
+  {
+    href: "/candidates/candidate-dashboard/donations",
+    label: "Donations",
+    icon: HandCoins,
+    premium: true,
   },
   // --- Premium Tabs ---
   {

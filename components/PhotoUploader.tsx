@@ -120,7 +120,10 @@ export function PhotoUploader({
     <Card className={cn(error && "border-red-500")}>
       <CardHeader>
         <CardTitle>Upload Profile Photo</CardTitle>
-        <CardDescription>Select a file to upload</CardDescription>
+        <CardDescription>
+          Select a file to upload. This photo will be available for all
+          elections.
+        </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="flex items-center gap-4 justify-center">

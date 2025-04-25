@@ -35,18 +35,34 @@ export async function GET(request: Request) {
       select: {
         id: true,
         name: true,
-        party: true,
-        position: true,
-        city: true,
-        state: true,
+        currentRole: true,
+        currentCity: true,
+        currentState: true,
         status: true,
         bio: true,
         website: true,
         linkedin: true,
-        electionId: true,
-        policies: true,
         slug: true,
-        votinglink: true,
+        donations: {
+          select: {
+            id: true,
+            amount: true,
+            createdAt: true,
+          },
+        },
+        elections: {
+          select: {
+            election: {
+              select: {
+                id: true,
+                position: true,
+                date: true,
+                city: true,
+                state: true,
+              },
+            },
+          },
+        },
       },
     });
 
@@ -109,30 +125,18 @@ export async function POST(request: Request) {
     const body = await request.json();
     const {
       name,
-      party,
-      position,
+      currentRole,
       city,
       state,
       bio,
       website,
       linkedin,
-      policies,
       clerkUserId,
-      additionalNotes,
-      electionId,
     } = body;
 
     // Validate required fields
-    if (
-      !name ||
-      !party ||
-      !position ||
-      !city ||
-      !state ||
-      !bio ||
-      !policies ||
-      policies.length === 0
-    ) {
+    if (!name || !currentRole || !city || !state || !bio) {
+      console.error("Missing required fields:", body);
       return NextResponse.json(
         { error: "Missing required fields" },
         { status: 400 }
@@ -164,14 +168,17 @@ export async function POST(request: Request) {
 
     body.status = "APPROVED" as SubmissionStatus;
     body.slug = uniqueSlug;
-    body.electionId = electionId || null;
     body.verified = true;
     body.website = website || null;
     body.linkedin = linkedin || null;
-    body.additionalNotes = additionalNotes || null;
     body.hidden = true;
+    body.currentCity = city;
+    body.currentState = state;
+    // remove the city and state from the body
+    delete body.city;
+    delete body.state;
 
-    const createData: Omit<Prisma.CandidateUncheckedCreateInput, "id"> = body;
+    const createData: Omit<Prisma.CandidateCreateInput, "id"> = body;
 
     try {
       const candidate = await prisma.candidate.create({
@@ -191,7 +198,7 @@ export async function POST(request: Request) {
         from: process.env.EMAIL_USER,
         to: process.env.MY_EMAIL, // your email address to receive notifications
         subject: `New Candidate Signup: ${candidate.name}`,
-        text: `A new candidate has signed up.\n\nName: ${candidate.name}\nLocation: ${candidate.city}, ${candidate.state}
+        text: `A new candidate has signed up.\n\nName: ${candidate.name}\nLocation: ${candidate.currentCity}, ${candidate.currentState}
         : ${body}`,
       };
 

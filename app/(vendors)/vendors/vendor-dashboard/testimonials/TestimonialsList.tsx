@@ -13,9 +13,9 @@ interface TestimonialsListProps {
     candidate: {
       id: number;
       name: string;
-      position: string;
-      city?: string | null;
-      state?: string | null;
+      currentRole: string;
+      currentCity?: string | null;
+      currentState?: string | null;
     };
   }>;
 }
@@ -59,13 +59,13 @@ export default function TestimonialsList({
                     {testimonial.candidate.name}
                   </h4>
                   <p className="text-sm text-gray-500">
-                    {testimonial.candidate.position}
-                    {testimonial.candidate.city &&
-                      testimonial.candidate.state && (
+                    {testimonial.candidate.currentRole}
+                    {testimonial.candidate.currentCity &&
+                      testimonial.candidate.currentState && (
                         <>
                           {" "}
-                          • {testimonial.candidate.city},{" "}
-                          {testimonial.candidate.state}
+                          • {testimonial.candidate.currentCity},{" "}
+                          {testimonial.candidate.currentState}
                         </>
                       )}
                   </p>

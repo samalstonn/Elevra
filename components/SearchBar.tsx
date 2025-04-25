@@ -99,6 +99,17 @@ export default function SearchBar({ onSearch }: SearchBarProps) {
 
     try {
       const results = await getLocationSuggestions(input);
+      // One-off suggestion for Cornell Business Review
+      if (input.toLowerCase().includes("cornell")) {
+        results.unshift({
+          id: "cornell-business-review",
+          text: "Cornell Business Review",
+          placeName: "Cornell Business Review",
+          city: "Cornell Business Review",
+          state: "NY",
+          stateName: "NY",
+        });
+      }
       setSuggestions(results);
     } catch (error) {
       console.error("Error fetching suggestions:", error);

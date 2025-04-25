@@ -9,55 +9,49 @@ datasource db {
 }
 
 model Election {
-  id          Int          @id @default(autoincrement())
+  id          Int            @id @default(autoincrement())
   position    String
   date        DateTime
-  createdAt   DateTime     @default(now())
-  updatedAt   DateTime     @updatedAt
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
   active      Boolean
   city        String
   description String
   positions   Int
   state       String
   type        ElectionType
-  hidden      Boolean      @default(false)
-  candidates  Candidate[]
+  hidden      Boolean        @default(false)
+  candidates  ElectionLink[]
 }
 
 model Candidate {
-  name            String
-  party           String
-  policies        String[]
-  website         String?
-  electionId      Int?
-  createdAt       DateTime               @default(now())
-  updatedAt       DateTime               @updatedAt
-  additionalNotes String?
-  city            String?
-  linkedin        String?
-  photo           String?
-  position        String
-  sources         String[]
-  state           String?
-  bio             String                 @default("")
-  clerkUserId     String?                @unique
-  history         String[]
-  id              Int                    @id @default(autoincrement())
-  status          SubmissionStatus       @default(PENDING)
-  verified        Boolean                @default(false)
-  photoUrl        String?
-  hidden          Boolean                @default(false)
-  slug            String                 @unique
-  donationCount   Int                    @default(0)
-  email           String?
-  phone           String?
-  votinglink      String?
-  election        Election?              @relation(fields: [electionId], references: [id])
-  profileViews    CandidateProfileView[]
-  donations       Donation[]
-  endorsements    Endorsement[]
-  Testimonial     Testimonial[]
-  Vendors         Vendor[]               @relation("CandidateToVendor")
+  name          String
+  createdAt     DateTime               @default(now())
+  updatedAt     DateTime               @updatedAt
+  website       String?
+  linkedin      String?
+  currentRole   String?
+  currentState  String?
+  bio           String?                @default("")
+  currentCity   String?
+  photoUrl      String?
+  photo         String?
+  clerkUserId   String?                @unique
+  history       String[]
+  id            Int                    @id @default(autoincrement())
+  status        SubmissionStatus       @default(PENDING)
+  verified      Boolean                @default(false)
+  hidden        Boolean                @default(false)
+  slug          String                 @unique
+  donationCount Int                    @default(0)
+  email         String?
+  phone         String?
+  profileViews  CandidateProfileView[]
+  donations     Donation[]
+  endorsements  Endorsement[]
+  Testimonial   Testimonial[]
+  Vendors       Vendor[]               @relation("CandidateToVendor")
+  elections     ElectionLink[]
 }
 
 model Donation {
@@ -252,4 +246,23 @@ enum ServiceCategoryType {
   PHYSICAL_MEDIA
   CONSULTING_PR
   OTHER
+}
+
+model ElectionLink {
+  candidate   Candidate @relation(fields: [candidateId], references: [id])
+  candidateId Int
+
+  election   Election @relation(fields: [electionId], references: [id])
+  electionId Int
+
+  joinedAt DateTime @default(now())
+
+  party           String
+  policies        String[] @default([])
+  sources         String[] @default([])
+  additionalNotes String?
+  votinglink      String?
+  photoUrl        String?
+
+  @@id([candidateId, electionId])
 }

@@ -9,30 +9,29 @@ import { CandidateImage } from "@/components/CandidateImage";
 import {
   FaCheckCircle,
   FaUserPlus,
-  FaChevronUp,
-  FaQuestionCircle,
-  FaDonate,
   FaShare,
 } from "react-icons/fa";
-import { MdHowToVote } from "react-icons/md";
 import { Edit } from "lucide-react"; // Icons
 import { Button } from "@/components/ui/button";
 import { Candidate, Election } from "@prisma/client";
-import { normalizeSlug } from "@/lib/functions";
+import type { ElectionLink } from "@prisma/client";
 import { TabButton } from "@/components/ui/tab-button";
 import { EndorsementTab } from "./EndorsementTab";
 import { ContactTab } from "./ContactTab";
+import { ElectionProfileTab } from "./ElectionTab";
 
-type ElectionWithCandidates = Election & { candidates: Candidate[] };
+export type ElectionWithCandidates = Election & { candidates: Candidate[] };
 
 export default function CandidateClient({
   candidate,
-  election,
+  electionLinks,
   suggestedCandidates,
   isEditable,
 }: {
   candidate: Candidate;
-  election: ElectionWithCandidates | null;
+  electionLinks: (ElectionLink & {
+    election: ElectionWithCandidates;
+  })[];
   suggestedCandidates: Candidate[];
   isEditable: boolean;
 }) {
@@ -44,19 +43,19 @@ export default function CandidateClient({
   } | null>(null);
 
   const [hovered, setHovered] = useState<string | null>(null);
-  const [dropdownHovered, setDropdownHovered] = useState(false);
-  const [hydrated, setHydrated] = useState(false);
-  const [showSources, setShowSources] = useState(false);
-  const [activeTab, setActiveTab] = useState<
-    "about" | "endorsements" | "contact"
-  >("about");
 
-  const decodedName = candidate.name ? normalizeSlug(candidate.name) : "";
-  const relatedCandidates = election?.candidates
-    ? election?.candidates
-        .filter((c: Candidate) => normalizeSlug(c.name) !== decodedName)
-        .slice(0, 3)
-    : [];
+  const [hydrated, setHydrated] = useState(false);
+
+  // Use string to allow dynamic election tabs
+  const [activeTab, setActiveTab] = useState<string>("about");
+  // Derive active election tab from activeTab
+  const activeElectionTab = useMemo(
+    () =>
+      electionLinks.find(
+        (link) => `election-${link.electionId}` === activeTab
+      ) || null,
+    [activeTab, electionLinks]
+  );
 
   const randomSuggestedCandidates = useMemo(() => {
     const shuffled = [...suggestedCandidates].sort(() => 0.5 - Math.random());
@@ -172,14 +171,11 @@ export default function CandidateClient({
               </div>
             </h1>
             <p className="text-sm font-semibold text-purple-600">
-              {candidate.party}
+              {candidate.currentRole}
             </p>
-            <p className="text-sm font-medium text-gray-600">
-              {candidate.position}
-            </p>
-            {candidate.city && candidate.state ? (
+            {candidate.currentCity && candidate.currentState ? (
               <p className="text-sm font-medium text-gray-500">
-                {candidate.city}, {candidate.state}
+                {candidate.currentCity}, {candidate.currentState}
               </p>
             ) : null}
             <div className="mt-4 flex justify-start gap-4">
@@ -190,23 +186,7 @@ export default function CandidateClient({
                   </Link>
                 </Button>
               ) : null}
-              {candidate.votinglink ? (
-                <Link href={candidate.votinglink} passHref target="_blank">
-                  <Button
-                    asChild
-                    variant="purple"
-                    size="md"
-                    className="flex items-center gap-2"
-                    rel="noopener noreferrer"
-                  >
-                    <span className="flex items-center gap-2">
-                      <MdHowToVote />
-                      <span>Vote</span>
-                    </span>
-                  </Button>
-                </Link>
-              ) : null}
-              <Link href={`/candidate/${candidate.slug}/donate`} passHref>
+              {/* <Link href={`/candidate/${candidate.slug}/donate`} passHref>
                 <Button
                   asChild
                   variant="green"
@@ -218,7 +198,7 @@ export default function CandidateClient({
                     <span>Donate</span>
                   </span>
                 </Button>
-              </Link>
+              </Link> */}
               <Button
                 variant="purple"
                 className="flex items-center gap-2"
@@ -242,13 +222,13 @@ export default function CandidateClient({
               >
                 <FaShare /> Share Profile
               </Button>
-              {!verified && (
+              {/* {!verified && (
                 <Button
                   variant="purple"
                   size="md"
                   onClick={() => {
                     router.push(
-                      `/candidate/verify?candidate=${candidate.slug}&candidateID=${candidate.id}&electionID=${election?.id}`
+                      `/candidate/verify?candidate=${candidate.slug}&candidateID=${candidate.id}`
                     );
                   }}
                   className="flex items-center gap-2"
@@ -256,7 +236,7 @@ export default function CandidateClient({
                   <FaCheckCircle />
                   <span>This is me</span>
                 </Button>
-              )}
+              )} */}
             </div>
           </div>
         </div>
@@ -267,6 +247,15 @@ export default function CandidateClient({
           >
             About
           </TabButton>
+          {electionLinks.map((link) => (
+            <TabButton
+              key={link.electionId}
+              active={activeTab === `election-${link.electionId}`}
+              onClick={() => setActiveTab(`election-${link.electionId}`)}
+            >
+              {link.election.position}
+            </TabButton>
+          ))}
           <TabButton
             active={activeTab === "endorsements"}
             onClick={() => setActiveTab("endorsements")}
@@ -288,69 +277,6 @@ export default function CandidateClient({
               <h2 className="text-lg font-semibold text-gray-900">Biography</h2>
               <p>{candidate.bio}</p>
             </div>
-            {candidate.policies && candidate.policies.length > 0 && (
-              <div className="mt-4">
-                <h2 className="text-lg font-semibold text-gray-900">
-                  Policies
-                </h2>
-                <ul className="space-y-1 text-sm">
-                  {candidate.policies.map((policy, index) => (
-                    <li key={index}>
-                      <span className="">{policy}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
-            {/* Additional Notes */}
-            {candidate.additionalNotes && (
-              <div className="mt-4">
-                <h2 className="text-lg font-semibold text-gray-900">
-                  Additional Notes
-                </h2>
-                <p className="text-sm">{candidate.additionalNotes}</p>
-              </div>
-            )}
-            {/* Sources Dropdown Section */}
-            {!verified && candidate.sources && candidate.sources.length > 0 && (
-              <div className="mt-6">
-                <div className="relative inline-block">
-                  <button
-                    onClick={() => setShowSources(!showSources)}
-                    className="flex items-center text-sm text-purple-600 hover:underline focus:outline-none"
-                  >
-                    <FaChevronUp
-                      className={`transition-transform duration-200 ${
-                        showSources ? "rotate-180" : "rotate-90"
-                      }`}
-                    />
-                    <span className="ml-2">Sources</span>
-                  </button>
-                  <div className="absolute -top-0 -right-5">
-                    <FaQuestionCircle
-                      className="text-purple-600 cursor-pointer"
-                      onMouseEnter={() => setDropdownHovered(true)}
-                      onMouseLeave={() => setDropdownHovered(false)}
-                    />
-                  </div>
-                  {dropdownHovered && (
-                    <div className="absolute left-2/3 transform -translate-x-1/2 -top-10 bg-gray-900 text-white text-xs px-2 py-1 rounded shadow whitespace-nowrap">
-                      Since this candidate is not yet verified, the Elevra team{" "}
-                      <br /> compiled relevant information using these sources.
-                    </div>
-                  )}
-                </div>
-                {showSources && (
-                  <ul className="list-disc list-inside text-sm text-purple-600 mt-2">
-                    {candidate.sources.map((source: string, index: number) => (
-                      <li key={index}>
-                        <span className="cursor-default">{source}</span>
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </div>
-            )}
           </>
         )}
         {activeTab === "endorsements" && (
@@ -365,13 +291,22 @@ export default function CandidateClient({
               website={candidate.website}
               phone={candidate.phone}
               linkedin={candidate.linkedin}
-              votinglink={candidate.votinglink}
             />
           </div>
         )}
+
+        {/* Election Profile Tab Content */}
+        {activeTab.startsWith("election-") && activeElectionTab && (
+          <>
+            <ElectionProfileTab
+              election={activeElectionTab.election}
+              link={activeElectionTab}
+            />
+          </>
+        )}
       </motion.div>
 
-      {/* Related candidates sidebar */}
+      {/* This sidebar previously relied on election and relatedCandidates. It now only shows suggested candidates. */}
       <motion.div
         initial={{ opacity: 0, x: 10 }}
         animate={{ opacity: 1, x: 0 }}
@@ -379,70 +314,65 @@ export default function CandidateClient({
         className="w-full md:w-1/3 h-fit mt-24"
       >
         <div className="bg-white">
-          <div className="text-gray-90 mb-4">
-            <h2 className="text-xl text-center font-semibold">
-              {election?.type === "STATE"
-                ? `${election?.position} in ${election?.state}`
-                : `${election?.position} in ${election?.city}, ${election?.state}`}
-            </h2>
-          </div>
+          {activeElectionTab && activeElectionTab.election && (
+            <div>
+              {/* Related candidates sidebar */}
+              {activeElectionTab.election.candidates.length > 0 ? (
+                <div className="">
+                  {activeElectionTab.election.candidates.map(
+                    (relatedCandidate: Candidate) => (
+                      <Link
+                        key={relatedCandidate.name}
+                        href={`/candidate/${relatedCandidate.slug}`}
+                        className="block"
+                      >
+                        <motion.div
+                          whileHover={{ scale: 1.02 }}
+                          className="flex items-center p-3 rounded-lg transition-colors gap-3"
+                        >
+                          <CandidateImage
+                            clerkUserId={relatedCandidate.clerkUserId}
+                            publicPhoto={relatedCandidate.photo}
+                            name={relatedCandidate.name}
+                            width={50}
+                            height={50}
+                          />
+                          <div className="flex-1">
+                            <h3 className="font-medium text-gray-900 flex items-center gap-2">
+                              {relatedCandidate.name}
+                              {relatedCandidate.verified ? (
+                                <FaCheckCircle className="text-blue-500" />
+                              ) : (
+                                <FaCheckCircle className="text-gray-400" />
+                              )}
+                            </h3>
+                            <p className="text-xs text-purple-600">
+                              {relatedCandidate.currentRole}
+                            </p>
+                          </div>
+                          <FaUserPlus className="text-purple-600 ml-2" />
+                        </motion.div>
+                      </Link>
+                    )
+                  )}
+                </div>
+              ) : (
+                <p className="text-gray-500 text-center py-4">
+                  No other candidates found in this election.
+                </p>
+              )}
 
-          <div>
-            {relatedCandidates.length > 0 ? (
-              <div className="">
-                {relatedCandidates.map((relatedCandidate: Candidate) => (
-                  <Link
-                    key={relatedCandidate.name}
-                    href={`/candidate/${relatedCandidate.slug}`}
-                    className="block"
-                  >
-                    <motion.div
-                      whileHover={{ scale: 1.02 }}
-                      className="flex items-center p-3 rounded-lg transition-colors gap-3"
-                    >
-                      <CandidateImage
-                        clerkUserId={relatedCandidate.clerkUserId}
-                        publicPhoto={relatedCandidate.photo}
-                        name={relatedCandidate.name}
-                        width={50}
-                        height={50}
-                      />
-                      <div className="flex-1">
-                        <h3 className="font-medium text-gray-900 flex items-center gap-2">
-                          {relatedCandidate.name}
-                          {relatedCandidate.verified ? (
-                            <FaCheckCircle className="text-blue-500" />
-                          ) : (
-                            <FaCheckCircle className="text-gray-400" />
-                          )}
-                        </h3>
-                        <p className="text-xs text-gray-600">
-                          {relatedCandidate.position}
-                        </p>
-                        <p className="text-xs font-medium text-purple-600 mt-1">
-                          {relatedCandidate.party}
-                        </p>
-                      </div>
-                      <FaUserPlus className="text-purple-600 ml-2" />
-                    </motion.div>
-                  </Link>
-                ))}
-              </div>
-            ) : (
-              <p className="text-gray-500 text-center py-4">
-                No other candidates found in this election.
-              </p>
-            )}
-
-            {election && (
               <Button
                 variant="outline"
                 size="sm"
                 className="w-full mt-4 text-purple-600 border-purple-300 hover:bg-purple-50"
                 onClick={() => {
-                  if (election.city && election.state) {
+                  if (
+                    activeElectionTab.election.city &&
+                    activeElectionTab.election.state
+                  ) {
                     router.push(
-                      `/results?city=${election?.city}&state=${election?.state}&electionID=${election?.id}`
+                      `/results?city=${activeElectionTab.election.city}&state=${activeElectionTab.election.state}&electionID=${activeElectionTab.election.id}`
                     );
                   } else {
                     console.error("Candidate city or state is missing.");
@@ -451,8 +381,8 @@ export default function CandidateClient({
               >
                 View Election
               </Button>
-            )}
-          </div>
+            </div>
+          )}
           {/* Suggested candidates sidebar */}
           <motion.div
             initial={{ opacity: 0, x: 10 }}
@@ -469,7 +399,7 @@ export default function CandidateClient({
               <div className="space-y-3 ">
                 {randomSuggestedCandidates.map((rc) => (
                   <motion.div
-                    key={rc.name}
+                    key={rc.id}
                     className="flex items-center justify-between "
                   >
                     <Link
@@ -492,9 +422,8 @@ export default function CandidateClient({
                             <FaCheckCircle className="text-gray-400" />
                           )}
                         </span>
-                        <p className="text-xs text-gray-600">{rc.position}</p>
                         <span className="text-xs text-purple-600 line-clamp-1">
-                          {rc.party}
+                          {rc.currentRole}
                         </span>
                       </div>
                     </Link>
