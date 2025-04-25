@@ -2,7 +2,6 @@
 
 import React from "react";
 import { FaEnvelope, FaGlobe, FaPhone, FaLinkedin } from "react-icons/fa";
-import { MdHowToVote } from "react-icons/md";
 
 interface ContactTabProps {
   email?: string | null;

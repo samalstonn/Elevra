@@ -9,17 +9,12 @@ import { CandidateImage } from "@/components/CandidateImage";
 import {
   FaCheckCircle,
   FaUserPlus,
-  FaChevronUp,
-  FaQuestionCircle,
-  FaDonate,
   FaShare,
 } from "react-icons/fa";
-import { MdHowToVote } from "react-icons/md";
 import { Edit } from "lucide-react"; // Icons
 import { Button } from "@/components/ui/button";
 import { Candidate, Election } from "@prisma/client";
 import type { ElectionLink } from "@prisma/client";
-import { normalizeSlug } from "@/lib/functions";
 import { TabButton } from "@/components/ui/tab-button";
 import { EndorsementTab } from "./EndorsementTab";
 import { ContactTab } from "./ContactTab";
@@ -191,7 +186,7 @@ export default function CandidateClient({
                   </Link>
                 </Button>
               ) : null}
-              <Link href={`/candidate/${candidate.slug}/donate`} passHref>
+              {/* <Link href={`/candidate/${candidate.slug}/donate`} passHref>
                 <Button
                   asChild
                   variant="green"
@@ -203,7 +198,7 @@ export default function CandidateClient({
                     <span>Donate</span>
                   </span>
                 </Button>
-              </Link>
+              </Link> */}
               <Button
                 variant="purple"
                 className="flex items-center gap-2"
@@ -227,7 +222,7 @@ export default function CandidateClient({
               >
                 <FaShare /> Share Profile
               </Button>
-              {!verified && (
+              {/* {!verified && (
                 <Button
                   variant="purple"
                   size="md"
@@ -241,7 +236,7 @@ export default function CandidateClient({
                   <FaCheckCircle />
                   <span>This is me</span>
                 </Button>
-              )}
+              )} */}
             </div>
           </div>
         </div>

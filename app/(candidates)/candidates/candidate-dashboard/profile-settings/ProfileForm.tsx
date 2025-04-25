@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect } from "react";
 import { useForm, Controller, type SubmitHandler } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -16,12 +16,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { CandidateDashboardData } from "@/types/candidate";
 import { Loader2 } from "lucide-react";
-import { FaMapMarkerAlt, FaCheckCircle } from "react-icons/fa";
-import { AutocompleteSuggestion } from "@/types/geocoding";
-import { getLocationSuggestions, normalizeLocation } from "@/lib/geocoding";
-import { debounce } from "@/lib/debounce";
 
 // Define Zod schema for validation
 // Important: Make policies non-optional since the form expects it as a required field
@@ -62,21 +57,6 @@ export function ProfileForm({
   const [isSubmitting, setIsSubmitting] = useState(false);
   // Removed: const [selectedElection, setSelectedElection] = useState<Election | null>(null);
 
-  // Location search state
-  const [locationInput, setLocationInput] = useState("");
-  const [locationSuggestions, setLocationSuggestions] = useState<
-    AutocompleteSuggestion[]
-  >([]);
-  const [isLoadingLocations, setIsLoadingLocations] = useState(false);
-  const [showLocationSuggestions, setShowLocationSuggestions] = useState(false);
-  const locationInputRef = useRef<HTMLInputElement>(null);
-  const suggestionsRef = useRef<HTMLDivElement>(null);
-  const [locationErrors, setLocationErrors] = useState<{
-    city?: string;
-    state?: string;
-    location?: string;
-  }>({});
-
   // Prepare the policies data - ensure it's a non-empty array
   const initialPolicies = Array.isArray(profileData.policies)
     ? profileData.policies.filter(Boolean)
@@ -91,8 +71,6 @@ export function ProfileForm({
     handleSubmit,
     control,
     reset,
-    setValue,
-    getValues,
     formState: { errors },
   } = useForm<ProfileFormData>({
     resolver: zodResolver(profileSchema),
@@ -197,17 +175,9 @@ export function ProfileForm({
                   rows={5}
                   value={(field.value || []).join("\n")}
                   onChange={(e) => {
-                    const valueText = e.target.value;
-                    // Split by newlines and filter out empty lines
-                    const policies = valueText
-                      ? valueText
-                          .split("\n")
-                          .map((p) => p.trim())
-                          .filter((p) => p !== "")
-                      : [""]; // Default to array with empty string if no content
-
-                    // If we end up with an empty array, use a default
-                    field.onChange(policies.length > 0 ? policies : [""]);
+                    // Preserve all lines, including empty ones
+                    const policies = e.target.value.split("\n");
+                    field.onChange(policies);
                   }}
                 />
               )}

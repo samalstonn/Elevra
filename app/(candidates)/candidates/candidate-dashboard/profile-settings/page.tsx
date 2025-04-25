@@ -16,6 +16,12 @@ export type ElectionLinkWithElection = ElectionLink & {
   election: Election;
 };
 
+// Define an interface for the search result items
+interface SearchResultItem {
+  id: string | number; // Allow string or number as ID might come as string from API/component
+  // Add other expected properties if known, e.g., name: string;
+}
+
 export default function ProfileSettingsPage() {
   const { userId, isLoaded } = useAuth();
   const [candidateData, setCandidateData] =
@@ -133,8 +139,8 @@ export default function ProfileSettingsPage() {
           shadow={false}
           multi
           onResultSelect={async (items) => {
-            const parsed = Array.isArray(items) ? items : [items];
-            for (const item of parsed as any[]) {
+            const parsed = (Array.isArray(items) ? items : [items]) as SearchResultItem[];
+            for (const item of parsed) {
               const electionId = Number(item.id);
               if (
                 !electionLinks.find((link) => link.electionId === electionId) &&

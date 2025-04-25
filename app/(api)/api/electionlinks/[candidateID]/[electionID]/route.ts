@@ -21,7 +21,10 @@ export async function GET(
     return NextResponse.json(link);
   } catch (error) {
     console.error("Error fetching election link:", error);
-    return NextResponse.json({ error: "Failed to fetch election link" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Failed to fetch election link" },
+      { status: 500 }
+    );
   }
 }
 
@@ -35,26 +38,41 @@ export async function PUT(
     const { profile } = await request.json();
 
     const allowedFields = [
-      "party", "position", "bio", "website", "linkedin",
-      "votinglink", "city", "state", "policies",
-      "additionalNotes", "photoUrl", "role", "sources"
+      "party",
+      "votinglink",
+      "policies",
+      "additionalNotes",
     ];
 
     const filteredProfile = Object.fromEntries(
       Object.entries(profile || {}).filter(([key]) =>
         allowedFields.includes(key)
       )
-    );
+    ) as {
+      party?: string;
+      votinglink?: string;
+      policies?: string[];
+      additionalNotes?: string;
+    };
 
     const link = await prisma.electionLink.upsert({
       where: { candidateId_electionId: { candidateId, electionId } },
-      create: { candidateId, electionId, ...filteredProfile },
+      create: {
+        candidateId,
+        electionId,
+        // ensure required fields have defaults
+        party: filteredProfile.party ?? "",
+        ...filteredProfile,
+      },
       update: filteredProfile,
     });
     return NextResponse.json(link);
   } catch (error) {
     console.error("Error updating election link:", error);
-    return NextResponse.json({ error: "Failed to update election link" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Failed to update election link" },
+      { status: 500 }
+    );
   }
 }
 
@@ -71,6 +89,9 @@ export async function DELETE(
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error("Error deleting election link:", error);
-    return NextResponse.json({ error: "Failed to delete election link" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Failed to delete election link" },
+      { status: 500 }
+    );
   }
 }

@@ -120,12 +120,7 @@ export default function OverviewPage() {
                   })
                 : donationTotal}
             </div>
-            <Link
-              href="/candidates/candidate-dashboard/donations"
-              className="text-xs text-blue-600 hover:underline"
-            >
-              View Donations
-            </Link>
+            <p className="text-xs text-muted-foreground">Coming soon...</p>{" "}
           </CardContent>
         </Card>
       </div>

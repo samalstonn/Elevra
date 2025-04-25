@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { headers } from "next/headers";
 import prisma from "@/prisma/prisma";
 import CandidateClient from "./CandidateClient";
-import type { ElectionWithCandidates } from "./CandidateClient";
+import { Candidate } from "@prisma/client";
 import { currentUser } from "@clerk/nextjs/server";
 
 interface CandidatePageProps {
@@ -48,12 +48,16 @@ export default async function CandidatePage({
     },
   });
 
+  interface ElectionCandidate {
+    candidate: Candidate;
+  }
+
   // Map links to include only the full Candidate objects in election.candidates
   const linksWithFullCandidates = links.map((link) => ({
     ...link,
     election: {
       ...link.election,
-      candidates: link.election.candidates.map((ec: any) => ec.candidate),
+      candidates: link.election.candidates.map((ec: ElectionCandidate) => ec.candidate),
     },
   }));
 

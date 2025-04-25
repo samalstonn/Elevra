@@ -7,7 +7,6 @@ import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { CandidateImage } from "@/components/CandidateImage"; // Adjust the path as needed
 import { FaUserPlus, FaCheckCircle } from "react-icons/fa"; // Import icons from react-icons
-import { MdHowToVote } from "react-icons/md";
 
 interface CandidateSectionProps {
   candidates?: Candidate[];

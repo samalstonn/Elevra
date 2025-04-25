@@ -125,30 +125,18 @@ export async function POST(request: Request) {
     const body = await request.json();
     const {
       name,
-      party,
-      position,
+      currentRole,
       city,
       state,
       bio,
       website,
       linkedin,
-      policies,
       clerkUserId,
-      additionalNotes,
-      electionId,
     } = body;
 
     // Validate required fields
-    if (
-      !name ||
-      !party ||
-      !position ||
-      !city ||
-      !state ||
-      !bio ||
-      !policies ||
-      policies.length === 0
-    ) {
+    if (!name || !currentRole || !city || !state || !bio) {
+      console.error("Missing required fields:", body);
       return NextResponse.json(
         { error: "Missing required fields" },
         { status: 400 }
@@ -180,14 +168,17 @@ export async function POST(request: Request) {
 
     body.status = "APPROVED" as SubmissionStatus;
     body.slug = uniqueSlug;
-    body.electionId = electionId || null;
     body.verified = true;
     body.website = website || null;
     body.linkedin = linkedin || null;
-    body.additionalNotes = additionalNotes || null;
     body.hidden = true;
+    body.currentCity = city;
+    body.currentState = state;
+    // remove the city and state from the body
+    delete body.city;
+    delete body.state;
 
-    const createData: Omit<Prisma.CandidateUncheckedCreateInput, "id"> = body;
+    const createData: Omit<Prisma.CandidateCreateInput, "id"> = body;
 
     try {
       const candidate = await prisma.candidate.create({
