@@ -33,12 +33,6 @@ export async function POST(req: NextRequest) {
   }
 }
 export async function GET(req: NextRequest) {
-  // Verify the authenticated user
-  const { userId } = await auth();
-  if (!userId) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
   const { searchParams } = new URL(req.url);
   const uploadedBy = searchParams.get("uploadedBy");
   if (!uploadedBy) {
@@ -46,11 +40,6 @@ export async function GET(req: NextRequest) {
       { error: "Missing uploadedBy parameter" },
       { status: 400 }
     );
-  }
-
-  // Ensure users can only access their own photos or add admin check
-  if (uploadedBy !== userId) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
   }
 
   const photos = await prisma.photo.findMany({
