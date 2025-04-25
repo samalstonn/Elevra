@@ -408,10 +408,12 @@ export default function CandidateSubmissionForm({
                 placeholder="Search for an election..."
                 apiEndpoint="/api/elections/search"
                 shadow={false}
-                onResultSelect={(election) => {
+                onResultSelect={(electionResult) => {
+                  const selectedElection =
+                    Array.isArray(electionResult) ? electionResult[0] : electionResult;
                   setFormData((prev) => ({
                     ...prev,
-                    electionId: election.id.toString(),
+                    electionId: selectedElection.id.toString(),
                   }));
                   if (errors.electionId) {
                     setErrors((prev) => ({ ...prev, electionId: undefined }));

@@ -43,8 +43,16 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Create the election submission in the database
-    const electionSubmission = await prisma.electionSubmission.create({
+    // Ensure the auto-increment sequence is in sync to avoid unique id conflicts
+    await prisma.$executeRawUnsafe(`
+      SELECT setval(
+        pg_get_serial_sequence('"Election"', 'id'),
+        (SELECT COALESCE(MAX(id), 1) FROM "Election")
+      );
+    `);
+
+    // Create the election in the database
+    const election = await prisma.election.create({
       data: {
         position,
         date: new Date(date),
@@ -53,8 +61,7 @@ export async function POST(request: NextRequest) {
         description,
         positions,
         type,
-        status: "PENDING",
-        clerkUserId: clerkUserId || null,
+        active: true,
       },
     });
     // Set up nodemailer transporter using your email service credentials
@@ -70,16 +77,13 @@ export async function POST(request: NextRequest) {
     const mailOptions = {
       from: process.env.EMAIL_USER,
       to: process.env.MY_EMAIL, // your email address to receive notifications
-      subject: `New Election Submission Request: ${electionSubmission.position}`,
-      text: `At: ${electionSubmission.city}, ${electionSubmission.state}\n\nDescription: ${electionSubmission.description}\n\nPositions: ${electionSubmission.positions}\n\nType: ${electionSubmission.type}`,
+      subject: `New Election Submission Request: ${election.position} ${clerkUserId}`,
+      text: `At: ${election.city}, ${election.state}\n\nDescription: ${election.description}\n\nPositions: ${election.positions}\n\nType: ${election.type}`,
     };
 
     // Send the email
     await transporter.sendMail(mailOptions);
-    return NextResponse.json({
-      success: true,
-      electionSubmission,
-    });
+    return NextResponse.json(election);
   } catch (error) {
     console.error("Error submitting election:", error);
     return NextResponse.json(

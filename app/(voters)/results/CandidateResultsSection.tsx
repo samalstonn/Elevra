@@ -181,14 +181,14 @@ export default function CandidateSection({
                     Are you running for {election.position}?
                   </h2>
                   <p className="text-gray-500 text-sm text-center mb-4">
-                    Please let us know here
+                    Get on the ballot and let voters know about you!
                   </p>
-                  <Link href="/submit" className="mt-auto mb-4">
+                  <Link href="/candidates" className="mt-auto mb-4">
                     <Button
                       variant="purple"
                       className="flex items-center gap-2"
                     >
-                      <span>Submit Your Information</span>
+                      <span>Join as Candidate</span>
                     </Button>
                   </Link>
                 </CardContent>
