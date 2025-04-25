@@ -34,7 +34,9 @@ export default function CandidateClient({
   isEditable,
 }: {
   candidate: Candidate;
-  electionLinks: (ElectionLink & { election: Election })[];
+  electionLinks: (ElectionLink & {
+    election: ElectionWithCandidates;
+  })[];
   suggestedCandidates: Candidate[];
   isEditable: boolean;
 }) {
@@ -59,8 +61,6 @@ export default function CandidateClient({
       ) || null,
     [activeTab, electionLinks]
   );
-
-  // Remove relatedCandidates and election logic
 
   const randomSuggestedCandidates = useMemo(() => {
     const shuffled = [...suggestedCandidates].sort(() => 0.5 - Math.random());
@@ -180,7 +180,7 @@ export default function CandidateClient({
             </p>
             {candidate.currentCity && candidate.currentState ? (
               <p className="text-sm font-medium text-gray-500">
-                {candidate.currentCity}, {candidate.currentCity}
+                {candidate.currentCity}, {candidate.currentState}
               </p>
             ) : null}
             <div className="mt-4 flex justify-start gap-4">
@@ -302,11 +302,15 @@ export default function CandidateClient({
 
         {/* Election Profile Tab Content */}
         {activeTab.startsWith("election-") && activeElectionTab && (
-          <ElectionProfileTab link={activeElectionTab} />
+          <>
+            <ElectionProfileTab
+              election={activeElectionTab.election}
+              link={activeElectionTab}
+            />
+          </>
         )}
       </motion.div>
 
-      {/* Related candidates sidebar */}
       {/* This sidebar previously relied on election and relatedCandidates. It now only shows suggested candidates. */}
       <motion.div
         initial={{ opacity: 0, x: 10 }}
@@ -315,26 +319,75 @@ export default function CandidateClient({
         className="w-full md:w-1/3 h-fit mt-24"
       >
         <div className="bg-white">
-          {/* Election links list (if any) */}
-          {electionLinks.length > 0 && (
-            <div className="mb-4">
-              <h2 className="text-lg font-semibold">Elections</h2>
-              <ul className="list-disc pl-5">
-                {electionLinks.map((link) => (
-                  <li key={link.electionId}>
-                    <Link
-                      href={`/candidate/${candidate.slug}?election=${link.electionId}`}
-                      className="text-purple-600 underline"
-                    >
-                      {link.election.position} in {link.election.city},{" "}
-                      {link.election.state}
-                    </Link>
-                  </li>
-                ))}
-              </ul>
+          {activeElectionTab && activeElectionTab.election && (
+            <div>
+              {/* Related candidates sidebar */}
+              {activeElectionTab.election.candidates.length > 0 ? (
+                <div className="">
+                  {activeElectionTab.election.candidates.map(
+                    (relatedCandidate: Candidate) => (
+                      <Link
+                        key={relatedCandidate.name}
+                        href={`/candidate/${relatedCandidate.slug}`}
+                        className="block"
+                      >
+                        <motion.div
+                          whileHover={{ scale: 1.02 }}
+                          className="flex items-center p-3 rounded-lg transition-colors gap-3"
+                        >
+                          <CandidateImage
+                            clerkUserId={relatedCandidate.clerkUserId}
+                            publicPhoto={relatedCandidate.photo}
+                            name={relatedCandidate.name}
+                            width={50}
+                            height={50}
+                          />
+                          <div className="flex-1">
+                            <h3 className="font-medium text-gray-900 flex items-center gap-2">
+                              {relatedCandidate.name}
+                              {relatedCandidate.verified ? (
+                                <FaCheckCircle className="text-blue-500" />
+                              ) : (
+                                <FaCheckCircle className="text-gray-400" />
+                              )}
+                            </h3>
+                            <p className="text-xs text-purple-600">
+                              {relatedCandidate.currentRole}
+                            </p>
+                          </div>
+                          <FaUserPlus className="text-purple-600 ml-2" />
+                        </motion.div>
+                      </Link>
+                    )
+                  )}
+                </div>
+              ) : (
+                <p className="text-gray-500 text-center py-4">
+                  No other candidates found in this election.
+                </p>
+              )}
+
+              <Button
+                variant="outline"
+                size="sm"
+                className="w-full mt-4 text-purple-600 border-purple-300 hover:bg-purple-50"
+                onClick={() => {
+                  if (
+                    activeElectionTab.election.city &&
+                    activeElectionTab.election.state
+                  ) {
+                    router.push(
+                      `/results?city=${activeElectionTab.election.city}&state=${activeElectionTab.election.state}&electionID=${activeElectionTab.election.id}`
+                    );
+                  } else {
+                    console.error("Candidate city or state is missing.");
+                  }
+                }}
+              >
+                View Election
+              </Button>
             </div>
           )}
-
           {/* Suggested candidates sidebar */}
           <motion.div
             initial={{ opacity: 0, x: 10 }}
@@ -351,7 +404,7 @@ export default function CandidateClient({
               <div className="space-y-3 ">
                 {randomSuggestedCandidates.map((rc) => (
                   <motion.div
-                    key={rc.name}
+                    key={rc.id}
                     className="flex items-center justify-between "
                   >
                     <Link

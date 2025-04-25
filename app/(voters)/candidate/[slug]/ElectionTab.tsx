@@ -7,14 +7,24 @@ import { MdHowToVote } from "react-icons/md";
 
 export type ElectionProfileTabProps = {
   link: ElectionLink;
+  election: Election;
 };
 
-export function ElectionProfileTab({ link }: ElectionProfileTabProps) {
+export function ElectionProfileTab({
+  link,
+  election,
+}: ElectionProfileTabProps) {
   const [dropdownHovered, setDropdownHovered] = useState(false);
   const [showSources, setShowSources] = useState(false);
   return (
-    <div className="mt-4 border rounded p-4 bg-gray-50">
-      {link.party && <p className="text-sm mt-2">Party: {link.party}</p>}
+    <div className="mt-4 p-4 ">
+      <p className="text-lg font-semibold">
+        Running for {election.position} in {election.city}, {election.state}
+      </p>
+      <p className="text-md font-semibold mt-2 text-purple-600"></p>
+      {link.party && (
+        <p className="text-md font-semibold text-purple-600">{link.party}</p>
+      )}
       {link.policies && link.policies.length > 0 && (
         <div className="mt-4">
           <h2 className="text-lg font-semibold text-gray-900">Policies</h2>
