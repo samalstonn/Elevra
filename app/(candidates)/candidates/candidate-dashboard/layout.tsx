@@ -28,16 +28,16 @@ const navItems = [
     premium: false,
   },
   {
-    href: "/candidates/candidate-dashboard/donations",
-    label: "Donations",
-    icon: HandCoins,
-    premium: false,
-  },
-  {
     href: "/candidates/candidate-dashboard/endorsements",
     label: "Endorsements",
     icon: Award,
     premium: false,
+  },
+  {
+    href: "/candidates/candidate-dashboard/donations",
+    label: "Donations",
+    icon: HandCoins,
+    premium: true,
   },
   // --- Premium Tabs ---
   {

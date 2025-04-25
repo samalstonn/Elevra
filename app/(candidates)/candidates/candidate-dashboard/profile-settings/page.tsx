@@ -149,11 +149,16 @@ export default function ProfileSettingsPage() {
                   }),
                 });
                 if (res.ok) {
-                  const refreshed = await fetch(`/api/electionlinks?candidateId=${candidateData.id}`);
+                  const refreshed = await fetch(
+                    `/api/electionlinks?candidateId=${candidateData.id}`
+                  );
                   if (refreshed.ok) {
-                    const newLinks: ElectionLinkWithElection[] = await refreshed.json();
+                    const newLinks: ElectionLinkWithElection[] =
+                      await refreshed.json();
                     setElectionLinks(newLinks);
-                    const newLink = newLinks.find((l) => l.electionId === electionId);
+                    const newLink = newLinks.find(
+                      (l) => l.electionId === electionId
+                    );
                     if (newLink) setActiveElectionId(newLink.electionId);
                   }
                 }
@@ -208,9 +213,13 @@ export default function ProfileSettingsPage() {
                         { method: "DELETE" }
                       );
                       if (activeElectionId === link.electionId) {
-                        const updatedLinks = electionLinks.filter((l) => l.electionId !== link.electionId);
+                        const updatedLinks = electionLinks.filter(
+                          (l) => l.electionId !== link.electionId
+                        );
                         setElectionLinks(updatedLinks);
-                        setActiveElectionId(updatedLinks[0]?.electionId ?? null);
+                        setActiveElectionId(
+                          updatedLinks[0]?.electionId ?? null
+                        );
                       } else {
                         setElectionLinks((prev) =>
                           prev.filter((l) => l.electionId !== link.electionId)
@@ -241,15 +250,8 @@ export default function ProfileSettingsPage() {
               candidateId={candidateData.id}
               electionId={activeElectionId}
               profileData={{
-                name: candidateData.name,
                 party: activeLink?.party ?? "",
-                position: activeLink?.position ?? "",
-                bio: activeLink?.bio ?? "",
-                website: activeLink?.website ?? "",
-                linkedin: activeLink?.linkedin ?? "",
                 votinglink: activeLink?.votinglink ?? "",
-                city: activeLink?.city ?? "",
-                state: activeLink?.state ?? "",
                 policies: activeLink?.policies ?? [],
                 additionalNotes: activeLink?.additionalNotes ?? "",
               }}

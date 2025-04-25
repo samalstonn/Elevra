@@ -26,30 +26,12 @@ import { debounce } from "@/lib/debounce";
 // Define Zod schema for validation
 // Important: Make policies non-optional since the form expects it as a required field
 const profileSchema = z.object({
-  name: z.string().min(2, { message: "Name must be at least 2 characters." }),
   party: z.string().min(1, { message: "Party affiliation is required." }),
-  position: z.string().min(3, { message: "Position sought is required." }),
-  bio: z
-    .string()
-    .min(10, { message: "Bio must be at least 10 characters." })
-    .max(10000, { message: "Bio cannot exceed 10000 characters." }),
-  website: z
-    .string()
-    .url({ message: "Please enter a valid URL." })
-    .optional()
-    .or(z.literal("")),
-  linkedin: z
-    .string()
-    .url({ message: "Please enter a valid LinkedIn URL." })
-    .optional()
-    .or(z.literal("")),
   votinglink: z
     .string()
     .url({ message: "Please enter a valid voting link URL." })
     .optional()
     .or(z.literal("")),
-  city: z.string().optional(),
-  state: z.string().optional(), // Assuming 2-letter state code
   policies: z
     .array(z.string())
     .max(5, { message: "Maximum 5 policies allowed." })
@@ -115,40 +97,18 @@ export function ProfileForm({
   } = useForm<ProfileFormData>({
     resolver: zodResolver(profileSchema),
     defaultValues: {
-      name: profileData.name || "",
       party: profileData.party || "",
-      position: profileData.position || "",
-      bio: profileData.bio || "",
-      website: profileData.website || "",
-      linkedin: profileData.linkedin || "",
       votinglink: profileData.votinglink || "",
-      city: profileData.city || "",
-      state: profileData.state || "",
       policies: policiesWithDefault,
       additionalNotes: profileData.additionalNotes || "",
     },
   });
 
-  // Initialize location input and fetch election when component mounts
-  useEffect(() => {
-    // Set location input if city and state are available
-    if (profileData.city && profileData.state) {
-      setLocationInput(`${profileData.city}, ${profileData.state}`);
-    }
-  }, [profileData.city, profileData.state]);
-
   // Reset form if profileData changes
   useEffect(() => {
     reset({
-      name: profileData.name || "",
       party: profileData.party || "",
-      position: profileData.position || "",
-      bio: profileData.bio || "",
-      website: profileData.website || "",
-      linkedin: profileData.linkedin || "",
       votinglink: profileData.votinglink || "",
-      city: profileData.city || "",
-      state: profileData.state || "",
       policies:
         Array.isArray(profileData.policies) && profileData.policies.length > 0
           ? profileData.policies
@@ -156,124 +116,6 @@ export function ProfileForm({
       additionalNotes: profileData.additionalNotes || "",
     });
   }, [profileData, reset]);
-
-  // Close suggestions when clicking outside
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (
-        suggestionsRef.current &&
-        !suggestionsRef.current.contains(event.target as Node) &&
-        locationInputRef.current &&
-        !locationInputRef.current.contains(event.target as Node)
-      ) {
-        setShowLocationSuggestions(false);
-      }
-    };
-
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
-  }, []);
-
-  // Location input change handler with debounced suggestions
-  const handleLocationInputChange = (
-    e: React.ChangeEvent<HTMLInputElement>
-  ) => {
-    const value = e.target.value;
-    setLocationInput(value);
-
-    // Clear location-related errors
-    if (
-      locationErrors.city ||
-      locationErrors.state ||
-      locationErrors.location
-    ) {
-      setLocationErrors({});
-    }
-
-    if (value.trim().length >= 2) {
-      setIsLoadingLocations(true);
-      setShowLocationSuggestions(true);
-      debouncedFetchLocationSuggestions(value);
-    } else {
-      setShowLocationSuggestions(false);
-      setLocationSuggestions([]);
-    }
-  };
-
-  // Debounced location suggestions fetch
-  const debouncedFetchLocationSuggestions = debounce(async (input: string) => {
-    if (input.trim().length < 2) {
-      setLocationSuggestions([]);
-      setIsLoadingLocations(false);
-      return;
-    }
-
-    try {
-      const results = await getLocationSuggestions(input);
-      setLocationSuggestions(results);
-    } catch (error) {
-      console.error("Error fetching location suggestions:", error);
-    } finally {
-      setIsLoadingLocations(false);
-    }
-  }, 500);
-
-  // Handle location suggestion selection
-  const handleSelectLocationSuggestion = async (
-    suggestion: AutocompleteSuggestion
-  ) => {
-    setLocationInput(suggestion.placeName);
-    setShowLocationSuggestions(false);
-
-    if (suggestion.city && suggestion.state) {
-      setValue("city", suggestion.city);
-      setValue("state", suggestion.state);
-    } else {
-      // Try to normalize the location if city/state not provided in suggestion
-      try {
-        const normalizedLocation = await normalizeLocation(
-          suggestion.placeName
-        );
-        if ("city" in normalizedLocation && "state" in normalizedLocation) {
-          setValue("city", normalizedLocation.city || "");
-          setValue("state", normalizedLocation.state || "");
-          setLocationInput(normalizedLocation.fullAddress || "");
-        }
-      } catch (error) {
-        console.error("Error normalizing location:", error);
-        setLocationErrors({
-          location: "Unable to determine city and state from this location",
-        });
-      }
-    }
-  };
-
-  // Handle manual location validation when input field loses focus
-  const handleLocationBlur = async () => {
-    if (locationInput && (!getValues("city") || !getValues("state"))) {
-      try {
-        const normalizedLocation = await normalizeLocation(locationInput);
-        if ("city" in normalizedLocation && "state" in normalizedLocation) {
-          setValue("city", normalizedLocation.city || "");
-          setValue("state", normalizedLocation.state || "");
-          setLocationInput(normalizedLocation.fullAddress || "");
-        } else if ("message" in normalizedLocation) {
-          setLocationErrors({
-            location: normalizedLocation.message,
-          });
-        }
-      } catch (error) {
-        console.error("Error validating location:", error);
-      }
-    }
-
-    // Hide suggestions after a short delay (allows for clicks on suggestions)
-    setTimeout(() => {
-      setShowLocationSuggestions(false);
-    }, 200);
-  };
 
   // Explicit type for onSubmit to match ProfileFormData exactly
   const onSubmit: SubmitHandler<ProfileFormData> = async (data) => {
@@ -287,15 +129,8 @@ export function ProfileForm({
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             profile: {
-              name: data.name,
               party: data.party,
-              position: data.position,
-              bio: data.bio,
-              website: data.website ?? "",
-              linkedin: data.linkedin ?? "",
               votinglink: data.votinglink ?? "",
-              city: data.city ?? "",
-              state: data.state ?? "",
               policies: (data.policies || []).filter((p) => p.trim() !== ""),
               additionalNotes: data.additionalNotes ?? "",
             },
@@ -337,17 +172,9 @@ export function ProfileForm({
           {/* Basic Info */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <Label htmlFor="name">Full Name</Label>
-              <br />
-              <Input id="name" {...register("name")} />
-              {errors.name && (
-                <p className="text-xs text-red-600 mt-1">
-                  {errors.name.message}
-                </p>
-              )}
-            </div>
-            <div>
-              <Label htmlFor="party">Party/Major Affiliation</Label>
+              <Label htmlFor="party">
+                Affiliation (Political Party, College Major)
+              </Label>
               <br />
               <Input id="party" {...register("party")} />
               {errors.party && (
@@ -356,108 +183,6 @@ export function ProfileForm({
                 </p>
               )}
             </div>
-          </div>
-
-          {/* Position */}
-          <div>
-            <Label htmlFor="position">
-              Current Position (Eg. Running for Mayor, Incumbent Mayor, Business
-              Owner, etc.)
-            </Label>
-            <br />
-            <Input
-              id="position"
-              {...register("position")}
-              style={{ width: "100%" }}
-            />
-            {errors.position && (
-              <p className="text-xs text-red-600 mt-1">
-                {errors.position.message}
-              </p>
-            )}
-          </div>
-
-          {/* Location with Autocomplete */}
-          <div className="space-y-2 relative">
-            <Label
-              htmlFor="location"
-              className="block text-sm font-medium text-gray-700 flex items-center gap-2"
-            >
-              <FaMapMarkerAlt className="text-purple-600" /> Location
-            </Label>
-            <div className="relative">
-              <Input
-                ref={locationInputRef}
-                id="location"
-                name="location"
-                value={locationInput}
-                onChange={handleLocationInputChange}
-                onBlur={handleLocationBlur}
-                onFocus={() => {
-                  if (locationInput.trim().length >= 2) {
-                    setShowLocationSuggestions(true);
-                  }
-                }}
-                placeholder="Enter city, state, or ZIP code"
-                className={locationErrors.location ? "border-red-500" : ""}
-                autoComplete="off"
-                style={{ width: "100%" }}
-              />
-              {isLoadingLocations && (
-                <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
-                  <Loader2 className="h-4 w-4 animate-spin text-gray-400" />
-                </div>
-              )}
-            </div>
-            {locationErrors.location && (
-              <p className="text-xs text-red-600 mt-1">
-                {locationErrors.location}
-              </p>
-            )}
-
-            {/* Location Suggestions */}
-            {showLocationSuggestions && locationSuggestions.length > 0 && (
-              <div
-                ref={suggestionsRef}
-                className="absolute z-10 w-full mt-1 bg-white shadow-lg rounded-md border border-gray-200 max-h-60 overflow-y-auto"
-              >
-                <ul className="py-1">
-                  {locationSuggestions.map((suggestion, index) => (
-                    <li
-                      key={suggestion.id || index}
-                      className="px-4 py-2 hover:bg-purple-50 cursor-pointer flex items-center"
-                      onClick={() => handleSelectLocationSuggestion(suggestion)}
-                    >
-                      <FaMapMarkerAlt className="text-purple-400 mr-2 flex-shrink-0" />
-                      <span className="text-sm">{suggestion.placeName}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
-
-            {/* Display selected location info */}
-            {getValues("city") && getValues("state") && (
-              <div className="flex items-center text-sm text-gray-600 mt-1">
-                <FaCheckCircle className="text-green-500 mr-2" />
-                <span>
-                  Selected: {getValues("city")}, {getValues("state")}
-                </span>
-              </div>
-            )}
-          </div>
-
-          {/* Hidden City and State fields (populated by location selection) */}
-          <input type="hidden" {...register("city")} />
-          <input type="hidden" {...register("state")} />
-
-          {/* Bio */}
-          <div>
-            <Label htmlFor="bio">Biography</Label>
-            <Textarea id="bio" {...register("bio")} rows={5} />
-            {errors.bio && (
-              <p className="text-xs text-red-600 mt-1">{errors.bio.message}</p>
-            )}
           </div>
 
           {/* Policies */}
@@ -496,40 +221,6 @@ export function ProfileForm({
               </p>
             )}
           </div>
-
-          {/* Links */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="website">Website URL (Optional)</Label>
-              <br />
-              <Input
-                id="website"
-                type="url"
-                {...register("website")}
-                placeholder="https://..."
-              />
-              {errors.website && (
-                <p className="text-xs text-red-600 mt-1">
-                  {errors.website.message}
-                </p>
-              )}
-            </div>
-            <div>
-              <Label htmlFor="linkedin">LinkedIn URL (Optional)</Label>
-              <br />
-              <Input
-                id="linkedin"
-                type="url"
-                {...register("linkedin")}
-                placeholder="https://linkedin.com/in/..."
-              />
-              {errors.linkedin && (
-                <p className="text-xs text-red-600 mt-1">
-                  {errors.linkedin.message}
-                </p>
-              )}
-            </div>
-          </div>
           <div>
             <Label htmlFor="votinglink">Voting Link (Optional)</Label>
             <br />
@@ -538,6 +229,7 @@ export function ProfileForm({
               type="url"
               {...register("votinglink")}
               placeholder="https://..."
+              style={{ width: "100%" }}
             />
             {errors.votinglink && (
               <p className="text-xs text-red-600 mt-1">

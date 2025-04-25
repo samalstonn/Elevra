@@ -13,8 +13,10 @@ import Link from "next/link";
 import { Eye, Edit, Mail, HandCoins } from "lucide-react"; // Icons
 import { FaShare } from "react-icons/fa"; // Importing FaShare
 import { useAuth } from "@clerk/nextjs";
-import { Candidate } from "@prisma/client";
+import { Candidate, Donation } from "@prisma/client";
 // import AnalyticsChart from "@/components/AnalyticsChart";
+
+export type CandidateWithDonations = Candidate & { donations: Donation[] };
 
 export default function OverviewPage() {
   const [candidate, setCandidate] = useState<Candidate | null>(null);
@@ -38,19 +40,9 @@ export default function OverviewPage() {
         }
         return res.json();
       })
-      .then((data: Candidate) => {
+      .then((data: CandidateWithDonations) => {
         setCandidate(data);
-        fetch(`/api/candidate/donations?clerkUserId=${userId}`)
-          .then((res) => {
-            if (!res.ok) {
-              throw new Error("Failed to fetch donation data");
-            }
-            return res.json();
-          })
-          .then((donationData) => {
-            setDonationTotal(donationData.totalDonations);
-          })
-          .catch((err) => console.error("Error fetching donation data:", err));
+        setDonationTotal(data.donations.length);
       })
       .catch((err) => console.error("Error fetching candidate:", err));
   }, [userId]);
@@ -109,7 +101,7 @@ export default function OverviewPage() {
             {/* Placeholder change */}
           </CardContent>
         </Card>
-        <Card>
+        <Card className="opacity-50 bg-gray-50">
           {" "}
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">

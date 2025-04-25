@@ -10,9 +10,9 @@ import { FaUserPlus, FaCheckCircle } from "react-icons/fa"; // Import icons from
 import { MdHowToVote } from "react-icons/md";
 
 interface CandidateSectionProps {
-  candidates: Candidate[];
+  candidates?: Candidate[];
   election: Election;
-  fallbackElections: Election[];
+  fallbackElections?: Election[];
 }
 
 const containerVariants = {
@@ -26,9 +26,9 @@ const cardVariants = {
 };
 
 export default function CandidateSection({
-  candidates,
+  candidates = [],
   election,
-  fallbackElections,
+  fallbackElections = [],
 }: CandidateSectionProps) {
   const electionIsActive = new Date(election.date) >= new Date();
 
@@ -264,11 +264,12 @@ export default function CandidateSection({
                         )}
                       </h2>
                       <p className="w-[85%] text-purple-700 text-sm ">
-                        {candidate.position}
+                        {candidate.currentRole}
                       </p>
                       <p
                         className={`w-[75%] text-gray-500 text-xs ${
-                          candidate.position.length > 37
+                          candidate.currentRole &&
+                          candidate.currentRole.length > 37
                             ? "line-clamp-3"
                             : "line-clamp-4"
                         }`}
@@ -279,31 +280,6 @@ export default function CandidateSection({
                       >
                         {candidate.bio}
                       </p>
-
-                      <motion.div
-                        className="absolute bottom-0 mt-4 flex justify-start gap-4"
-                        whileHover={{ scale: 1.02 }}
-                        transition={{ duration: 0.2, ease: "easeOut" }}
-                      >
-                        {candidate.votinglink ? (
-                          <Button
-                            variant="purple"
-                            size="sm"
-                            className="flex items-center gap-2 mt-2"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              if (candidate.votinglink) {
-                                window.open(candidate.votinglink, "_blank");
-                              }
-                            }}
-                          >
-                            <span className="flex items-center gap-2">
-                              <MdHowToVote />
-                              <span>Vote</span>
-                            </span>
-                          </Button>
-                        ) : null}
-                      </motion.div>
                     </CardContent>
                   </Card>
                 </motion.div>

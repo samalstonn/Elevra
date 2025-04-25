@@ -1,41 +1,63 @@
-"use client";
-
-import { useSearchParams } from "next/navigation";
-import useSWR from "swr";
+import prisma from "@/prisma/prisma";
 import { Suspense } from "react";
 import ElectionResultsClient from "./ElectionResultsClient";
 import { ElectionWithCandidates } from "./ElectionResultsClient";
 
-const fetcher = (url: string) => fetch(url).then((res) => res.json());
+interface ElectionResultsPageProps {
+  searchParams: {
+    city?: string;
+    state?: string;
+  };
+}
 
-function ElectionResultsPage() {
-  const searchParams = useSearchParams();
-  const city = searchParams.get("city");
-  const state = searchParams.get("state");
-  const electionID = searchParams.get("electionID");
+async function ElectionResultsPage({ searchParams }: ElectionResultsPageProps) {
+  const resolvedSearchParams = await searchParams;
+  const city = resolvedSearchParams.city;
+  const state = resolvedSearchParams.state;
 
-  const { data: elections, isLoading } = useSWR<ElectionWithCandidates[]>(
-    `/api/elections?city=${city}&state=${state}`,
-    fetcher
-  );
+  if (!city || !state) {
+    return (
+      <div className="w-screen h-screen flex items-center justify-center">
+        Please provide a city and state.
+      </div>
+    );
+  }
+  const elections = await prisma.election.findMany({
+    where: {
+      city: city,
+      state: state,
+    },
+    include: {
+      candidates: {
+        include: {
+          candidate: true,
+        },
+      },
+    },
+  });
+
+  // Reshape the candidates array for each election to be a flat array of Candidate objects
+  const reshapedElections = elections.map((election) => ({
+    ...election,
+    candidates: election.candidates.map((ec: any) => ec.candidate),
+  }));
 
   return (
     <>
-      {isLoading ? (
-        <div className="w-screen h-screen flex items-center justify-center">
-          Loading...
-        </div>
-      ) : (
-        <ElectionResultsClient elections={elections || []} initialElectionID={electionID} />
-      )}
+      <ElectionResultsClient
+        elections={reshapedElections}
+        initialElectionID={null}
+      />
     </>
   );
 }
 
-export default function ElectionResults() {
+export default function ElectionResults({
+  searchParams,
+}: ElectionResultsPageProps) {
   return (
     <Suspense fallback={<div>Loading...</div>}>
-      <ElectionResultsPage />
+      <ElectionResultsPage searchParams={searchParams} />
     </Suspense>
   );
 }

@@ -35,18 +35,21 @@ export async function GET(request: Request) {
       select: {
         id: true,
         name: true,
-        party: true,
-        position: true,
-        city: true,
-        state: true,
+        currentRole: true,
+        currentCity: true,
+        currentState: true,
         status: true,
         bio: true,
         website: true,
         linkedin: true,
-        // electionId removed
-        policies: true,
         slug: true,
-        votinglink: true,
+        donations: {
+          select: {
+            id: true,
+            amount: true,
+            createdAt: true,
+          },
+        },
         elections: {
           select: {
             election: {
@@ -204,7 +207,7 @@ export async function POST(request: Request) {
         from: process.env.EMAIL_USER,
         to: process.env.MY_EMAIL, // your email address to receive notifications
         subject: `New Candidate Signup: ${candidate.name}`,
-        text: `A new candidate has signed up.\n\nName: ${candidate.name}\nLocation: ${candidate.city}, ${candidate.state}
+        text: `A new candidate has signed up.\n\nName: ${candidate.name}\nLocation: ${candidate.currentCity}, ${candidate.currentState}
         : ${body}`,
       };
 
