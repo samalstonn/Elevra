@@ -20,10 +20,12 @@ model Election {
   description String?
 
   // Timestamps & flags
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  active    Boolean  @default(true)
-  hidden    Boolean  @default(false)
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+  active      Boolean          @default(true)
+  hidden      Boolean          @default(false)
+  clerkUserId String? // for submission tracking
+  status      SubmissionStatus @default(PENDING)
 
   // Relations
   offices Office[]
@@ -50,56 +52,79 @@ model Office {
   clerkUserId String?
   status      SubmissionStatus @default(PENDING)
 
-  // Candidates — keep your existing model unchanged
-  candidates Candidate[]
+  // Relations  
+  candidates     Candidate[] // remove
+  candidatesLink OfficeLink[]
 }
 
 model Candidate {
-  id              Int                    @id @default(autoincrement())
+  id Int @id @default(autoincrement())
 
   // Identification & Core Details
-  name            String
-  party           String
-  position        String
-  slug            String                 @unique
-  clerkUserId     String?                @unique
+  name        String
+  party       String // remove
+  position    String // change to currentRole
+  slug        String  @unique
+  clerkUserId String? @unique
 
   // Biography & Policy
-  bio             String                 @default("")
-  policies        String[]
+  bio             String   @default("")
+  policies        String[] //remove
   sources         String[]
   history         String[]
   additionalNotes String?
 
   // Contact Information
-  website         String?
-  linkedin        String?
-  photo         String?
-  photoUrl        String?
-  email           String?
-  phone           String?
-  votinglink      String?
+  website    String?
+  linkedin   String?
+  photo      String?
+  photoUrl   String?
+  email      String?
+  phone      String?
+  votinglink String? //remove
 
   // Location
-  city            String?
-  state           String?
+  city  String? // change to currentCity
+  state String? // change to currentState
 
   // Election & Engagement
-  officeId        Int? 
-  donationCount   Int                    @default(0)
+  officeId      Int? // remove
+  donationCount Int  @default(0)
 
   // Timestamps & Status
-  createdAt       DateTime               @default(now())
-  updatedAt       DateTime               @updatedAt
-  status          SubmissionStatus       @default(PENDING)
-  verified        Boolean                @default(false)
-  hidden          Boolean                @default(false)
-  office          Office?                @relation(fields: [officeId], references: [id])
-  profileViews    CandidateProfileView[]
-  donations       Donation[]
-  endorsements    Endorsement[]
-  Testimonial     Testimonial[]
-  Vendors         Vendor[]               @relation("CandidateToVendor")
+  createdAt DateTime         @default(now())
+  updatedAt DateTime         @updatedAt
+  status    SubmissionStatus @default(PENDING)
+  verified  Boolean          @default(false)
+  hidden    Boolean          @default(false)
+  office    Office?          @relation(fields: [officeId], references: [id]) // remove
+
+  // Relations  
+  profileViews CandidateProfileView[]
+  donations    Donation[]
+  endorsements Endorsement[]
+  Testimonial  Testimonial[]
+  Vendors      Vendor[]               @relation("CandidateToVendor")
+  offices      OfficeLink[]
+}
+
+model OfficeLink {
+  candidate   Candidate @relation(fields: [candidateId], references: [id])
+  candidateId Int
+
+  office   Office @relation(fields: [officeId], references: [id])
+  officeId Int
+
+  joinedAt DateTime @default(now())
+
+  party           String
+  policies        String[] @default([])
+  sources         String[] @default([])
+  additionalNotes String?
+  votinglink      String?
+  photoUrl        String?
+
+  @@id([candidateId, officeId])
 }
 
 model Donation {
