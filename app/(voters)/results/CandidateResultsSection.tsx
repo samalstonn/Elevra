@@ -154,6 +154,14 @@ export default function CandidateSection({
                   {electionIsActive ? "Active" : "Inactive"}
                 </span>
               </p>
+              <div className="text-sm mt-2">
+                <Link href={`/candidates?tab=signup&electionId=${election.id}`}>
+                  Running in this election?
+                  <Button variant="purple" size="sm" className="ml-2">
+                    Join as a candidate
+                  </Button>
+                </Link>
+              </div>
             </CardContent>
           </Card>
         </div>
@@ -183,7 +191,10 @@ export default function CandidateSection({
                   <p className="text-gray-500 text-sm text-center mb-4">
                     Get on the ballot and let voters know about you!
                   </p>
-                  <Link href="/candidates" className="mt-auto mb-4">
+                  <Link
+                    href={`/candidates?tab=signup&electionId=${election.id}`}
+                    className="mt-auto mb-4"
+                  >
                     <Button
                       variant="purple"
                       className="flex items-center gap-2"

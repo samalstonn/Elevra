@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
+import { useSignIn } from "@clerk/nextjs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -13,8 +14,6 @@ import {
   FaLinkedin,
   FaMapMarkerAlt,
 } from "react-icons/fa";
-import { useAuth } from "@clerk/nextjs";
-import { useUser } from "@clerk/nextjs";
 import { getLocationSuggestions, normalizeLocation } from "@/lib/geocoding";
 import { debounce } from "@/lib/debounce";
 import { AutocompleteSuggestion } from "@/types/geocoding";
@@ -22,6 +21,10 @@ import { Loader2 } from "lucide-react";
 
 // Form state interface
 interface FormState {
+  firstName: string;
+  lastName: string;
+  email: string;
+  password: string;
   name: string;
   website: string;
   linkedin: string;
@@ -33,6 +36,10 @@ interface FormState {
 
 // Initial empty form state
 const initialFormState: FormState = {
+  firstName: "",
+  lastName: "",
+  email: "",
+  password: "",
   name: "",
   website: "",
   linkedin: "",
@@ -44,6 +51,10 @@ const initialFormState: FormState = {
 
 // Form validation error interface
 interface FormErrors {
+  firstName?: string;
+  lastName?: string;
+  email?: string;
+  password?: string;
   name?: string;
   website?: string;
   linkedin?: string;
@@ -75,8 +86,18 @@ export default function CandidateSignupForm() {
   const suggestionsRef = useRef<HTMLDivElement>(null);
 
   const router = useRouter();
-  const { isLoaded, userId } = useAuth();
-  const { user } = useUser();
+
+  const { isLoaded, signIn, setActive } = useSignIn();
+
+  const handleAfterSignup = async (email: string, password: string) => {
+    if (!isLoaded) return;
+    const { createdSessionId } = await signIn.create({
+      identifier: email,
+      password,
+    });
+    await setActive({ session: createdSessionId });
+    router.push("/candidates/candidate-dashboard");
+  };
 
   // Load draft from localStorage on component mount
   useEffect(() => {
@@ -92,18 +113,7 @@ export default function CandidateSignupForm() {
         console.error("Error parsing saved draft:", e);
       }
     }
-
-    // Pre-fill email and name from Clerk if available
-    if (user) {
-      const fullName = `${user.firstName || ""} ${user.lastName || ""}`.trim();
-      if (fullName) {
-        setFormData((prev) => ({
-          ...prev,
-          name: prev.name || fullName,
-        }));
-      }
-    }
-  }, [user]);
+  }, []);
 
   // Close suggestions when clicking outside
   useEffect(() => {
@@ -282,11 +292,15 @@ export default function CandidateSignupForm() {
   const validateForm = (): FormErrors => {
     const newErrors: FormErrors = {};
 
-    if (!formData.name.trim()) {
-      newErrors.name = "Name is required";
-    } else if (formData.name.length > 100) {
-      newErrors.name = "Name must be less than 100 characters";
-    }
+    if (!formData.firstName.trim())
+      newErrors.firstName = "First name is required";
+    if (!formData.lastName.trim()) newErrors.lastName = "Last name is required";
+    if (!formData.email.trim()) newErrors.email = "Email is required";
+    else if (!/\S+@\S+\.\S+/.test(formData.email))
+      newErrors.email = "Enter a valid email";
+    if (!formData.password) newErrors.password = "Password is required";
+    else if (formData.password.length < 8)
+      newErrors.password = "Password must be at least 8 characters";
 
     if (!formData.currentRole.trim()) {
       newErrors.currentRole = "currentRole is required";
@@ -317,13 +331,6 @@ export default function CandidateSignupForm() {
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
-    // Check if user is authenticated
-    if (!isLoaded || !userId) {
-      setErrorMessage("You must be logged in to register as a candidate.");
-      setSubmitStatus("error");
-      return;
-    }
-
     // Validate the form
     const newErrors = validateForm();
     if (Object.keys(newErrors).length > 0) {
@@ -334,25 +341,23 @@ export default function CandidateSignupForm() {
     setIsSubmitting(true);
 
     try {
-      const response = await fetch("/api/candidate", {
+      // Combine first and last name into one field for the API
+      const submissionData = {
+        ...formData,
+        name: `${formData.firstName.trim()} ${formData.lastName.trim()}`.trim(),
+      };
+      const response = await fetch("/api/auth-signup", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          ...formData,
-          clerkUserId: userId,
-        }),
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify(submissionData),
       });
 
       if (response.ok) {
         setSubmitStatus("success");
-        clearDraft(); // Clear draft after successful submission
-
-        // Redirect to candidate dashboard after successful submission
-        setTimeout(() => {
-          router.push("/candidates/candidate-dashboard");
-        }, 2000);
+        clearDraft();
+        // Log in the new user via Clerk front-end
+        await handleAfterSignup(formData.email, formData.password);
       } else {
         const data = await response.json();
         setErrorMessage(data.error || "Failed to submit candidate information");
@@ -369,54 +374,79 @@ export default function CandidateSignupForm() {
     }
   };
 
-  if (!isLoaded) {
-    return <div>Loading authentication...</div>;
-  }
-
-  if (!userId) {
-    return (
-      <div className="text-center p-6">
-        <h2 className="text-xl font-semibold mb-4">Authentication Required</h2>
-        <p className="mb-4">
-          Please sign in before registering as a candidate.
-        </p>
-        <Button
-          variant="purple"
-          onClick={() =>
-            router.push(
-              `/sign-in?redirect_url=${encodeURIComponent(
-                window.location.pathname
-              )}`
-            )
-          }
-        >
-          Sign In
-        </Button>
-      </div>
-    );
-  }
-
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
-      {/* Candidate Name */}
-      <div className="space-y-2 text-left">
+      {/* Authentication Fields */}
+      <div className="space-y-4 text-left">
         <label
-          htmlFor="name"
+          htmlFor="currentRole"
           className="block text-sm font-medium text-gray-700"
         >
           Full Name*
         </label>
         <Input
-          id="name"
-          name="name"
-          value={formData.name}
+          id="firstName"
+          name="firstName"
+          value={formData.firstName}
           onChange={handleInputChange}
-          placeholder="Your full name"
-          className={errors.name ? "border-red-500" : ""}
+          placeholder="First Name"
+          className={errors.firstName ? "border-red-500" : ""}
           style={{ width: "100%" }}
         />
-        {errors.name && (
-          <p className="text-red-500 text-xs mt-1">{errors.name}</p>
+        {errors.firstName && (
+          <p className="text-red-500 text-xs mt-1">{errors.firstName}</p>
+        )}
+
+        <Input
+          id="lastName"
+          name="lastName"
+          value={formData.lastName}
+          onChange={handleInputChange}
+          placeholder="Last Name"
+          className={errors.lastName ? "border-red-500" : ""}
+          style={{ width: "100%" }}
+        />
+        {errors.lastName && (
+          <p className="text-red-500 text-xs mt-1">{errors.lastName}</p>
+        )}
+        <label
+          htmlFor="currentRole"
+          className="block text-sm font-medium text-gray-700"
+        >
+          Email*
+        </label>
+        <Input
+          id="email"
+          name="email"
+          type="email"
+          value={formData.email}
+          onChange={handleInputChange}
+          placeholder="Email Address"
+          className={errors.email ? "border-red-500" : ""}
+          style={{ width: "100%" }}
+        />
+        {errors.email && (
+          <p className="text-red-500 text-xs mt-1">{errors.email}</p>
+        )}
+
+        <label
+          htmlFor="currentRole"
+          className="block text-sm font-medium text-gray-700"
+        >
+          Password*
+        </label>
+        <Input
+          id="password"
+          name="password"
+          type="password"
+          value={formData.password}
+          onChange={handleInputChange}
+          placeholder="Password"
+          className={errors.password ? "border-red-500" : ""}
+          style={{ width: "100%" }}
+        />
+        {errors.password && (
+          <p className="text-red-500 text-xs mt-1">{errors.password}</p>
         )}
       </div>
 

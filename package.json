@@ -9,7 +9,9 @@
     "lint": "next lint"
   },
   "dependencies": {
-    "@clerk/nextjs": "^6.12.2",
+    "@clerk/elements": "^0.23.18",
+    "@clerk/nextjs": "^6.18.0",
+    "@clerk/shared": "^3.7.4",
     "@hookform/resolvers": "^5.0.0",
     "@prisma/client": "^6.6.0",
     "@radix-ui/react-alert-dialog": "^1.1.6",
@@ -53,7 +55,7 @@
     "zod": "^3.24.2"
   },
   "devDependencies": {
-    "@clerk/clerk-sdk-node": "^4.13.23",
+    "@clerk/clerk-sdk-node": "^5.1.6",
     "@eslint/eslintrc": "^3",
     "@faker-js/faker": "^9.6.0",
     "@playwright/test": "^1.51.1",
