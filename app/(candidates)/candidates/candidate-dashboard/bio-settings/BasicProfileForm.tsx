@@ -1,16 +1,10 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useEffect } from "react";
 import { useAuth } from "@clerk/nextjs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { FaMapMarkerAlt, FaGlobe, FaLinkedin } from "react-icons/fa";
-import { getLocationSuggestions, normalizeLocation } from "@/lib/geocoding";
-import { AutocompleteSuggestion } from "@/types/geocoding";
-import { debounce } from "@/lib/debounce";
-import { Link } from "lucide-react";
 
 interface FormState {
   name: string;
@@ -35,7 +29,8 @@ const initialFormState: FormState = {
 interface FormErrors {
   name?: string;
   currentRole?: string;
-  location?: string;
+  currentCity?: string;
+  currentState?: string;
   bio?: string;
   website?: string;
   linkedin?: string;
@@ -50,15 +45,6 @@ export default function BasicProfileForm() {
   );
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-
-  const [locationInput, setLocationInput] = useState("");
-  const [locationSuggestions, setLocationSuggestions] = useState<
-    AutocompleteSuggestion[]
-  >([]);
-  const [_isLoadingLocations, setIsLoadingLocations] = useState(false);
-  const [showLocationSuggestions, setShowLocationSuggestions] = useState(false);
-  const locationInputRef = useRef<HTMLInputElement>(null);
-  const suggestionsRef = useRef<HTMLDivElement>(null);
 
   // Fetch existing candidate data
   useEffect(() => {
@@ -76,7 +62,6 @@ export default function BasicProfileForm() {
           website: data.website ?? "",
           linkedin: data.linkedin ?? "",
         }));
-        setLocationInput(`${data.currentCity}, ${data.currentState}`);
       })
       .catch((e) => console.error(e));
   }, [isLoaded, userId]);
@@ -91,76 +76,13 @@ export default function BasicProfileForm() {
     setSubmitStatus(null);
   };
 
-  // Location handlers (same as signup)
-  const debouncedFetch = debounce(async (input: string) => {
-    if (input.trim().length < 2) {
-      setLocationSuggestions([]);
-      setIsLoadingLocations(false);
-      return;
-    }
-    try {
-      const results = await getLocationSuggestions(input);
-      setLocationSuggestions(results);
-    } catch {
-      setLocationSuggestions([]);
-    } finally {
-      setIsLoadingLocations(false);
-    }
-  }, 300);
-
-  const handleLocationChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const val = e.target.value;
-    setLocationInput(val);
-    setErrors((prev) => ({ ...prev, location: undefined }));
-    if (val.trim().length >= 2) {
-      setIsLoadingLocations(true);
-      setShowLocationSuggestions(true);
-      debouncedFetch(val);
-    } else {
-      setShowLocationSuggestions(false);
-      setLocationSuggestions([]);
-    }
-  };
-
-  const handleLocationSelect = async (s: AutocompleteSuggestion) => {
-    setLocationInput(s.placeName);
-    setShowLocationSuggestions(false);
-    if (s.city && s.state) {
-      setFormData((prev) => ({
-        ...prev,
-        currentCity: s.city ?? "",
-        currentState: s.state ?? "",
-      }));
-    } else {
-      try {
-        const normalized = await normalizeLocation(s.placeName);
-        if ("city" in normalized && "state" in normalized) {
-          setFormData((prev) => ({
-            ...prev,
-            currentCity: normalized.city ?? "",
-            currentState: normalized.state ?? "",
-          }));
-        }
-      } catch {
-        setErrors((prev) => ({
-          ...prev,
-          location: "Could not resolve location",
-        }));
-      }
-    }
-  };
-
-  const handleLocationBlur = () => {
-    setTimeout(() => setShowLocationSuggestions(false), 200);
-  };
-
   // Validation
   const validateForm = (): FormErrors => {
     const newErrors: FormErrors = {};
     if (!formData.name.trim()) newErrors.name = "Name is required";
     if (!formData.currentRole.trim()) newErrors.currentRole = "Required";
-    if (!formData.currentCity || !formData.currentState)
-      newErrors.location = "Required";
+    if (!formData.currentCity.trim()) newErrors.currentCity = "City is required";
+    if (!formData.currentState.trim()) newErrors.currentState = "State is required";
     if (!formData.bio.trim()) newErrors.bio = "Required";
     return newErrors;
   };
@@ -202,7 +124,7 @@ export default function BasicProfileForm() {
         setErrorMessage(data.error || "Update failed");
         setSubmitStatus("error");
       }
-    } catch (err) {
+    } catch {
       setErrorMessage("Update error");
       setSubmitStatus("error");
     } finally {
@@ -249,30 +171,33 @@ export default function BasicProfileForm() {
           style={{ width: "100%" }}
         />
       </div>
-      <div className="relative">
-        <label
-          htmlFor="location"
-          className="block text-sm font-medium text-gray-700 flex items-center gap-2"
-        >
-          <FaMapMarkerAlt className="text-purple-600" /> Location*
-        </label>
-        <Input
-          ref={locationInputRef}
-          name="location"
-          value={locationInput}
-          onChange={handleLocationChange}
-          onBlur={handleLocationBlur}
-          style={{ width: "100%" }}
-        />
-        {showLocationSuggestions && (
-          <div ref={suggestionsRef} className="absolute z-10 bg-white border">
-            {locationSuggestions.map((s, i) => (
-              <div key={i} onClick={() => handleLocationSelect(s)}>
-                {s.placeName}
-              </div>
-            ))}
-          </div>
-        )}
+      <div className="grid grid-cols-2 gap-4">
+        <div>
+          <label htmlFor="currentCity" className="block text-sm font-medium text-gray-700">
+            City*
+          </label>
+          <Input
+            id="currentCity"
+            name="currentCity"
+            value={formData.currentCity}
+            onChange={handleInputChange}
+            className={errors.currentCity ? "border-red-500" : ""}
+          />
+          {errors.currentCity && <p className="text-red-500 text-xs mt-1">{errors.currentCity}</p>}
+        </div>
+        <div>
+          <label htmlFor="currentState" className="block text-sm font-medium text-gray-700">
+            State*
+          </label>
+          <Input
+            id="currentState"
+            name="currentState"
+            value={formData.currentState}
+            onChange={handleInputChange}
+            className={errors.currentState ? "border-red-500" : ""}
+          />
+          {errors.currentState && <p className="text-red-500 text-xs mt-1">{errors.currentState}</p>}
+        </div>
       </div>
       <div>
         <label

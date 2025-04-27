@@ -6,11 +6,7 @@ import { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { CandidateImage } from "@/components/CandidateImage";
-import {
-  FaCheckCircle,
-  FaUserPlus,
-  FaShare,
-} from "react-icons/fa";
+import { FaCheckCircle, FaUserPlus, FaShare } from "react-icons/fa";
 import { Edit } from "lucide-react"; // Icons
 import { Button } from "@/components/ui/button";
 import { Candidate, Election } from "@prisma/client";
@@ -181,7 +177,7 @@ export default function CandidateClient({
             <div className="mt-4 flex justify-start gap-4">
               {isEditable ? (
                 <Button variant="outline" asChild>
-                  <Link href="/candidates/candidate-dashboard/profile-settings">
+                  <Link href="/candidates/candidate-dashboard/bio-settings">
                     <Edit className="mr-2 h-4 w-4" /> Edit Profile
                   </Link>
                 </Button>
