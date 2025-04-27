@@ -149,14 +149,16 @@ export function PhotoUploader({
             {error}
           </div>
         )}
-        <Button
-          onClick={handleUpload}
-          disabled={!file || uploading}
-          className="w-full flex items-center justify-center gap-2"
-        >
-          <UploadCloud className="h-4 w-4" />
-          {uploading ? "Uploading…" : "Upload Photo"}
-        </Button>
+        {file && (
+          <Button
+            onClick={handleUpload}
+            disabled={uploading}
+            className="w-full flex items-center justify-center gap-2"
+          >
+            <UploadCloud className="h-4 w-4" />
+            {uploading ? "Uploading…" : "Upload Photo"}
+          </Button>
+        )}
       </CardContent>
     </Card>
   );

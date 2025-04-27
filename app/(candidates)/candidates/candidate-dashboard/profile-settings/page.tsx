@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { ProfileForm } from "./ProfileForm";
-import { PhotoUploader } from "@/components/PhotoUploader";
+
 import { CandidateDashboardData } from "@/types/candidate";
 import { useAuth } from "@clerk/nextjs";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -77,11 +77,6 @@ export default function ProfileSettingsPage() {
     // If Clerk is not loaded yet, isLoading remains true
   }, [userId, isLoaded]);
 
-  // Handle profile update success
-  const handleUpdateSuccess = (updatedData: CandidateDashboardData) => {
-    setCandidateData(updatedData); // Update local state with the response from the API
-  };
-
   // Determine the currently active election link
   const activeLink = electionLinks.find(
     (link) => link.electionId === activeElectionId
@@ -139,7 +134,9 @@ export default function ProfileSettingsPage() {
           shadow={false}
           multi
           onResultSelect={async (items) => {
-            const parsed = (Array.isArray(items) ? items : [items]) as SearchResultItem[];
+            const parsed = (
+              Array.isArray(items) ? items : [items]
+            ) as SearchResultItem[];
             for (const item of parsed) {
               const electionId = Number(item.id);
               if (
@@ -280,21 +277,6 @@ export default function ProfileSettingsPage() {
               }}
             />
           )}
-        </div>
-        {/* Photo Upload */}
-        <div>
-          <PhotoUploader
-            clerkUserId={userId!}
-            currentPhotoUrl={candidateData?.photoUrl || null}
-            onUpload={(url) => {
-              if (candidateData) {
-                handleUpdateSuccess({
-                  ...candidateData,
-                  photoUrl: url,
-                });
-              }
-            }}
-          />
         </div>
       </div>
     </div>

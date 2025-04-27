@@ -385,7 +385,7 @@ export default function CandidateSignupForm() {
           onClick={() =>
             router.push(
               `/sign-in?redirect_url=${encodeURIComponent(
-                window.location.pathname
+                window.location.href
               )}`
             )
           }

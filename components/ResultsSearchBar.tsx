@@ -110,7 +110,7 @@ export default function SearchBar({
             });
 
             // Show up to 5 results
-            setResults(sortedData.slice(0, 5));
+            setResults(sortedData.slice(0, 10));
           } else {
             setResults([]);
           }

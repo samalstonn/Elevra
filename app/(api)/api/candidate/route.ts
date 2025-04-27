@@ -1,3 +1,42 @@
+
+export async function PUT(request: Request) {
+  try {
+    const { userId } = await auth();
+    if (!userId) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+    const body = await request.json();
+    const {
+      name,
+      currentRole,
+      city,
+      state,
+      bio,
+      website,
+      linkedin,
+    } = body;
+    // Validate required
+    if (!name || !currentRole || !city || !state || !bio) {
+      return NextResponse.json({ error: "Missing fields" }, { status: 400 });
+    }
+    const updated = await prisma.candidate.update({
+      where: { clerkUserId: userId },
+      data: {
+        name,
+        currentRole,
+        currentCity: city,
+        currentState: state,
+        bio,
+        website: website || null,
+        linkedin: linkedin || null,
+      },
+    });
+    return NextResponse.json(updated);
+  } catch (err: unknown) {
+    console.error(err);
+    return NextResponse.json({ error: "Update failed" }, { status: 500 });
+  }
+}
 // app/(api)/api/candidate/route.ts
 //
 import { NextResponse } from "next/server";
