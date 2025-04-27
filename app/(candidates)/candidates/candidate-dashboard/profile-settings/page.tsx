@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { ProfileForm } from "./ProfileForm";
-import { PhotoUploader } from "@/components/PhotoUploader";
+
 import { CandidateDashboardData } from "@/types/candidate";
 import { useAuth } from "@clerk/nextjs";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -280,21 +280,6 @@ export default function ProfileSettingsPage() {
               }}
             />
           )}
-        </div>
-        {/* Photo Upload */}
-        <div>
-          <PhotoUploader
-            clerkUserId={userId!}
-            currentPhotoUrl={candidateData?.photoUrl || null}
-            onUpload={(url) => {
-              if (candidateData) {
-                handleUpdateSuccess({
-                  ...candidateData,
-                  photoUrl: url,
-                });
-              }
-            }}
-          />
         </div>
       </div>
     </div>

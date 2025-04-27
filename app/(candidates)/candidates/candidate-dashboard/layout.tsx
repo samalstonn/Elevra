@@ -22,9 +22,15 @@ const navItems = [
     premium: false,
   },
   {
+    href: "/candidates/candidate-dashboard/bio-settings",
+    label: "My Profile",
+    icon: User,
+    premium: false,
+  },
+  {
     href: "/candidates/candidate-dashboard/profile-settings",
     label: "My Elections",
-    icon: User,
+    icon: Users,
     premium: false,
   },
   {
