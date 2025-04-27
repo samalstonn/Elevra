@@ -7,9 +7,27 @@ import { TabButton } from "@/components/ui/tab-button";
 import { FeatureCard } from "@/components/ui/feature-card";
 import CandidateSignupForm from "@/app/(candidates)/candidates/CandidateSignUpForm";
 import CandidateLoginForm from "@/app/(candidates)/candidates/CandidateLoginForm";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useEffect } from "react";
 
 export default function CandidatesPage() {
-  const [activeTab, setActiveTab] = useState("home");
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const initialTab = searchParams.get("tab") || "home";
+  const electionIdFromParams = searchParams.get("electionId") || undefined;
+  const [activeTab, setActiveTab] = useState(initialTab);
+  const [electionId, setElectionId] = useState(electionIdFromParams);
+
+  useEffect(() => {
+    const url = new URL(window.location.href);
+    url.searchParams.set("tab", activeTab);
+    if (electionId) {
+      url.searchParams.set("electionId", electionId);
+    } else {
+      url.searchParams.delete("electionId");
+    }
+    router.push(url.pathname + url.search);
+  }, [activeTab, electionId]);
 
   return (
     <div className="min-h-screen flex flex-col items-center w-full overflow-x-hidden mx-auto mb-8">
