@@ -5,7 +5,10 @@ import { useAuth } from "@clerk/nextjs";
 import { CandidateDashboardData } from "@/types/candidate";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Terminal } from "lucide-react";
+import { Eye, Terminal } from "lucide-react";
+import BasicProfileForm from "./BasicProfileForm";
+import { Button } from "@/components/ui/button";
+import Link from "next/link";
 
 export default function BioSettingsPage() {
   const { userId, isLoaded } = useAuth();
@@ -96,19 +99,31 @@ export default function BioSettingsPage() {
   }
 
   return (
-    <div>
-      <PhotoUploader
-        clerkUserId={userId!}
-        currentPhotoUrl={candidateData?.photoUrl || null}
-        onUpload={(url) => {
-          if (candidateData) {
-            handleUpdateSuccess({
-              ...candidateData,
-              photoUrl: url,
-            });
-          }
-        }}
-      />
+    <div className="flex flex-row gap-4">
+      <div>
+        <PhotoUploader
+          clerkUserId={userId!}
+          currentPhotoUrl={candidateData?.photoUrl || null}
+          onUpload={(url) => {
+            if (candidateData) {
+              handleUpdateSuccess({
+                ...candidateData,
+                photoUrl: url,
+              });
+            }
+          }}
+        />
+        <Button variant="purple" asChild className="mt-4">
+          <Link
+            href={
+              candidateData ? `/candidate/${candidateData.slug}` : "/candidates"
+            }
+          >
+            <Eye className="mr-2 h-4 w-4" /> View Public Profile
+          </Link>
+        </Button>
+      </div>
+      <BasicProfileForm />
     </div>
   );
 }
