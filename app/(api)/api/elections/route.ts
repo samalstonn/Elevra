@@ -33,6 +33,7 @@ export async function GET(request: Request) {
           city: true,
           state: true,
           position: true,
+          date: true,
         },
         orderBy: [
           {

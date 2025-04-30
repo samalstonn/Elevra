@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { date } from "zod";
 
 type GroupedElection = {
   city: string | null;
@@ -30,6 +31,7 @@ export default function LiveElectionsPage() {
               city: e.city,
               state: e.state,
               positions: new Set<string>(),
+              date: e.date,
             });
           }
           locationMap.get(key).positions.add(e.position);
@@ -39,9 +41,16 @@ export default function LiveElectionsPage() {
           city: entry.city,
           state: entry.state,
           positions: Array.from(entry.positions),
+          date: entry.date,
         }));
 
-        const sorted = grouped.sort((a, b) => {
+        const currentDate = new Date();
+        const futureElections = grouped.filter((election) => {
+          const electionDate = new Date(election.date);
+          return electionDate >= currentDate;
+        });
+
+        const sorted = futureElections.sort((a, b) => {
           const placeA = `${a.city || ""}, ${a.state}`.toLowerCase();
           const placeB = `${b.city || ""}, ${b.state}`.toLowerCase();
           return placeA.localeCompare(placeB);
