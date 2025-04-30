@@ -12,9 +12,8 @@ export default async function VerifyPage({
   const resolvedSearchParams = await searchParams;
   const candidate = resolvedSearchParams.candidate;
   const candidateID = resolvedSearchParams.candidateID;
-  const electionID = resolvedSearchParams.electionID;
 
-  if (!candidate || !candidateID || !electionID) {
+  if (!candidate || !candidateID) {
     console.error("Missing verification params");
     redirect("/candidate/verify/error");
   }
@@ -33,7 +32,7 @@ export default async function VerifyPage({
   const { userId } = await auth();
   if (!userId) {
     // send them to Clerk sign‑in, then back here
-    const returnUrl = `/candidate/verify?candidate=${candidate}&candidateID=${candidateID}&electionID=${electionID}`;
+    const returnUrl = `/candidate/verify?candidate=${candidate}&candidateID=${candidateID}`;
     redirect(`/sign-in?redirect_url=${encodeURIComponent(returnUrl)}`);
   }
 
@@ -53,7 +52,7 @@ export default async function VerifyPage({
       );
       if (res.ok) {
         redirect(
-          `/candidate/verify/success?candidate=${candidate}&candidateID=${candidateID}&electionID=${electionID}`
+          `/candidate/verify/success?candidate=${candidate}&candidateID=${candidateID}`
         );
       } else {
         redirect("/candidate/verify/error");

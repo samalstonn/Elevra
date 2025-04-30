@@ -124,7 +124,7 @@ export default function CandidateClient({
 
   if (!hydrated) return null;
 
-  const verified = candidate.status === "APPROVED";
+  const verified = candidate.verified;
 
   return (
     <motion.div
@@ -218,7 +218,7 @@ export default function CandidateClient({
               >
                 <FaShare /> Share Profile
               </Button>
-              {/* {!verified && (
+              {!verified && (
                 <Button
                   variant="purple"
                   size="md"
@@ -232,7 +232,7 @@ export default function CandidateClient({
                   <FaCheckCircle />
                   <span>This is me</span>
                 </Button>
-              )} */}
+              )}
             </div>
           </div>
         </div>

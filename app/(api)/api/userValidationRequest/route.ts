@@ -16,7 +16,6 @@ export async function POST(request: Request) {
       state = "",
       candidateId,
       clerkUserId,
-      electionId,
     } = await request.json();
 
     if (!candidateId || isNaN(Number(candidateId))) {
@@ -32,12 +31,6 @@ export async function POST(request: Request) {
     ) {
       return NextResponse.json(
         { error: "Invalid clerkUserId" },
-        { status: 400 }
-      );
-    }
-    if (!electionId || isNaN(Number(electionId))) {
-      return NextResponse.json(
-        { error: "Invalid electionId" },
         { status: 400 }
       );
     }
@@ -70,7 +63,7 @@ export async function POST(request: Request) {
         state,
         candidateId: Number(candidateId),
         clerkUserId,
-        electionId: Number(electionId),
+        electionId: 0, // Set to 0 for now, update later
         status: "PENDING",
       },
     });

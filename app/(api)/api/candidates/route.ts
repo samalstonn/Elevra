@@ -3,7 +3,11 @@ import prisma from "@/prisma/prisma"; // Adjust the import path to match your pr
 
 export async function GET() {
   try {
-    const candidates = await prisma.candidate.findMany();
+    const candidates = await prisma.candidate.findMany({
+      where: {
+        hidden: false,
+      },
+    });
     return NextResponse.json(candidates);
   } catch (error) {
     console.error("Error fetching candidates:", error);

@@ -32,7 +32,6 @@ export default function CandidateVerificationForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const candidateId = searchParams.get("candidateID");
-  const electionId = searchParams.get("electionID");
   const [locationInput, setLocationInput] = useState("");
   const [locationSuggestions, setLocationSuggestions] = useState<
     AutocompleteSuggestion[]
@@ -219,7 +218,6 @@ export default function CandidateVerificationForm() {
         state: formData.state,
         candidateId: candidateId ? parseInt(candidateId) : 0,
         clerkUserId: user?.id || "",
-        electionId: electionId ? parseInt(electionId) : 0,
       };
 
       const response = await fetch("/api/userValidationRequest", {
@@ -397,7 +395,7 @@ export default function CandidateVerificationForm() {
                     htmlFor="position"
                     className="block text-sm font-medium text-gray-700 mb-1"
                   >
-                    Current Position* (Eg. Running for Mayor, Incumbent Mayor,
+                    Current Role* (Eg. Running for Mayor, Incumbent Mayor,
                     Business Owner, etc.)
                   </label>
                   <input
