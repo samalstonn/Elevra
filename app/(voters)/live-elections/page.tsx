@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { date } from "zod";
 
 type GroupedElection = {
   city: string | null;
