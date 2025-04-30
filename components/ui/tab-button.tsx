@@ -11,7 +11,7 @@ export function TabButton({
   children,
   active,
   onClick,
-  className = "",
+  className = "py-4 px-6 text-lg font-medium",
 }: TabButtonProps) {
   return (
     <button
