@@ -43,6 +43,8 @@ export default function LayoutClient({
     return () => mediaQuery.removeEventListener("change", handler);
   }, []);
 
+  // Check if the current page is the results page to apply special styling
+
   return (
     <ClerkProvider publishableKey={clerkKey || ""}>
       <html lang="en">
@@ -88,8 +90,10 @@ export default function LayoutClient({
               </div>
             </header>
 
-            {/* Main Content */}
-            <main className="flex-grow w-full flex items-center justify-center min-h-[75vh]">
+            {/* Main Content - Conditional styling for results page */}
+            <main
+              className={`flex-grow w-full items-start justify-start min-h-[75vh]`}
+            >
               {children}
               <Analytics />
               <SpeedInsights />

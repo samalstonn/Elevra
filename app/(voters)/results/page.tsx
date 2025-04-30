@@ -49,12 +49,12 @@ async function ElectionResultsPage({ searchParams }: ElectionResultsPageProps) {
   }));
 
   return (
-    <>
+    <div className="p-0 m-0">
       <ElectionResultsClient
         elections={reshapedElections}
         initialElectionID={null}
       />
-    </>
+    </div>
   );
 }
 

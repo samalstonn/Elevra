@@ -7,6 +7,7 @@ interface CandidateImageProps {
   name: string;
   width?: number;
   height?: number;
+  className?: string;
 }
 
 const getInitialSrc = (photo?: string | null): string => {
@@ -19,6 +20,7 @@ export function CandidateImage({
   name,
   width = 64,
   height = 64,
+  className = "",
 }: CandidateImageProps) {
   console.log("CandidateImage", { clerkUserId, publicPhoto, name });
   const [imgSrc, setImgSrc] = useState<string>(getInitialSrc(publicPhoto));
@@ -55,7 +57,7 @@ export function CandidateImage({
       width={width}
       height={height}
       unoptimized
-      className="rounded-full object-cover shadow-md aspect-square"
+      className={`rounded-full object-cover shadow-md aspect-square ${className}`}
       style={{ aspectRatio: "1 / 1" }}
       onError={() => {
         if (imgSrc !== "/default-profile.png") {

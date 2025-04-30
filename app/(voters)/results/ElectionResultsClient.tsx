@@ -14,6 +14,7 @@ import Link from "next/link";
 import { Card, CardContent } from "@/components/Card";
 
 import CandidateSection from "./CandidateResultsSection";
+import MobileCandidateResultsSection from "./MobileCandidateResultsSection";
 
 export type ElectionWithCandidates = Election & { candidates: Candidate[] };
 
@@ -118,12 +119,13 @@ export default function ElectionResultsClient({
   if (!hasElections) {
     return (
       <motion.div
-        className="w-screen mx-auto px-4 py-12 flex flex-col items-center"
+        className="w-screen mx-auto px-4 flex flex-col items-center"
+        style={{ marginTop: 0, paddingTop: 0 }}
         initial="hidden"
         animate="visible"
         variants={fadeInVariants}
       >
-        <div className="max-w-3xl text-center mb-8">
+        <div className="max-w-3xl text-center mb-8 mt-8">
           <h1 className="text-3xl font-bold text-gray-900 mb-4">
             No Elections Found
           </h1>
@@ -199,17 +201,26 @@ export default function ElectionResultsClient({
           Loading...
         </div>
       ) : (
-        <motion.div
-          className="w-screen mx-auto px-4 mb-16 flex flex-col"
-          initial="hidden"
-          animate="visible"
-          variants={fadeInVariants}
-        >
-          <div className="relative">
+        <div className="w-screen flex flex-col" style={{ marginTop: "-1px" }}>
+          {" "}
+          {/* Negative margin to counteract any parent padding */}
+          {/* Filter section with no top padding and explicit inline styles */}
+          <div
+            className="relative bg-white"
+            style={{
+              marginTop: 0,
+              paddingTop: 0,
+              position: "relative",
+              top: 0,
+            }}
+          >
             <motion.div
               ref={scrollRef}
               variants={fadeInVariants}
-              className="flex flex-nowrap overflow-x-auto gap-4 bg-white p-4 no-scrollbar"
+              initial="hidden"
+              animate="visible"
+              className="flex flex-nowrap overflow-x-auto gap-4 p-4 no-scrollbar"
+              style={{ marginTop: 0, paddingTop: "4px" }}
             >
               {sortedElections.map((elec) => (
                 <Button
@@ -224,6 +235,7 @@ export default function ElectionResultsClient({
                 </Button>
               ))}
             </motion.div>
+
             {canScrollLeft && (
               <div
                 className="pointer-events-none absolute top-0 left-0 h-full w-24 z-0"
@@ -233,6 +245,7 @@ export default function ElectionResultsClient({
                 }}
               />
             )}
+
             {canScrollRight && (
               <div
                 className="pointer-events-none absolute top-0 right-0 h-full w-24 z-0"
@@ -263,37 +276,61 @@ export default function ElectionResultsClient({
               </Button>
             )}
           </div>
-
-          <div className="mt-4">
-            {/* Candidate Sections */}
-            <motion.div
-              variants={fadeInVariants}
-              className="grid grid-cols-1 gap-6"
-            >
-              {(filteredElections || []).map((elec) => (
-                <motion.div
-                  key={elec.id}
-                  variants={fadeInVariants}
-                  className="mt-4 flex flex-col"
-                >
-                  <div className="flex-1">
-                    <CandidateSection
-                      candidates={[...elec.candidates].sort((a, b) => {
-                        if (a.verified && !b.verified) return -1;
-                        if (!a.verified && b.verified) return 1;
-                        if (a.photo && !b.photo) return -1;
-                        if (!a.photo && b.photo) return 1;
-                        return 0;
-                      })}
-                      election={elec}
-                      fallbackElections={[]}
-                    />
-                  </div>
-                </motion.div>
-              ))}
-            </motion.div>
-          </div>
-        </motion.div>
+          {/* Content section */}
+          <motion.div
+            className="px-4 mb-16"
+            initial="hidden"
+            animate="visible"
+            variants={fadeInVariants}
+          >
+            <div className="mt-4">
+              {/* Candidate Sections */}
+              <motion.div
+                variants={fadeInVariants}
+                className="grid grid-cols-1 gap-6"
+              >
+                {(filteredElections || []).map((elec) => (
+                  <motion.div
+                    key={elec.id}
+                    variants={fadeInVariants}
+                    className="mt-2 flex flex-col"
+                  >
+                    <div className="flex-1">
+                      <div>
+                        <div className="md:hidden">
+                          <MobileCandidateResultsSection
+                            candidates={[...elec.candidates].sort((a, b) => {
+                              if (a.verified && !b.verified) return -1;
+                              if (!a.verified && b.verified) return 1;
+                              if (a.photo && !b.photo) return -1;
+                              if (!a.photo && b.photo) return 1;
+                              return 0;
+                            })}
+                            election={elec}
+                            fallbackElections={[]}
+                          />
+                        </div>
+                        <div className="hidden md:block">
+                          <CandidateSection
+                            candidates={[...elec.candidates].sort((a, b) => {
+                              if (a.verified && !b.verified) return -1;
+                              if (!a.verified && b.verified) return 1;
+                              if (a.photo && !b.photo) return -1;
+                              if (!a.photo && b.photo) return 1;
+                              return 0;
+                            })}
+                            election={elec}
+                            fallbackElections={[]}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </motion.div>
+                ))}
+              </motion.div>
+            </div>
+          </motion.div>
+        </div>
       )}
     </>
   );

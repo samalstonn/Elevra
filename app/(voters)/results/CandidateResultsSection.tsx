@@ -7,6 +7,7 @@ import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { CandidateImage } from "@/components/CandidateImage"; // Adjust the path as needed
 import { FaUserPlus, FaCheckCircle } from "react-icons/fa"; // Import icons from react-icons
+import { useState } from "react";
 
 interface CandidateSectionProps {
   candidates?: Candidate[];
@@ -29,7 +30,8 @@ export default function CandidateSection({
   election,
   fallbackElections = [],
 }: CandidateSectionProps) {
-  const electionIsActive = new Date(election.date) >= new Date();
+  const electionIsActive = new Date(election.date) > new Date();
+  const [showDetails, setShowDetails] = useState(true);
 
   // If no election data is available
   if (!election) {
@@ -122,20 +124,28 @@ export default function CandidateSection({
       animate="visible"
       variants={containerVariants}
     >
-      <h2 className="text-3xl font-semibold text-gray-900 mb-4 transition-colors">
+      <h2 className="text-3xl font-semibold text-gray-900 mb-4 transition-colors hidden md:block">
         {election.position}
       </h2>
 
       {/* Election Card Section - Always displayed */}
       <div className="mb-2 md:mb-6">
-        <div className="grid grid-cols-1 gap-4">
-          <Card key={election.id} className="bg-transparent">
-            <CardContent>
-              <p className="text-sm text-gray-800">{election.description}</p>
-              <p className="text-sm text-gray-800 mt-2">
+        <div className="p-2">
+          <p className="text-sm text-gray-800">{election.description}</p>
+
+          <button
+            onClick={() => setShowDetails(!showDetails)}
+            className="text-sm text-purple-600 mt-2 focus:outline-none"
+          >
+            {showDetails ? "Hide Details" : "Show Details"}
+          </button>
+
+          {showDetails && (
+            <div className="mt-2 space-y-2">
+              <p className="text-sm text-gray-800">
                 <strong>Positions:</strong> {election.positions}
               </p>
-              <p className="text-sm text-gray-800 mt-2">
+              <p className="text-sm text-gray-800">
                 <strong>Election Date:</strong>{" "}
                 {new Date(election.date).toLocaleDateString("en-US", {
                   timeZone: "UTC",
@@ -144,7 +154,7 @@ export default function CandidateSection({
                   day: "numeric",
                 })}
               </p>
-              <p className="mt-2 text-sm font-medium text-gray-800">
+              <p className="text-sm font-medium text-gray-800">
                 <strong>Status:</strong>{" "}
                 <span
                   className={
@@ -154,8 +164,8 @@ export default function CandidateSection({
                   {electionIsActive ? "Active" : "Inactive"}
                 </span>
               </p>
-            </CardContent>
-          </Card>
+            </div>
+          )}
         </div>
       </div>
 
@@ -233,40 +243,38 @@ export default function CandidateSection({
         </div>
       ) : (
         /* Candidate Cards Section - Only shown if candidates exist */
-        <motion.div className="flex flex-nowrap gap-2 overflow-x-auto md:grid md:grid-cols-3 sm:gap-2 md:flex-wrap md:overflow-visible justify-start">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
           {candidates.map((candidate, index) => (
-            <motion.div
-              key={index}
-              variants={cardVariants}
-              className="flex-shrink-0"
-            >
+            <motion.div key={index} variants={cardVariants}>
               <Link href={`/candidate/${candidate.slug}`}>
                 <motion.div
                   whileHover={{ scale: 1.05 }}
                   transition={{ duration: 0.2, ease: "easeOut" }}
                 >
-                  <Card className="group transition-all rounded-lg cursor-pointer h-[315px] w-[350px] flex flex-col relative">
+                  <Card className="group transition-all rounded-lg cursor-pointer h-[250px] w-full flex flex-col relative">
                     <CardContent className="flex flex-col gap-2">
-                      <CandidateImage
-                        clerkUserId={candidate.clerkUserId}
-                        publicPhoto={candidate.photo}
-                        name={candidate.name}
-                        width={64}
-                        height={64}
-                      />
-                      <h2 className="text-xl font-semibold text-gray-900 mt-2 line-clamp-2 flex items-center">
-                        {candidate.name}
-                        {candidate.verified ? (
-                          <FaCheckCircle className="text-blue-500 ml-1 inline" />
-                        ) : (
-                          <FaCheckCircle className="text-gray-400 ml-1 inline" />
-                        )}
-                      </h2>
+                      <div className="flex items-center">
+                        <CandidateImage
+                          clerkUserId={candidate.clerkUserId}
+                          publicPhoto={candidate.photo}
+                          name={candidate.name}
+                          width={48}
+                          height={48}
+                        />
+                        <h2 className="text-lg font-semibold text-gray-900 mt-2 ml-2 flex items-center">
+                          {candidate.name}
+                          {candidate.verified ? (
+                            <FaCheckCircle className="text-blue-500 ml-1 inline" />
+                          ) : (
+                            <FaCheckCircle className="text-gray-400 ml-1 inline" />
+                          )}
+                        </h2>
+                      </div>
                       <p className="w-[85%] text-purple-700 text-sm ">
                         {candidate.currentRole}
                       </p>
                       <p
-                        className={`w-[75%] text-gray-500 text-xs ${
+                        className={`hidden md:block w-[75%] text-gray-500 text-xs ${
                           candidate.currentRole &&
                           candidate.currentRole.length > 37
                             ? "line-clamp-3"
@@ -285,7 +293,7 @@ export default function CandidateSection({
               </Link>
             </motion.div>
           ))}
-        </motion.div>
+        </div>
       )}
     </motion.div>
   );

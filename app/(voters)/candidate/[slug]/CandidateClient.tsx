@@ -39,7 +39,6 @@ export default function CandidateClient({
   } | null>(null);
 
   const [hovered, setHovered] = useState<string | null>(null);
-
   const [hydrated, setHydrated] = useState(false);
 
   // Use string to allow dynamic election tabs
@@ -76,19 +75,16 @@ export default function CandidateClient({
     const hasError = decodedUrl.includes("error");
 
     if (hasSessionId) {
-      console.log("Setting success message");
       setPopupMessage({
         type: "success",
         message: `Your donation to ${candidateName} was successful! Thank you for your support!`,
       });
     } else if (hasCancel) {
-      console.log("Setting cancel message");
       setPopupMessage({
         type: "error",
         message: `Your donation to ${candidateName} was cancelled.`,
       });
     } else if (hasError) {
-      console.log("Setting error message");
       setPopupMessage({
         type: "error",
         message: `There was an error processing your donation. Please try again.`,
@@ -113,11 +109,6 @@ export default function CandidateClient({
     }
   }, [searchParams, candidate]);
 
-  // Add a separate useEffect to handle popup message state changes
-  useEffect(() => {
-    console.log("Popup message state changed:", popupMessage);
-  }, [popupMessage]);
-
   if (!candidate) {
     return <div>Candidate not found</div>;
   }
@@ -131,26 +122,30 @@ export default function CandidateClient({
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.8, ease: "easeOut" }}
-      className="container mx-auto px-4 flex flex-col md:flex-row gap-6 mb-16"
+      className="w-full mx-auto px-4 flex flex-col md:flex-row gap-6 mb-16 mt-0 pt-0"
     >
-      {/* Main candidate profile card */}
-      <motion.div className="w-full md:w-2/3 flex flex-col sm:p-6 bg-white">
-        {/* Profile Header */}
-        <div className="flex flex-row items-start text-left gap-4">
+      {/* Main candidate profile card - keep desktop layout on MD+ screens */}
+      <motion.div className="w-full md:w-2/3 flex flex-col p-4 sm:p-6 bg-white">
+        {/* Profile Header - Desktop: side by side, Mobile: stacked */}
+        <div className="flex flex-col items-center md:flex-row md:items-start md:text-left text-center gap-4">
           <CandidateImage
             clerkUserId={candidate.clerkUserId}
             publicPhoto={candidate.photo}
             name={candidate.name}
             width={150}
             height={150}
+            className="md:w-[150px] md:h-[150px] w-[80px] h-[80px]"
           />
           <div>
-            <h1 className="mt-2 text-xl font-bold text-gray-900 flex items-center gap-2 relative">
+            <h1 className="mt-2 text-xl font-bold text-gray-900 flex items-center md:justify-start justify-center gap-2">
               {candidate.name}
               <div
                 className="relative cursor-pointer"
                 onMouseEnter={() => setHovered(candidate.name)}
                 onMouseLeave={() => setHovered(null)}
+                onClick={() =>
+                  setHovered(hovered === candidate.name ? null : candidate.name)
+                }
               >
                 {verified ? (
                   <FaCheckCircle className="text-blue-500" />
@@ -174,7 +169,9 @@ export default function CandidateClient({
                 {candidate.currentCity}, {candidate.currentState}
               </p>
             ) : null}
-            <div className="mt-4 flex justify-start gap-4">
+
+            {/* Desktop: normal buttons, Mobile: grid buttons */}
+            <div className="mt-4 hidden md:flex justify-start gap-4">
               {isEditable ? (
                 <Button variant="outline" asChild>
                   <Link href="/candidates/candidate-dashboard/bio-settings">
@@ -182,19 +179,7 @@ export default function CandidateClient({
                   </Link>
                 </Button>
               ) : null}
-              {/* <Link href={`/candidate/${candidate.slug}/donate`} passHref>
-                <Button
-                  asChild
-                  variant="green"
-                  size="md"
-                  className="flex items-center gap-2"
-                >
-                  <span className="flex items-center gap-2">
-                    <FaDonate />
-                    <span>Donate</span>
-                  </span>
-                </Button>
-              </Link> */}
+
               <Button
                 variant="purple"
                 className="flex items-center gap-2"
@@ -218,6 +203,7 @@ export default function CandidateClient({
               >
                 <FaShare /> Share Profile
               </Button>
+
               {!verified && (
                 <Button
                   variant="purple"
@@ -234,39 +220,102 @@ export default function CandidateClient({
                 </Button>
               )}
             </div>
+
+            {/* Mobile-only buttons grid */}
+            <div className="mt-4 gap-2 md:hidden flex justify-center">
+              {isEditable ? (
+                <Button
+                  variant="outline"
+                  asChild
+                  className="flex justify-center text-sm px-2"
+                >
+                  <Link href="/candidates/candidate-dashboard/bio-settings">
+                    <Edit className="mr-1 h-4 w-4" /> Edit Profile
+                  </Link>
+                </Button>
+              ) : null}
+
+              <Button
+                variant="purple"
+                className="flex justify-center items-center gap-1 text-sm px-2"
+                size="sm"
+                onClick={async () => {
+                  const url = `${window.location.origin}/candidate/${candidate.slug}`;
+                  if (navigator.share) {
+                    try {
+                      await navigator.share({
+                        title: `Check out ${candidate.name}'s campaign on Elevra!`,
+                        url,
+                      });
+                    } catch (error) {
+                      console.error("Error sharing:", error);
+                    }
+                  } else {
+                    navigator.clipboard.writeText(url);
+                    alert("Profile link copied to clipboard!");
+                  }
+                }}
+              >
+                <FaShare className="h-3 w-3" /> Share
+              </Button>
+
+              {!verified && (
+                <Button
+                  variant="purple"
+                  size="sm"
+                  onClick={() => {
+                    router.push(
+                      `/candidate/verify?candidate=${candidate.slug}&candidateID=${candidate.id}`
+                    );
+                  }}
+                  className="flex justify-center items-center gap-1 text-sm px-2"
+                >
+                  <FaCheckCircle className="h-3 w-3" />
+                  <span>This is me</span>
+                </Button>
+              )}
+            </div>
           </div>
         </div>
-        <div className="inline-flex space-x-4 mb-4 justify-center w-full">
-          <TabButton
-            active={activeTab === "about"}
-            onClick={() => setActiveTab("about")}
-          >
-            About
-          </TabButton>
-          {electionLinks.map((link) => (
-            <TabButton
-              key={link.electionId}
-              active={activeTab === `election-${link.electionId}`}
-              onClick={() => setActiveTab(`election-${link.electionId}`)}
-            >
-              {link.election.position}
-            </TabButton>
-          ))}
-          <TabButton
-            active={activeTab === "endorsements"}
-            onClick={() => setActiveTab("endorsements")}
-          >
-            Endorsements
-          </TabButton>
-          <TabButton
-            active={activeTab === "contact"}
-            onClick={() => setActiveTab("contact")}
-          >
-            Contact
-          </TabButton>
-        </div>
-        {/* Candidate Tabs */}
 
+        {/* Tabs - Desktop: regular spacing, Mobile: horizontal scroll */}
+        <div className="md:inline-flex md:space-x-4 md:mb-4 md:justify-center md:w-full mt-6 mb-4 overflow-x-auto pb-2">
+          <div className="inline-flex space-x-2 md:space-x-4 w-max min-w-full md:min-w-0">
+            <TabButton
+              active={activeTab === "about"}
+              onClick={() => setActiveTab("about")}
+              className="text-sm md:text-base px-3 md:px-4 py-1 md:py-2"
+            >
+              About
+            </TabButton>
+            {electionLinks.map((link) => (
+              <TabButton
+                key={link.electionId}
+                active={activeTab === `election-${link.electionId}`}
+                onClick={() => setActiveTab(`election-${link.electionId}`)}
+                className="text-sm md:text-base px-3 md:px-4 py-1 md:py-2 whitespace-nowrap"
+              >
+                {link.election.position}
+              </TabButton>
+            ))}
+            <TabButton
+              active={activeTab === "endorsements"}
+              onClick={() => setActiveTab("endorsements")}
+              className="text-sm md:text-base px-3 md:px-4 py-1 md:py-2"
+            >
+              Endorsements
+            </TabButton>
+            <TabButton
+              active={activeTab === "contact"}
+              onClick={() => setActiveTab("contact")}
+              className="text-sm md:text-base px-3 md:px-4 py-1 md:py-2"
+            >
+              Contact
+            </TabButton>
+          </div>
+        </div>
+
+        {/* Tab Content - Same for both desktop and mobile */}
         {activeTab === "about" && (
           <>
             <div className="mt-4 text-sm text-gray-700">
@@ -302,12 +351,12 @@ export default function CandidateClient({
         )}
       </motion.div>
 
-      {/* This sidebar previously relied on election and relatedCandidates. It now only shows suggested candidates. */}
+      {/* Desktop sidebar - hidden on mobile */}
       <motion.div
         initial={{ opacity: 0, x: 10 }}
         animate={{ opacity: 1, x: 0 }}
         transition={{ duration: 0.8, ease: "easeOut", delay: 0.2 }}
-        className="w-full md:w-1/3 h-fit mt-24"
+        className="hidden md:block md:w-1/3 h-fit"
       >
         <div className="bg-white">
           {activeElectionTab && activeElectionTab.election && (
@@ -379,6 +428,7 @@ export default function CandidateClient({
               </Button>
             </div>
           )}
+
           {/* Suggested candidates sidebar */}
           <motion.div
             initial={{ opacity: 0, x: 10 }}
@@ -392,15 +442,15 @@ export default function CandidateClient({
                   Your Suggested Candidates
                 </h2>
               </div>
-              <div className="space-y-3 ">
+              <div className="space-y-3">
                 {randomSuggestedCandidates.map((rc) => (
                   <motion.div
                     key={rc.id}
-                    className="flex items-center justify-between "
+                    className="flex items-center justify-between"
                   >
                     <Link
                       href={`/candidate/${rc.slug}`}
-                      className="flex items-center gap-3 "
+                      className="flex items-center gap-3"
                     >
                       <CandidateImage
                         clerkUserId={rc.clerkUserId}
@@ -431,15 +481,147 @@ export default function CandidateClient({
         </div>
       </motion.div>
 
-      {/* Popup Message */}
+      {/* Mobile-only Related candidates section - shown below main content */}
+      {activeElectionTab && activeElectionTab.election && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.8, ease: "easeOut", delay: 0.1 }}
+          className="md:hidden w-full p-4 bg-white"
+        >
+          <h2 className="text-sm font-semibold text-gray-600 mb-3">
+            {activeElectionTab.election.position} Candidates
+          </h2>
+
+          {/* Related candidates cards */}
+          {activeElectionTab.election.candidates.length > 0 ? (
+            <div className="space-y-2">
+              {activeElectionTab.election.candidates.map(
+                (relatedCandidate: Candidate) => (
+                  <Link
+                    key={relatedCandidate.name}
+                    href={`/candidate/${relatedCandidate.slug}`}
+                    className="block"
+                  >
+                    <motion.div
+                      whileHover={{ scale: 1.02 }}
+                      className="flex items-center p-3 rounded-lg transition-colors gap-3"
+                    >
+                      <CandidateImage
+                        clerkUserId={relatedCandidate.clerkUserId}
+                        publicPhoto={relatedCandidate.photo}
+                        name={relatedCandidate.name}
+                        width={40}
+                        height={40}
+                      />
+                      <div className="flex-1">
+                        <h3 className="font-medium text-gray-900 flex items-center gap-2">
+                          {relatedCandidate.name}
+                          {relatedCandidate.verified ? (
+                            <FaCheckCircle className="text-blue-500 h-3 w-3" />
+                          ) : (
+                            <FaCheckCircle className="text-gray-400 h-3 w-3" />
+                          )}
+                        </h3>
+                        <p className="text-xs text-purple-600">
+                          {relatedCandidate.currentRole}
+                        </p>
+                      </div>
+                      <FaUserPlus className="text-purple-600 h-4 w-4" />
+                    </motion.div>
+                  </Link>
+                )
+              )}
+            </div>
+          ) : (
+            <p className="text-gray-500 text-center py-4">
+              No other candidates found in this election.
+            </p>
+          )}
+
+          <Button
+            variant="outline"
+            size="sm"
+            className="w-full mt-4 text-purple-600 border-purple-300 hover:bg-purple-50"
+            onClick={() => {
+              if (
+                activeElectionTab.election.city &&
+                activeElectionTab.election.state
+              ) {
+                router.push(
+                  `/results?city=${activeElectionTab.election.city}&state=${activeElectionTab.election.state}&electionID=${activeElectionTab.election.id}`
+                );
+              } else {
+                console.error("Candidate city or state is missing.");
+              }
+            }}
+          >
+            View Election
+          </Button>
+        </motion.div>
+      )}
+
+      {/* Mobile-only Suggested candidates section */}
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.8, ease: "easeOut", delay: 0.2 }}
+        className="md:hidden w-full bg-white p-4"
+      >
+        <div className="flex justify-between items-center mb-3">
+          <h2 className="text-sm font-semibold text-gray-600">
+            Your Suggested Candidates
+          </h2>
+        </div>
+        <div className="grid grid-cols-1 gap-3">
+          {randomSuggestedCandidates.map((rc) => (
+            <Link
+              key={rc.id}
+              href={`/candidate/${rc.slug}`}
+              className="flex items-center justify-between p-3 "
+            >
+              <div className="flex items-center gap-3">
+                <CandidateImage
+                  clerkUserId={rc.clerkUserId}
+                  publicPhoto={rc.photo}
+                  name={rc.name}
+                  width={40}
+                  height={40}
+                />
+                <div className="flex flex-col">
+                  <span className="text-sm font-semibold text-gray-900 flex items-center gap-2">
+                    {rc.name}
+                    {rc.verified ? (
+                      <FaCheckCircle className="text-blue-500 h-3 w-3" />
+                    ) : (
+                      <FaCheckCircle className="text-gray-400 h-3 w-3" />
+                    )}
+                  </span>
+                  <span className="text-xs text-purple-600 line-clamp-1">
+                    {rc.currentRole}
+                  </span>
+                </div>
+              </div>
+              <FaUserPlus className="text-purple-600 h-4 w-4" />
+            </Link>
+          ))}
+        </div>
+      </motion.div>
+
+      {/* Responsive Popup Message */}
       {popupMessage && (
         <div
-          className={`fixed top-24 left-1/2 transform -translate-x-1/2 ${
+          className={`fixed top-4 left-4 right-4 md:top-24 md:left-1/2 md:right-auto md:transform md:-translate-x-1/2 ${
             popupMessage.type === "success" ? "bg-purple-600" : "bg-red-500"
-          } text-white text-center px-4 py-2 rounded-3xl shadow-md z-50`}
+          } text-white text-center px-4 py-2 md:rounded-3xl rounded-lg shadow-md z-50 flex items-center justify-between md:max-w-md`}
         >
-          {popupMessage.message}
-          <button className="ml-2" onClick={() => setPopupMessage(null)}>
+          <span className="flex-1 text-sm md:text-base">
+            {popupMessage.message}
+          </span>
+          <button
+            className="ml-2 w-6 h-6 flex items-center justify-center"
+            onClick={() => setPopupMessage(null)}
+          >
             ✕
           </button>
         </div>
