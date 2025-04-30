@@ -81,8 +81,10 @@ export default function BasicProfileForm() {
     const newErrors: FormErrors = {};
     if (!formData.name.trim()) newErrors.name = "Name is required";
     if (!formData.currentRole.trim()) newErrors.currentRole = "Required";
-    if (!formData.currentCity.trim()) newErrors.currentCity = "City is required";
-    if (!formData.currentState.trim()) newErrors.currentState = "State is required";
+    if (!formData.currentCity.trim())
+      newErrors.currentCity = "City is required";
+    if (!formData.currentState.trim())
+      newErrors.currentState = "State is required";
     if (!formData.bio.trim()) newErrors.bio = "Required";
     return newErrors;
   };
@@ -173,7 +175,10 @@ export default function BasicProfileForm() {
       </div>
       <div className="grid grid-cols-2 gap-4">
         <div>
-          <label htmlFor="currentCity" className="block text-sm font-medium text-gray-700">
+          <label
+            htmlFor="currentCity"
+            className="block text-sm font-medium text-gray-700"
+          >
             City*
           </label>
           <Input
@@ -182,11 +187,18 @@ export default function BasicProfileForm() {
             value={formData.currentCity}
             onChange={handleInputChange}
             className={errors.currentCity ? "border-red-500" : ""}
+            style={{ width: "100%" }}
           />
-          {errors.currentCity && <p className="text-red-500 text-xs mt-1">{errors.currentCity}</p>}
+          {errors.currentCity && (
+            <p className="text-red-500 text-xs mt-1">{errors.currentCity}</p>
+          )}
         </div>
+        <br />
         <div>
-          <label htmlFor="currentState" className="block text-sm font-medium text-gray-700">
+          <label
+            htmlFor="currentState"
+            className="block text-sm font-medium text-gray-700"
+          >
             State*
           </label>
           <Input
@@ -195,8 +207,11 @@ export default function BasicProfileForm() {
             value={formData.currentState}
             onChange={handleInputChange}
             className={errors.currentState ? "border-red-500" : ""}
+            style={{ width: "100%" }}
           />
-          {errors.currentState && <p className="text-red-500 text-xs mt-1">{errors.currentState}</p>}
+          {errors.currentState && (
+            <p className="text-red-500 text-xs mt-1">{errors.currentState}</p>
+          )}
         </div>
       </div>
       <div>
@@ -213,19 +228,39 @@ export default function BasicProfileForm() {
           className={errors.bio ? "border-red-500" : ""}
         />
       </div>
-      <div className="flex gap-4">
-        <Input
-          name="website"
-          value={formData.website}
-          onChange={handleInputChange}
-          placeholder="Website"
-        />
-        <Input
-          name="linkedin"
-          value={formData.linkedin}
-          onChange={handleInputChange}
-          placeholder="LinkedIn"
-        />
+      <div className="flex flex-col gap-4">
+        <div>
+          <label
+            htmlFor="website"
+            className="block text-sm font-medium text-gray-700"
+          >
+            Website
+          </label>
+          <Input
+            id="website"
+            name="website"
+            value={formData.website}
+            onChange={handleInputChange}
+            placeholder="Website"
+            style={{ width: "100%" }}
+          />
+        </div>
+        <div>
+          <label
+            htmlFor="linkedin"
+            className="block text-sm font-medium text-gray-700"
+          >
+            LinkedIn
+          </label>
+          <Input
+            id="linkedin"
+            name="linkedin"
+            value={formData.linkedin}
+            onChange={handleInputChange}
+            placeholder="LinkedIn"
+            style={{ width: "100%" }}
+          />
+        </div>
       </div>
       {submitStatus === "success" && (
         <div className="p-3 bg-green-100 text-green-700 rounded-lg">

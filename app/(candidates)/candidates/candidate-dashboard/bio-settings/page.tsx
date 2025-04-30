@@ -99,31 +99,38 @@ export default function BioSettingsPage() {
   }
 
   return (
-    <div className="flex flex-row gap-4">
-      <div>
-        <PhotoUploader
-          clerkUserId={userId!}
-          currentPhotoUrl={candidateData?.photoUrl || null}
-          onUpload={(url) => {
-            if (candidateData) {
-              handleUpdateSuccess({
-                ...candidateData,
-                photoUrl: url,
-              });
-            }
-          }}
-        />
-        <Button variant="purple" asChild className="mt-4">
-          <Link
-            href={
-              candidateData ? `/candidate/${candidateData.slug}` : "/candidates"
-            }
-          >
-            <Eye className="mr-2 h-4 w-4" /> View Public Profile
-          </Link>
-        </Button>
+    <div className="w-full h-full ">
+      <div className="flex flex-col md:flex-row gap-6">
+        <div className="flex flex-col space-y-4">
+          <PhotoUploader
+            clerkUserId={userId!}
+            currentPhotoUrl={candidateData?.photoUrl || null}
+            onUpload={(url) => {
+              if (candidateData) {
+                handleUpdateSuccess({
+                  ...candidateData,
+                  photoUrl: url,
+                });
+              }
+            }}
+          />
+          <Button variant="purple" asChild className="w-full">
+            <Link
+              href={
+                candidateData
+                  ? `/candidate/${candidateData.slug}`
+                  : "/candidates"
+              }
+            >
+              <Eye className="mr-2 h-4 w-4" /> View Public Profile
+            </Link>
+          </Button>
+        </div>
+
+        <div className="flex-1 mt-4 md:mt-0">
+          <BasicProfileForm />
+        </div>
       </div>
-      <BasicProfileForm />
     </div>
   );
 }
