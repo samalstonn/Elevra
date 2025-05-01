@@ -62,8 +62,30 @@ export default function ElectionResults({
   searchParams,
 }: ElectionResultsPageProps) {
   return (
-    <Suspense fallback={<div>Loading...</div>}>
+    <Suspense fallback={<ResultsSkeleton />}>
       <ElectionResultsPage searchParams={searchParams} />
     </Suspense>
+  );
+}
+
+function ResultsSkeleton() {
+  return (
+    <div className="w-screen p-4 space-y-4 animate-pulse">
+      {/* Filter skeleton */}
+      <div className="flex space-x-4 overflow-x-auto no-scrollbar mb-4">
+        {[...Array(5)].map((_, i) => (
+          <div key={i} className="h-8 w-24 bg-gray-200 rounded"></div>
+        ))}
+      </div>
+      {/* Candidate sections skeleton */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {[...Array(4)].map((_, i) => (
+          <div key={i} className="space-y-2">
+            <div className="h-6 w-1/3 bg-gray-200 rounded"></div>
+            <div className="h-48 bg-gray-200 rounded"></div>
+          </div>
+        ))}
+      </div>
+    </div>
   );
 }

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import LiveElectionsSkeleton from "./LiveElectionsSkeleton";
 
 type GroupedElection = {
   city: string | null;
@@ -72,7 +73,7 @@ export default function LiveElectionsPage() {
         Live Elections
       </h1>
 
-      {loading && <p>Loading elections...</p>}
+      {loading && <LiveElectionsSkeleton />}
       {error && <p className="text-red-600">{error}</p>}
 
       <div className="space-y-4">

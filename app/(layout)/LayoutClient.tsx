@@ -15,7 +15,6 @@ import { Analytics } from "@vercel/analytics/react";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { usePathname } from "next/navigation";
 import SearchBar from "../../components/ResultsSearchBar";
-import AddressButton from "../../components/AddressButton";
 import { Toaster } from "@/components/ui/toaster";
 import Footer from "../(footer-pages)/Footer";
 
@@ -62,7 +61,7 @@ export default function LayoutClient({
                 pathname.startsWith("/candidate/")) && (
                 <div className="flex-grow flex items-center justify-center gap-4 mx-auto">
                   {/* Address button (only desktop) */}
-                  <AddressButton showLocation={!isMobile} />
+                  {/* <AddressButton showLocation={!isMobile} /> */}
                   {/* Desktop search bar only */}
                   <div className="max-w-4xl w-full hidden md:block">
                     <SearchBar
@@ -78,12 +77,18 @@ export default function LayoutClient({
                   <Button asChild>
                     <Link href={dashboardLink}>My Dashboard</Link>
                   </Button>
+                  <Button asChild variant="purple">
+                    <Link href="/live-elections">Live Elections</Link>
+                  </Button>
                   <UserButton />
                 </SignedIn>
 
                 <SignedOut>
                   <Button asChild>
                     <Link href={dashboardLink}>My Dashboard</Link>
+                  </Button>
+                  <Button asChild variant="purple">
+                    <Link href="/live-elections">Live Elections</Link>
                   </Button>
                   <SignInButton />
                 </SignedOut>
