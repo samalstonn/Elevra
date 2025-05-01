@@ -13,7 +13,7 @@ export async function GET(
   try {
     const link = await prisma.electionLink.findUnique({
       where: { candidateId_electionId: { candidateId, electionId } },
-      include: { election: true },
+      include: { election: true, ContentBlock: true },
     });
     if (!link) {
       return NextResponse.json({ error: "Not found" }, { status: 404 });

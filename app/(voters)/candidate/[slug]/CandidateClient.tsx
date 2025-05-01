@@ -10,13 +10,15 @@ import { FaCheckCircle, FaUserPlus, FaShare } from "react-icons/fa";
 import { Edit } from "lucide-react"; // Icons
 import { Button } from "@/components/ui/button";
 import { Candidate, Election } from "@prisma/client";
-import type { ElectionLink } from "@prisma/client";
+import type { ContentBlock, ElectionLink } from "@prisma/client";
 import { TabButton } from "@/components/ui/tab-button";
 import { EndorsementTab } from "./EndorsementTab";
 import { ContactTab } from "./ContactTab";
 import { ElectionProfileTab } from "./ElectionTab";
 
-export type ElectionWithCandidates = Election & { candidates: Candidate[] };
+export type ElectionWithCandidates = Election & {
+  candidates: Candidate[];
+};
 
 export default function CandidateClient({
   candidate,
@@ -27,6 +29,7 @@ export default function CandidateClient({
   candidate: Candidate;
   electionLinks: (ElectionLink & {
     election: ElectionWithCandidates;
+    ContentBlock: ContentBlock[];
   })[];
   suggestedCandidates: Candidate[];
   isEditable: boolean;
@@ -136,7 +139,7 @@ export default function CandidateClient({
             height={150}
             className="md:w-[150px] md:h-[150px] w-[80px] h-[80px]"
           />
-          <div>
+          <div className="pl-2">
             <h1 className="mt-2 text-xl font-bold text-gray-900 flex items-center md:justify-start justify-center gap-2">
               {candidate.name}
               <div
@@ -343,10 +346,7 @@ export default function CandidateClient({
         {/* Election Profile Tab Content */}
         {activeTab.startsWith("election-") && activeElectionTab && (
           <>
-            <ElectionProfileTab
-              election={activeElectionTab.election}
-              link={activeElectionTab}
-            />
+            <ElectionProfileTab link={activeElectionTab} />
           </>
         )}
       </motion.div>

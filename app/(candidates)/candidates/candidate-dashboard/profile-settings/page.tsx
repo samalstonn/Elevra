@@ -1,19 +1,20 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { ProfileForm } from "./ProfileForm";
-
 import { CandidateDashboardData } from "@/types/candidate";
 import { useAuth } from "@clerk/nextjs";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Terminal } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 
 import SearchBar from "@/components/ResultsSearchBar";
-import { Election, ElectionLink } from "@prisma/client";
+import { ContentBlock, Election, ElectionLink } from "@prisma/client";
+import ContentBlocksEditor from "./ContentBlocksEditor";
 
 export type ElectionLinkWithElection = ElectionLink & {
   election: Election;
+  ContentBlock?: ContentBlock[];
 };
 
 // Define an interface for the search result items
@@ -35,6 +36,8 @@ export default function ProfileSettingsPage() {
   >([]);
   // (pendingElectionIds state removed)
   const [activeElectionId, setActiveElectionId] = useState<number | null>(null);
+
+  const { toast } = useToast();
 
   useEffect(() => {
     // Fetch candidate data only when Clerk is loaded and userId is available
@@ -241,38 +244,47 @@ export default function ProfileSettingsPage() {
       </div>
       <h1 className="text-3xl font-bold text-gray-800">
         {activeLink?.election?.position
-          ? `Profile Settings for ${activeLink.election.position}`
+          ? `${activeLink.election.position}`
           : "Please Add an Election Above"}
       </h1>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {/* Profile Form */}
         <div className="md:col-span-2">
           {activeElectionId != null && candidateData && (
-            <ProfileForm
-              key={activeElectionId}
-              candidateId={candidateData.id}
-              electionId={activeElectionId}
-              profileData={{
-                party: activeLink?.party ?? "",
-                votinglink: activeLink?.votinglink ?? "",
-                policies: activeLink?.policies ?? [],
-                additionalNotes: activeLink?.additionalNotes ?? "",
-              }}
-              onUpdateSuccess={async () => {
-                if (!candidateData) return;
-                const res = await fetch(
-                  `/api/electionlinks?candidateId=${candidateData.id}`
-                );
-                if (res.ok) {
-                  const freshLinks: ElectionLinkWithElection[] =
-                    await res.json();
-                  setElectionLinks(freshLinks);
-                  const current = freshLinks.find(
-                    (l) => l.electionId === activeElectionId
-                  );
-                  if (current) {
-                    setActiveElectionId(current.electionId); // trigger re-render
+            <ContentBlocksEditor
+              initialBlocks={activeLink?.ContentBlock ?? []}
+              onSave={async (blocks) => {
+                try {
+                  const res = await fetch("/api/v1/contentblocks/save", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                      candidateId: candidateData.id,
+                      electionId: activeElectionId,
+                      blocks,
+                    }),
+                  });
+                  const data = await res.json();
+                  if (!res.ok || data.error) {
+                    toast({
+                      variant: "destructive",
+                      title: "Error saving blocks",
+                      description:
+                        data.error || "Block limits exceeded or unknown error.",
+                    });
+                    return;
                   }
+                  toast({
+                    title: "Blocks saved",
+                    description:
+                      "Your election profile been updated successfully.",
+                  });
+                } catch (err) {
+                  toast({
+                    variant: "destructive",
+                    title: "Network error",
+                    description: "Unable to save content blocks.",
+                  });
                 }
               }}
             />
