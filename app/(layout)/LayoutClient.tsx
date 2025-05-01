@@ -33,7 +33,7 @@ export default function LayoutClient({
   } else if (pathname.startsWith("/vendors")) {
     dashboardLink = "/vendors/vendor-dashboard";
   }
-  const [isMobile, setIsMobile] = useState<boolean>(false);
+  const [_isMobile, setIsMobile] = useState<boolean>(false);
   useEffect(() => {
     const mediaQuery = window.matchMedia("(max-width: 768px)");
     setIsMobile(mediaQuery.matches);
