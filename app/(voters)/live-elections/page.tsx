@@ -44,9 +44,9 @@ export default function LiveElectionsPage() {
           date: entry.date,
         }));
 
-        const currentDate = new Date();
+        const currentDate = new Date().setHours(0, 0, 0, 0);
         const futureElections = grouped.filter((election) => {
-          const electionDate = new Date(election.date);
+          const electionDate = new Date(election.date).setHours(0, 0, 0, 0);
           return electionDate >= currentDate;
         });
 

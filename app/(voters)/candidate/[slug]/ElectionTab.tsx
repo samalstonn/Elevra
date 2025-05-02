@@ -1,107 +1,142 @@
-import { Button } from "@/components/ui/button";
-import { Election, ElectionLink } from "@prisma/client";
+import {
+  ElectionLink,
+  ContentBlock,
+  BlockType,
+  ListStyle,
+} from "@prisma/client";
 import Link from "next/link";
-import { useState } from "react";
-import { FaChevronUp, FaQuestionCircle } from "react-icons/fa";
+import { Button } from "@/components/ui/button";
 import { MdHowToVote } from "react-icons/md";
+import { marked } from "marked";
+import DOMPurify from "dompurify";
+import Image from "next/image";
 
 export type ElectionProfileTabProps = {
-  link: ElectionLink;
-  election: Election;
+  link: ElectionLink & { ContentBlock: ContentBlock[] };
 };
 
-export function ElectionProfileTab({
-  link,
-  election,
-}: ElectionProfileTabProps) {
-  const [dropdownHovered, setDropdownHovered] = useState(false);
-  const [showSources, setShowSources] = useState(false);
+const colorClass = {
+  BLACK: "text-black",
+  GRAY: "text-gray-700",
+  PURPLE: "text-purple-700",
+} as const;
+
+function mdToHtml(markdown: string): string {
+  marked.setOptions({ async: false });
+  const raw = marked.parse(markdown) as string;
+  return DOMPurify.sanitize(raw);
+}
+
+export function ElectionProfileTab({ link }: ElectionProfileTabProps) {
   return (
-    <div className="mt-4 p-4 ">
-      <p className="text-lg font-semibold">
-        Running for {election.position} in {election.city}, {election.state}
-      </p>
-      <p className="text-md font-semibold mt-2 text-purple-600"></p>
-      {link.party && (
-        <p className="text-md font-semibold text-purple-600">{link.party}</p>
-      )}
-      {link.policies && link.policies.length > 0 && (
-        <div className="mt-4">
-          <h2 className="text-lg font-semibold text-gray-900">Policies</h2>
-          <ul className="space-y-1 text-sm">
-            {link.policies.map((policy, index) => (
-              <li key={index}>
-                <span className="">{policy}</span>
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
-      {/* Additional Notes */}
-      {link.additionalNotes && (
-        <div className="mt-4">
-          <h2 className="text-lg font-semibold text-gray-900">
-            Additional Notes
-          </h2>
-          <p className="text-sm">{link.additionalNotes}</p>
-        </div>
-      )}
-      {/* Sources Dropdown Section */}
-      {link.sources && link.sources.length > 0 && (
-        <div className="mt-6">
-          <div className="relative inline-block">
-            <button
-              onClick={() => setShowSources(!showSources)}
-              className="flex items-center text-sm text-purple-600 hover:underline focus:outline-none"
-            >
-              <FaChevronUp
-                className={`transition-transform duration-200 ${
-                  showSources ? "rotate-180" : "rotate-90"
-                }`}
-              />
-              <span className="ml-2">Sources</span>
-            </button>
-            <div className="absolute -top-0 -right-5">
-              <FaQuestionCircle
-                className="text-purple-600 cursor-pointer"
-                onMouseEnter={() => setDropdownHovered(true)}
-                onMouseLeave={() => setDropdownHovered(false)}
-              />
-            </div>
-            {dropdownHovered && (
-              <div className="absolute left-2/3 transform -translate-x-1/2 -top-10 bg-gray-900 text-white text-xs px-2 py-1 rounded shadow whitespace-nowrap">
-                Since this candidate is not yet verified, the Elevra team <br />{" "}
-                compiled relevant information using these sources.
-              </div>
-            )}
-          </div>
-          {showSources && (
-            <ul className="list-disc list-inside text-sm text-purple-600 mt-2">
-              {link.sources.map((source: string, index: number) => (
-                <li key={index}>
-                  <span className="cursor-default">{source}</span>
-                </li>
-              ))}
-            </ul>
-          )}
-        </div>
-      )}
-      {link.votinglink ? (
-        <Link href={link.votinglink} passHref target="_blank">
-          <Button
-            asChild
-            variant="purple"
-            size="md"
-            className="flex items-center gap-2"
-            rel="noopener noreferrer"
-          >
+    <div className="pl-2 space-y-2">
+      {[...link.ContentBlock]
+        .sort((a, b) => a.order - b.order)
+        .map((block) => {
+          const color = block.color ? colorClass[block.color] : "";
+
+          switch (block.type) {
+            case BlockType.HEADING:
+              const headingClass =
+                block.level === 1
+                  ? `text-xl font-bold ${color}`
+                  : `text-lg font-semibold ${color}`;
+              return (
+                <h2 key={block.id} className={headingClass}>
+                  {block.text}
+                </h2>
+              );
+
+            case BlockType.TEXT:
+              return (
+                <div
+                  key={block.id}
+                  className={`text-sm ${color}`}
+                  dangerouslySetInnerHTML={{
+                    __html: mdToHtml(block.body ?? ""),
+                  }}
+                />
+              );
+
+            case BlockType.LIST:
+              const ListTag =
+                block.listStyle === ListStyle.NUMBER ? "ol" : "ul";
+              const listClass =
+                block.listStyle === ListStyle.NUMBER
+                  ? `list-decimal text-sm ml-6 ${color}`
+                  : `list-disc text-sm ml-6 ${color}`;
+              return (
+                <ListTag key={block.id} className={listClass}>
+                  {block.items.map((item, idx) => (
+                    <li key={idx}>{item}</li>
+                  ))}
+                </ListTag>
+              );
+
+            case BlockType.DIVIDER:
+              return <hr key={block.id} className="border-gray-200" />;
+
+            case BlockType.IMAGE:
+              return (
+                <figure key={block.id} className="flex flex-col items-center">
+                  {block.imageUrl && (
+                    <Image
+                      src={block.imageUrl!}
+                      alt={block.caption ?? ""}
+                      width={600}
+                      height={600}
+                      className="w-full max-w-2xl rounded"
+                      priority={false}
+                    />
+                  )}
+                  {block.caption && (
+                    <figcaption className={`text-sm mt-1 ${color}`}>
+                      {block.caption}
+                    </figcaption>
+                  )}
+                </figure>
+              );
+
+            case BlockType.VIDEO:
+              return (
+                <figure key={block.id} className="flex flex-col items-center">
+                  {block.videoUrl && (
+                    <video
+                      src={block.videoUrl}
+                      controls
+                      preload="metadata"
+                      className="w-full max-w-2xl rounded"
+                    />
+                  )}
+                  {block.caption && (
+                    <figcaption className={`text-sm mt-1 ${color}`}>
+                      {block.caption}
+                    </figcaption>
+                  )}
+                </figure>
+              );
+
+            default:
+              return null;
+          }
+        })}
+
+      {/* Vote button */}
+      {link.votinglink && (
+        <Link
+          href={link.votinglink}
+          passHref
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          <Button asChild variant="purple" size="md">
             <span className="flex items-center gap-2">
               <MdHowToVote />
               <span>Vote</span>
             </span>
           </Button>
         </Link>
-      ) : null}
+      )}
     </div>
   );
 }

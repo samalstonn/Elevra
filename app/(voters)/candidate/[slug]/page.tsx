@@ -36,6 +36,7 @@ export default async function CandidatePage({
   const links = await prisma.electionLink.findMany({
     where: { candidateId: candidateID },
     include: {
+      ContentBlock: true,
       election: {
         include: {
           candidates: {

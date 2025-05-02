@@ -1,6 +1,6 @@
 "use client";
 import React, { useState, useEffect } from "react";
-import { PhotoUploader } from "@/components/PhotoUploader";
+import { PhotoUploader } from "@/components/ProfilePhotoUploader";
 import { useAuth } from "@clerk/nextjs";
 import { CandidateDashboardData } from "@/types/candidate";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";

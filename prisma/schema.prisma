@@ -258,11 +258,75 @@ model ElectionLink {
   joinedAt DateTime @default(now())
 
   party           String
-  policies        String[] @default([])
-  sources         String[] @default([])
+  policies        String[]       @default([])
+  sources         String[]       @default([])
   additionalNotes String?
   votinglink      String?
   photoUrl        String?
+  ContentBlock    ContentBlock[]
 
   @@id([candidateId, electionId])
+}
+
+/// ---------------------------------------------------------------------------
+/// Content‑block system for dynamic ElectionTab pages
+/// ---------------------------------------------------------------------------
+
+enum BlockType {
+  HEADING // Heading 1 or Heading 2
+  TEXT // Rich‑text paragraph
+  LIST // Bulleted or numbered list
+  DIVIDER // Horizontal rule
+  IMAGE // Image with optional caption
+  VIDEO // Video with optional caption
+}
+
+enum ListStyle {
+  BULLET
+  NUMBER
+}
+
+enum TextColor {
+  BLACK
+  GRAY
+  PURPLE
+}
+
+model ContentBlock {
+  id Int @id @default(autoincrement())
+
+  // composite FK to the election link this block belongs to
+  candidateId  Int
+  electionId   Int
+  electionLink ElectionLink @relation(fields: [candidateId, electionId], references: [candidateId, electionId], onDelete: Cascade)
+
+  order Int // display order (0‑based)
+
+  // common to every block
+  type  BlockType
+  color TextColor? // not used by DIVIDER
+
+  // HEADING
+  level Int? // 1 or 2
+  text  String? // HEADING text
+
+  // TEXT
+  body String? // markdown / plain text
+
+  // LIST
+  listStyle ListStyle?
+  items     String[] // array of list items
+
+  // IMAGE
+  imageUrl String?
+  caption  String? // also used by VIDEO
+
+  // VIDEO
+  videoUrl     String?
+  thumbnailUrl String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([candidateId, electionId, order])
 }

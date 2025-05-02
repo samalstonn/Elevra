@@ -30,7 +30,9 @@ export default function CandidateSection({
   election,
   fallbackElections = [],
 }: CandidateSectionProps) {
-  const electionIsActive = new Date(election.date) > new Date();
+  const electionIsActive =
+    new Date(election.date).setHours(0, 0, 0, 0) >=
+    new Date().setHours(0, 0, 0, 0);
   const [showDetails, setShowDetails] = useState(true);
 
   // If no election data is available
@@ -125,7 +127,7 @@ export default function CandidateSection({
       variants={containerVariants}
     >
       <h2 className="text-3xl font-semibold text-gray-900 mb-4 transition-colors hidden md:block">
-        {election.position}
+        {election.position} in {election.city}, {election.state}
       </h2>
 
       {/* Election Card Section - Always displayed */}
