@@ -4,10 +4,10 @@ import { BlockType, ContentBlock } from "@prisma/client";
 import { auth } from "@clerk/nextjs/server";
 
 const MAX_PER_TYPE: Record<BlockType, number> = {
-  HEADING: 4,
+  HEADING: 8,
   TEXT: 10,
   LIST: 6,
-  DIVIDER: 4,
+  DIVIDER: 10,
   IMAGE: 2,
   VIDEO: 1,
 };
