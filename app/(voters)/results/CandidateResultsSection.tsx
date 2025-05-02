@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { CandidateImage } from "@/components/CandidateImage"; // Adjust the path as needed
 import { FaUserPlus, FaCheckCircle } from "react-icons/fa"; // Import icons from react-icons
 import { useState } from "react";
+import { isElectionActive } from "@/lib/functions";
 
 interface CandidateSectionProps {
   candidates?: Candidate[];
@@ -30,10 +31,8 @@ export default function CandidateSection({
   election,
   fallbackElections = [],
 }: CandidateSectionProps) {
-  const electionIsActive =
-    new Date(election.date).setHours(0, 0, 0, 0) >=
-    new Date().setHours(0, 0, 0, 0);
   const [showDetails, setShowDetails] = useState(true);
+  const electionIsActive = isElectionActive(new Date(election.date));
 
   // If no election data is available
   if (!election) {

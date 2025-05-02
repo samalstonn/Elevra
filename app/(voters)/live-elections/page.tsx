@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import LiveElectionsSkeleton from "./LiveElectionsSkeleton";
+import { isElectionActive } from "@/lib/functions";
 
 type GroupedElection = {
   city: string | null;
@@ -44,10 +45,8 @@ export default function LiveElectionsPage() {
           date: entry.date,
         }));
 
-        const currentDate = new Date().setHours(0, 0, 0, 0);
         const futureElections = grouped.filter((election) => {
-          const electionDate = new Date(election.date).setHours(0, 0, 0, 0);
-          return electionDate >= currentDate;
+          return isElectionActive(new Date(election.date));
         });
 
         const sorted = futureElections.sort((a, b) => {

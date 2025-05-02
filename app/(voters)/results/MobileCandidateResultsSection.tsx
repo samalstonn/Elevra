@@ -6,6 +6,7 @@ import { Candidate, Election } from "@prisma/client";
 import { CandidateImage } from "@/components/CandidateImage";
 import { FaCheckCircle } from "react-icons/fa";
 import { useState } from "react";
+import { isElectionActive } from "@/lib/functions";
 
 interface MobileCandidateResultsSectionProps {
   candidates?: Candidate[];
@@ -19,9 +20,7 @@ export default function MobileCandidateResultsSection({
   fallbackElections = [],
 }: MobileCandidateResultsSectionProps) {
   const [showDetails, setShowDetails] = useState(false);
-  const electionIsActive =
-    new Date(election.date).setHours(0, 0, 0, 0) >=
-    new Date().setHours(0, 0, 0, 0);
+  const electionIsActive = isElectionActive(new Date(election.date));
 
   // If no candidates are available
   if (!candidates || candidates.length === 0) {

@@ -321,6 +321,7 @@ export default function ElectionResultsClient({
                             })}
                             election={elec}
                             fallbackElections={[]}
+                            
                           />
                         </div>
                       </div>
