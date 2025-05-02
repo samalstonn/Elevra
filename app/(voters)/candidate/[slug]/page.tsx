@@ -108,7 +108,7 @@ export default async function CandidatePage({
     currentUserId !== null && currentUserId === candidate.clerkUserId;
 
   return (
-    <div className="px-40">
+    <div className="md:px-40">
       <CandidateClient
         candidate={candidate}
         electionLinks={linksWithFullCandidates}

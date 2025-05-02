@@ -19,6 +19,8 @@ import {
 import { CSS } from "@dnd-kit/utilities";
 import { Button } from "@/components/ui/button";
 import Image from "next/image";
+import Link from "next/link";
+import { Eye } from "lucide-react";
 
 function uploadMedia(
   file: File,
@@ -150,66 +152,122 @@ export default function ContentBlocksEditor({
 
   /* ----------------- Render ----------------- */
   return (
-    <div className="space-y-4">
-      {/* Toolbar */}
-      <div className="flex gap-2 flex-wrap">
-        <Button
-          size="sm"
-          variant="secondary"
-          onClick={() => addBlock("HEADING")}
+    <div className="flex w-full gap-6 items-start">
+      {/* Main editor area */}
+      <div className="flex-grow min-w-0 space-y-4">
+        {/* Drag list */}
+        <DndContext
+          sensors={sensors}
+          collisionDetection={closestCenter}
+          onDragEnd={handleDragEnd}
         >
-          + Heading
-        </Button>
-        <Button size="sm" variant="secondary" onClick={() => addBlock("TEXT")}>
-          + Text
-        </Button>
-        <Button size="sm" variant="secondary" onClick={() => addBlock("LIST")}>
-          + Bullet List
-        </Button>
-        <Button
-          size="sm"
-          variant="secondary"
-          onClick={() => addBlock("DIVIDER")}
-        >
-          + Divider
-        </Button>
-        <Button size="sm" variant="secondary" onClick={() => addBlock("IMAGE")}>
-          + Image
-        </Button>
-        <Button size="sm" variant="secondary" onClick={() => addBlock("VIDEO")}>
-          + Video
-        </Button>
+          <SortableContext
+            items={blocks.map((b) => b.order)}
+            strategy={verticalListSortingStrategy}
+          >
+            {blocks.map((block) => (
+              <SortableBlock
+                key={block.order}
+                block={block}
+                candidateSlug={candidateSlug}
+                onChange={(patch) => updateBlock(block.order, patch)}
+                onDelete={() => deleteBlock(block.order)}
+                uploading={uploadingMap[block.order] || false}
+                setUploading={setUploading}
+                progress={uploadProgressMap[block.order] ?? 0}
+                setProgress={setProgress}
+              />
+            ))}
+          </SortableContext>
+        </DndContext>
+        <div className="flex flex-row items-center gap-2">
+          <Button onClick={handleSave} disabled={isSaving || anyUploading}>
+            {isSaving ? "Saving..." : anyUploading ? "Uploading..." : "Save"}
+          </Button>
+          <Button variant="purple" asChild>
+            <Link href={`/candidate/${candidateSlug}`}>
+              <Eye className="mr-2 h-4 w-4" /> View Public Profile
+            </Link>
+          </Button>
+        </div>
       </div>
 
-      {/* Drag list */}
-      <DndContext
-        sensors={sensors}
-        collisionDetection={closestCenter}
-        onDragEnd={handleDragEnd}
-      >
-        <SortableContext
-          items={blocks.map((b) => b.order)}
-          strategy={verticalListSortingStrategy}
-        >
-          {blocks.map((block) => (
-            <SortableBlock
-              key={block.order}
-              block={block}
-              candidateSlug={candidateSlug}
-              onChange={(patch) => updateBlock(block.order, patch)}
-              onDelete={() => deleteBlock(block.order)}
-              uploading={uploadingMap[block.order] || false}
-              setUploading={setUploading}
-              progress={uploadProgressMap[block.order] ?? 0}
-              setProgress={setProgress}
-            />
-          ))}
-        </SortableContext>
-      </DndContext>
+      {/* Toolbar card */}
+      <aside className="w-60 flex-shrink-0 ml-auto sticky top-2 self-start border rounded-lg p-4 bg-white shadow-sm">
+        <div className="flex flex-col gap-2">
+          <Button
+            size="sm"
+            variant="secondary"
+            onClick={() => addBlock("HEADING")}
+          >
+            + Heading
+          </Button>
+          <Button
+            size="sm"
+            variant="secondary"
+            onClick={() => addBlock("TEXT")}
+          >
+            + Text
+          </Button>
+          <Button
+            size="sm"
+            variant="secondary"
+            onClick={() => addBlock("LIST")}
+          >
+            + Bullet List
+          </Button>
+          <Button
+            size="sm"
+            variant="secondary"
+            onClick={() => addBlock("DIVIDER")}
+          >
+            + Divider
+          </Button>
+          <Button
+            size="sm"
+            variant="secondary"
+            onClick={() => addBlock("IMAGE")}
+          >
+            + Image
+          </Button>
+          <Button
+            size="sm"
+            variant="secondary"
+            onClick={() => addBlock("VIDEO")}
+          >
+            + Video
+          </Button>
+        </div>
 
-      <Button onClick={handleSave} disabled={isSaving || anyUploading}>
-        {isSaving ? "Saving..." : anyUploading ? "Uploading..." : "Save"}
-      </Button>
+        {/* Helper Tips card */}
+        <div className="mt-6 space-y-2 text-sm">
+          <h4 className="text-xs font-semibold uppercase tracking-wide text-purple-700">
+            Tips
+          </h4>
+          <ul className="list-disc ml-4 space-y-1 text-gray-700">
+            <li>
+              Start with a strong <strong>Heading</strong> to introduce your
+              message.
+            </li>
+            <li>
+              Use <strong>Text</strong> blocks to share your experience, values,
+              or vision.
+            </li>
+            <li>
+              Add <strong>Images</strong> (max 2) to engage viewers.
+            </li>
+            <li>
+              Include a <strong>Video</strong> clip to speak directly to voters.
+            </li>
+            <li>Reorder blocks easily! Just click and drag them into place.</li>
+            <li>
+              Once you&apos;re happy with your profile, click{" "}
+              <strong>Save</strong>
+              to publish your changes.
+            </li>
+          </ul>
+        </div>
+      </aside>
     </div>
   );
 }
@@ -257,7 +315,11 @@ function SortableBlock({
             <option value={2}>Sub-Header</option>
           </select>
           <input
-            className="w-full text-xl font-semibold outline-none"
+            className={`w-full outline-none ${
+              block.level === 1
+                ? `text-2xl font-bold text-center`
+                : `text-lg font-semibold`
+            }`}
             placeholder="Heading…"
             value={block.text ?? ""}
             onChange={(e) => onChange({ text: e.target.value })}
@@ -332,7 +394,7 @@ function SortableBlock({
         <Image
           src={block.imageUrl}
           alt={block.caption ?? ""}
-          className="w-1/2 rounded"
+          className="w-1/2 rounded mx-auto"
           width={600}
           height={600}
           priority={false}
@@ -378,7 +440,7 @@ function SortableBlock({
           src={block.videoUrl}
           controls
           preload="metadata"
-          className="w-1/2 rounded"
+          className="w-1/2 rounded mx-auto"
         />
       ) : (
         <input
@@ -413,19 +475,28 @@ function SortableBlock({
       style={style}
       {...attributes}
       {...listeners}
-      className="border rounded p-3 bg-white shadow-sm space-y-2 cursor-grab"
+      className="border rounded-xl p-6 bg-white shadow-sm space-y-2 cursor-grab"
     >
       <div className="flex justify-between items-center">
-        <span className="text-xs text-gray-400 uppercase">{block.type}</span>
-        <select
-          value={block.color ?? DEFAULT_COLOR}
-          onChange={(e) => onChange({ color: e.target.value as TextColor })}
-          className="text-xs bg-transparent border border-gray-300 rounded px-1 py-0.5"
-        >
-          <option value="BLACK">Black</option>
-          <option value="GRAY">Gray</option>
-          <option value="PURPLE">Purple</option>
-        </select>
+        <span className="text-xs text-gray-400 uppercase mb-2">
+          {block.type}
+          {block.type !== "IMAGE" &&
+            block.type !== "DIVIDER" &&
+            block.type !== "VIDEO" && (
+              <select
+                value={block.color ?? DEFAULT_COLOR}
+                onChange={(e) =>
+                  onChange({ color: e.target.value as TextColor })
+                }
+                className=" ml-2 text-black text-xs bg-transparent border border-gray-300 rounded px-1 py-0.5"
+              >
+                <option value="BLACK">Black</option>
+                <option value="GRAY">Gray</option>
+                <option value="PURPLE">Purple</option>
+              </select>
+            )}
+        </span>
+
         <button
           onClick={onDelete}
           className="text-red-500 text-xs hover:text-red-700"
