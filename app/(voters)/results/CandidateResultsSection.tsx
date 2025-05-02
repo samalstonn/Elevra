@@ -127,7 +127,7 @@ export default function CandidateSection({
       variants={containerVariants}
     >
       <h2 className="text-3xl font-semibold text-gray-900 mb-4 transition-colors hidden md:block">
-        {election.position}
+        {election.position} in {election.city}, {election.state}
       </h2>
 
       {/* Election Card Section - Always displayed */}
