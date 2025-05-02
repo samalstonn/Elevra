@@ -92,25 +92,3 @@ export const calculateFee = (baseAmount: number): number => {
   // Step 4: Round to 2 decimal places
   return Math.round(fee * 100) / 100;
 };
-
-
-/**
- * Checks if an election date is active (today or in the future).
- * Compares dates in UTC to avoid timezone issues.
- * @param electionDate - The date of the election to check
- * @returns boolean indicating if the election is active
- */
-export function isElectionActive(electionDate: Date): boolean {
-  const today = new Date();
-  const todayUTC = Date.UTC(
-    today.getUTCFullYear(),
-    today.getUTCMonth(),
-    today.getUTCDate()
-  );
-  const electionUTC = Date.UTC(
-    electionDate.getUTCFullYear(),
-    electionDate.getUTCMonth(),
-    electionDate.getUTCDate()
-  );
-  return electionUTC >= todayUTC;
-}
