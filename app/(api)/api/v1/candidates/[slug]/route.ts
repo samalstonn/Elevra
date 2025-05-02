@@ -1,6 +1,6 @@
 // app/api/v1/candidates/[slug]/route.ts
 
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 import prisma from "@/prisma/prisma";
 import { handleApiError } from "@/lib/api/errors/error-handler";
 import { NotFoundError, ValidationError } from "@/lib/api/errors/error-types";
@@ -13,7 +13,7 @@ import { logger } from "@/lib/logger";
  */
 export async function GET(
   request: NextRequest,
-  { params }: { params: Promise<{ slug: string }> }
+  { params }: { params: { slug: string } }
 ) {
   try {
     logger.api.request("GET", request.url);
@@ -90,6 +90,12 @@ async function recordProfileView(candidateId: number, request: NextRequest) {
         userAgent,
         referrerUrl: referrer,
       },
+    });
+    logger.info("Profile view recorded", {
+      candidateId,
+      ip,
+      userAgent,
+      referrer,
     });
   } catch (error) {
     // Log the error but don't fail the main request if this fails

@@ -1,6 +1,6 @@
 // lib/api/errors/validation-errors.ts
 
-import { ZodError, ZodIssue } from "zod";
+import { ZodError } from "zod";
 
 /**
  * Formats a Zod error into a user-friendly format

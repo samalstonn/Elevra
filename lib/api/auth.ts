@@ -2,6 +2,7 @@
 
 import { auth } from "@clerk/nextjs/server";
 import { AuthenticationError, AuthorizationError } from "./errors/error-types";
+import { logger } from "../logger";
 
 /**
  * Ensures a user is authenticated
@@ -64,6 +65,11 @@ async function checkIfUserIsAdmin(userId: string): Promise<boolean> {
   // e.g., fetch user from database and check roles
   // For now, return false as placeholder
   const adminUserIds = process.env.ADMIN_USER_IDS?.split(",") || [];
+  if (process.env.NODE_ENV === "production" && adminUserIds.length === 0) {
+    // Warn or fail fast if no admin IDs are configured
+    logger.warn(
+      "ADMIN_USER_IDS is not set or empty. No admin users will be recognized."
+    );
+  }
   return adminUserIds.includes(userId);
-  return false;
 }

@@ -1,18 +1,20 @@
 // lib/api/rate-limit.ts
 
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 import { Redis } from "@upstash/redis";
 import { RateLimitError } from "./errors/error-types";
 import { handleApiError } from "./errors/error-handler";
 
 // Initialize Redis client
-// You'll need to install @upstash/redis or another Redis client
-const redis = process.env.UPSTASH_REDIS_URL
-  ? new Redis({
-      url: process.env.UPSTASH_REDIS_URL,
-      token: process.env.UPSTASH_REDIS_TOKEN!,
-    })
-  : null;
+const redisUrl = process.env.UPSTASH_REDIS_URL;
+const redisToken = process.env.UPSTASH_REDIS_TOKEN;
+const redis =
+  redisUrl && redisToken
+    ? new Redis({
+        url: redisUrl,
+        token: redisToken,
+      })
+    : null;
 
 /**
  * Rate limiting middleware for API routes
@@ -35,9 +37,13 @@ export async function rateLimitRequest(
     );
     // Fallback: in-memory limiter using rate-limiter-flexible
     const { RateLimiterMemory } = await import("rate-limiter-flexible");
+    const {
+      limit = 60, // Default: 60 requests
+      window = 60, // Default: per minute
+    } = options;
     const memoryLimiter = new RateLimiterMemory({
-      points: 100, // max 100 requests
-      duration: 60, // per 60 seconds
+      points: limit, // Use the same limit as Redis
+      duration: window, // Use the same window as Redis
     });
     return { consume: (key: string) => memoryLimiter.consume(key) };
   }
