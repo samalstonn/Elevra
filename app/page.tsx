@@ -49,8 +49,6 @@ function HomePageContent() {
         }}
         className="flex flex-col items-center text-center py-12 sm:py-20 space-y-4 sm:space-y-6 w-full max-w-screen"
       >
-        <div className="h-20"></div>
-
         {/* Animated "Elevra" Header */}
         <motion.h1
           variants={{
@@ -62,7 +60,7 @@ function HomePageContent() {
               transition: { duration: 0.6, ease: "easeOut" },
             },
           }}
-          className="text-4xl sm:text-6xl md:text-7xl font-bold text-purple-900"
+          className="text-4xl sm:text-6xl md:text-7xl font-bold text-purple-800"
         >
           Elevra
         </motion.h1>
@@ -92,11 +90,14 @@ function HomePageContent() {
               transition: { duration: 0.6, ease: "easeOut" },
             },
           }}
-          className="w-full max-w-lg sm:max-w-xl md:max-w-2xl lg:max-w-3xl py-6"
+          className="w-full max-w-lg sm:max-w-xl md:max-w-2xl lg:max-w-3xl"
         >
           <SearchBar
             onSearch={(location: NormalizedLocation) => handleSearch(location)}
           />
+          <Button variant="purple" className="mt-4 float-left ml-20" asChild>
+            <a href="/live-elections">Check Out What&apos;s Live</a>
+          </Button>
         </motion.div>
 
         <motion.div
@@ -109,7 +110,7 @@ function HomePageContent() {
               transition: { duration: 0.6, ease: "easeOut" },
             },
           }}
-          className="mt-8 text-center text-gray-700 flex justify-center items-center gap-4"
+          className="text-center text-gray-700 flex justify-center items-center"
         >
           <span>Looking for something else? I am a...</span>
         </motion.div>
@@ -139,7 +140,7 @@ function HomePageContent() {
         initial="hidden"
         whileInView="visible"
         viewport={{ once: true }}
-        className="max-w-screen bg-gray-50"
+        className="max-w-screen"
       >
         <Showcase />
       </motion.div>

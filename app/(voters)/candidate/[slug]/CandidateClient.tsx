@@ -125,10 +125,10 @@ export default function CandidateClient({
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.8, ease: "easeOut" }}
-      className="w-full mx-auto px-4 flex flex-col md:flex-row gap-6 mb-16 mt-0 pt-0"
+      className="w-full mx-auto px-4 flex flex-col gap-6 mb-16 mt-0 pt-0"
     >
       {/* Main candidate profile card - keep desktop layout on MD+ screens */}
-      <motion.div className="w-full md:w-2/3 flex flex-col p-4 sm:p-6 bg-white">
+      <motion.div className="w-full flex flex-col p-4 bg-white">
         {/* Profile Header - Desktop: side by side, Mobile: stacked */}
         <div className="flex flex-col items-center md:flex-row md:items-start md:text-left text-center gap-4">
           <CandidateImage
@@ -351,143 +351,13 @@ export default function CandidateClient({
         )}
       </motion.div>
 
-      {/* Desktop sidebar - hidden on mobile */}
-      <motion.div
-        initial={{ opacity: 0, x: 10 }}
-        animate={{ opacity: 1, x: 0 }}
-        transition={{ duration: 0.8, ease: "easeOut", delay: 0.2 }}
-        className="hidden md:block md:w-1/3 h-fit"
-      >
-        <div className="bg-white">
-          {activeElectionTab && activeElectionTab.election && (
-            <div>
-              {/* Related candidates sidebar */}
-              {activeElectionTab.election.candidates.length > 0 ? (
-                <div className="">
-                  {activeElectionTab.election.candidates.map(
-                    (relatedCandidate: Candidate) => (
-                      <Link
-                        key={relatedCandidate.name}
-                        href={`/candidate/${relatedCandidate.slug}`}
-                        className="block"
-                      >
-                        <motion.div
-                          whileHover={{ scale: 1.02 }}
-                          className="flex items-center p-3 rounded-lg transition-colors gap-3"
-                        >
-                          <CandidateImage
-                            clerkUserId={relatedCandidate.clerkUserId}
-                            publicPhoto={relatedCandidate.photo}
-                            name={relatedCandidate.name}
-                            width={50}
-                            height={50}
-                          />
-                          <div className="flex-1">
-                            <h3 className="font-medium text-gray-900 flex items-center gap-2">
-                              {relatedCandidate.name}
-                              {relatedCandidate.verified ? (
-                                <FaCheckCircle className="text-blue-500" />
-                              ) : (
-                                <FaCheckCircle className="text-gray-400" />
-                              )}
-                            </h3>
-                            <p className="text-xs text-purple-600">
-                              {relatedCandidate.currentRole}
-                            </p>
-                          </div>
-                          <FaUserPlus className="text-purple-600 ml-2" />
-                        </motion.div>
-                      </Link>
-                    )
-                  )}
-                </div>
-              ) : (
-                <p className="text-gray-500 text-center py-4">
-                  No other candidates found in this election.
-                </p>
-              )}
-
-              <Button
-                variant="outline"
-                size="sm"
-                className="w-full mt-4 text-purple-600 border-purple-300 hover:bg-purple-50"
-                onClick={() => {
-                  if (
-                    activeElectionTab.election.city &&
-                    activeElectionTab.election.state
-                  ) {
-                    router.push(
-                      `/results?city=${activeElectionTab.election.city}&state=${activeElectionTab.election.state}&electionID=${activeElectionTab.election.id}`
-                    );
-                  } else {
-                    console.error("Candidate city or state is missing.");
-                  }
-                }}
-              >
-                View Election
-              </Button>
-            </div>
-          )}
-
-          {/* Suggested candidates sidebar */}
-          <motion.div
-            initial={{ opacity: 0, x: 10 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.8, ease: "easeOut", delay: 0.2 }}
-            className="w-full h-fit sticky top-24"
-          >
-            <div className="bg-white p-4">
-              <div className="flex justify-between items-center mb-3">
-                <h2 className="text-sm font-semibold text-gray-600">
-                  Your Suggested Candidates
-                </h2>
-              </div>
-              <div className="space-y-3">
-                {randomSuggestedCandidates.map((rc) => (
-                  <motion.div
-                    key={rc.id}
-                    className="flex items-center justify-between"
-                  >
-                    <Link
-                      href={`/candidate/${rc.slug}`}
-                      className="flex items-center gap-3"
-                    >
-                      <CandidateImage
-                        clerkUserId={rc.clerkUserId}
-                        publicPhoto={rc.photo}
-                        name={rc.name}
-                        width={40}
-                        height={40}
-                      />
-                      <div className="flex flex-col">
-                        <span className="text-sm font-semibold text-gray-900 flex items-center gap-2">
-                          {rc.name}
-                          {rc.verified ? (
-                            <FaCheckCircle className="text-blue-500" />
-                          ) : (
-                            <FaCheckCircle className="text-gray-400" />
-                          )}
-                        </span>
-                        <span className="text-xs text-purple-600 line-clamp-1">
-                          {rc.currentRole}
-                        </span>
-                      </div>
-                    </Link>
-                  </motion.div>
-                ))}
-              </div>
-            </div>
-          </motion.div>
-        </div>
-      </motion.div>
-
-      {/* Mobile-only Related candidates section - shown below main content */}
+      {/* Related candidates section - shown below main content */}
       {activeElectionTab && activeElectionTab.election && (
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 0.8, ease: "easeOut", delay: 0.1 }}
-          className="md:hidden w-full p-4 bg-white"
+          className=" w-full p-4 bg-white"
         >
           <h2 className="text-sm font-semibold text-gray-600 mb-3">
             {activeElectionTab.election.position} Candidates
@@ -561,14 +431,14 @@ export default function CandidateClient({
         </motion.div>
       )}
 
-      {/* Mobile-only Suggested candidates section */}
+      {/* Suggested candidates section */}
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
-        transition={{ duration: 0.8, ease: "easeOut", delay: 0.2 }}
-        className="md:hidden w-full bg-white p-4"
+        transition={{ duration: 0.8, ease: "easeOut", delay: 0.1 }}
+        className="w-full bg-white p-4"
       >
-        <div className="flex justify-between items-center mb-3">
+        <div className="flex justify-between items-center mb-3 ">
           <h2 className="text-sm font-semibold text-gray-600">
             Your Suggested Candidates
           </h2>
@@ -580,7 +450,10 @@ export default function CandidateClient({
               href={`/candidate/${rc.slug}`}
               className="flex items-center justify-between p-3 "
             >
-              <div className="flex items-center gap-3">
+              <motion.div
+                whileHover={{ scale: 1.02 }}
+                className="flex items-center gap-3"
+              >
                 <CandidateImage
                   clerkUserId={rc.clerkUserId}
                   publicPhoto={rc.photo}
@@ -601,7 +474,7 @@ export default function CandidateClient({
                     {rc.currentRole}
                   </span>
                 </div>
-              </div>
+              </motion.div>
               <FaUserPlus className="text-purple-600 h-4 w-4" />
             </Link>
           ))}

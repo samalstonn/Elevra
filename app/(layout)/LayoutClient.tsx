@@ -53,7 +53,7 @@ export default function LayoutClient({
             <header className="w-full flex items-center justify-between gap-4 px-6 py-6">
               <Link
                 href="/"
-                className="text-xl sm:text-3xl font-bold text-purple-900 shrink-0"
+                className="text-xl sm:text-3xl font-bold text-purple-800 shrink-0"
               >
                 Elevra
               </Link>
@@ -74,16 +74,6 @@ export default function LayoutClient({
 
               <div className="flex items-center gap-4 shrink-0">
                 <SignedIn>
-                  <Button
-                    asChild
-                    variant="purple"
-                    size="sm"
-                    className="md:text-base md:p-4"
-                  >
-                    <Link href="/live-elections">
-                      <span>Live Elections</span>
-                    </Link>
-                  </Button>
                   <Button asChild size="sm" className="md:text-base md:p-4">
                     <Link href={dashboardLink}>
                       <span className="hidden md:inline">My Dashboard</span>
@@ -94,16 +84,6 @@ export default function LayoutClient({
                 </SignedIn>
 
                 <SignedOut>
-                  <Button
-                    asChild
-                    variant="purple"
-                    size="sm"
-                    className="md:text-base md:p-4"
-                  >
-                    <Link href="/live-elections">
-                      <span>Live Elections</span>
-                    </Link>
-                  </Button>
                   <Button asChild size="sm" className="md:text-base md:p-4">
                     <Link href={dashboardLink}>
                       <span className="hidden md:inline">My Dashboard</span>

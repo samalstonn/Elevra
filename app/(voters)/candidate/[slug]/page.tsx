@@ -108,11 +108,13 @@ export default async function CandidatePage({
     currentUserId !== null && currentUserId === candidate.clerkUserId;
 
   return (
-    <CandidateClient
-      candidate={candidate}
-      electionLinks={linksWithFullCandidates}
-      suggestedCandidates={suggestedCandidates}
-      isEditable={isEditable}
-    />
+    <div className="px-40">
+      <CandidateClient
+        candidate={candidate}
+        electionLinks={linksWithFullCandidates}
+        suggestedCandidates={suggestedCandidates}
+        isEditable={isEditable}
+      />
+    </div>
   );
 }

@@ -29,7 +29,7 @@ function mdToHtml(markdown: string): string {
 
 export function ElectionProfileTab({ link }: ElectionProfileTabProps) {
   return (
-    <div className="pl-2 space-y-2">
+    <div className="space-y-4 mx-auto max-w-2xl px-4">
       {[...link.ContentBlock]
         .sort((a, b) => a.order - b.order)
         .map((block) => {
@@ -39,7 +39,7 @@ export function ElectionProfileTab({ link }: ElectionProfileTabProps) {
             case BlockType.HEADING:
               const headingClass =
                 block.level === 1
-                  ? `text-xl font-bold ${color}`
+                  ? `text-2xl font-bold ${color} text-center`
                   : `text-lg font-semibold ${color}`;
               return (
                 <h2 key={block.id} className={headingClass}>
@@ -85,7 +85,7 @@ export function ElectionProfileTab({ link }: ElectionProfileTabProps) {
                       alt={block.caption ?? ""}
                       width={600}
                       height={600}
-                      className="w-full max-w-2xl rounded"
+                      className="w-1/2 rounded"
                       priority={false}
                     />
                   )}
