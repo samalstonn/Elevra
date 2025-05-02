@@ -90,7 +90,7 @@ export default function ProfileSettingsPage() {
     return (
       <div className="space-y-6">
         <Skeleton className="h-8 w-1/3" />
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
           <div className="md:col-span-2 space-y-4">
             <Skeleton className="h-64 w-full" />
           </div>
@@ -249,7 +249,7 @@ export default function ProfileSettingsPage() {
       </h1>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {/* ContentBlocksEditor */}
-        <div className="md:col-span-2">
+        <div className="md:col-span-4">
           {activeElectionId != null && candidateData && (
             <ContentBlocksEditor
               candidateSlug={candidateData.slug}

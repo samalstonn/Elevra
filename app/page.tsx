@@ -95,7 +95,11 @@ function HomePageContent() {
           <SearchBar
             onSearch={(location: NormalizedLocation) => handleSearch(location)}
           />
-          <Button variant="purple" className="mt-4 float-left ml-20" asChild>
+          <Button
+            variant="purple"
+            className="mt-4 mx-auto sm:float-left sm:ml-20"
+            asChild
+          >
             <a href="/live-elections">Check Out What&apos;s Live</a>
           </Button>
         </motion.div>
