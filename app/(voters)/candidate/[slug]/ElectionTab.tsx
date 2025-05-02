@@ -78,14 +78,14 @@ export function ElectionProfileTab({ link }: ElectionProfileTabProps) {
 
             case BlockType.IMAGE:
               return (
-                <figure key={block.id}>
+                <figure key={block.id} className="flex flex-col items-center">
                   {block.imageUrl && (
                     <Image
                       src={block.imageUrl!}
                       alt={block.caption ?? ""}
-                      width={800}
-                      height={800}
-                      className="w-full rounded-lg shadow"
+                      width={600}
+                      height={600}
+                      className="w-1/2 rounded-lg shadow"
                       priority={false}
                     />
                   )}
@@ -99,13 +99,13 @@ export function ElectionProfileTab({ link }: ElectionProfileTabProps) {
 
             case BlockType.VIDEO:
               return (
-                <figure key={block.id}>
+                <figure key={block.id} className="flex flex-col items-center">
                   {block.videoUrl && (
                     <video
                       src={block.videoUrl}
                       controls
                       preload="metadata"
-                      className="w-full rounded-lg shadow"
+                      className="w-3/4 rounded-lg shadow"
                     />
                   )}
                   {block.caption && (

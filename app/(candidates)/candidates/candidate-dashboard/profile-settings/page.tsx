@@ -248,10 +248,11 @@ export default function ProfileSettingsPage() {
           : "Please Add an Election Above"}
       </h1>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {/* Profile Form */}
+        {/* ContentBlocksEditor */}
         <div className="md:col-span-2">
           {activeElectionId != null && candidateData && (
             <ContentBlocksEditor
+              candidateSlug={candidateData.slug}
               initialBlocks={activeLink?.ContentBlock ?? []}
               onSave={async (blocks) => {
                 try {

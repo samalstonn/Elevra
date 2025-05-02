@@ -19,14 +19,35 @@ import {
 import { CSS } from "@dnd-kit/utilities";
 import { Button } from "@/components/ui/button";
 
-async function uploadImage(file: File): Promise<string> {
-  const { uploadUrl, url } = await fetch("/api/blob/signed-url", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ type: "image", filename: file.name }),
-  }).then((r) => r.json());
-  await fetch(uploadUrl, { method: "PUT", body: file });
-  return url as string;
+function uploadMedia(
+  file: File,
+  slug: string,
+  onProgress?: (percent: number) => void
+): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("candidateSlug", slug);
+    const xhr = new XMLHttpRequest();
+    xhr.open("PUT", "/api/blob/signed-url");
+    xhr.upload.onprogress = (event) => {
+      if (event.lengthComputable && onProgress) {
+        const percent = Math.round((event.loaded / event.total) * 100);
+        onProgress(percent);
+      }
+    };
+    xhr.onload = () => {
+      if (xhr.status >= 200 && xhr.status < 300) {
+        const data = JSON.parse(xhr.responseText);
+        if (data.error) reject(data.error);
+        else resolve(data.url);
+      } else {
+        reject(`Upload failed with status ${xhr.status}`);
+      }
+    };
+    xhr.onerror = () => reject("Network error");
+    xhr.send(formData);
+  });
 }
 
 export type ContentBlockInput = Omit<
@@ -35,13 +56,18 @@ export type ContentBlockInput = Omit<
 >;
 
 type Props = {
+  candidateSlug: string;
   initialBlocks: ContentBlock[];
   onSave: (blocks: ContentBlockInput[]) => Promise<void>;
 };
 
 const DEFAULT_COLOR: TextColor = "BLACK";
 
-export default function ContentBlocksEditor({ initialBlocks, onSave }: Props) {
+export default function ContentBlocksEditor({
+  candidateSlug,
+  initialBlocks,
+  onSave,
+}: Props) {
   console.log("initialBlocks", initialBlocks);
   const [blocks, setBlocks] = useState<ContentBlockInput[]>(
     [...initialBlocks]
@@ -59,6 +85,15 @@ export default function ContentBlocksEditor({ initialBlocks, onSave }: Props) {
   );
 
   const [isSaving, setIsSaving] = useState(false);
+  const [uploadingMap, setUploadingMap] = useState<Record<number, boolean>>({});
+  const [uploadProgressMap, setUploadProgressMap] = useState<Record<number, number>>({});
+  const anyUploading = Object.values(uploadingMap).some(Boolean);
+  function setUploading(order: number, isUploading: boolean) {
+    setUploadingMap(prev => ({ ...prev, [order]: isUploading }));
+  }
+  function setProgress(order: number, percent: number) {
+    setUploadProgressMap(prev => ({ ...prev, [order]: percent }));
+  }
 
   const handleSave = async () => {
     setIsSaving(true);
@@ -135,12 +170,12 @@ export default function ContentBlocksEditor({ initialBlocks, onSave }: Props) {
         >
           + Divider
         </Button>
-        {/* <Button size="sm" variant="secondary" onClick={() => addBlock("IMAGE")}>
+        <Button size="sm" variant="secondary" onClick={() => addBlock("IMAGE")}>
           + Image
         </Button>
         <Button size="sm" variant="secondary" onClick={() => addBlock("VIDEO")}>
           + Video
-        </Button> */}
+        </Button>
       </div>
 
       {/* Drag list */}
@@ -157,15 +192,20 @@ export default function ContentBlocksEditor({ initialBlocks, onSave }: Props) {
             <SortableBlock
               key={block.order}
               block={block}
+              candidateSlug={candidateSlug}
               onChange={(patch) => updateBlock(block.order, patch)}
               onDelete={() => deleteBlock(block.order)}
+              uploading={uploadingMap[block.order] || false}
+              setUploading={setUploading}
+              progress={uploadProgressMap[block.order] ?? 0}
+              setProgress={setProgress}
             />
           ))}
         </SortableContext>
       </DndContext>
 
-      <Button onClick={handleSave} disabled={isSaving}>
-        {isSaving ? "Saving..." : "Save"}
+      <Button onClick={handleSave} disabled={isSaving || anyUploading}>
+        {isSaving ? "Saving..." : anyUploading ? "Uploading..." : "Save"}
       </Button>
     </div>
   );
@@ -176,10 +216,20 @@ function SortableBlock({
   block,
   onChange,
   onDelete,
+  candidateSlug,
+  uploading,
+  setUploading,
+  progress,
+  setProgress,
 }: {
   block: ContentBlockInput;
   onChange: (patch: Partial<ContentBlockInput>) => void;
   onDelete: () => void;
+  candidateSlug: string;
+  uploading: boolean;
+  setUploading: (order: number, isUploading: boolean) => void;
+  progress: number;
+  setProgress: (order: number, percent: number) => void;
 }) {
   const { attributes, listeners, setNodeRef, transform, transition } =
     useSortable({ id: block.order });
@@ -271,6 +321,10 @@ function SortableBlock({
       break;
 
     case "IMAGE":
+      if (uploading) {
+        inner = <progress value={progress} max={100} className="w-full" />;
+        break;
+      }
       inner = block.imageUrl ? (
         <img src={block.imageUrl} className="w-full rounded" />
       ) : (
@@ -280,15 +334,55 @@ function SortableBlock({
           onChange={async (e) => {
             const file = e.target.files?.[0];
             if (!file) return;
-            const url = await uploadImage(file);
-            onChange({ imageUrl: url });
+            setUploading(block.order, true);
+            setProgress(block.order, 0);
+            try {
+              const url = await uploadMedia(file, candidateSlug, (p) =>
+                setProgress(block.order, p)
+              );
+              onChange({ imageUrl: url });
+            } finally {
+              setUploading(block.order, false);
+              setProgress(block.order, 0);
+            }
           }}
         />
       );
       break;
 
     case "VIDEO":
-      inner = <p className="text-sm text-gray-500">[video placeholder]</p>;
+      if (uploading) {
+        inner = <progress value={progress} max={100} className="w-full" />;
+        break;
+      }
+      inner = block.videoUrl ? (
+        <video
+          src={block.videoUrl}
+          controls
+          preload="metadata"
+          className="w-full rounded-lg"
+        />
+      ) : (
+        <input
+          type="file"
+          accept="video/*"
+          onChange={async (e) => {
+            const file = e.target.files?.[0];
+            if (!file) return;
+            setUploading(block.order, true);
+            setProgress(block.order, 0);
+            try {
+              const url = await uploadMedia(file, candidateSlug, (p) =>
+                setProgress(block.order, p)
+              );
+              onChange({ videoUrl: url, thumbnailUrl: "" });
+            } finally {
+              setUploading(block.order, false);
+              setProgress(block.order, 0);
+            }
+          }}
+        />
+      );
       break;
 
     default:

@@ -1,38 +1,71 @@
-import { NextResponse } from "next/server";
-import { put } from "@vercel/blob"; // Vercel Blob SDK
+import { NextRequest, NextResponse } from "next/server";
+import { put } from "@vercel/blob";
 
-/**
- * POST  /api/blob/signed-url
- * Body: { type: "image" | "video", filename: string }
- * Returns: { uploadUrl: string; url: string }
- *
- * The frontend will do: fetch(uploadUrl, { method:"PUT", body:file })
- * then store `url` in the ContentBlock.
- */
-export async function POST(req: Request) {
-  const { type, filename } = await req.json();
-
-  if (!["image", "video"].includes(type) || typeof filename !== "string") {
-    return NextResponse.json({ error: "Invalid payload" }, { status: 400 });
+export async function PUT(req: NextRequest) {
+  // Expect a multipart/form-data with “file” field
+  const formData = await req.formData();
+  const candidateSlug = formData.get("candidateSlug");
+  if (typeof candidateSlug !== "string") {
+    return NextResponse.json(
+      { error: "Missing candidateSlug" },
+      { status: 400 }
+    );
+  }
+  const file = formData.get("file") as File | null;
+  if (!file || !(file instanceof Blob)) {
+    return NextResponse.json(
+      { error: "No file provided under the 'file' field" },
+      { status: 400 }
+    );
   }
 
-  // Determine allowed content‑type
-  const contentType =
-    type === "image" ? "image/webp" : "video/mp4"; // we'll transcode later
+  // Validate file type (image or video)
+  if (!file.type.startsWith("image/") && !file.type.startsWith("video/")) {
+    return NextResponse.json(
+      { error: "Only image or video files are allowed" },
+      { status: 400 }
+    );
+  }
 
-  // Key structure: blocks/<timestamp>-<filename>
-  const key = `blocks/${Date.now()}-${filename}`;
+  // Validate file size (5MB for images, 25MB for videos)
+  const maxSize = file.type.startsWith("image/")
+    ? 5 * 1024 * 1024
+    : 25 * 1024 * 1024;
+  if (file.size > maxSize) {
+    return NextResponse.json(
+      {
+        error: `File size exceeds the ${
+          file.type.startsWith("image/") ? "5MB" : "25MB"
+        } limit`,
+      },
+      { status: 400 }
+    );
+  }
 
-  // Generate the signed URL (put() with no body returns uploadUrl + url)
-  const blob = await put(key, {
-    access: "public",
-    contentType,
-    addRandomSuffix: false, // we want readable keys
-    generateUploadUrl: true,
-  });
+  // Key under blocks/ folder
+  const folder = file.type.startsWith("image/") ? "images" : "videos";
+  const key = `blocks/${candidateSlug}/${folder}/${Date.now()}_${file.name}`;
 
-  return NextResponse.json({
-    uploadUrl: blob.uploadUrl,
-    url: blob.url,
-  });
+  try {
+    const blob = await put(key, file, {
+      access: "public",
+      addRandomSuffix: false,
+      contentType: file.type,
+    });
+
+    return NextResponse.json(
+      {
+        url: blob.url,
+        downloadUrl: blob.downloadUrl,
+        key: blob.pathname,
+      },
+      { status: 200 }
+    );
+  } catch (err) {
+    console.error("Blob upload error:", err);
+    return NextResponse.json(
+      { error: "Failed to upload file" },
+      { status: 500 }
+    );
+  }
 }
