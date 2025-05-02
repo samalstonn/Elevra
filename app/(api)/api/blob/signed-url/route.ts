@@ -1,7 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { put } from "@vercel/blob";
+import { auth } from "@clerk/nextjs/server";
 
 export async function PUT(req: NextRequest) {
+  const { userId } = await auth();
+  if (!userId) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   // Expect a multipart/form-data with “file” field
   const formData = await req.formData();
   const candidateSlug = formData.get("candidateSlug");
