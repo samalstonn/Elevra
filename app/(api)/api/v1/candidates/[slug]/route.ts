@@ -31,25 +31,7 @@ export async function GET(
         hidden: false, // Only return non-hidden candidates
       },
       include: {
-        // Include related data as needed
-        office: {
-          select: {
-            id: true,
-            position: true,
-            description: true,
-            city: true,
-            state: true,
-            election: {
-              select: {
-                id: true,
-                name: true,
-                date: true,
-                type: true,
-              },
-            },
-          },
-        },
-        // Include donation counts or other aggregated data
+        // Include counts or other aggregated data
         _count: {
           select: {
             donations: true,

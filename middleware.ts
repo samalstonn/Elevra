@@ -68,7 +68,7 @@ export async function middleware(request: NextRequest) {
       });
 
       // If rate limit was applied and successful, add headers
-      if (result) {
+      if (result && result.success) {
         const response = NextResponse.next();
         response.headers.set("X-RateLimit-Limit", result.limit.toString());
         response.headers.set(
