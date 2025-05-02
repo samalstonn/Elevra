@@ -19,7 +19,7 @@ export default function MobileCandidateResultsSection({
   fallbackElections = [],
 }: MobileCandidateResultsSectionProps) {
   const [showDetails, setShowDetails] = useState(false);
-  const electionIsActive = new Date(election.date) > new Date();
+  const electionIsActive = new Date(election.date).setHours(0, 0, 0, 0) >= new Date().setHours(0, 0, 0, 0);
 
   // If no candidates are available
   if (!candidates || candidates.length === 0) {

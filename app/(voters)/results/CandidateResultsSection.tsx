@@ -30,7 +30,9 @@ export default function CandidateSection({
   election,
   fallbackElections = [],
 }: CandidateSectionProps) {
-  const electionIsActive = new Date(election.date) > new Date();
+  const electionIsActive =
+    new Date(election.date).setHours(0, 0, 0, 0) >=
+    new Date().setHours(0, 0, 0, 0);
   const [showDetails, setShowDetails] = useState(true);
 
   // If no election data is available
