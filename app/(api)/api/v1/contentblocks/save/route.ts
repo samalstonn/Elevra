@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import prisma from "@/prisma/prisma";
 import { BlockType, ContentBlock } from "@prisma/client";
+import { auth } from "@clerk/nextjs/server";
 
 const MAX_PER_TYPE: Record<BlockType, number> = {
   HEADING: 4,
@@ -13,6 +14,12 @@ const MAX_PER_TYPE: Record<BlockType, number> = {
 
 export async function POST(request: Request) {
   try {
+    // Get the current authenticated user
+    const { userId } = await auth();
+    if (!userId) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
     const { candidateId, electionId, blocks } = await request.json();
 
     if (
@@ -21,6 +28,15 @@ export async function POST(request: Request) {
       !Array.isArray(blocks)
     ) {
       return NextResponse.json({ error: "Invalid payload" }, { status: 400 });
+    }
+
+    // Verify that the user can edit this candidate's blocks
+    const candidate = await prisma.candidate.findUnique({
+      where: { id: candidateId, clerkUserId: userId },
+    });
+
+    if (!candidate) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
     }
 
     // Validate block counts per type

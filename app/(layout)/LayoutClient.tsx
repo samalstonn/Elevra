@@ -74,12 +74,6 @@ export default function LayoutClient({
 
               <div className="flex items-center gap-4 shrink-0">
                 <SignedIn>
-                  <Button asChild size="sm" className="md:text-base md:p-4">
-                    <Link href={dashboardLink}>
-                      <span className="hidden md:inline">My Dashboard</span>
-                      <span className="md:hidden">📊</span>
-                    </Link>
-                  </Button>
                   <Button
                     asChild
                     variant="purple"
@@ -87,20 +81,19 @@ export default function LayoutClient({
                     className="md:text-base md:p-4"
                   >
                     <Link href="/live-elections">
-                      <span className="hidden md:inline">Live Elections</span>
-                      <span className="md:hidden">🗳️</span>
+                      <span>Live Elections</span>
+                    </Link>
+                  </Button>
+                  <Button asChild size="sm" className="md:text-base md:p-4">
+                    <Link href={dashboardLink}>
+                      <span className="hidden md:inline">My Dashboard</span>
+                      <span className="md:hidden">📊</span>
                     </Link>
                   </Button>
                   <UserButton />
                 </SignedIn>
 
                 <SignedOut>
-                  <Button asChild size="sm" className="md:text-base md:p-4">
-                    <Link href={dashboardLink}>
-                      <span className="hidden md:inline">My Dashboard</span>
-                      <span className="md:hidden">📊</span>
-                    </Link>
-                  </Button>
                   <Button
                     asChild
                     variant="purple"
@@ -108,8 +101,13 @@ export default function LayoutClient({
                     className="md:text-base md:p-4"
                   >
                     <Link href="/live-elections">
-                      <span className="hidden md:inline">Live Elections</span>
-                      <span className="md:hidden">🗳️</span>
+                      <span>Live Elections</span>
+                    </Link>
+                  </Button>
+                  <Button asChild size="sm" className="md:text-base md:p-4">
+                    <Link href={dashboardLink}>
+                      <span className="hidden md:inline">My Dashboard</span>
+                      <span className="md:hidden">📊</span>
                     </Link>
                   </Button>
                   <SignInButton />

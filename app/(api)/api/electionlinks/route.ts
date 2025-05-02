@@ -1,6 +1,7 @@
 // app/(api)/api/electionlinks/route.ts
 import { NextResponse } from "next/server";
 import { PrismaClient, TextColor, BlockType, ListStyle } from "@prisma/client";
+import { pick } from "lodash";
 
 const prisma = new PrismaClient();
 
@@ -50,7 +51,10 @@ export async function POST(request: Request) {
       candidateId,
       electionId,
       ...defaults,
-      ...(profile || {}),
+      // only allow known fields from profile
+      ...(profile
+        ? pick(profile, ["party", "policies", "sources", "additionalNotes"])
+        : {}),
     };
 
     const newLinkWithBlocks = await prisma.$transaction(async (tx) => {

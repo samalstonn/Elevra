@@ -8,6 +8,7 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { MdHowToVote } from "react-icons/md";
 import { marked } from "marked";
+import DOMPurify from "dompurify";
 import Image from "next/image";
 
 export type ElectionProfileTabProps = {
@@ -21,99 +22,104 @@ const colorClass = {
 } as const;
 
 function mdToHtml(markdown: string): string {
-  // You can swap 'marked' for another parser if preferred.
   marked.setOptions({ async: false });
-  return marked.parse(markdown) as string;
+  const raw = marked.parse(markdown) as string;
+  return DOMPurify.sanitize(raw);
 }
 
 export function ElectionProfileTab({ link }: ElectionProfileTabProps) {
   return (
     <div className="pl-2 space-y-2">
-      {link.ContentBlock.sort((a, b) => a.order - b.order).map((block) => {
-        const color = block.color ? colorClass[block.color] : "";
+      {[...link.ContentBlock]
+        .sort((a, b) => a.order - b.order)
+        .map((block) => {
+          const color = block.color ? colorClass[block.color] : "";
 
-        switch (block.type) {
-          case BlockType.HEADING:
-            const headingClass =
-              block.level === 1
-                ? `text-xl font-bold ${color}`
-                : `text-lg font-semibold ${color}`;
-            return (
-              <h2 key={block.id} className={headingClass}>
-                {block.text}
-              </h2>
-            );
+          switch (block.type) {
+            case BlockType.HEADING:
+              const headingClass =
+                block.level === 1
+                  ? `text-xl font-bold ${color}`
+                  : `text-lg font-semibold ${color}`;
+              return (
+                <h2 key={block.id} className={headingClass}>
+                  {block.text}
+                </h2>
+              );
 
-          case BlockType.TEXT:
-            return (
-              <div
-                key={block.id}
-                className={`text-sm ${color}`}
-                dangerouslySetInnerHTML={{ __html: mdToHtml(block.body ?? "") }}
-              />
-            );
+            case BlockType.TEXT:
+              return (
+                <div
+                  key={block.id}
+                  className={`text-sm ${color}`}
+                  dangerouslySetInnerHTML={{
+                    __html: mdToHtml(block.body ?? ""),
+                  }}
+                />
+              );
 
-          case BlockType.LIST:
-            const ListTag = block.listStyle === ListStyle.NUMBER ? "ol" : "ul";
-            const listClass =
-              block.listStyle === ListStyle.NUMBER
-                ? `list-decimal text-sm ml-6 ${color}`
-                : `list-disc text-sm ml-6 ${color}`;
-            return (
-              <ListTag key={block.id} className={listClass}>
-                {block.items.map((item, idx) => (
-                  <li key={idx}>{item}</li>
-                ))}
-              </ListTag>
-            );
+            case BlockType.LIST:
+              const ListTag =
+                block.listStyle === ListStyle.NUMBER ? "ol" : "ul";
+              const listClass =
+                block.listStyle === ListStyle.NUMBER
+                  ? `list-decimal text-sm ml-6 ${color}`
+                  : `list-disc text-sm ml-6 ${color}`;
+              return (
+                <ListTag key={block.id} className={listClass}>
+                  {block.items.map((item, idx) => (
+                    <li key={idx}>{item}</li>
+                  ))}
+                </ListTag>
+              );
 
-          case BlockType.DIVIDER:
-            return <hr key={block.id} className="border-gray-200" />;
+            case BlockType.DIVIDER:
+              return <hr key={block.id} className="border-gray-200" />;
 
-          case BlockType.IMAGE:
-            return (
-              <figure key={block.id}>
-                {block.imageUrl && (
-                  <Image
-                    src={block.imageUrl!}
-                    alt={block.caption ?? ""}
-                    width={800}
-                    height={800}
-                    className="w-full rounded-lg shadow"
-                    priority={false}
-                  />
-                )}
-                {block.caption && (
-                  <figcaption className={`text-sm mt-1 ${color}`}>
-                    {block.caption}
-                  </figcaption>
-                )}
-              </figure>
-            );
+            case BlockType.IMAGE:
+              return (
+                <figure key={block.id}>
+                  {block.imageUrl && (
+                    <Image
+                      src={block.imageUrl!}
+                      alt={block.caption ?? ""}
+                      width={800}
+                      height={800}
+                      className="w-full rounded-lg shadow"
+                      priority={false}
+                    />
+                  )}
+                  {block.caption && (
+                    <figcaption className={`text-sm mt-1 ${color}`}>
+                      {block.caption}
+                    </figcaption>
+                  )}
+                </figure>
+              );
 
-          case BlockType.VIDEO:
-            return (
-              <figure key={block.id}>
-                {block.videoUrl && (
-                  <video
-                    src={block.videoUrl}
-                    controls
-                    preload="metadata"
-                    className="w-full rounded-lg shadow"
-                  />
-                )}
-                {block.caption && (
-                  <figcaption className={`text-sm mt-1 ${color}`}>
-                    {block.caption}
-                  </figcaption>
-                )}
-              </figure>
-            );
+            case BlockType.VIDEO:
+              return (
+                <figure key={block.id}>
+                  {block.videoUrl && (
+                    <video
+                      src={block.videoUrl}
+                      controls
+                      preload="metadata"
+                      className="w-full rounded-lg shadow"
+                    />
+                  )}
+                  {block.caption && (
+                    <figcaption className={`text-sm mt-1 ${color}`}>
+                      {block.caption}
+                    </figcaption>
+                  )}
+                </figure>
+              );
 
-          default:
-            return null;
-        }
-      })}
+            default:
+              return null;
+          }
+        })}
 
       {/* Vote button */}
       {link.votinglink && (

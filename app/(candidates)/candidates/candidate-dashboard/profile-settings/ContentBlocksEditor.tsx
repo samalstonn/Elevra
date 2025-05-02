@@ -19,6 +19,16 @@ import {
 import { CSS } from "@dnd-kit/utilities";
 import { Button } from "@/components/ui/button";
 
+async function uploadImage(file: File): Promise<string> {
+  const { uploadUrl, url } = await fetch("/api/blob/signed-url", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ type: "image", filename: file.name }),
+  }).then((r) => r.json());
+  await fetch(uploadUrl, { method: "PUT", body: file });
+  return url as string;
+}
+
 export type ContentBlockInput = Omit<
   ContentBlock,
   "id" | "candidateId" | "electionId" | "createdAt" | "updatedAt"
@@ -125,12 +135,12 @@ export default function ContentBlocksEditor({ initialBlocks, onSave }: Props) {
         >
           + Divider
         </Button>
-        <Button size="sm" variant="secondary" onClick={() => addBlock("IMAGE")}>
+        {/* <Button size="sm" variant="secondary" onClick={() => addBlock("IMAGE")}>
           + Image
         </Button>
         <Button size="sm" variant="secondary" onClick={() => addBlock("VIDEO")}>
           + Video
-        </Button>
+        </Button> */}
       </div>
 
       {/* Drag list */}
@@ -261,7 +271,20 @@ function SortableBlock({
       break;
 
     case "IMAGE":
-      inner = <p className="text-sm text-gray-500">[image placeholder]</p>;
+      inner = block.imageUrl ? (
+        <img src={block.imageUrl} className="w-full rounded" />
+      ) : (
+        <input
+          type="file"
+          accept="image/*"
+          onChange={async (e) => {
+            const file = e.target.files?.[0];
+            if (!file) return;
+            const url = await uploadImage(file);
+            onChange({ imageUrl: url });
+          }}
+        />
+      );
       break;
 
     case "VIDEO":
