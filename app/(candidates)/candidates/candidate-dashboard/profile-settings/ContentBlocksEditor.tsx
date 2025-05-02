@@ -18,6 +18,7 @@ import {
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { Button } from "@/components/ui/button";
+import Image from "next/image";
 
 function uploadMedia(
   file: File,
@@ -86,13 +87,15 @@ export default function ContentBlocksEditor({
 
   const [isSaving, setIsSaving] = useState(false);
   const [uploadingMap, setUploadingMap] = useState<Record<number, boolean>>({});
-  const [uploadProgressMap, setUploadProgressMap] = useState<Record<number, number>>({});
+  const [uploadProgressMap, setUploadProgressMap] = useState<
+    Record<number, number>
+  >({});
   const anyUploading = Object.values(uploadingMap).some(Boolean);
   function setUploading(order: number, isUploading: boolean) {
-    setUploadingMap(prev => ({ ...prev, [order]: isUploading }));
+    setUploadingMap((prev) => ({ ...prev, [order]: isUploading }));
   }
   function setProgress(order: number, percent: number) {
-    setUploadProgressMap(prev => ({ ...prev, [order]: percent }));
+    setUploadProgressMap((prev) => ({ ...prev, [order]: percent }));
   }
 
   const handleSave = async () => {
@@ -326,7 +329,14 @@ function SortableBlock({
         break;
       }
       inner = block.imageUrl ? (
-        <img src={block.imageUrl} className="w-full rounded" />
+        <Image
+          src={block.imageUrl}
+          alt={block.caption ?? ""}
+          className="w-1/2"
+          width={600}
+          height={600}
+          priority={false}
+        />
       ) : (
         <input
           type="file"

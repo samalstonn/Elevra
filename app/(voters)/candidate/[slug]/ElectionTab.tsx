@@ -85,7 +85,7 @@ export function ElectionProfileTab({ link }: ElectionProfileTabProps) {
                       alt={block.caption ?? ""}
                       width={600}
                       height={600}
-                      className="w-1/2 rounded-lg shadow"
+                      className="w-1/2"
                       priority={false}
                     />
                   )}
