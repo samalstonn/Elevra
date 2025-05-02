@@ -85,7 +85,7 @@ export function ElectionProfileTab({ link }: ElectionProfileTabProps) {
                       alt={block.caption ?? ""}
                       width={600}
                       height={600}
-                      className="w-1/2"
+                      className="w-full max-w-2xl rounded"
                       priority={false}
                     />
                   )}
@@ -105,7 +105,7 @@ export function ElectionProfileTab({ link }: ElectionProfileTabProps) {
                       src={block.videoUrl}
                       controls
                       preload="metadata"
-                      className="w-3/4 rounded-lg shadow"
+                      className="w-full max-w-2xl rounded"
                     />
                   )}
                   {block.caption && (

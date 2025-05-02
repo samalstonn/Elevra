@@ -332,7 +332,7 @@ function SortableBlock({
         <Image
           src={block.imageUrl}
           alt={block.caption ?? ""}
-          className="w-1/2"
+          className="w-1/2 rounded"
           width={600}
           height={600}
           priority={false}
@@ -370,7 +370,7 @@ function SortableBlock({
           src={block.videoUrl}
           controls
           preload="metadata"
-          className="w-full rounded-lg"
+          className="w-1/2 rounded"
         />
       ) : (
         <input
