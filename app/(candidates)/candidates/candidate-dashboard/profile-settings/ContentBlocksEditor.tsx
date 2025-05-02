@@ -351,6 +351,14 @@ function SortableBlock({
                 setProgress(block.order, p)
               );
               onChange({ imageUrl: url });
+            } catch (error) {
+              console.error("Upload failed:", error);
+              // Show error to user
+              alert(
+                `Upload failed: ${
+                  error instanceof Error ? error.message : String(error)
+                }`
+              );
             } finally {
               setUploading(block.order, false);
               setProgress(block.order, 0);
