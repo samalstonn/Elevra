@@ -1,6 +1,7 @@
 "use client";
 
 import { ContentBlock, BlockType, ListStyle, TextColor } from "@prisma/client";
+import type { DragEndEvent } from "@dnd-kit/core";
 import { useState } from "react";
 import {
   DndContext,
@@ -36,7 +37,14 @@ export default function ContentBlocksEditor({ initialBlocks, onSave }: Props) {
     [...initialBlocks]
       .sort((a, b) => a.order - b.order)
       .map(
-        ({ id, candidateId, electionId, createdAt, updatedAt, ...rest }) => rest
+        ({
+          id: _id,
+          candidateId: _candidateId,
+          electionId: _electionId,
+          createdAt: _createdAt,
+          updatedAt: _updatedAt,
+          ...rest
+        }) => rest
       )
   );
 
@@ -58,11 +66,11 @@ export default function ContentBlocksEditor({ initialBlocks, onSave }: Props) {
     })
   );
 
-  const handleDragEnd = (event: any) => {
+  const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
-    if (active.id !== over.id) {
+    if (active.id !== over?.id) {
       const oldIndex = blocks.findIndex((b) => b.order === active.id);
-      const newIndex = blocks.findIndex((b) => b.order === over.id);
+      const newIndex = blocks.findIndex((b) => b.order === over?.id);
       const reordered = arrayMove(blocks, oldIndex, newIndex).map((b, idx) => ({
         ...b,
         order: idx,
@@ -188,7 +196,7 @@ function SortableBlock({
           <input
             className="w-full text-xl font-semibold outline-none"
             placeholder="Heading…"
-            value={(block as any).text ?? ""}
+            value={block.text ?? ""}
             onChange={(e) => onChange({ text: e.target.value })}
           />
         </>
@@ -201,7 +209,7 @@ function SortableBlock({
           className="w-full border-none outline-none resize-none"
           placeholder="Write text…"
           rows={3}
-          value={(block as any).body ?? ""}
+          value={block.body ?? ""}
           onChange={(e) => onChange({ body: e.target.value })}
         />
       );

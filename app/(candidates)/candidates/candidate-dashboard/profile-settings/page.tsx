@@ -285,6 +285,7 @@ export default function ProfileSettingsPage() {
                     title: "Network error",
                     description: "Unable to save content blocks.",
                   });
+                  console.error("Error saving content blocks:", err);
                 }
               }}
             />

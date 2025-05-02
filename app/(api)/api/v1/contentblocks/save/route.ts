@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import prisma from "@/prisma/prisma";
-import { BlockType } from "@prisma/client";
+import { BlockType, ContentBlock } from "@prisma/client";
 
 const MAX_PER_TYPE: Record<BlockType, number> = {
   HEADING: 4,
@@ -58,7 +58,7 @@ export async function POST(request: Request) {
         where: { candidateId, electionId },
       }),
       prisma.contentBlock.createMany({
-        data: blocks.map((b: any) => ({
+        data: blocks.map((b: ContentBlock) => ({
           candidateId,
           electionId,
           order: b.order,

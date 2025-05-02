@@ -1,5 +1,4 @@
 import {
-  Election,
   ElectionLink,
   ContentBlock,
   BlockType,
@@ -9,6 +8,7 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { MdHowToVote } from "react-icons/md";
 import { marked } from "marked";
+import Image from "next/image";
 
 export type ElectionProfileTabProps = {
   link: ElectionLink & { ContentBlock: ContentBlock[] };
@@ -74,10 +74,13 @@ export function ElectionProfileTab({ link }: ElectionProfileTabProps) {
             return (
               <figure key={block.id}>
                 {block.imageUrl && (
-                  <img
-                    src={block.imageUrl}
+                  <Image
+                    src={block.imageUrl!}
                     alt={block.caption ?? ""}
+                    width={800}
+                    height={800}
                     className="w-full rounded-lg shadow"
+                    priority={false}
                   />
                 )}
                 {block.caption && (
