@@ -2,6 +2,7 @@ import prisma from "@/prisma/prisma";
 import { Suspense } from "react";
 import ElectionResultsClient from "./ElectionResultsClient";
 import { Candidate } from "@prisma/client";
+import { isElectionActive } from "@/lib/functions";
 
 interface ElectionResultsPageProps {
   searchParams: Promise<{
@@ -36,12 +37,16 @@ async function ElectionResultsPage({ searchParams }: ElectionResultsPageProps) {
     },
   });
 
+  const activeElections = elections.filter((election) =>
+    isElectionActive(new Date(election.date))
+  );
+
   interface ElectionCandidate {
     candidate: Candidate; // Relaxing the type to any
   }
 
   // Reshape the candidates array for each election to be a flat array of Candidate objects
-  const reshapedElections = elections.map((election) => ({
+  const reshapedElections = activeElections.map((election) => ({
     ...election,
     candidates: election.candidates.map(
       (ec: ElectionCandidate) => ec.candidate

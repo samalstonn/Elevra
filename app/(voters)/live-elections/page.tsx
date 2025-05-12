@@ -21,7 +21,12 @@ export default function LiveElectionsPage() {
       try {
         const res = await fetch("/api/elections?city=all&state=all");
         if (!res.ok) throw new Error("Failed to fetch elections");
-        const data = await res.json();
+        let data = await res.json();
+
+        // Filter out non-active elections
+        data = data.filter((election: { date: string | number | Date }) =>
+          isElectionActive(new Date(election.date))
+        );
 
         // Group elections by city and state
         const locationMap = new Map();
@@ -48,6 +53,8 @@ export default function LiveElectionsPage() {
         const futureElections = grouped.filter((election) => {
           return isElectionActive(new Date(election.date));
         });
+
+        console.log("Future elections:", futureElections);
 
         const sorted = futureElections.sort((a, b) => {
           const placeA = `${a.city || ""}, ${a.state}`.toLowerCase();
