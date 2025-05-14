@@ -262,7 +262,7 @@ export default function ContentBlocksEditor({
             <li>Reorder blocks easily! Just click and drag them into place.</li>
             <li>
               Once you&apos;re happy with your profile, click
-              <strong>Save </strong>to publish your changes.
+              <strong>Save </strong> to publish your changes.
             </li>
           </ul>
         </div>
