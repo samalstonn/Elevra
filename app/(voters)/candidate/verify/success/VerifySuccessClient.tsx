@@ -24,11 +24,8 @@ export default function VerifySuccessClient() {
             ✏️ <strong>Edit your candidate profile</strong> to ensure it&apos;s
             up-to-date and compelling.
             <br />
-            <strong>Add a voting link</strong> to enable a prominent{" "}
-            <strong>Vote</strong> button on your public page.
-            <br />
-            💬 <strong>Get a verified badge</strong> beside your name - verified
-            candidates show up higher in search.
+            💬 <strong>You have a verified badge</strong> beside your name -
+            verified candidates show up higher in search.
             <br />
             📩 <strong>Share your profile</strong> with voters to drive more
             engagement and visibility.

@@ -40,24 +40,21 @@ export default async function VerifyPage({
   const clerkUser = await clerkClient.users.getUser(userId);
   const userEmail = clerkUser.emailAddresses?.[0]?.emailAddress;
   if (userEmail === candidateRec.email) {
-    if (candidateRec.status === "PENDING") {
-      // Auto-approve via API
-      const res = await fetch(
-        `${process.env.NEXT_PUBLIC_APP_URL}/api/userValidationRequest/auto-approve`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ slug: candidate, clerkUserId: userId }),
-        }
-      );
-      if (res.ok) {
-        redirect(
-          `/candidate/verify/success?candidate=${candidate}&candidateID=${candidateID}`
-        );
-      } else {
-        redirect("/candidate/verify/error");
+    // Auto-approve via API
+    const res = await fetch(
+      `${process.env.NEXT_PUBLIC_APP_URL}/api/userValidationRequest/auto-approve`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ slug: candidate, clerkUserId: userId }),
       }
+    );
+    if (res.ok) {
+      redirect(
+        `/candidate/verify/success?candidate=${candidate}&candidateID=${candidateID}`
+      );
     } else {
+      console.error("Error auto-approving candidate:", res.statusText);
       redirect("/candidate/verify/error");
     }
   }
