@@ -27,7 +27,7 @@ export default function LayoutClient({
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
-  let dashboardLink = "/dashboard";
+  let dashboardLink = "/candidates/candidate-dashboard";
   if (pathname.startsWith("/candidates")) {
     dashboardLink = "/candidates/candidate-dashboard";
   } else if (pathname.startsWith("/vendors")) {
