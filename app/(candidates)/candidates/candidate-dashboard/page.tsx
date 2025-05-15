@@ -36,6 +36,10 @@ export default function OverviewPage() {
     fetch(`/api/candidate?clerkUserId=${userId}`)
       .then((res) => {
         if (!res.ok) {
+          if (res.status === 404) {
+            window.location.href = `${process.env.NEXT_PUBLIC_APP_URL}/candidates?tab=signup`;
+            return;
+          }
           throw new Error("Failed to fetch candidate data");
         }
         return res.json();
