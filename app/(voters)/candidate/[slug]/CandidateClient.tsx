@@ -339,6 +339,7 @@ export default function CandidateClient({
               website={candidate.website}
               phone={candidate.phone}
               linkedin={candidate.linkedin}
+              verified={verified}
             />
           </div>
         )}

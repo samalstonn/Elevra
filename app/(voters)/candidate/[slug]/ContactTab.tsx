@@ -8,6 +8,7 @@ interface ContactTabProps {
   website?: string | null;
   phone?: string | null;
   linkedin?: string | null;
+  verified?: boolean;
 }
 
 export function ContactTab({
@@ -15,6 +16,7 @@ export function ContactTab({
   website,
   phone,
   linkedin,
+  verified,
 }: ContactTabProps) {
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -78,7 +80,7 @@ export function ContactTab({
           </div>
         </div>
       )}
-      {!email && !website && !phone && !linkedin && (
+      {(!verified || (!email && !website && !phone && !linkedin)) && (
         <div className="md:col-span-2 text-center text-sm text-gray-500">
           No contact information available.
         </div>
