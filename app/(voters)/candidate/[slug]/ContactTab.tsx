@@ -20,7 +20,7 @@ export function ContactTab({
 }: ContactTabProps) {
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-      {email && (
+      {verified && email && (
         <div className="flex items-center space-x-3 p-4">
           <FaEnvelope className="text-gray-500" />
           <div className="flex-1">
@@ -80,7 +80,7 @@ export function ContactTab({
           </div>
         </div>
       )}
-      {(!verified || (!email && !website && !phone && !linkedin)) && (
+      {!email && !website && !phone && !linkedin && (
         <div className="md:col-span-2 text-center text-sm text-gray-500">
           No contact information available.
         </div>
