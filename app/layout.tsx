@@ -1,4 +1,5 @@
 import LayoutClient from "./(layout)/LayoutClient";
+import { validateConfig } from "@/lib/config";
 
 export const metadata = {
   title: "Elevra",
@@ -7,6 +8,8 @@ export const metadata = {
     icon: "/favicon.ico",
   },
 };
+
+validateConfig();
 
 export default function RootLayout({
   children,
