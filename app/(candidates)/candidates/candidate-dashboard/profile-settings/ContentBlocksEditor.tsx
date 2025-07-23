@@ -1,8 +1,8 @@
 "use client";
 
 import { ContentBlock, BlockType, ListStyle, TextColor } from "@prisma/client";
+import { useState, useEffect, useRef } from "react";
 import type { DragEndEvent } from "@dnd-kit/core";
-import { useState } from "react";
 import {
   DndContext,
   closestCenter,
@@ -21,6 +21,12 @@ import { Button } from "@/components/ui/button";
 import Image from "next/image";
 import Link from "next/link";
 import { Eye } from "lucide-react";
+
+const colorClass = {
+  BLACK: "text-black",
+  GRAY: "text-gray-700",
+  PURPLE: "text-purple-700",
+} as const;
 
 function uploadMedia(
   file: File,
@@ -87,6 +93,19 @@ export default function ContentBlocksEditor({
       )
   );
 
+  /** ------------- Toolbar state ------------- */
+  const [selectedColor, setSelectedColor] = useState<TextColor>(DEFAULT_COLOR);
+  /** Keeps track of the block currently being edited */
+  const [selectedOrder, setSelectedOrder] = useState<number | null>(null);
+
+  useEffect(() => {
+    if (blocks.length === 0) {
+      setBlocks([
+        { type: "TEXT", order: 0, color: DEFAULT_COLOR } as ContentBlockInput,
+      ]);
+    }
+  }, []); // run once
+
   const [isSaving, setIsSaving] = useState(false);
   const [uploadingMap, setUploadingMap] = useState<Record<number, boolean>>({});
   const [uploadProgressMap, setUploadProgressMap] = useState<
@@ -109,32 +128,91 @@ export default function ContentBlocksEditor({
     }
   };
 
-  /* ----------------- Drag-and-drop sensors ----------------- */
-  const sensors = useSensors(
-    useSensor(PointerSensor, {
-      activationConstraint: { delay: 100, tolerance: 10 },
-    })
-  );
-
-  const handleDragEnd = (event: DragEndEvent) => {
-    const { active, over } = event;
-    if (active.id !== over?.id) {
-      const oldIndex = blocks.findIndex((b) => b.order === active.id);
-      const newIndex = blocks.findIndex((b) => b.order === over?.id);
-      const reordered = arrayMove(blocks, oldIndex, newIndex).map((b, idx) => ({
-        ...b,
-        order: idx,
-      }));
-      setBlocks(reordered);
-    }
-  };
-
   /* ----------------- Helpers ----------------- */
-  const addBlock = (type: BlockType) => {
+  const addBlock = (
+    type: BlockType,
+    extra: Partial<ContentBlockInput> = {}
+  ) => {
     setBlocks((prev) => [
       ...prev,
-      { type, order: prev.length, color: DEFAULT_COLOR } as ContentBlockInput,
+      {
+        type,
+        order: prev.length,
+        color: selectedColor,
+        ...extra,
+      } as ContentBlockInput,
     ]);
+  };
+
+  /** Convert the currently‑selected block, or create a new one if none selected.
+   *  When converting we attempt to carry the user’s existing content forward in a sensible way.
+   *  – TEXT ➜ LIST: split existing body on new‑lines into list items
+   *  – LIST ➜ TEXT: join items back into a multi‑line body
+   *  – TEXT/LIST ➜ HEADING: collapse text into a single line
+   */
+  const convertBlock = (
+    type: BlockType,
+    extra: Partial<ContentBlockInput> = {}
+  ) => {
+    if (selectedOrder === null) {
+      // nothing highlighted → just insert a new block
+      addBlock(type, extra);
+      return;
+    }
+
+    setBlocks((prev) =>
+      prev.map((b) => {
+        if (b.order !== selectedOrder) return b;
+
+        const incoming: ContentBlockInput = { ...b, type, ...extra };
+
+        /* ---------- TEXT → LIST ---------- */
+        if (type === "LIST") {
+          let seed = "";
+          if (b.type === "TEXT") seed = b.body ?? "";
+          else if (b.type === "HEADING") seed = b.text ?? "";
+          else if (b.type === "LIST") seed = (b.items ?? []).join("\n");
+
+          const items = seed
+            .split(/\n+/)
+            .map((s) => s.trim())
+            .filter(Boolean);
+
+          incoming.items = items;
+          incoming.listStyle =
+            extra.listStyle ??
+            (b.type === "LIST" ? b.listStyle : ListStyle.BULLET);
+          delete (incoming as any).body;
+          delete (incoming as any).text;
+        }
+
+        /* ---------- LIST → TEXT ---------- */
+        if (type === "TEXT") {
+          if (b.type === "LIST") {
+            incoming.body = (b.items ?? []).join("\n");
+            delete (incoming as any).items;
+            delete (incoming as any).listStyle;
+          } else if (b.type === "HEADING") {
+            incoming.body = b.text ?? "";
+            delete (incoming as any).text;
+          }
+        }
+
+        /* ---------- → HEADING ---------- */
+        if (type === "HEADING") {
+          if (b.type === "TEXT") {
+            incoming.text = (b.body ?? "").split(/\n/)[0];
+            delete (incoming as any).body;
+          } else if (b.type === "LIST") {
+            incoming.text = (b.items ?? []).join(" ");
+            delete (incoming as any).items;
+            delete (incoming as any).listStyle;
+          }
+        }
+
+        return incoming;
+      })
+    );
   };
 
   const updateBlock = (order: number, patch: Partial<ContentBlockInput>) => {
@@ -152,121 +230,109 @@ export default function ContentBlocksEditor({
 
   /* ----------------- Render ----------------- */
   return (
-    <div className="flex w-full gap-6 items-start">
-      {/* Main editor area */}
-      <div className="flex-grow min-w-0 space-y-4">
-        {/* Drag list */}
-        <DndContext
-          sensors={sensors}
-          collisionDetection={closestCenter}
-          onDragEnd={handleDragEnd}
+    <div className="w-full space-y-4">
+      {/* ---------- Top Toolbar ---------- */}
+      <div className="sticky top-2 z-10 mb-4 bg-gray-100 border rounded-full p-2 flex flex-wrap items-center gap-2">
+        {/* Plain‑text dropdown */}
+        <select
+          defaultValue=""
+          className="border rounded-xl px-2 py-1 text-sm"
+          onChange={(e) => {
+            const v = e.target.value;
+            if (v === "H1") convertBlock("HEADING", { level: 1 });
+            else if (v === "H2") convertBlock("HEADING", { level: 2 });
+            else if (v === "TEXT") convertBlock("TEXT");
+            e.target.value = "";
+          }}
         >
-          <SortableContext
-            items={blocks.map((b) => b.order)}
-            strategy={verticalListSortingStrategy}
-          >
-            {blocks.map((block) => (
-              <SortableBlock
-                key={block.order}
-                block={block}
-                candidateSlug={candidateSlug}
-                onChange={(patch) => updateBlock(block.order, patch)}
-                onDelete={() => deleteBlock(block.order)}
-                uploading={uploadingMap[block.order] || false}
-                setUploading={setUploading}
-                progress={uploadProgressMap[block.order] ?? 0}
-                setProgress={setProgress}
-              />
-            ))}
-          </SortableContext>
-        </DndContext>
-        <div className="flex flex-row items-center gap-2">
-          <Button onClick={handleSave} disabled={isSaving || anyUploading}>
-            {isSaving ? "Saving..." : anyUploading ? "Uploading..." : "Save"}
-          </Button>
-          <Button variant="purple" asChild>
-            <Link href={`/candidate/${candidateSlug}`}>
-              <Eye className="mr-2 h-4 w-4" /> View Public Profile
-            </Link>
-          </Button>
-        </div>
+          <option value="" disabled>
+            Normal Text
+          </option>
+          <option value="H1">Heading 1</option>
+          <option value="H2">Heading 2</option>
+          <option value="TEXT">Normal</option>
+        </select>
+
+        {/* List dropdown */}
+        <select
+          defaultValue=""
+          className="border rounded-xl px-2 py-1 text-sm"
+          onChange={(e) => {
+            const v = e.target.value;
+            if (v === "BULLET")
+              convertBlock("LIST", { listStyle: ListStyle.BULLET });
+            else if (v === "NUMBER")
+              convertBlock("LIST", { listStyle: ListStyle.NUMBER });
+            e.target.value = "";
+          }}
+        >
+          <option value="" disabled>
+            List
+          </option>
+          <option value="BULLET">Bulleted list</option>
+          <option value="NUMBER">Numbered list</option>
+        </select>
+
+        {/* Color picker */}
+        <select
+          value={selectedColor}
+          onChange={(e) => {
+            const c = e.target.value as TextColor;
+            setSelectedColor(c);
+            if (selectedOrder !== null)
+              updateBlock(selectedOrder, { color: c });
+          }}
+          className="border rounded-xl px-2 py-1 text-sm"
+        >
+          <option value="PURPLE">Purple</option>
+          <option value="GRAY">Grey</option>
+          <option value="BLACK">Black</option>
+        </select>
+
+        {/* Media & divider buttons */}
+        <Button size="sm" variant="secondary" onClick={() => addBlock("IMAGE")}>
+          Image
+        </Button>
+        <Button size="sm" variant="secondary" onClick={() => addBlock("VIDEO")}>
+          Video
+        </Button>
+        <Button
+          size="sm"
+          variant="secondary"
+          onClick={() => addBlock("DIVIDER")}
+        >
+          Divider
+        </Button>
       </div>
-
-      {/* Toolbar card */}
-      <aside className="w-60 flex-shrink-0 ml-auto sticky top-2 self-start border rounded-lg p-4 bg-white shadow-sm">
-        <div className="flex flex-col gap-2">
-          <Button
-            size="sm"
-            variant="secondary"
-            onClick={() => addBlock("HEADING")}
-          >
-            + Heading
-          </Button>
-          <Button
-            size="sm"
-            variant="secondary"
-            onClick={() => addBlock("TEXT")}
-          >
-            + Text
-          </Button>
-          <Button
-            size="sm"
-            variant="secondary"
-            onClick={() => addBlock("LIST")}
-          >
-            + Bullet List
-          </Button>
-          <Button
-            size="sm"
-            variant="secondary"
-            onClick={() => addBlock("DIVIDER")}
-          >
-            + Divider
-          </Button>
-          <Button
-            size="sm"
-            variant="secondary"
-            onClick={() => addBlock("IMAGE")}
-          >
-            + Image
-          </Button>
-          <Button
-            size="sm"
-            variant="secondary"
-            onClick={() => addBlock("VIDEO")}
-          >
-            + Video
-          </Button>
-        </div>
-
-        {/* Helper Tips card */}
-        <div className="mt-6 space-y-2 text-sm">
-          <h4 className="text-xs font-semibold uppercase tracking-wide text-purple-700">
-            Tips
-          </h4>
-          <ul className="list-disc ml-4 space-y-1 text-gray-700">
-            <li>
-              Start with a strong <strong>Heading</strong> to introduce your
-              message.
-            </li>
-            <li>
-              Use <strong>Text</strong> blocks to share your experience, values,
-              or vision.
-            </li>
-            <li>
-              Add <strong>Images</strong> (max 2) to engage viewers.
-            </li>
-            <li>
-              Include a <strong>Video</strong> clip to speak directly to voters.
-            </li>
-            <li>Reorder blocks easily! Just click and drag them into place.</li>
-            <li>
-              Once you&apos;re happy with your profile, click
-              <strong>Save </strong> to publish your changes.
-            </li>
-          </ul>
-        </div>
-      </aside>
+      <SortableContext
+        items={blocks.map((b) => b.order)}
+        strategy={verticalListSortingStrategy}
+      >
+        {blocks.map((block) => (
+          <SortableBlock
+            key={block.order}
+            block={block}
+            candidateSlug={candidateSlug}
+            onChange={(patch) => updateBlock(block.order, patch)}
+            onDelete={() => deleteBlock(block.order)}
+            uploading={uploadingMap[block.order] || false}
+            setUploading={setUploading}
+            progress={uploadProgressMap[block.order] ?? 0}
+            setProgress={setProgress}
+            setSelectedOrder={setSelectedOrder}
+          />
+        ))}
+      </SortableContext>
+      <div className="flex flex-row items-center gap-2">
+        <Button onClick={handleSave} disabled={isSaving || anyUploading}>
+          {isSaving ? "Saving..." : anyUploading ? "Uploading..." : "Save"}
+        </Button>
+        <Button variant="purple" asChild>
+          <Link href={`/candidate/${candidateSlug}`}>
+            <Eye className="mr-2 h-4 w-4" /> View Public Profile
+          </Link>
+        </Button>
+      </div>
     </div>
   );
 }
@@ -281,6 +347,7 @@ function SortableBlock({
   setUploading,
   progress,
   setProgress,
+  setSelectedOrder,
 }: {
   block: ContentBlockInput;
   onChange: (patch: Partial<ContentBlockInput>) => void;
@@ -290,6 +357,7 @@ function SortableBlock({
   setUploading: (order: number, isUploading: boolean) => void;
   progress: number;
   setProgress: (order: number, percent: number) => void;
+  setSelectedOrder: (order: number) => void;
 }) {
   const { attributes, listeners, setNodeRef, transform, transition } =
     useSortable({ id: block.order });
@@ -299,83 +367,79 @@ function SortableBlock({
     transition,
   };
 
+  const color = block.color ? colorClass[block.color] : "";
+
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+
   /* ----- Render each block type inline-editable ----- */
   let inner: React.ReactNode;
   switch (block.type) {
     case "HEADING":
+      const headingClass =
+        block.level === 1
+          ? `text-4xl font-bold ${color} px-2 py-1`
+          : `text-2xl font-semibold ${color} px-2 py-1`;
       inner = (
-        <>
-          <select
-            value={block.level ?? 1}
-            onChange={(e) => onChange({ level: parseInt(e.target.value) })}
-            className="text-sm mb-1"
-          >
-            <option value={1}>Title</option>
-            <option value={2}>Sub-Header</option>
-          </select>
-          <input
-            className={`w-full outline-none ${
-              block.level === 1
-                ? `text-2xl font-bold text-center`
-                : `text-lg font-semibold`
-            }`}
-            placeholder="Heading…"
-            value={block.text ?? ""}
-            onChange={(e) => onChange({ text: e.target.value })}
-          />
-        </>
+        <h2
+          className={headingClass}
+          contentEditable
+          suppressContentEditableWarning
+          onBlur={(e) => onChange({ text: e.currentTarget.textContent ?? "" })}
+          onFocus={() => setSelectedOrder(block.order)}
+        >
+          {block.text ?? ""}
+        </h2>
       );
       break;
 
     case "TEXT":
       inner = (
-        <textarea
-          className="w-full border-none outline-none resize-none"
-          placeholder="Write text…"
-          rows={3}
-          value={block.body ?? ""}
-          onChange={(e) => onChange({ body: e.target.value })}
-        />
+        <div
+          className={`text-sm whitespace-pre-wrap ${color} px-2 py-1`}
+          contentEditable
+          suppressContentEditableWarning
+          onBlur={(e) => onChange({ body: e.currentTarget.innerText })}
+          onFocus={() => setSelectedOrder(block.order)}
+        >
+          {block.body ?? ""}
+        </div>
       );
       break;
 
     case "LIST": {
-      const items = (block.items ?? []) as string[];
+      const ListTag = block.listStyle === ListStyle.NUMBER ? "ol" : "ul";
+      const listClass =
+        block.listStyle === ListStyle.NUMBER
+          ? `list-decimal text-sm ml-6 ${color}`
+          : `list-disc text-sm ml-6 ${color}`;
+
       inner = (
-        <div className="space-y-2">
-          <select
-            value={block.listStyle ?? ListStyle.BULLET}
-            onChange={(e) =>
-              onChange({ listStyle: e.target.value as ListStyle })
-            }
-            className="text-sm mb-1"
-          >
-            <option value={ListStyle.BULLET}>Bulleted</option>
-            <option value={ListStyle.NUMBER}>Numbered</option>
-          </select>
-          <div className="ml-6 space-y-1">
-            {items.map((item, idx) => (
-              <input
+        <>
+          <ListTag className={listClass}>
+            {(block.items ?? []).map((item, idx) => (
+              <li
                 key={idx}
-                className="w-full border-b border-gray-200 py-1 outline-none"
-                placeholder="List item…"
-                value={item}
-                onChange={(e) => {
-                  const newItems = [...items];
-                  newItems[idx] = e.target.value;
+                contentEditable
+                suppressContentEditableWarning
+                onBlur={(e) => {
+                  const newItems = [...(block.items ?? [])];
+                  newItems[idx] = e.currentTarget.textContent ?? "";
                   onChange({ items: newItems });
                 }}
-              />
+                onFocus={() => setSelectedOrder(block.order)}
+              >
+                {item}
+              </li>
             ))}
-            <button
-              onClick={() => onChange({ items: [...items, ""] })}
-              className="text-sm text-purple-600 hover:underline"
-              type="button"
-            >
-              + Add item
-            </button>
-          </div>
-        </div>
+          </ListTag>
+          <button
+            onClick={() => onChange({ items: [...(block.items ?? []), ""] })}
+            className="text-sm text-purple-600 hover:underline ml-6"
+            type="button"
+          >
+            + Add item
+          </button>
+        </>
       );
       break;
     }
@@ -389,43 +453,64 @@ function SortableBlock({
         inner = <progress value={progress} max={100} className="w-full" />;
         break;
       }
-      inner = block.imageUrl ? (
-        <Image
-          src={block.imageUrl}
-          alt={block.caption ?? ""}
-          className="w-1/2 rounded mx-auto"
-          width={600}
-          height={600}
-          priority={false}
-        />
-      ) : (
-        <input
-          type="file"
-          accept="image/*"
-          onChange={async (e) => {
-            const file = e.target.files?.[0];
-            if (!file) return;
-            setUploading(block.order, true);
-            setProgress(block.order, 0);
-            try {
-              const url = await uploadMedia(file, candidateSlug, (p) =>
-                setProgress(block.order, p)
-              );
-              onChange({ imageUrl: url });
-            } catch (error) {
-              console.error("Upload failed:", error);
-              // Show error to user
-              alert(
-                `Upload failed: ${
-                  error instanceof Error ? error.message : String(error)
-                }`
-              );
-            } finally {
-              setUploading(block.order, false);
-              setProgress(block.order, 0);
-            }
-          }}
-        />
+
+      const handleImageSelect = async (
+        e: React.ChangeEvent<HTMLInputElement>
+      ) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+        setUploading(block.order, true);
+        setProgress(block.order, 0);
+        try {
+          const url = await uploadMedia(file, candidateSlug, (p) =>
+            setProgress(block.order, p)
+          );
+          onChange({ imageUrl: url });
+        } catch (error) {
+          console.error("Upload failed:", error);
+          alert(
+            `Upload failed: ${
+              error instanceof Error ? error.message : String(error)
+            }`
+          );
+        } finally {
+          setUploading(block.order, false);
+          setProgress(block.order, 0);
+        }
+      };
+
+      inner = (
+        <>
+          {block.imageUrl ? (
+            <Image
+              src={block.imageUrl}
+              alt={block.caption ?? ""}
+              className="w-full rounded mx-auto cursor-pointer"
+              width={0}
+              height={0}
+              sizes="100vw"
+              style={{ width: "50%", height: "auto" }}
+              priority={false}
+              onClick={() => fileInputRef.current?.click()}
+            />
+          ) : (
+            <Button
+              size="sm"
+              variant="secondary"
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+            >
+              Select Image
+            </Button>
+          )}
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            className="hidden"
+            onChange={handleImageSelect}
+          />
+        </>
       );
       break;
 
@@ -474,36 +559,9 @@ function SortableBlock({
       style={style}
       {...attributes}
       {...listeners}
-      className="border rounded-xl p-6 bg-white shadow-sm space-y-2 cursor-grab"
+      className="space-y-6 mx-auto max-w-4xl px-4 cursor-text"
+      onClick={() => setSelectedOrder(block.order)}
     >
-      <div className="flex justify-between items-center">
-        <span className="text-xs text-gray-400 uppercase mb-2">
-          {block.type}
-          {block.type !== "IMAGE" &&
-            block.type !== "DIVIDER" &&
-            block.type !== "VIDEO" && (
-              <select
-                value={block.color ?? DEFAULT_COLOR}
-                onChange={(e) =>
-                  onChange({ color: e.target.value as TextColor })
-                }
-                className=" ml-2 text-black text-xs bg-transparent border border-gray-300 rounded px-1 py-0.5"
-              >
-                <option value="BLACK">Black</option>
-                <option value="GRAY">Gray</option>
-                <option value="PURPLE">Purple</option>
-              </select>
-            )}
-        </span>
-
-        <button
-          onClick={onDelete}
-          className="text-red-500 text-xs hover:text-red-700"
-          title="Delete block"
-        >
-          ✕
-        </button>
-      </div>
       {inner}
     </div>
   );
