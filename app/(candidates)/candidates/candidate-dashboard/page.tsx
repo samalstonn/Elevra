@@ -14,42 +14,20 @@ import { Eye, Edit, Mail, HandCoins } from "lucide-react"; // Icons
 import { FaShare } from "react-icons/fa"; // Importing FaShare
 import { useAuth } from "@clerk/nextjs";
 import { Candidate, Donation } from "@prisma/client";
+import { useCandidate } from "@/lib/useCandidate";
 // import AnalyticsChart from "@/components/AnalyticsChart";
 
 export type CandidateWithDonations = Candidate & { donations: Donation[] };
 
 export default function OverviewPage() {
-  const [candidate, setCandidate] = useState<Candidate | null>(null);
   const [profileViews, setProfileViews] = useState<number | string>(
     "Loading..."
   );
   const [donationTotal, setDonationTotal] = useState<number | string>(
     "Loading..."
   );
-  // Placeholder data - replace with actual fetched data later
   const { userId } = useAuth();
-
-  // Fetch candidate's location on component mount
-  useEffect(() => {
-    console.log("Fetching candidate data...");
-    if (!userId) return;
-    fetch(`/api/candidate?clerkUserId=${userId}`)
-      .then((res) => {
-        if (!res.ok) {
-          if (res.status === 404) {
-            window.location.href = `${process.env.NEXT_PUBLIC_APP_URL}/candidates?tab=signup`;
-            return;
-          }
-          throw new Error("Failed to fetch candidate data");
-        }
-        return res.json();
-      })
-      .then((data: CandidateWithDonations) => {
-        setCandidate(data);
-        setDonationTotal(data.donations.length);
-      })
-      .catch((err) => console.error("Error fetching candidate:", err));
-  }, [userId]);
+  const { data: candidate, error, isLoading, refresh } = useCandidate();
 
   useEffect(() => {
     if (!candidate) return;

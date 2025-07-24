@@ -21,6 +21,7 @@ import { Button } from "@/components/ui/button";
 import Image from "next/image";
 import Link from "next/link";
 import { Eye } from "lucide-react";
+import Toolbar from "./toolbar";
 
 const colorClass = {
   BLACK: "text-black",
@@ -97,6 +98,13 @@ export default function ContentBlocksEditor({
   const [selectedColor, setSelectedColor] = useState<TextColor>(DEFAULT_COLOR);
   /** Keeps track of the block currently being edited */
   const [selectedOrder, setSelectedOrder] = useState<number | null>(null);
+
+  const handleColorChange = (c: TextColor) => {
+    setSelectedColor(c);
+    if (selectedOrder !== null) {
+      updateBlock(selectedOrder, { color: c });
+    }
+  };
 
   useEffect(() => {
     if (blocks.length === 0) {
@@ -232,78 +240,12 @@ export default function ContentBlocksEditor({
   return (
     <div className="w-full space-y-4">
       {/* ---------- Top Toolbar ---------- */}
-      <div className="sticky top-2 z-10 mb-4 bg-gray-100 border rounded-full p-2 flex flex-wrap items-center gap-2">
-        {/* Plain‑text dropdown */}
-        <select
-          defaultValue=""
-          className="border rounded-xl px-2 py-1 text-sm"
-          onChange={(e) => {
-            const v = e.target.value;
-            if (v === "H1") convertBlock("HEADING", { level: 1 });
-            else if (v === "H2") convertBlock("HEADING", { level: 2 });
-            else if (v === "TEXT") convertBlock("TEXT");
-            e.target.value = "";
-          }}
-        >
-          <option value="" disabled>
-            Normal Text
-          </option>
-          <option value="H1">Heading 1</option>
-          <option value="H2">Heading 2</option>
-          <option value="TEXT">Normal</option>
-        </select>
-
-        {/* List dropdown */}
-        <select
-          defaultValue=""
-          className="border rounded-xl px-2 py-1 text-sm"
-          onChange={(e) => {
-            const v = e.target.value;
-            if (v === "BULLET")
-              convertBlock("LIST", { listStyle: ListStyle.BULLET });
-            else if (v === "NUMBER")
-              convertBlock("LIST", { listStyle: ListStyle.NUMBER });
-            e.target.value = "";
-          }}
-        >
-          <option value="" disabled>
-            List
-          </option>
-          <option value="BULLET">Bulleted list</option>
-          <option value="NUMBER">Numbered list</option>
-        </select>
-
-        {/* Color picker */}
-        <select
-          value={selectedColor}
-          onChange={(e) => {
-            const c = e.target.value as TextColor;
-            setSelectedColor(c);
-            if (selectedOrder !== null)
-              updateBlock(selectedOrder, { color: c });
-          }}
-          className="border rounded-xl px-2 py-1 text-sm"
-        >
-          <option value="PURPLE">Purple</option>
-          <option value="GRAY">Grey</option>
-          <option value="BLACK">Black</option>
-        </select>
-
-        {/* Media & divider buttons */}
-        <Button size="sm" variant="secondary" onClick={() => addBlock("IMAGE")}>
-          Image
-        </Button>
-        <Button size="sm" variant="secondary" onClick={() => addBlock("VIDEO")}>
-          Video
-        </Button>
-        <Button
-          size="sm"
-          variant="secondary"
-          onClick={() => addBlock("DIVIDER")}
-        >
-          Divider
-        </Button>
-      </div>
+      {/* <Toolbar
+        selectedColor={selectedColor}
+        onColorChange={handleColorChange}
+        convertBlock={convertBlock}
+        addBlock={addBlock}
+      /> */}
       <SortableContext
         items={blocks.map((b) => b.order)}
         strategy={verticalListSortingStrategy}
@@ -369,7 +311,8 @@ function SortableBlock({
 
   const color = block.color ? colorClass[block.color] : "";
 
-  const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const imageInputRef = useRef<HTMLInputElement | null>(null);
+  const videoInputRef = useRef<HTMLInputElement | null>(null);
 
   /* ----- Render each block type inline-editable ----- */
   let inner: React.ReactNode;
@@ -485,26 +428,27 @@ function SortableBlock({
             <Image
               src={block.imageUrl}
               alt={block.caption ?? ""}
-              className="w-full rounded mx-auto cursor-pointer"
+              className="w-full rounded mx-auto cursor-pointer hover:outline hover:outline-2 hover:outline-purple-600"
               width={0}
               height={0}
               sizes="100vw"
               style={{ width: "50%", height: "auto" }}
               priority={false}
-              onClick={() => fileInputRef.current?.click()}
+              title="Click to change photo"
+              onClick={() => imageInputRef.current?.click()}
             />
           ) : (
             <Button
               size="sm"
               variant="secondary"
               type="button"
-              onClick={() => fileInputRef.current?.click()}
+              onClick={() => imageInputRef.current?.click()}
             >
               Select Image
             </Button>
           )}
           <input
-            ref={fileInputRef}
+            ref={imageInputRef}
             type="file"
             accept="image/*"
             className="hidden"
@@ -519,34 +463,67 @@ function SortableBlock({
         inner = <progress value={progress} max={100} className="w-full" />;
         break;
       }
-      inner = block.videoUrl ? (
-        <video
-          src={block.videoUrl}
-          controls
-          preload="metadata"
-          className="w-1/2 rounded mx-auto"
-        />
-      ) : (
-        <input
-          type="file"
-          accept="video/*"
-          onChange={async (e) => {
-            const file = e.target.files?.[0];
-            if (!file) return;
-            setUploading(block.order, true);
+      if (block.videoUrl) {
+        const handleVideoSelect = async (
+          e: React.ChangeEvent<HTMLInputElement>
+        ) => {
+          const file = e.target.files?.[0];
+          if (!file) return;
+          setUploading(block.order, true);
+          setProgress(block.order, 0);
+          try {
+            const url = await uploadMedia(file, candidateSlug, (p) =>
+              setProgress(block.order, p)
+            );
+            onChange({ videoUrl: url, thumbnailUrl: "" });
+          } finally {
+            setUploading(block.order, false);
             setProgress(block.order, 0);
-            try {
-              const url = await uploadMedia(file, candidateSlug, (p) =>
-                setProgress(block.order, p)
-              );
-              onChange({ videoUrl: url, thumbnailUrl: "" });
-            } finally {
-              setUploading(block.order, false);
+          }
+        };
+
+        inner = (
+          <>
+            <video
+              src={block.videoUrl}
+              controls
+              preload="metadata"
+              className="w-1/2 rounded mx-auto cursor-pointer hover:outline hover:outline-2 hover:outline-purple-600"
+              title="Click to change video"
+              onClick={() => videoInputRef.current?.click()}
+            />
+            <input
+              ref={videoInputRef}
+              type="file"
+              accept="video/*"
+              className="hidden"
+              onChange={handleVideoSelect}
+            />
+          </>
+        );
+      } else {
+        inner = (
+          <input
+            type="file"
+            accept="video/*"
+            onChange={async (e) => {
+              const file = e.target.files?.[0];
+              if (!file) return;
+              setUploading(block.order, true);
               setProgress(block.order, 0);
-            }
-          }}
-        />
-      );
+              try {
+                const url = await uploadMedia(file, candidateSlug, (p) =>
+                  setProgress(block.order, p)
+                );
+                onChange({ videoUrl: url, thumbnailUrl: "" });
+              } finally {
+                setUploading(block.order, false);
+                setProgress(block.order, 0);
+              }
+            }}
+          />
+        );
+      }
       break;
 
     default:

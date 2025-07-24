@@ -12,6 +12,7 @@ import {
   Award, // Endorsements (Premium)
   Users, // Vendor Marketplace
   Menu,
+  StickyNote,
 } from "lucide-react";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
@@ -25,15 +26,21 @@ const navItems = [
     premium: false,
   },
   {
-    href: "/candidates/candidate-dashboard/bio-settings",
+    href: "/candidates/candidate-dashboard/my-profile",
     label: "My Profile",
     icon: User,
     premium: false,
   },
   {
-    href: "/candidates/candidate-dashboard/profile-settings",
+    href: "/candidates/candidate-dashboard/my-elections",
     label: "My Elections",
     icon: Users,
+    premium: false,
+  },
+  {
+    href: "/candidates/candidate-dashboard/my-page",
+    label: "My Page",
+    icon: StickyNote,
     premium: false,
   },
   {
@@ -129,9 +136,7 @@ export default function CandidateDashboardLayout({
       </aside>
 
       {/* Main Content Area - Full Width on Mobile */}
-      <main className="flex-1 p-4 md:p-6 lg:p-8">
-        {children}
-      </main>
+      <main className="flex-1 p-4 md:p-6 lg:p-8">{children}</main>
     </div>
   );
 }
