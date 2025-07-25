@@ -127,7 +127,7 @@ export default function OverviewPage() {
         </CardHeader>
         <CardContent className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
           <Button variant="outline" asChild>
-            <Link href="/candidates/candidate-dashboard/profile-settings">
+            <Link href="/candidates/candidate-dashboard/my-profile">
               <Edit className="mr-2 h-4 w-4" /> Edit Profile
             </Link>
           </Button>

@@ -9,6 +9,17 @@ import SearchBar from "@/components/ResultsSearchBar";
 import { ContentBlock, Election, ElectionLink } from "@prisma/client";
 import { useCandidate, ElectionLinkWithElection } from "@/lib/useCandidate";
 
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { X } from "lucide-react";
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
+
 interface SearchResultItem {
   id: string | number;
 }
@@ -23,6 +34,7 @@ export default function ProfileSettingsPage() {
   } = useCandidate();
 
   const [activeElectionId, setActiveElectionId] = useState<number | null>(null);
+  const [showJoinedModal, setShowJoinedModal] = useState(false);
 
   useEffect(() => {
     if (electionLinks.length === 0) {
@@ -83,7 +95,7 @@ export default function ProfileSettingsPage() {
     <div className="space-y-6">
       <div className="mb-6">
         <h2 className="text-xl font-semibold">Manage Elections</h2>
-        <p className="text-sm text-gray-500 mt-2 mb-2">
+        <p className="text-sm text-gray-500 mt-2 mb-2 max-w-2xl">
           Add or remove elections you are participating in. Search for elections
           by position, city, or state. Once added, you can manage your profile
           and content for each election.
@@ -92,7 +104,6 @@ export default function ProfileSettingsPage() {
           placeholder="Search for elections..."
           apiEndpoint="/api/elections/search"
           shadow={false}
-          multi
           onResultSelect={async (items) => {
             if (!candidateData) return;
             const parsed = (
@@ -110,6 +121,7 @@ export default function ProfileSettingsPage() {
                   }),
                 });
                 if (res.ok) {
+                  setShowJoinedModal(true);
                   refresh();
                 }
               }
@@ -120,75 +132,112 @@ export default function ProfileSettingsPage() {
       <div className="mb-6">
         <h2 className="text-xl font-semibold mb-2">Your Elections</h2>
         {electionLinks.length > 0 ? (
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Election
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  City
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  State
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Action
-                </th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {electionLinks.map((link) => (
-                <tr key={link.electionId}>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {link.election?.position ?? "Unknown"}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {link.election?.city ?? "—"}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {link.election?.state ?? "—"}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm">
-                    {/* <button
-                onClick={() => setActiveElectionId(link.electionId)}
-                className="px-3 py-1 bg-blue-600 text-white rounded"
-              >
-                Edit Profile
-              </button> */}
-                    <button
-                      onClick={async () => {
-                        if (!candidateData) return;
-                        await fetch(
-                          `/api/electionlinks/${candidateData.id}/${link.electionId}`,
-                          {
-                            method: "DELETE",
-                          }
-                        );
-                        refresh();
-                      }}
-                      className="ml-2 px-3 py-1 bg-red-600 text-white rounded"
-                    >
-                      Delete
-                    </button>
-                  </td>
+          <div>
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Election
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    City
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    State
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Action
+                  </th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200 ">
+                {electionLinks.map((link) => (
+                  <tr key={link.electionId}>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      {link.election?.position ?? "Unknown"}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      {link.election?.city ?? "—"}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      {link.election?.state ?? "—"}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm">
+                      {/* <button
+                  onClick={() => setActiveElectionId(link.electionId)}
+                  className="px-3 py-1 bg-blue-600 text-white rounded"
+                >
+                  Edit Profile
+                </button> */}
+                      <button
+                        onClick={async () => {
+                          if (!candidateData) return;
+                          await fetch(
+                            `/api/electionlinks/${candidateData.id}/${link.electionId}`,
+                            {
+                              method: "DELETE",
+                            }
+                          );
+                          refresh();
+                        }}
+                        className="ml-2 px-3 py-1 bg-red-600 text-white rounded"
+                      >
+                        Delete
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            <div className="mt-6 p-4 bg-purple-50 rounded">
+              <p className="text-sm text-gray-700">
+                You can customize your public web page for your candidacy in the{" "}
+                <strong>My Page</strong> tab to the left. Share your background,
+                platform, and connect with voters - all in one place.
+              </p>
+            </div>
+          </div>
         ) : (
-          <p className="text-sm text-gray-500 mb-4">
+          <p className="text-sm text-gray-500 mb-4 max-w-2xl">
             You are not currently associated with any elections. Please look for
             your election in the search bar above.
           </p>
         )}
         <h2 className="text-xl font-semibold mt-4 mb-2">Past Elections</h2>
-        <p className="text-sm text-gray-500 mb-4">
+        <p className="text-sm text-gray-500 mb-4 max-w-2xl">
           You have not previously participated in any elections. Join an
           election above and start building your profile. After your election
           ends, it will appear here for your records.
         </p>
       </div>
+      {/* Success join modal */}
+      <Dialog open={showJoinedModal} onOpenChange={setShowJoinedModal}>
+        <DialogContent className="max-w-sm">
+          <button
+            className="absolute top-4 right-4 text-gray-500 hover:text-gray-700"
+            onClick={() => setShowJoinedModal(false)}
+            aria-label="Close"
+          >
+            <X className="h-4 w-4" />
+          </button>
+          <DialogHeader>
+            <DialogTitle className="text-lg">Election Joined!</DialogTitle>
+          </DialogHeader>
+
+          <p className="text-sm text-gray-700">
+            You have successfully joined this election. You can customize your
+            public candidate page next.
+          </p>
+
+          <DialogFooter className="flex justify-start gap-2 mt-4">
+            <Link href="/candidates/candidate-dashboard/my-page">
+              <Button variant="outline" className="text-sm">
+                Customize Page
+              </Button>
+            </Link>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

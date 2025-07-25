@@ -177,7 +177,7 @@ export default function CandidateClient({
             <div className="mt-4 hidden md:flex justify-start gap-4">
               {isEditable ? (
                 <Button variant="outline" asChild>
-                  <Link href="/candidates/candidate-dashboard/bio-settings">
+                  <Link href="/candidates/candidate-dashboard/my-profile">
                     <Edit className="mr-2 h-4 w-4" /> Edit Profile
                   </Link>
                 </Button>
@@ -232,7 +232,7 @@ export default function CandidateClient({
                   asChild
                   className="flex justify-center text-sm px-2"
                 >
-                  <Link href="/candidates/candidate-dashboard/bio-settings">
+                  <Link href="/candidates/candidate-dashboard/my-profile">
                     <Edit className="mr-1 h-4 w-4" /> Edit Profile
                   </Link>
                 </Button>
