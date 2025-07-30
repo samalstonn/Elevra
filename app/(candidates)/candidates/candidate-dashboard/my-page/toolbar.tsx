@@ -1,5 +1,3 @@
-
-
 "use client";
 
 import { BlockType, ListStyle, TextColor } from "@prisma/client";

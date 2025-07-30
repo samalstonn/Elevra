@@ -12,7 +12,6 @@ import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { Eye, Edit, Mail, HandCoins } from "lucide-react"; // Icons
 import { FaShare } from "react-icons/fa"; // Importing FaShare
-import { useAuth } from "@clerk/nextjs";
 import { Candidate, Donation } from "@prisma/client";
 import { useCandidate } from "@/lib/useCandidate";
 // import AnalyticsChart from "@/components/AnalyticsChart";

@@ -89,20 +89,12 @@ export default function ContentBlocksEditor({
   /** Keeps track of the block currently being edited */
   const [selectedOrder, setSelectedOrder] = useState<number | null>(null);
 
-  const handleColorChange = (c: TextColor) => {
-    setSelectedColor(c);
-    if (selectedOrder !== null) {
-      updateBlock(selectedOrder, { color: c });
-    }
-  };
-
-  useEffect(() => {
-    if (blocks.length === 0) {
-      setBlocks([
-        { type: "TEXT", order: 0, color: DEFAULT_COLOR } as ContentBlockInput,
-      ]);
-    }
-  }, []); // run once
+  // const handleColorChange = (c: TextColor) => {
+  //   setSelectedColor(c);
+  //   if (selectedOrder !== null) {
+  //     updateBlock(selectedOrder, { color: c });
+  //   }
+  // };
 
   const [isSaving, setIsSaving] = useState(false);
   const [uploadingMap, setUploadingMap] = useState<Record<number, boolean>>({});
@@ -148,70 +140,67 @@ export default function ContentBlocksEditor({
    *  – LIST ➜ TEXT: join items back into a multi‑line body
    *  – TEXT/LIST ➜ HEADING: collapse text into a single line
    */
-  const convertBlock = (
-    type: BlockType,
-    extra: Partial<ContentBlockInput> = {}
-  ) => {
-    if (selectedOrder === null) {
-      // nothing highlighted → just insert a new block
-      addBlock(type, extra);
-      return;
-    }
+  // const convertblock = (type: BlockType, extra: Partial<ContentBlockInput> = {}) => {
+  //   if (selectedOrder === null) {
+  //     // nothing highlighted → just insert a new block
+  //     addBlock(type, extra);
+  //     return;
+  //   }
 
-    setBlocks((prev) =>
-      prev.map((b) => {
-        if (b.order !== selectedOrder) return b;
+  //   setBlocks((prev) =>
+  //     prev.map((b) => {
+  //       if (b.order !== selectedOrder) return b;
 
-        const incoming: ContentBlockInput = { ...b, type, ...extra };
+  //       const incoming: ContentBlockInput = { ...b, type, ...extra };
 
-        /* ---------- TEXT → LIST ---------- */
-        if (type === "LIST") {
-          let seed = "";
-          if (b.type === "TEXT") seed = b.body ?? "";
-          else if (b.type === "HEADING") seed = b.text ?? "";
-          else if (b.type === "LIST") seed = (b.items ?? []).join("\n");
+  //       /* ---------- TEXT → LIST ---------- */
+  //       if (type === "LIST") {
+  //         let seed = "";
+  //         if (b.type === "TEXT") seed = b.body ?? "";
+  //         else if (b.type === "HEADING") seed = b.text ?? "";
+  //         else if (b.type === "LIST") seed = (b.items ?? []).join("\n");
 
-          const items = seed
-            .split(/\n+/)
-            .map((s) => s.trim())
-            .filter(Boolean);
+  //         const items = seed
+  //           .split(/\n+/)
+  //           .map((s) => s.trim())
+  //           .filter(Boolean);
 
-          incoming.items = items;
-          incoming.listStyle =
-            extra.listStyle ??
-            (b.type === "LIST" ? b.listStyle : ListStyle.BULLET);
-          delete (incoming as any).body;
-          delete (incoming as any).text;
-        }
+  //         incoming.items = items;
+  //         incoming.listStyle =
+  //           extra.listStyle ??
+  //           (b.type === "LIST" ? b.listStyle : ListStyle.BULLET);
+  //         delete (incoming as any).body;
+  //         delete (incoming as any).text;
+  //       }
 
-        /* ---------- LIST → TEXT ---------- */
-        if (type === "TEXT") {
-          if (b.type === "LIST") {
-            incoming.body = (b.items ?? []).join("\n");
-            delete (incoming as any).items;
-            delete (incoming as any).listStyle;
-          } else if (b.type === "HEADING") {
-            incoming.body = b.text ?? "";
-            delete (incoming as any).text;
-          }
-        }
+  //       /* ---------- LIST → TEXT ---------- */
+  //       if (type === "TEXT") {
+  //         if (b.type === "LIST") {
+  //           incoming.body = (b.items ?? []).join("\n");
+  //           delete (incoming as any).items;
+  //           delete (incoming as any).listStyle;
+  //         } else if (b.type === "HEADING") {
+  //           incoming.body = b.text ?? "";
+  //           delete (incoming as any).text;
+  //         }
+  //       }
 
-        /* ---------- → HEADING ---------- */
-        if (type === "HEADING") {
-          if (b.type === "TEXT") {
-            incoming.text = (b.body ?? "").split(/\n/)[0];
-            delete (incoming as any).body;
-          } else if (b.type === "LIST") {
-            incoming.text = (b.items ?? []).join(" ");
-            delete (incoming as any).items;
-            delete (incoming as any).listStyle;
-          }
-        }
+  //       /* ---------- → HEADING ---------- */
+  //       if (type === "HEADING") {
+  //         if (b.type === "TEXT") {
+  //           incoming.text = (b.body ?? "").split(/\n/)[0];
+  //           delete (incoming as any).body;
+  //         } else if (b.type === "LIST") {
+  //           incoming.text = (b.items ?? []).join(" ");
+  //           delete (incoming as any).items;
+  //           delete (incoming as any).listStyle;
+  //         }
+  //       }
 
-        return incoming;
-      })
-    );
-  };
+  //       return incoming;
+  //     })
+  //   );
+  // };
 
   const updateBlock = (order: number, patch: Partial<ContentBlockInput>) => {
     setBlocks((prev) =>

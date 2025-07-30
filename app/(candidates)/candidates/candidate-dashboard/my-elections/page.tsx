@@ -32,20 +32,7 @@ export default function ProfileSettingsPage() {
     refresh,
   } = useCandidate();
 
-  const [activeElectionId, setActiveElectionId] = useState<number | null>(null);
   const [showJoinedModal, setShowJoinedModal] = useState(false);
-
-  useEffect(() => {
-    if (electionLinks.length === 0) {
-      setActiveElectionId(null);
-      return;
-    }
-    setActiveElectionId((prev) =>
-      prev && electionLinks.some((l) => l.electionId === prev)
-        ? prev
-        : electionLinks[0].electionId
-    );
-  }, [electionLinks]);
 
   if (isLoading) {
     return (
