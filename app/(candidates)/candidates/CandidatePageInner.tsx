@@ -97,15 +97,14 @@ export default function CandidatesPageInner() {
               }}
               className="text-xl text-gray-700 mb-8 max-w-3xl"
             >
-              Join our platform to connect with expert vendors and resources to
-              empower your campaign.
+              Join our platform to share information and manage your campaign.
             </motion.p>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8 w-full my-12">
               <FeatureCard
                 icon="🔍"
-                title="Discover Vendors"
-                description="Find trusted vendors to boost your political campaign"
+                title="Become Discoverable"
+                description="Local voters can find you easily and learn about your campaign"
               />
               <FeatureCard
                 icon="🎯"

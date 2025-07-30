@@ -214,7 +214,7 @@ const FeatureCards = () => {
           }}
           className="mt-12"
         >
-          Explore Candidates Now
+          Check Out What&apos;s Live
         </Button>
       </div>
     </motion.section>

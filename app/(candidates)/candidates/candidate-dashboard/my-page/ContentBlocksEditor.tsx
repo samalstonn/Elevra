@@ -2,16 +2,7 @@
 
 import { ContentBlock, BlockType, ListStyle, TextColor } from "@prisma/client";
 import { useState, useEffect, useRef } from "react";
-import type { DragEndEvent } from "@dnd-kit/core";
 import {
-  DndContext,
-  closestCenter,
-  PointerSensor,
-  useSensor,
-  useSensors,
-} from "@dnd-kit/core";
-import {
-  arrayMove,
   SortableContext,
   verticalListSortingStrategy,
   useSortable,
@@ -21,7 +12,6 @@ import { Button } from "@/components/ui/button";
 import Image from "next/image";
 import Link from "next/link";
 import { Eye } from "lucide-react";
-import Toolbar from "./toolbar";
 
 const colorClass = {
   BLACK: "text-black",

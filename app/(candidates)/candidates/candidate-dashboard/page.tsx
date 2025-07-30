@@ -23,11 +23,8 @@ export default function OverviewPage() {
   const [profileViews, setProfileViews] = useState<number | string>(
     "Loading..."
   );
-  const [donationTotal, setDonationTotal] = useState<number | string>(
-    "Loading..."
-  );
-  const { userId } = useAuth();
-  const { data: candidate, error, isLoading, refresh } = useCandidate();
+  const [donationTotal, _] = useState<number | string>("Loading...");
+  const { data: candidate } = useCandidate();
 
   useEffect(() => {
     if (!candidate) return;

@@ -62,13 +62,13 @@ export async function POST(request: Request) {
       // 1 ▸ Create the election link
       const link = await tx.electionLink.create({ data: linkData });
 
-      const dataToCreate = davidWeinsteinTemplate.map((block, index) => ({
+      const dataToCreate = davidWeinsteinTemplate.map((block, _) => ({
         ...block,
         candidateId,
         electionId,
       }));
 
-      const oldBlocks = [
+      const _ = [
         {
           candidateId,
           electionId,

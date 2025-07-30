@@ -27,19 +27,19 @@ const navItems = [
   },
   {
     href: "/candidates/candidate-dashboard/my-profile",
-    label: "My Profile",
+    label: "Profile",
     icon: User,
     premium: false,
   },
   {
     href: "/candidates/candidate-dashboard/my-elections",
-    label: "My Elections",
+    label: "Campaigns",
     icon: Users,
     premium: false,
   },
   {
     href: "/candidates/candidate-dashboard/my-page",
-    label: "My Page",
+    label: "Public Campaign Page",
     icon: StickyNote,
     premium: false,
   },

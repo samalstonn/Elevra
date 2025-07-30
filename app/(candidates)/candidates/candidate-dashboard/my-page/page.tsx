@@ -25,7 +25,6 @@ export default function MyPage() {
     electionLinks = [],
     error,
     isLoading,
-    refresh,
   } = useCandidate();
 
   const [activeElectionId, setActiveElectionId] = useState<number | null>(null);
@@ -58,7 +57,6 @@ export default function MyPage() {
         : electionLinks[0].electionId
     );
   }, [electionLinks]);
-
 
   const activeLink = electionLinks.find(
     (link) => link.electionId === activeElectionId
@@ -166,7 +164,10 @@ export default function MyPage() {
           )}
         </div>
       </div>
-      <Dialog open={showTutorial} onOpenChange={setShowTutorial}>
+      <Dialog
+        open={activeElectionId != null && showTutorial}
+        onOpenChange={setShowTutorial}
+      >
         <DialogContent className="max-w-md">
           <button
             className="absolute top-4 right-4 text-gray-500 hover:text-gray-700"
@@ -202,7 +203,7 @@ export default function MyPage() {
               checked={dontShowAgain}
               onChange={(e) => setDontShowAgain(e.target.checked)}
             />
-            Don't show me again
+            Don&apos;t show me again
           </label>
 
           <DialogFooter className="flex justify-start mt-4">

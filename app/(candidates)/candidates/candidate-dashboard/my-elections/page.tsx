@@ -6,8 +6,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Terminal } from "lucide-react";
 
 import SearchBar from "@/components/ResultsSearchBar";
-import { ContentBlock, Election, ElectionLink } from "@prisma/client";
-import { useCandidate, ElectionLinkWithElection } from "@/lib/useCandidate";
+import { useCandidate } from "@/lib/useCandidate";
 
 import {
   Dialog,
@@ -47,10 +46,6 @@ export default function ProfileSettingsPage() {
         : electionLinks[0].electionId
     );
   }, [electionLinks]);
-
-  const activeLink = electionLinks.find(
-    (link) => link.electionId === activeElectionId
-  );
 
   if (isLoading) {
     return (
@@ -93,12 +88,15 @@ export default function ProfileSettingsPage() {
 
   return (
     <div className="space-y-6">
+      <h1 className="text-3xl font-semibold">My Elections</h1>
+      {/* <p className="text-sm text-gray-500 mt-2 mb-2 max-w-2xl">
+        Add elections you are participating in. Manage your web page and content
+        for each election.
+      </p> */}
       <div className="mb-6">
-        <h2 className="text-xl font-semibold">Manage Elections</h2>
-        <p className="text-sm text-gray-500 mt-2 mb-2 max-w-2xl">
-          Add or remove elections you are participating in. Search for elections
-          by position, city, or state. Once added, you can manage your profile
-          and content for each election.
+        <h2 className="text-xl font-semibold mb-2">Add New Election</h2>
+        <p className="text-sm text-gray-500 mt-2 mb-4 max-w-2xl">
+          Search for elections by city, state, or position.
         </p>
         <SearchBar
           placeholder="Search for elections..."
@@ -130,7 +128,7 @@ export default function ProfileSettingsPage() {
         />
       </div>
       <div className="mb-6">
-        <h2 className="text-xl font-semibold mb-2">Your Elections</h2>
+        <h2 className="text-xl font-semibold mb-2">Manage Your Elections</h2>
         {electionLinks.length > 0 ? (
           <div>
             <table className="min-w-full divide-y divide-gray-200">
@@ -191,9 +189,10 @@ export default function ProfileSettingsPage() {
             </table>
             <div className="mt-6 p-4 bg-purple-50 rounded">
               <p className="text-sm text-gray-700">
-                You can customize your public web page for your candidacy in the{" "}
-                <strong>My Page</strong> tab to the left. Share your background,
-                platform, and connect with voters - all in one place.
+                You can customize your public campaign web page in the{" "}
+                <strong>Public Campaign Page</strong> tab to the left. Share
+                your background, platform, and connect with voters - all in one
+                place.
               </p>
             </div>
           </div>
@@ -206,8 +205,8 @@ export default function ProfileSettingsPage() {
         <h2 className="text-xl font-semibold mt-4 mb-2">Past Elections</h2>
         <p className="text-sm text-gray-500 mb-4 max-w-2xl">
           You have not previously participated in any elections. Join an
-          election above and start building your profile. After your election
-          ends, it will appear here for your records.
+          election above and start building your campaign page. After your
+          campaign ends, it will appear here for your records.
         </p>
       </div>
       {/* Success join modal */}
@@ -226,7 +225,7 @@ export default function ProfileSettingsPage() {
 
           <p className="text-sm text-gray-700">
             You have successfully joined this election. You can customize your
-            public candidate page next.
+            public campaign page next.
           </p>
 
           <DialogFooter className="flex justify-start gap-2 mt-4">
