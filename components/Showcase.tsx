@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
-import { Users, UserRound, ShoppingBag } from "lucide-react";
+import { Users, UserRound } from "lucide-react";
 import Image from "next/image";
 
 interface ShowcaseProps {
@@ -140,7 +140,7 @@ const Showcase: React.FC<ShowcaseProps> = ({}) => {
               <span>For Campaigns</span>
             </Button>
 
-            <Button
+            {/* <Button
               variant={activeContent === "vendors" ? "default" : "purple"}
               size="lg"
               className={`flex items-center gap-2 ${
@@ -150,7 +150,7 @@ const Showcase: React.FC<ShowcaseProps> = ({}) => {
             >
               <ShoppingBag size={20} />
               <span>For Vendors</span>
-            </Button>
+            </Button> */}
           </div>
         </motion.div>
       </div>

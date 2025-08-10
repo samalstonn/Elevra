@@ -47,7 +47,7 @@ function HomePageContent() {
             },
           },
         }}
-        className="flex flex-col items-center text-center py-12 sm:py-20 space-y-4 sm:space-y-6 w-full max-w-screen"
+        className="flex flex-col items-center text-center py-12 w-full max-w-screen mt-16"
       >
         {/* Animated "Elevra" Header */}
         <motion.h1
@@ -60,7 +60,7 @@ function HomePageContent() {
               transition: { duration: 0.6, ease: "easeOut" },
             },
           }}
-          className="text-4xl sm:text-6xl md:text-7xl font-bold text-purple-800"
+          className="text-4xl sm:text-6xl md:text-7xl font-bold text-purple-800 mb-4"
         >
           Elevra
         </motion.h1>
@@ -74,7 +74,7 @@ function HomePageContent() {
               transition: { duration: 0.6, ease: "easeOut" },
             },
           }}
-          className="text-1xl sm:text-3xl md:text-4xl tracking-tight text-gray-900 w-full leading-tight"
+          className="text-1xl sm:text-3xl md:text-4xl tracking-tight text-gray-900 w-full leading-tight mb-4"
         >
           Discover and Support Local Candidates in Seconds.
         </motion.h2>
@@ -90,14 +90,14 @@ function HomePageContent() {
               transition: { duration: 0.6, ease: "easeOut" },
             },
           }}
-          className="w-full max-w-lg sm:max-w-xl md:max-w-2xl lg:max-w-3xl"
+          className="w-full max-w-lg sm:max-w-xl md:max-w-2xl lg:max-w-3xl mb-8"
         >
           <SearchBar
             onSearch={(location: NormalizedLocation) => handleSearch(location)}
           />
-          <Button variant="purple" className="mt-4 mx-auto" asChild>
+          {/* <Button variant="purple" className="mt-4 mx-auto" asChild>
             <a href="/live-elections">Check Out What&apos;s Live</a>
-          </Button>
+          </Button> */}
         </motion.div>
 
         <motion.div
@@ -110,9 +110,9 @@ function HomePageContent() {
               transition: { duration: 0.6, ease: "easeOut" },
             },
           }}
-          className="text-center text-gray-700 flex justify-center items-center"
+          className="text-center text-gray-700 flex justify-center items-center mb-2"
         >
-          <span>Looking for something else? I am a...</span>
+          <span className="italic">If you are a candidate, click below</span>
         </motion.div>
         <motion.div
           variants={{
@@ -124,13 +124,10 @@ function HomePageContent() {
               transition: { duration: 0.6, ease: "easeOut" },
             },
           }}
-          className="flex justify-center items-center gap-2"
+          className="flex justify-center items-center mb-16"
         >
           <Button variant="purple" asChild>
-            <a href="/vendors">Vendor</a>
-          </Button>
-          <Button variant="purple" asChild>
-            <a href="/candidates">Candidate</a>
+            <a href="/candidates">Launch Your Campaign</a>
           </Button>
         </motion.div>
       </motion.main>

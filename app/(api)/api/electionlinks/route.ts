@@ -2,6 +2,7 @@
 import { NextResponse } from "next/server";
 import { PrismaClient, TextColor, BlockType, ListStyle } from "@prisma/client";
 import { pick } from "lodash";
+import { davidWeinsteinTemplate } from "@/app/(templates)/basicwebpage";
 
 const prisma = new PrismaClient();
 
@@ -61,63 +62,71 @@ export async function POST(request: Request) {
       // 1 ▸ Create the election link
       const link = await tx.electionLink.create({ data: linkData });
 
+      const dataToCreate = davidWeinsteinTemplate.map((block, _) => ({
+        ...block,
+        candidateId,
+        electionId,
+      }));
+
+      const _ = [
+        {
+          candidateId,
+          electionId,
+          order: 0,
+          type: BlockType.HEADING,
+          level: 1,
+          text: "", // Candidate will fill later
+          color: TextColor.BLACK,
+        },
+        {
+          candidateId,
+          electionId,
+          order: 1,
+          type: BlockType.HEADING,
+          level: 2,
+          text: "Party name",
+          color: TextColor.PURPLE,
+        },
+        {
+          candidateId,
+          electionId,
+          order: 2,
+          type: BlockType.HEADING,
+          level: 2,
+          text: "Policies",
+          color: TextColor.BLACK,
+        },
+        {
+          candidateId,
+          electionId,
+          order: 3,
+          type: BlockType.LIST,
+          listStyle: ListStyle.BULLET,
+          items: [],
+          color: TextColor.BLACK,
+        },
+        {
+          candidateId,
+          electionId,
+          order: 4,
+          type: BlockType.HEADING,
+          level: 2,
+          text: "Notes",
+          color: TextColor.BLACK,
+        },
+        {
+          candidateId,
+          electionId,
+          order: 5,
+          type: BlockType.TEXT,
+          body: "",
+          color: TextColor.GRAY,
+        },
+      ];
+
       // 2 ▸ Seed six starter blocks
       await tx.contentBlock.createMany({
-        data: [
-          {
-            candidateId,
-            electionId,
-            order: 0,
-            type: BlockType.HEADING,
-            level: 1,
-            text: "", // Candidate will fill later
-            color: TextColor.BLACK,
-          },
-          {
-            candidateId,
-            electionId,
-            order: 1,
-            type: BlockType.HEADING,
-            level: 2,
-            text: "Party name",
-            color: TextColor.PURPLE,
-          },
-          {
-            candidateId,
-            electionId,
-            order: 2,
-            type: BlockType.HEADING,
-            level: 2,
-            text: "Policies",
-            color: TextColor.BLACK,
-          },
-          {
-            candidateId,
-            electionId,
-            order: 3,
-            type: BlockType.LIST,
-            listStyle: ListStyle.BULLET,
-            items: [],
-            color: TextColor.BLACK,
-          },
-          {
-            candidateId,
-            electionId,
-            order: 4,
-            type: BlockType.HEADING,
-            level: 2,
-            text: "Notes",
-            color: TextColor.BLACK,
-          },
-          {
-            candidateId,
-            electionId,
-            order: 5,
-            type: BlockType.TEXT,
-            body: "",
-            color: TextColor.GRAY,
-          },
-        ],
+        data: dataToCreate,
       });
 
       return link;

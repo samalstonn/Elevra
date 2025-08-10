@@ -8,7 +8,6 @@ import {
 } from "@clerk/nextjs";
 import "../globals.css";
 import { useState, useEffect } from "react";
-import { Button } from "../../components/ui/button";
 import { Inter } from "next/font/google";
 import Link from "next/link";
 import { Analytics } from "@vercel/analytics/react";
@@ -17,6 +16,7 @@ import { usePathname } from "next/navigation";
 import SearchBar from "../../components/ResultsSearchBar";
 import { Toaster } from "@/components/ui/toaster";
 import Footer from "../(footer-pages)/Footer";
+import HeaderButtons from "./HeaderButtons";
 
 const inter = Inter({ subsets: ["latin"] });
 const clerkKey = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
@@ -27,12 +27,7 @@ export default function LayoutClient({
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
-  let dashboardLink = "/candidates/candidate-dashboard";
-  if (pathname.startsWith("/candidates")) {
-    dashboardLink = "/candidates/candidate-dashboard";
-  } else if (pathname.startsWith("/vendors")) {
-    dashboardLink = "/vendors/vendor-dashboard";
-  }
+
   const [_isMobile, setIsMobile] = useState<boolean>(false);
   useEffect(() => {
     const mediaQuery = window.matchMedia("(max-width: 768px)");
@@ -41,8 +36,6 @@ export default function LayoutClient({
     mediaQuery.addEventListener("change", handler);
     return () => mediaQuery.removeEventListener("change", handler);
   }, []);
-
-  // Check if the current page is the results page to apply special styling
 
   return (
     <ClerkProvider publishableKey={clerkKey || ""}>
@@ -74,22 +67,12 @@ export default function LayoutClient({
 
               <div className="flex items-center gap-4 shrink-0">
                 <SignedIn>
-                  <Button asChild size="sm" className="md:text-base md:p-4">
-                    <Link href={dashboardLink}>
-                      <span className="hidden md:inline">My Dashboard</span>
-                      <span className="md:hidden">📊</span>
-                    </Link>
-                  </Button>
+                  <HeaderButtons pathname={pathname} />
                   <UserButton />
                 </SignedIn>
 
                 <SignedOut>
-                  <Button asChild size="sm" className="md:text-base md:p-4">
-                    <Link href={dashboardLink}>
-                      <span className="hidden md:inline">My Dashboard</span>
-                      <span className="md:hidden">📊</span>
-                    </Link>
-                  </Button>
+                  <HeaderButtons pathname={pathname} />
                   <SignInButton />
                 </SignedOut>
               </div>

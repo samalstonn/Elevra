@@ -1,6 +1,0 @@
----
-description: 
-globs: 
-alwaysApply: true
----
-ALWAYS use prioritize using components in components/ui primarily before creating new components

@@ -12,44 +12,18 @@ import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { Eye, Edit, Mail, HandCoins } from "lucide-react"; // Icons
 import { FaShare } from "react-icons/fa"; // Importing FaShare
-import { useAuth } from "@clerk/nextjs";
 import { Candidate, Donation } from "@prisma/client";
+import { useCandidate } from "@/lib/useCandidate";
 // import AnalyticsChart from "@/components/AnalyticsChart";
 
 export type CandidateWithDonations = Candidate & { donations: Donation[] };
 
 export default function OverviewPage() {
-  const [candidate, setCandidate] = useState<Candidate | null>(null);
   const [profileViews, setProfileViews] = useState<number | string>(
     "Loading..."
   );
-  const [donationTotal, setDonationTotal] = useState<number | string>(
-    "Loading..."
-  );
-  // Placeholder data - replace with actual fetched data later
-  const { userId } = useAuth();
-
-  // Fetch candidate's location on component mount
-  useEffect(() => {
-    console.log("Fetching candidate data...");
-    if (!userId) return;
-    fetch(`/api/candidate?clerkUserId=${userId}`)
-      .then((res) => {
-        if (!res.ok) {
-          if (res.status === 404) {
-            window.location.href = `${process.env.NEXT_PUBLIC_APP_URL}/candidates?tab=signup`;
-            return;
-          }
-          throw new Error("Failed to fetch candidate data");
-        }
-        return res.json();
-      })
-      .then((data: CandidateWithDonations) => {
-        setCandidate(data);
-        setDonationTotal(data.donations.length);
-      })
-      .catch((err) => console.error("Error fetching candidate:", err));
-  }, [userId]);
+  const [donationTotal, _] = useState<number | string>("Loading...");
+  const { data: candidate } = useCandidate();
 
   useEffect(() => {
     if (!candidate) return;
@@ -149,7 +123,7 @@ export default function OverviewPage() {
         </CardHeader>
         <CardContent className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
           <Button variant="outline" asChild>
-            <Link href="/candidates/candidate-dashboard/profile-settings">
+            <Link href="/candidates/candidate-dashboard/my-profile">
               <Edit className="mr-2 h-4 w-4" /> Edit Profile
             </Link>
           </Button>
