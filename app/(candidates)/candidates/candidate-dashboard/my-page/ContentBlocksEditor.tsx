@@ -1,7 +1,7 @@
 "use client";
 
-import { ContentBlock, BlockType, ListStyle, TextColor } from "@prisma/client";
-import { useState, useEffect, useRef } from "react";
+import { ContentBlock, ListStyle, TextColor } from "@prisma/client";
+import { useState, useRef } from "react";
 import {
   SortableContext,
   verticalListSortingStrategy,
@@ -85,9 +85,10 @@ export default function ContentBlocksEditor({
   );
 
   /** ------------- Toolbar state ------------- */
-  const [selectedColor, setSelectedColor] = useState<TextColor>(DEFAULT_COLOR);
+  const [_selectedColor, _setSelectedColor] =
+    useState<TextColor>(DEFAULT_COLOR);
   /** Keeps track of the block currently being edited */
-  const [selectedOrder, setSelectedOrder] = useState<number | null>(null);
+  const [_selectedOrder, setSelectedOrder] = useState<number | null>(null);
 
   // const handleColorChange = (c: TextColor) => {
   //   setSelectedColor(c);
@@ -119,20 +120,20 @@ export default function ContentBlocksEditor({
   };
 
   /* ----------------- Helpers ----------------- */
-  const addBlock = (
-    type: BlockType,
-    extra: Partial<ContentBlockInput> = {}
-  ) => {
-    setBlocks((prev) => [
-      ...prev,
-      {
-        type,
-        order: prev.length,
-        color: selectedColor,
-        ...extra,
-      } as ContentBlockInput,
-    ]);
-  };
+  // const addBlock = (
+  //   type: BlockType,
+  //   extra: Partial<ContentBlockInput> = {}
+  // ) => {
+  //   setBlocks((prev) => [
+  //     ...prev,
+  //     {
+  //       type,
+  //       order: prev.length,
+  //       color: selectedColor,
+  //       ...extra,
+  //     } as ContentBlockInput,
+  //   ]);
+  // };
 
   /** Convert the currently‑selected block, or create a new one if none selected.
    *  When converting we attempt to carry the user’s existing content forward in a sensible way.
@@ -208,12 +209,12 @@ export default function ContentBlocksEditor({
     );
   };
 
-  const deleteBlock = (orderToDelete: number) => {
-    setBlocks((prev) => {
-      const filtered = prev.filter((b) => b.order !== orderToDelete);
-      return filtered.map((b, idx) => ({ ...b, order: idx })); // re-index orders
-    });
-  };
+  // const deleteBlock = (orderToDelete: number) => {
+  //   setBlocks((prev) => {
+  //     const filtered = prev.filter((b) => b.order !== orderToDelete);
+  //     return filtered.map((b, idx) => ({ ...b, order: idx })); // re-index orders
+  //   });
+  // };
 
   /* ----------------- Render ----------------- */
   return (
@@ -235,7 +236,7 @@ export default function ContentBlocksEditor({
             block={block}
             candidateSlug={candidateSlug}
             onChange={(patch) => updateBlock(block.order, patch)}
-            onDelete={() => deleteBlock(block.order)}
+            // onDelete={() => deleteBlock(block.order)}
             uploading={uploadingMap[block.order] || false}
             setUploading={setUploading}
             progress={uploadProgressMap[block.order] ?? 0}
@@ -262,7 +263,7 @@ export default function ContentBlocksEditor({
 function SortableBlock({
   block,
   onChange,
-  onDelete,
+  // onDelete,
   candidateSlug,
   uploading,
   setUploading,
@@ -272,7 +273,7 @@ function SortableBlock({
 }: {
   block: ContentBlockInput;
   onChange: (patch: Partial<ContentBlockInput>) => void;
-  onDelete: () => void;
+  // onDelete: () => void;
   candidateSlug: string;
   uploading: boolean;
   setUploading: (order: number, isUploading: boolean) => void;

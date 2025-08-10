@@ -370,7 +370,7 @@ export default function CandidateClient({
               {activeElectionTab.election.candidates.map(
                 (relatedCandidate: Candidate) => (
                   <Link
-                    key={relatedCandidate.name}
+                    key={relatedCandidate.slug}
                     href={`/candidate/${relatedCandidate.slug}`}
                     className="block"
                   >

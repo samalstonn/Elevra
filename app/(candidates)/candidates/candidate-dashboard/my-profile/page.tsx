@@ -11,7 +11,7 @@ import { Button } from "@/components/ui/button";
 import Link from "next/link";
 
 export default function BioSettingsPage() {
-  const { userId, isLoaded } = useAuth();
+  const { userId } = useAuth();
   const { data: candidateData, error, isLoading, refresh } = useCandidate();
 
   // Loading State

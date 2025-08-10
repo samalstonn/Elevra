@@ -6,8 +6,11 @@ import { Button } from "@/components/ui/button";
 type ToolbarProps = {
   selectedColor: TextColor;
   onColorChange: (color: TextColor) => void;
-  convertBlock: (type: BlockType, extra?: Record<string, any>) => void;
-  addBlock: (type: BlockType, extra?: Record<string, any>) => void;
+  convertBlock: (
+    type: BlockType,
+    extra?: Record<string, number | string>
+  ) => void;
+  addBlock: (type: BlockType, extra?: Record<string, number>) => void;
 };
 
 export default function Toolbar({
