@@ -12,7 +12,7 @@ export default function HeaderButtons({ pathname }: { pathname: string }) {
   const liveElectionsLink = "/live-elections";
 
   return (
-    <div>
+    <div className="flex items-center gap-4">
       <Button
         asChild
         size="sm"

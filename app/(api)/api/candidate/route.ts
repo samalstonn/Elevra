@@ -1,4 +1,3 @@
-
 export async function PUT(request: Request) {
   try {
     const { userId } = await auth();
@@ -6,15 +5,7 @@ export async function PUT(request: Request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
     const body = await request.json();
-    const {
-      name,
-      currentRole,
-      city,
-      state,
-      bio,
-      website,
-      linkedin,
-    } = body;
+    const { name, currentRole, city, state, bio, website, linkedin } = body;
     // Validate required
     if (!name || !currentRole || !city || !state || !bio) {
       return NextResponse.json({ error: "Missing fields" }, { status: 400 });
