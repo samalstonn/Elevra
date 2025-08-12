@@ -153,30 +153,12 @@ export async function POST(request: Request) {
 
     // Parse the request body
     const body = await request.json();
-    const {
-      name,
-      currentRole,
-      city,
-      state,
-      bio,
-      website,
-      linkedin,
-      clerkUserId,
-    } = body;
-
-    // Validate required fields
-    if (!name || !currentRole || !city || !state || !bio) {
-      console.error("Missing required fields:", body);
-      return NextResponse.json(
-        { error: "Missing required fields" },
-        { status: 400 }
-      );
-    }
+    const { name, city, state, website, linkedin, clerkUserId } = body;
 
     // Ensure the clerkUserId matches the authenticated user
     if (clerkUserId !== userId) {
       return NextResponse.json(
-        { error: "Unauthorized access" },
+        { error: "clerkUserId does not match authenticated user" },
         { status: 403 }
       );
     }

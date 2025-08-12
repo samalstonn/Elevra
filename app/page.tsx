@@ -74,9 +74,9 @@ function HomePageContent() {
               transition: { duration: 0.6, ease: "easeOut" },
             },
           }}
-          className="text-1xl sm:text-3xl md:text-4xl tracking-tight text-gray-900 w-full leading-tight mb-4"
+          className="text-1xl sm:text-3xl md:text-4xl tracking-tight text-gray-900 w-full leading-tight mb-8"
         >
-          Discover and Support Local Candidates in Seconds.
+          The Hub For Local Elections.
         </motion.h2>
 
         {/* Search Bar */}
@@ -90,7 +90,7 @@ function HomePageContent() {
               transition: { duration: 0.6, ease: "easeOut" },
             },
           }}
-          className="w-full max-w-lg sm:max-w-xl md:max-w-2xl lg:max-w-3xl mb-8"
+          className="w-full max-w-lg sm:max-w-xl md:max-w-2xl lg:max-w-3xl mb-12"
         >
           <SearchBar
             onSearch={(location: NormalizedLocation) => handleSearch(location)}

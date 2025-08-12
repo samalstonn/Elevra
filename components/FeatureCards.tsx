@@ -1,5 +1,6 @@
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
+import Link from "next/link";
 
 const FeatureCards = () => {
   const cardsSectionOne = [
@@ -206,15 +207,11 @@ const FeatureCards = () => {
         ))}
       </motion.div>
       <div className="flex flex-col items-center w-full overflow-x-hidden mx-auto">
-        <Button
-          variant="purple"
-          size="xxl"
-          onClick={() => {
-            window.scrollTo({ top: 0, behavior: "smooth" });
-          }}
-          className="mt-12"
-        >
-          Check Out What&apos;s Live
+        <Button variant="purple" size="xxl" className="mt-12">
+          <Link href={"/live-elections"}>
+            <span className="hidden md:inline">Check Out What&apos;s Live</span>
+            <span className="md:hidden">📊</span>
+          </Link>
         </Button>
       </div>
     </motion.section>

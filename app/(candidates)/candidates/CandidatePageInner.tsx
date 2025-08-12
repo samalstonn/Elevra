@@ -5,7 +5,6 @@ import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { TabButton } from "@/components/ui/tab-button";
 import { FeatureCard } from "@/components/ui/feature-card";
-import CandidateSignupForm from "@/app/(candidates)/candidates/CandidateSignUpForm";
 import CandidateLoginForm from "@/app/(candidates)/candidates/CandidateLoginForm";
 import { useRouter, useSearchParams } from "next/navigation";
 
@@ -54,12 +53,6 @@ export default function CandidatesPageInner() {
               onClick={() => setActiveTab("home")}
             >
               Home
-            </TabButton>
-            <TabButton
-              active={activeTab === "signup"}
-              onClick={() => setActiveTab("signup")}
-            >
-              Join as a Candidate
             </TabButton>
             <TabButton
               active={activeTab === "login"}
@@ -136,52 +129,6 @@ export default function CandidatesPageInner() {
               >
                 Join as a Candidate
               </Button>
-            </motion.div>
-          </div>
-        )}
-
-        {activeTab === "signup" && (
-          <div className="flex flex-col items-center max-w-4xl mx-auto px-4 mt-12">
-            <motion.h1
-              variants={{
-                hidden: { opacity: 0, y: 20 },
-                visible: {
-                  opacity: 1,
-                  y: 0,
-                  transition: { duration: 0.6, ease: "easeOut" },
-                },
-              }}
-              className="text-4xl sm:text-5xl font-bold text-purple-700 mb-6"
-            >
-              Get Started as a Candidate
-            </motion.h1>
-            <motion.p
-              variants={{
-                hidden: { opacity: 0, y: 20 },
-                visible: {
-                  opacity: 1,
-                  y: 0,
-                  transition: { duration: 0.6, ease: "easeOut", delay: 0.1 },
-                },
-              }}
-              className="text-lg text-gray-600 text-center max-w-xl mb-8"
-            >
-              Sign up to start building your campaign and connect with
-              specialized vendors.
-            </motion.p>
-
-            <motion.div
-              variants={{
-                hidden: { opacity: 0, y: 20 },
-                visible: {
-                  opacity: 1,
-                  y: 0,
-                  transition: { duration: 0.6, ease: "easeOut", delay: 0.2 },
-                },
-              }}
-              className="w-full max-w-md"
-            >
-              <CandidateSignupForm />
             </motion.div>
           </div>
         )}

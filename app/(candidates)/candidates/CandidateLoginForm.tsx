@@ -10,6 +10,7 @@ import {
   FaExclamationTriangle,
 } from "react-icons/fa";
 import { useAuth } from "@clerk/nextjs";
+import { useUser } from "@clerk/nextjs";
 
 // Candidate interface based on Prisma schema
 interface Candidate {
@@ -36,6 +37,8 @@ export default function CandidateLoginForm() {
 
   const router = useRouter();
   const { isLoaded, userId } = useAuth();
+  const { user } = useUser();
+  const fullName = user?.fullName; // capture to use in effect dependencies
 
   // Check if the user is already registered as a candidate when component mounts
   useEffect(() => {
@@ -71,11 +74,46 @@ export default function CandidateLoginForm() {
             setLoginStatus("rejected");
           }
         } else if (response.status === 404) {
-          // Candidate not found - user needs to sign up
-          setCandidate(null);
-          setError(
-            "You haven't registered as a candidate yet. Please join as a candidate."
-          );
+          // Candidate not found - need to create a new candidate
+          setIsLoading(true);
+          try {
+            const response = await fetch("/api/candidate", {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({
+                name: fullName || "Unknown",
+                website: "",
+                linkedin: "",
+                currentRole: "",
+                currentState: "",
+                bio: "",
+                currentCity: "",
+                clerkUserId: userId,
+              }),
+            });
+
+            if (response.ok) {
+              setLoginStatus("success");
+              // Redirect to candidate dashboard after successful submission
+              setTimeout(() => {
+                router.push("/candidates/candidate-dashboard");
+              }, 2000);
+            } else {
+              const data = await response.json();
+              setError(data.error || "Failed to submit candidate information");
+              setLoginStatus("error");
+            }
+          } catch (error: unknown) {
+            if (error instanceof Error) {
+              console.error("Error creating candidate:", error);
+            }
+            setError("An unexpected error occurred. Please try again later.");
+            setLoginStatus("error");
+          } finally {
+            setLoginStatus("success");
+          }
         } else {
           const data = await response.json();
           setError(
@@ -93,7 +131,7 @@ export default function CandidateLoginForm() {
     };
 
     checkCandidateStatus();
-  }, [isLoaded, userId, router]);
+  }, [isLoaded, userId, router, fullName]);
 
   if (!isLoaded) {
     return <div>Loading authentication...</div>;

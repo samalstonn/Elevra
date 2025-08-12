@@ -8,30 +8,8 @@ const AboutUs = () => {
       whileInView={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.8, ease: "easeInOut" }}
       viewport={{ once: true }}
-      className="w-screen pt-32 pb-32 px-6"
+      className="w-screen pt-16 pb-32 px-6"
     >
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.7, ease: "easeInOut", delay: 0.2 }}
-        viewport={{ once: true }}
-        className="max-w-5xl mx-auto text-center"
-      >
-        {/* Header Section */}
-        <h2 className="text-3xl sm:text-4xl font-extrabold text-gray-900">
-          About Elevra
-        </h2>
-        <p className="mt-6 text-lg text-gray-600">
-          Elevra was founded by students and faculty at Cornell University to
-          put power in the hands of local communities. We are a nonpartisan,
-          focused solution for voters to engage with local elections and for
-          candidates to manage their campaigns from one place.
-        </p>
-      </motion.div>
-
-      {/* Section Spacer */}
-      <div className="mt-24"></div>
-
       <motion.h2
         initial={{ opacity: 0, y: 20 }}
         whileInView={{ opacity: 1, y: 0 }}
@@ -39,78 +17,48 @@ const AboutUs = () => {
         viewport={{ once: true }}
         className="text-3xl sm:text-4xl font-extrabold text-gray-900 text-center"
       >
-        Why Use Elevra?
+        Mission Statement
       </motion.h2>
-
-      {/* Features Grid with Smooth Stagger Effect */}
-      <motion.div
-        initial="hidden"
-        whileInView="visible"
-        variants={{
-          hidden: { opacity: 0 },
-          visible: {
-            opacity: 1,
-            transition: { staggerChildren: 0.25 },
-          },
-        }}
+      <motion.p
+        initial={{ opacity: 0, y: 20 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.7, ease: "easeInOut", delay: 0.4 }}
         viewport={{ once: true }}
-        className="mt-12 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 max-w-5xl mx-auto"
+        className="mt-6 text-lg text-gray-600 text-center"
       >
-        {[
-          {
-            emoji: "🧠",
-            title: "Contribute Smarter",
-            text: "Make informed, data-driven decisions about which candidates to support.",
-          },
-          {
-            emoji: "⚡",
-            title: "Donate Faster",
-            text: "Our streamlined platform gets your contribution to local campaigns in just a few clicks.",
-          },
-          {
-            emoji: "📊",
-            title: "Quantify Impact",
-            text: "Track how your donations are being put to work in your community.",
-          },
-        ].map((card, index) => (
-          <motion.div
-            key={index}
-            initial={{ opacity: 0, y: 20, scale: 0.95 }}
-            whileInView={{ opacity: 1, y: 0, scale: 1 }}
-            transition={{
-              duration: 0.6,
-              ease: "easeInOut",
-              delay: index * 0.15,
-            }}
-            viewport={{ once: true }}
-            whileHover={{
-              scale: 1.03,
-              transition: { type: "spring", stiffness: 100 },
-            }}
-            whileTap={{
-              scale: 0.98,
-              transition: { type: "spring", stiffness: 200 },
-            }}
-            className="bg-gray-100 rounded-xl shadow-md p-8 text-center transition-transform"
-          >
-            <motion.span
-              initial={{ scale: 0.85, opacity: 0 }}
-              whileInView={{ scale: 1, opacity: 1 }}
-              transition={{
-                duration: 0.4,
-                ease: "easeInOut",
-                delay: index * 0.15 + 0.2,
-              }}
-              className="text-4xl"
-            >
-              {card.emoji}
-            </motion.span>
-            <h3 className="mt-4 text-xl font-semibold text-gray-900">
-              {card.title}
-            </h3>
-            <p className="mt-2 text-gray-600">{card.text}</p>
-          </motion.div>
-        ))}
+        Elevra makes running local elections simple and connect voters with the
+        campaigns that shape their communities.
+      </motion.p>
+      {/* Section Spacer */}
+      <div className="mt-24"></div>
+
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.7, ease: "easeInOut", delay: 0.2 }}
+        viewport={{ once: true }}
+        className="max-w-5xl mx-auto"
+      >
+        {/* Header Section */}
+        <h2 className="text-3xl sm:text-4xl font-extrabold text-gray-900 text-center">
+          About Elevra
+        </h2>
+        <p className="mt-6 text-lg text-gray-600 text-center">
+          Founded by students and faculty at Cornell University, Elevra was
+          created to remove the barriers that keep people from running for local
+          office and to make it easier for voters to engage with elections that
+          matter most. Our team’s firsthand experience in local government,
+          congressional campaigns, and community leadership has shaped a
+          platform where: <br />
+        </p>
+        <p className="text-lg text-gray-600 mt-2 pl-20 pr-20">
+          1. Any voter can enter a ZIP code and instantly see who’s running for
+          what in their community. <br />
+          2. Candidates can launch and manage their campaigns without juggling
+          expensive tools or disconnected resources. By putting all the
+          essentials in one place, Elevra makes local elections more accessible,
+          efficient, and connected for everyone.
+        </p>
       </motion.div>
     </motion.section>
   );
