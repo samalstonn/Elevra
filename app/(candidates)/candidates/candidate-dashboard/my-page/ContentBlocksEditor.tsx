@@ -344,7 +344,7 @@ function SortableBlock({
                 <span
                   contentEditable
                   suppressContentEditableWarning
-                  className="inline-block min-w-[4ch] pr-4 outline-none"
+                  className="min-w-[4ch] pr-4 outline-none align-top" // removed inline-block so list marker aligns to first line, added align-top
                   onBlur={(e) => {
                     const newItems = [...(block.items ?? [])];
                     newItems[idx] = e.currentTarget.textContent ?? "";
