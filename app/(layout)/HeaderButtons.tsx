@@ -10,6 +10,7 @@ export default function HeaderButtons({ pathname }: { pathname: string }) {
     dashboardLink = "/vendors/vendor-dashboard";
   }
   const liveElectionsLink = "/live-elections";
+  const blogLink = "/blog";
 
   return (
     <div className="flex items-center gap-4">
@@ -21,7 +22,7 @@ export default function HeaderButtons({ pathname }: { pathname: string }) {
       >
         <Link href={liveElectionsLink}>
           <span className="hidden md:inline">Live Elections</span>
-          <span className="md:hidden">📊</span>
+          <span className="md:hidden">🗳️</span>
         </Link>
       </Button>
       <Button
@@ -30,9 +31,9 @@ export default function HeaderButtons({ pathname }: { pathname: string }) {
         variant="purple"
         className="md:text-base md:p-4"
       >
-        <Link href={dashboardLink}>
+        <Link href={blogLink}>
           <span className="hidden md:inline">Blog</span>
-          <span className="md:hidden">📊</span>
+          <span className="md:hidden">📰</span>
         </Link>
       </Button>
       <Button
