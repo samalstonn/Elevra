@@ -8,7 +8,7 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { MdHowToVote } from "react-icons/md";
 import { marked } from "marked";
-import DOMPurify from "dompurify";
+import DOMPurify from "isomorphic-dompurify";
 import Image from "next/image";
 
 export type ElectionProfileTabProps = {

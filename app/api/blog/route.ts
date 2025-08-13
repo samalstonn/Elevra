@@ -15,7 +15,7 @@ async function ensureAdmin(userId: string | null): Promise<boolean> {
   if (isAdminUser(userId)) return true;
   if (!userId) return false;
   try {
-    const client = await clerkClient();
+    const client = await clerkClient(); // revert: clerkClient is a function returning ClerkClient
     const user = await client.users.getUser(userId);
     return Boolean(user.privateMetadata?.isAdmin);
   } catch {

@@ -341,6 +341,7 @@ export default function AdminDashboard() {
                       <a
                         href={`/blog/${p.slug}`}
                         target="_blank"
+                        rel="noopener noreferrer"
                         className="text-gray-600 hover:underline"
                       >
                         View
@@ -363,7 +364,7 @@ function MarkdownPreview({ source }: { source: string }) {
     (async () => {
       const { marked } = await import("marked");
       marked.setOptions({ gfm: true, breaks: true });
-      const DOMPurify = (await import("dompurify")).default;
+      const DOMPurify = (await import("isomorphic-dompurify")).default;
       const parsed = marked.parse(source);
       if (parsed instanceof Promise) {
         parsed.then((resolved) => setHtml(DOMPurify.sanitize(resolved)));
