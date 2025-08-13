@@ -88,7 +88,7 @@ export async function POST(request: Request) {
       },
     });
     return NextResponse.json(post, { status: 201 });
-  } catch (e: any) {
+  } catch (e: unknown) {
     console.error(e);
     return NextResponse.json(
       { error: "Failed to create post" },
@@ -172,7 +172,7 @@ export async function PATCH(request: Request) {
       },
     });
     return NextResponse.json(updated);
-  } catch (e) {
+  } catch (e: unknown) {
     console.error(e);
     return NextResponse.json(
       { error: "Failed to update post" },

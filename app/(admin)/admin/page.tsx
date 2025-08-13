@@ -24,6 +24,16 @@ interface BlogForm {
   status: "DRAFT" | "PUBLISHED";
 }
 
+// New type for request payload (create/update)
+interface BlogPostUpsertRequest {
+  id?: number;
+  title: string;
+  contentMd: string;
+  authorName?: string;
+  tags: string[];
+  status: "DRAFT" | "PUBLISHED";
+}
+
 export default function AdminDashboard() {
   const sendTestEmail = async () => {
     try {
@@ -86,17 +96,17 @@ export default function AdminDashboard() {
     e.preventDefault();
     setSaving(true);
     try {
-      const payload: any = {
+      let payload: BlogPostUpsertRequest = {
         title: form.title,
         contentMd: form.contentMd,
-        authorName: form.authorName,
+        authorName: form.authorName || undefined,
         tags: form.tags
           .split(",")
           .map((t) => t.trim())
           .filter(Boolean),
         status: form.status,
       };
-      if (editing) payload.id = editing.id;
+      if (editing) payload = { ...payload, id: editing.id };
       const method = editing ? "PATCH" : "POST";
       const res = await fetch("/api/blog", {
         method,
@@ -215,7 +225,10 @@ export default function AdminDashboard() {
             <select
               value={form.status}
               onChange={(e) =>
-                setForm((f) => ({ ...f, status: e.target.value as any }))
+                setForm((f) => ({
+                  ...f,
+                  status: e.target.value as "DRAFT" | "PUBLISHED",
+                }))
               }
               className="rounded border px-3 py-2"
             >

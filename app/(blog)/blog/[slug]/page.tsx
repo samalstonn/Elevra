@@ -5,15 +5,16 @@ import DOMPurify from "isomorphic-dompurify";
 import { marked } from "marked";
 marked.setOptions({ gfm: true, breaks: true });
 
-interface Props {
-  params: Promise<{ slug: string }> | { slug: string };
-}
-
 export const revalidate = 60;
 
-export default async function BlogPostPage({ params }: Props) {
-  const awaited = params instanceof Promise ? await params : params;
-  const { slug } = awaited;
+export default async function BlogPostPage({
+  params,
+}: {
+  params?: Promise<{ slug: string }>; // Next.js 15 may supply params as a Promise
+}) {
+  const awaited = params ? await params : undefined;
+  const slug = awaited?.slug;
+  if (!slug) notFound();
   const post = await prisma.blogPost.findUnique({
     where: { slug },
   });
