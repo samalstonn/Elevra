@@ -15,8 +15,8 @@ export default async function BlogIndexPage() {
 
   return (
     <main className="max-w-6xl mx-auto px-6 py-16">
-      <h1 className="text-5xl font-bold text-purple-800 mb-12 tracking-tight">
-        Blog
+      <h1 className="text-3xl font-bold text-purple-800 mb-12 tracking-tight">
+        The Elevra Blog
       </h1>
       <div className="grid gap-12 md:grid-cols-2 xl:grid-cols-3">
         {posts.map((p) => (
