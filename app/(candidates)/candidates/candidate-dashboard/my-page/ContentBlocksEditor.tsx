@@ -11,7 +11,7 @@ import { CSS } from "@dnd-kit/utilities";
 import { Button } from "@/components/ui/button";
 import Image from "next/image";
 import Link from "next/link";
-import { Eye } from "lucide-react";
+import { Trash2, Eye } from "lucide-react";
 
 const colorClass = {
   BLACK: "text-black",
@@ -338,26 +338,41 @@ function SortableBlock({
 
       inner = (
         <>
-          <ListTag className={listClass}>
+          <ListTag className={listClass + " space-y-1"}>
             {(block.items ?? []).map((item, idx) => (
-              <li
-                key={idx}
-                contentEditable
-                suppressContentEditableWarning
-                onBlur={(e) => {
-                  const newItems = [...(block.items ?? [])];
-                  newItems[idx] = e.currentTarget.textContent ?? "";
-                  onChange({ items: newItems });
-                }}
-                onFocus={() => setSelectedOrder(block.order)}
-              >
-                {item}
+              <li key={idx} className="relative">
+                <span
+                  contentEditable
+                  suppressContentEditableWarning
+                  className="inline-block min-w-[4ch] pr-4 outline-none"
+                  onBlur={(e) => {
+                    const newItems = [...(block.items ?? [])];
+                    newItems[idx] = e.currentTarget.textContent ?? "";
+                    onChange({ items: newItems });
+                  }}
+                  onFocus={() => setSelectedOrder(block.order)}
+                >
+                  {item}
+                </span>
+                <button
+                  type="button"
+                  aria-label="Delete list item"
+                  className="absolute -right-5 top-1.5 text-red-500 hover:text-red-600 opacity-100 transition"
+                  onClick={() => {
+                    const newItems = (block.items ?? []).filter(
+                      (_, i) => i !== idx
+                    );
+                    onChange({ items: newItems });
+                  }}
+                >
+                  <Trash2 className="w-3 h-3" />
+                </button>
               </li>
             ))}
           </ListTag>
           <button
             onClick={() => onChange({ items: [...(block.items ?? []), ""] })}
-            className="text-sm text-purple-600 hover:underline ml-6"
+            className="text-sm text-purple-600 hover:underline ml-6 mt-1"
             type="button"
           >
             + Add item

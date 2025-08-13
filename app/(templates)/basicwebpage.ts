@@ -6,7 +6,7 @@ export const davidWeinsteinTemplate = [
     order: 0,
     type: BlockType.HEADING,
     level: 1,
-    text: "I’m David Weinstein & I’m running for the Hastings Board of Education.",
+    text: "I’m Johnny Appleseed & I’m running for the Hackensack Board of Education.",
     color: TextColor.BLACK,
   },
 
@@ -14,11 +14,11 @@ export const davidWeinsteinTemplate = [
   {
     order: 1,
     type: BlockType.TEXT,
-    body: `I grew up in Hastings. From Hillside to FMS to HHS, I walked these halls, learned from incredible teachers, and built relationships that shaped who I am today.
+    body: `I was raised right here in Hackensack - walking these same halls, learning from exceptional teachers, and building friendships that shaped the person I am today.
 
-Now, I’m raising my own child here, and I want to help make sure our schools remain strong for all learners: safe, supportive, and inclusive for the next generation.
+Now, as I raise my own child in this community, I’m committed to helping ensure our schools remain strong for every student: safe, supportive, and inclusive for the next generation.
 
-That’s why I’m running for the Board of Education on **May 20th 2025**.`,
+That’s why I’m running for the Board of Education on **November 4th 2025**`,
     color: TextColor.GRAY,
   },
 
@@ -26,7 +26,7 @@ That’s why I’m running for the Board of Education on **May 20th 2025**.`,
   {
     order: 2,
     type: BlockType.IMAGE,
-    imageUrl: "/david1.webp",
+    imageUrl: "/example-johnny.jpg",
   },
 
   /* ────────────────  WHAT I BRING  ────────────────── */
@@ -42,11 +42,11 @@ That’s why I’m running for the Board of Education on **May 20th 2025**.`,
     type: BlockType.LIST,
     listStyle: ListStyle.BULLET,
     items: [
-      "I bring a strong sense of responsibility to this community. I’m a volunteer firefighter here in Hastings, and service has always been central to how I show up. Our schools are not just for students and their families. They are part of the fabric of our entire community. I want to bring my entire Hastings self to this role: as a parent, a longtime resident and native, a first responder, and Hastings’ #1 Fan.",
-      "I bring a deep belief in equity. I believe all students deserve to feel safe, supported, and seen. That means understanding all the factors that impact a student’s growth, and building systems that reflect our values, not just our intentions.",
-      "I bring curiosity. I ask a lot of questions and I don’t shy away from hard conversations. I believe that’s how progress happens: when we confront challenges directly and work through them together.",
-      "I bring leadership experience. I’ve spent the majority of my career as a Head of Production in media and advertising, managing complex teams, tight timelines, and competing priorities. My job is to listen, to organize, to lead, and to find solutions that reflect the needs of everyone involved.",
-      "I bring perspective. I know what it’s like to be a student in this district, and now I’m experiencing it as a parent. That dual lens helps me understand where we’ve come from and informs me on where we need to go.",
+      "I bring commitment. Hackensack has been my home for decades, and I’ve built my life here - as a student walking these same hallways, as a parent raising my child here, and as Senior Editor at the Hackensack Daily News covering the stories that shape our community. I understand that our schools are more than classrooms - they’re a cornerstone of our city’s identity.",
+      "I bring a passion for fairness. Every student deserves the chance to thrive in an environment where they feel safe, respected, and supported. That means looking closely at the challenges they face and making sure our policies turn our shared values into action.",
+      "I bring curiosity and courage. I believe in asking thoughtful questions, seeking real answers, and not backing away from difficult topics. Honest dialogue is how we find solutions that work for everyone.",
+      "I bring proven leadership. In my career, I’ve led teams through tight deadlines, complex projects, and tough decisions. I know how to listen, prioritize, and collaborate to reach goals that serve the greater good.",
+      "I bring perspective. I see our schools through two lenses - my own years as a student here and my experiences as a parent today. That dual view helps me appreciate our progress while keeping my eyes on what still needs to be done.",
     ],
     color: TextColor.BLACK,
   },
@@ -64,11 +64,11 @@ That’s why I’m running for the Board of Education on **May 20th 2025**.`,
     type: BlockType.LIST,
     listStyle: ListStyle.BULLET,
     items: [
-      "I believe in a school system that reflects the best of who we are—one that supports every student, celebrates diverse perspectives, and creates opportunities for all kids to thrive.",
-      "I believe in protecting the most vulnerable among us and making sure every student has what they need to succeed, regardless of their background, how they learn, or what challenges they may be facing.",
-      "I believe in listening to all voices, not just the loudest. We grow stronger when we hear from students, parents, educators, and neighbors with different perspectives and lived experiences.",
-      "I believe in asking hard questions and making thoughtful decisions. I believe in being honest about trade-offs and clear about values.",
-      "I believe that public education is one of the most important things we can invest in—not just for today’s students but for the future of our entire community.",
+      "I believe our schools should reflect the very best of Hackensack - championing every student, honoring diverse perspectives, and opening doors so all children can reach their potential.",
+      "I believe we have a responsibility to stand with our most vulnerable students and make sure every child has the tools, support, and opportunities they need to succeed, no matter their background, learning style, or personal challenges.",
+      "I believe in hearing from all voices, not just the loudest. Our strength comes from listening to students, families, educators, and neighbors with a range of experiences and perspectives.",
+      "I believe in facing tough questions head-on and making decisions with clarity and integrity - being transparent about trade-offs and grounded in shared values.",
+      "I believe public education is one of our greatest investments - not only for today’s students but for the future health, prosperity, and unity of our community.",
     ],
     color: TextColor.BLACK,
   },
@@ -84,16 +84,16 @@ That’s why I’m running for the Board of Education on **May 20th 2025**.`,
   {
     order: 8,
     type: BlockType.TEXT,
-    body: `The heart of Hastings has always been its people. My connection to this village didn’t begin with this campaign, but rather started as a kid at Hillside, learning from the incredible teachers who shaped who I am.   
+    body: `The heart of Hackensack has always been its people. My connection to this city didn’t begin with this campaign - it began as a kid walking the halls of our public schools, learning from the dedicated teachers who helped shape who I am.
 
-I’m looking forward to strengthening my connection to this village and doing everything I can to support our citizens and institutions. I’m ready to focus on working with existing board members and the administration to make our schools and our community the best it can be.`,
+I’m committed to strengthening that connection and doing everything I can to support our students, families, and schools. I’m ready to work collaboratively with fellow board members and our administration to make Hackensack’s schools - and our community - the very best they can be.`,
     color: TextColor.BLACK,
   },
   /* ────────────────  Picture/video  ─────────────── */
   {
     order: 9,
     type: BlockType.IMAGE,
-    imageUrl: "/DAVID_LAWN_SIGN.webp",
+    imageUrl: "/johnny-lawnsign.png",
   },
 ] satisfies Array<
   // anything that matches Prisma’s create input,
