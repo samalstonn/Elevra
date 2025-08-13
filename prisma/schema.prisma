@@ -248,6 +248,26 @@ enum ServiceCategoryType {
   OTHER
 }
 
+enum BlogStatus {
+  DRAFT
+  PUBLISHED
+}
+
+model BlogPost {
+  id          Int        @id @default(autoincrement())
+  title       String
+  slug        String     @unique
+  authorName  String?
+  excerpt     String?
+  coverImage  String?
+  contentMd   String
+  tags        String[]   @default([])
+  status      BlogStatus @default(DRAFT)
+  publishedAt DateTime?
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+}
+
 model ElectionLink {
   candidate   Candidate @relation(fields: [candidateId], references: [id])
   candidateId Int
