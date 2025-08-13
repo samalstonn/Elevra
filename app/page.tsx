@@ -76,7 +76,7 @@ function HomePageContent() {
           }}
           className="text-1xl sm:text-3xl md:text-4xl tracking-tight text-gray-900 w-full leading-tight mb-8"
         >
-          The Hub For Local Elections.
+          Local Elections, Simplified.
         </motion.h2>
 
         {/* Search Bar */}
