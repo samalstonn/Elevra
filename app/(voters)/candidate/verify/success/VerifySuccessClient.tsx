@@ -32,9 +32,8 @@ export default function VerifySuccessClient() {
           </p>
 
           <p>
-            You’re ready to engage with voters on Elevra! Donations are
-            currently in test mode and will be enabled soon. Please let us know
-            at elevracommunity@gmail.com if this feature is important to you.
+            You’re ready to engage with voters on Elevra! Please let us know at
+            elevracommunity@gmail.com what features are important to you.
           </p>
 
           <p>

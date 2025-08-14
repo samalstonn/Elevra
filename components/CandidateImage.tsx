@@ -22,7 +22,6 @@ export function CandidateImage({
   height = 64,
   className = "",
 }: CandidateImageProps) {
-  console.log("CandidateImage", { clerkUserId, publicPhoto, name });
   const [imgSrc, setImgSrc] = useState<string>(getInitialSrc(publicPhoto));
 
   useEffect(() => {

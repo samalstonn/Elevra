@@ -25,7 +25,6 @@ export function EndorsementTab({ candidateId }: EndorsementTabProps) {
   const [showForm, setShowForm] = useState(false);
   const router = useRouter();
   const { isSignedIn, user } = useUser();
-  console.log("User:", user);
 
   const handleDelete = async (endorsementId: number) => {
     if (!confirm("Are you sure you want to delete your endorsement?")) return;
@@ -150,14 +149,11 @@ export function EndorsementTab({ candidateId }: EndorsementTabProps) {
                       content: formData.get("content"),
                       clerkUserId: user?.id || "", // Use actual userId from context
                     };
-                    const res = await fetch(
-                      `/api/endorsement`,
-                      {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify(payload),
-                      }
-                    );
+                    const res = await fetch(`/api/endorsement`, {
+                      method: "POST",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify(payload),
+                    });
                     if (res.ok) {
                       setShowForm(false);
                       router.refresh();

@@ -211,10 +211,25 @@ export default function CandidateClient({
                 <Button
                   variant="purple"
                   size="md"
-                  onClick={() => {
-                    router.push(
-                      `/candidate/verify?candidate=${candidate.slug}&candidateID=${candidate.id}`
-                    );
+                  onClick={async () => {
+                    try {
+                      const resp = await fetch("/api/v1/contentblocks/reset", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ candidateId: candidate.id }),
+                      });
+                      if (!resp.ok) {
+                        const data = await resp.json().catch(() => ({}));
+                        throw new Error(data.error || "Failed to reset");
+                      }
+                      router.refresh();
+                      router.push(
+                        `/candidate/verify?candidate=${candidate.slug}&candidateID=${candidate.id}`
+                      );
+                    } catch (e) {
+                      console.error(e);
+                      alert("Could not reset content blocks.");
+                    }
                   }}
                   className="flex items-center gap-2"
                 >
@@ -266,10 +281,25 @@ export default function CandidateClient({
                 <Button
                   variant="purple"
                   size="sm"
-                  onClick={() => {
-                    router.push(
-                      `/candidate/verify?candidate=${candidate.slug}&candidateID=${candidate.id}`
-                    );
+                  onClick={async () => {
+                    try {
+                      const resp = await fetch("/api/v1/contentblocks/reset", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ candidateId: candidate.id }),
+                      });
+                      if (!resp.ok) {
+                        const data = await resp.json().catch(() => ({}));
+                        throw new Error(data.error || "Failed to reset");
+                      }
+                      router.refresh();
+                      router.push(
+                        `/candidate/verify?candidate=${candidate.slug}&candidateID=${candidate.id}`
+                      );
+                    } catch (e) {
+                      console.error(e);
+                      alert("Could not reset content blocks.");
+                    }
                   }}
                   className="flex justify-center items-center gap-1 text-sm px-2"
                 >

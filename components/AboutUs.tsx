@@ -24,10 +24,10 @@ const AboutUs = () => {
         whileInView={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.7, ease: "easeInOut", delay: 0.4 }}
         viewport={{ once: true }}
-        className="mt-6 text-lg text-gray-600 text-center"
+        className="mt-12 text-lg text-gray-600 text-center"
       >
-        Elevra makes running local elections simple and connect voters with the
-        campaigns that shape their communities.
+        Elevra makes running local elections simple and connects voters with the
+        leaders that shape their communities.
       </motion.p>
       {/* Section Spacer */}
       <div className="mt-24"></div>
@@ -51,14 +51,29 @@ const AboutUs = () => {
           congressional campaigns, and community leadership has shaped a
           platform where: <br />
         </p>
-        <p className="text-lg text-gray-600 mt-2 pl-20 pr-20">
-          1. Any voter can enter a ZIP code and instantly see who’s running for
-          what in their community. <br />
-          2. Candidates can launch and manage their campaigns without juggling
-          expensive tools or disconnected resources. By putting all the
-          essentials in one place, Elevra makes local elections more accessible,
-          efficient, and connected for everyone.
-        </p>
+        <div className="mt-6 space-y-4 text-lg text-gray-600">
+          <div className="flex">
+            <span className="w-6 flex-shrink-0 text-center">1.</span>
+            <p className="ml-2">
+              Any voter can enter a ZIP code and instantly see who’s running for
+              what in their community.
+            </p>
+          </div>
+          <div className="flex">
+            <span className="w-6 flex-shrink-0 text-center">2.</span>
+            <p className="ml-2">
+              Candidates can launch and manage their campaigns without juggling
+              expensive tools or disconnected resources.
+            </p>
+          </div>
+          <div className="flex">
+            <span className="w-6 flex-shrink-0 text-center">3.</span>
+            <p className="ml-2">
+              By putting all the essentials in one place, Elevra makes local
+              elections more accessible, efficient, and connected for everyone.
+            </p>
+          </div>
+        </div>
       </motion.div>
     </motion.section>
   );
