@@ -15,6 +15,7 @@ import { TabButton } from "@/components/ui/tab-button";
 import { EndorsementTab } from "./EndorsementTab";
 import { ContactTab } from "./ContactTab";
 import { ElectionProfileTab } from "./ElectionTab";
+import { useAuth } from "@clerk/nextjs";
 
 export type ElectionWithCandidates = Election & {
   candidates: Candidate[];
@@ -36,6 +37,7 @@ export default function CandidateClient({
 }) {
   const searchParams = useSearchParams();
   const router = useRouter();
+  const { isSignedIn } = useAuth();
   const [popupMessage, setPopupMessage] = useState<{
     type: "success" | "error";
     message: string;
@@ -43,6 +45,7 @@ export default function CandidateClient({
 
   const [hovered, setHovered] = useState<string | null>(null);
   const [hydrated, setHydrated] = useState(false);
+  const [isResetting, setIsResetting] = useState(false);
 
   // Use string to allow dynamic election tabs
   const [activeTab, setActiveTab] = useState<string>("about");
@@ -111,6 +114,38 @@ export default function CandidateClient({
       window.history.replaceState({}, "", cleanUrl.toString());
     }
   }, [searchParams, candidate]);
+
+  // Abstracted function to reset content blocks and navigate to verify flow
+  const handleThisIsMe = async () => {
+    if (isResetting) return;
+    if (!isSignedIn) {
+      alert("Please sign in first to verify this profile.");
+      const back = window.location.pathname + window.location.search;
+      router.push(`/sign-in?redirect_url=${encodeURIComponent(back)}`);
+      return;
+    }
+    try {
+      setIsResetting(true);
+      const resp = await fetch("/api/v1/contentblocks/reset", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ candidateId: candidate.id }),
+      });
+      if (!resp.ok) {
+        const data = await resp.json().catch(() => ({}));
+        throw new Error(data.error || "Failed to reset");
+      }
+      router.refresh();
+      router.push(
+        `/candidate/verify?candidate=${candidate.slug}&candidateID=${candidate.id}`
+      );
+    } catch (e) {
+      console.error(e);
+      alert("Could not reset content blocks.");
+    } finally {
+      setIsResetting(false);
+    }
+  };
 
   if (!candidate) {
     return <div>Candidate not found</div>;
@@ -211,30 +246,12 @@ export default function CandidateClient({
                 <Button
                   variant="purple"
                   size="md"
-                  onClick={async () => {
-                    try {
-                      const resp = await fetch("/api/v1/contentblocks/reset", {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({ candidateId: candidate.id }),
-                      });
-                      if (!resp.ok) {
-                        const data = await resp.json().catch(() => ({}));
-                        throw new Error(data.error || "Failed to reset");
-                      }
-                      router.refresh();
-                      router.push(
-                        `/candidate/verify?candidate=${candidate.slug}&candidateID=${candidate.id}`
-                      );
-                    } catch (e) {
-                      console.error(e);
-                      alert("Could not reset content blocks.");
-                    }
-                  }}
+                  onClick={handleThisIsMe}
+                  disabled={isResetting}
                   className="flex items-center gap-2"
                 >
                   <FaCheckCircle />
-                  <span>This is me</span>
+                  <span>{isResetting ? "Working..." : "This is me"}</span>
                 </Button>
               )}
             </div>
@@ -281,30 +298,12 @@ export default function CandidateClient({
                 <Button
                   variant="purple"
                   size="sm"
-                  onClick={async () => {
-                    try {
-                      const resp = await fetch("/api/v1/contentblocks/reset", {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({ candidateId: candidate.id }),
-                      });
-                      if (!resp.ok) {
-                        const data = await resp.json().catch(() => ({}));
-                        throw new Error(data.error || "Failed to reset");
-                      }
-                      router.refresh();
-                      router.push(
-                        `/candidate/verify?candidate=${candidate.slug}&candidateID=${candidate.id}`
-                      );
-                    } catch (e) {
-                      console.error(e);
-                      alert("Could not reset content blocks.");
-                    }
-                  }}
+                  onClick={handleThisIsMe}
+                  disabled={isResetting}
                   className="flex justify-center items-center gap-1 text-sm px-2"
                 >
                   <FaCheckCircle className="h-3 w-3" />
-                  <span>This is me</span>
+                  <span>{isResetting ? "..." : "This is me"}</span>
                 </Button>
               )}
             </div>

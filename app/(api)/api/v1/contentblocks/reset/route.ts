@@ -4,7 +4,6 @@ import prisma from "@/prisma/prisma";
 import { davidWeinsteinTemplate } from "@/app/(templates)/basicwebpage";
 
 export async function POST(request: Request) {
-  console.log("Resetting content blocks...");
   try {
     const { userId } = await auth(); // await added as auth() returns a promise
     if (!userId) {
@@ -30,9 +29,6 @@ export async function POST(request: Request) {
         { status: 404 }
       );
     }
-    console.log("Candidate found:", candidate);
-    console.log("Authenticated user ID:", userId);
-    console.log("Candidate's Clerk user ID:", candidate.clerkUserId);
 
     // Check Clerk user email verification status (invoke clerkClient())
     const clerk = await clerkClient();
