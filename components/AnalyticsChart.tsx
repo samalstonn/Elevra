@@ -16,6 +16,16 @@ interface DataPoint {
   views: number;
 }
 
+interface TimeseriesPoint {
+  date: string;
+  views: number;
+}
+
+interface TimeseriesApiResponse {
+  data: TimeseriesPoint[];
+  totalViews?: number;
+}
+
 interface AnalyticsChartProps {
   candidateId?: number;
   days?: number; // default 30
@@ -65,20 +75,24 @@ export default function AnalyticsChart({
     )
       .then((r) => {
         if (!r.ok) throw new Error("Failed fetching timeseries");
-        return r.json();
+        return r.json() as Promise<TimeseriesApiResponse>;
       })
       .then((json) => {
         setData(json.data);
         if (onDataLoaded) {
-          onDataLoaded({
-            total:
-              json.totalViews ??
-              json.data.reduce((a: number, d: any) => a + (d.views || 0), 0),
-            days,
-          });
+          const total =
+            json.totalViews ??
+            json.data.reduce((a, d) => a + (d.views || 0), 0);
+          onDataLoaded({ total, days });
         }
       })
-      .catch((e) => setError(e.message))
+      .catch((e: unknown) => {
+        const message =
+          typeof e === "object" && e && "message" in e
+            ? (e as { message?: string }).message || "Unknown error"
+            : "Unknown error";
+        setError(message);
+      })
       .finally(() => setLoading(false));
   }, [candidateId, days, onDataLoaded]);
   return (

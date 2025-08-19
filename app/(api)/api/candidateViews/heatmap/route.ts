@@ -50,11 +50,12 @@ export async function GET(request: Request) {
     }
 
     return NextResponse.json({ matrix, max, days });
-  } catch (e: any) {
+  } catch (e: unknown) {
     console.error("/api/candidateViews/heatmap error", e);
-    return NextResponse.json(
-      { error: e.message || "Internal error" },
-      { status: 500 }
-    );
+    const message =
+      typeof e === "object" && e && "message" in e
+        ? (e as { message?: string }).message || "Internal error"
+        : "Internal error";
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }

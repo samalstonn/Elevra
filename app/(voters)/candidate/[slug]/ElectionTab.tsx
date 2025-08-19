@@ -12,6 +12,9 @@ import DOMPurify from "isomorphic-dompurify";
 import Image from "next/image";
 import { davidWeinsteinTemplate } from "@/app/(templates)/basicwebpage";
 
+// Define a template entry type derived from davidWeinsteinTemplate values
+type TemplateEntry = (typeof davidWeinsteinTemplate)[number];
+
 export type ElectionProfileTabProps = {
   link: ElectionLink & { ContentBlock: ContentBlock[] };
 };
@@ -43,18 +46,23 @@ export function ElectionProfileTab({ link }: ElectionProfileTabProps) {
     caption: (b.caption ?? "").trim() || null,
     color: b.color ?? null,
   });
-  const normalizeTemplate = (t: (typeof davidWeinsteinTemplate)[number]) => ({
+  const normalizeTemplate = (t: TemplateEntry) => ({
     order: t.order,
     type: t.type,
-    level: (t as any).level ?? null,
-    text: ((t as any).text ?? "").trim(),
-    body: ((t as any).body ?? "").trim(),
-    listStyle: (t as any).listStyle ?? null,
-    items: (t as any).items ?? [],
-    imageUrl: (t as any).imageUrl ?? null,
-    videoUrl: (t as any).videoUrl ?? null,
-    caption: ((t as any).caption ?? "").trim() || null,
-    color: (t as any).color ?? null,
+    level: "level" in t && typeof t.level === "number" ? t.level : null,
+    text: "text" in t && typeof t.text === "string" ? t.text.trim() : "",
+    body: "body" in t && typeof t.body === "string" ? t.body.trim() : "",
+    listStyle: "listStyle" in t ? t.listStyle ?? null : null,
+    items: "items" in t ? (t.items as string[]) ?? [] : [],
+    imageUrl:
+      "imageUrl" in t && typeof t.imageUrl === "string" ? t.imageUrl : null,
+    videoUrl:
+      "videoUrl" in t && typeof t.videoUrl === "string" ? t.videoUrl : null,
+    caption:
+      "caption" in t && typeof t.caption === "string"
+        ? t.caption.trim() || null
+        : null,
+    color: "color" in t ? t.color ?? null : null,
   });
 
   const sortedBlocks = [...link.ContentBlock].sort((a, b) => a.order - b.order);
