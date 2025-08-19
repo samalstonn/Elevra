@@ -16,6 +16,7 @@ import { EndorsementTab } from "./EndorsementTab";
 import { ContactTab } from "./ContactTab";
 import { ElectionProfileTab } from "./ElectionTab";
 import { useAuth } from "@clerk/nextjs";
+import { useUser } from "@clerk/nextjs";
 
 export type ElectionWithCandidates = Election & {
   candidates: Candidate[];
@@ -38,6 +39,7 @@ export default function CandidateClient({
   const searchParams = useSearchParams();
   const router = useRouter();
   const { isSignedIn } = useAuth();
+  const { user } = useUser();
   const [popupMessage, setPopupMessage] = useState<{
     type: "success" | "error";
     message: string;
@@ -135,6 +137,37 @@ export default function CandidateClient({
         const data = await resp.json().catch(() => ({}));
         throw new Error(data.error || "Failed to reset");
       }
+      // After reset, attempt immediate auto-approve if email matches
+      const candidateEmail = candidate.email;
+      const userEmail = user?.emailAddresses?.[0]?.emailAddress;
+      if (candidateEmail && userEmail && candidateEmail === userEmail) {
+        try {
+          const approve = await fetch(
+            `/api/userValidationRequest/auto-approve`,
+            {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                slug: candidate.slug,
+                clerkUserId: user.id,
+              }),
+            }
+          );
+          if (approve.ok) {
+            router.refresh();
+            router.push(
+              `/candidate/verify/success?candidate=${candidate.slug}&candidateID=${candidate.id}`
+            );
+            return;
+          }
+        } catch (e) {
+          console.error(
+            "Auto-approve failed client-side, falling back to verify page",
+            e
+          );
+        }
+      }
+      // Fallback: go to verify page (server will auto-approve if match not detected here)
       router.refresh();
       router.push(
         `/candidate/verify?candidate=${candidate.slug}&candidateID=${candidate.id}`
