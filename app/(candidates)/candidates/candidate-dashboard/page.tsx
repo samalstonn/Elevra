@@ -14,41 +14,42 @@ import { Eye, Edit, Mail, HandCoins } from "lucide-react"; // Icons
 import { FaShare } from "react-icons/fa"; // Importing FaShare
 import { Candidate, Donation } from "@prisma/client";
 import { useCandidate } from "@/lib/useCandidate";
-// import AnalyticsChart from "@/components/AnalyticsChart";
+import AnalyticsChart from "@/components/AnalyticsChart";
+import ViewsHeatmap from "@/components/ViewsHeatmap";
 
 export type CandidateWithDonations = Candidate & { donations: Donation[] };
 
 export default function OverviewPage() {
   const [profileViews, setProfileViews] = useState<number | string>(
-    "Loading..."
+    "Please create a campaign to have a visible profile"
   );
   const [donationTotal, _] = useState<number | string>("Loading...");
   const { data: candidate } = useCandidate();
 
   useEffect(() => {
     if (!candidate) return;
-    console.log(`Fetching profile views for candidate ID: ${candidate.id}`);
-    fetch(`/api/candidateViews?candidateID=${candidate.id}`)
-      .then((res) => {
-        console.log("Response from candidateViews API:", res);
-        if (!res.ok) {
-          console.error("Failed to fetch candidate profile views");
-          throw new Error("Failed to fetch candidate profile views");
-        }
-        return res.json();
-      })
-      .then((data) => {
-        console.log("Data received for profile views:", data);
-        // Assuming the API returns an object with a 'viewCount' field
-        setProfileViews(data.viewCount);
-      })
-      .catch((err) =>
-        console.error("Error fetching candidate profile views:", err)
-      );
+    // Remove old single count fetch; replaced by timeseries aggregate via chart callback
   }, [candidate]);
 
   return (
     <div className="space-y-6">
+      {/* Feature interest banner */}
+      <div className="bg-purple-50 border border-purple-200 text-purple-800 text-xs md:text-sm p-3 md:p-4 rounded-lg flex flex-col md:flex-row md:items-center md:justify-between gap-2 shadow-sm">
+        <div className="flex-1 leading-snug">
+          Curious about Mailing List Subscribers or Donation analytics? 📨💸
+          <br className="hidden md:block" />
+          If you’d like early access (or have ideas), let us know; we’re
+          building this with you.
+        </div>
+        <div className="flex items-center gap-2">
+          <Link
+            href="/feedback"
+            className="inline-flex items-center px-3 py-1.5 rounded-md bg-purple-600 text-white text-xs md:text-sm font-medium hover:bg-purple-700 transition"
+          >
+            Share Feedback
+          </Link>
+        </div>
+      </div>
       <h1 className="text-3xl font-bold text-gray-800">Dashboard Overview</h1>
 
       {/* Quick Stats Cards */}
@@ -59,7 +60,13 @@ export default function OverviewPage() {
             <Eye className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{profileViews}</div>
+            {typeof profileViews === "string" ? (
+              <div className="text-xs text-gray-500 font-normal leading-snug">
+                {profileViews}
+              </div>
+            ) : (
+              <div className="text-2xl font-bold">{profileViews}</div>
+            )}
             {/* <p className="text-xs text-muted-foreground">
               +10% from last month
             </p>{" "} */}
@@ -102,6 +109,39 @@ export default function OverviewPage() {
           </CardContent>
         </Card>
       </div>
+      {/* Profile Views Time Series */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Profile Views Over Time</CardTitle>
+          <CardDescription>Daily views for the last 30 days.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          {candidate ? (
+            <AnalyticsChart
+              candidateId={candidate.id}
+              days={30}
+              onDataLoaded={({ total }) => setProfileViews(total)}
+            />
+          ) : (
+            <div className="text-xs text-gray-500">Loading candidate...</div>
+          )}
+        </CardContent>
+      </Card>
+      <Card>
+        <CardHeader>
+          <CardTitle>Time-of-Day Activity</CardTitle>
+          <CardDescription>
+            When people view your profile (local time).
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {candidate ? (
+            <ViewsHeatmap candidateId={candidate.id} days={30} />
+          ) : (
+            <div className="text-xs text-gray-500">Loading heatmap...</div>
+          )}
+        </CardContent>
+      </Card>
       {/* Analytics Card */}
       {/* <Card className="col-span-4">
         <CardHeader>

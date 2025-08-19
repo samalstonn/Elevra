@@ -92,14 +92,18 @@ export default async function CandidatePage({
     },
   });
 
-  // Get suggested candidates
-  const suggestedCandidates = await prisma.candidate.findMany({
+  // Get suggested candidates (only those with actual images)
+  const suggestedCandidatesRaw = await prisma.candidate.findMany({
     where: {
-      NOT: { id: candidateID },
+      id: { not: candidateID },
       hidden: false,
     },
-    // No include necessary here
   });
+  const suggestedCandidates = suggestedCandidatesRaw.filter(
+    (c) =>
+      (c.photo && c.photo.trim() !== "") ||
+      (c.photoUrl && c.photoUrl.trim() !== "")
+  );
 
   // Check if current user can edit this candidate profile
   const user = await currentUser();

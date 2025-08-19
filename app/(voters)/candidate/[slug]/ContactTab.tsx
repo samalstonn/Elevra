@@ -18,6 +18,17 @@ export function ContactTab({
   linkedin,
   verified,
 }: ContactTabProps) {
+  // If candidate is not verified, always show placeholder
+  if (!verified) {
+    return (
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="md:col-span-2 text-center text-sm text-gray-500">
+          No contact information available.
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
       {verified && email && (
@@ -80,7 +91,8 @@ export function ContactTab({
           </div>
         </div>
       )}
-      {!email && !website && !phone && !linkedin && (
+      {/* Show placeholder if verified but has no other contact methods (besides optional email) */}
+      {!website && !phone && !linkedin && (
         <div className="md:col-span-2 text-center text-sm text-gray-500">
           No contact information available.
         </div>

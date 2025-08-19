@@ -13,9 +13,13 @@ import {
 
 interface DataPoint {
   date: string;
-  timestamp: number;
   views: number;
-  interactions: number;
+}
+
+interface AnalyticsChartProps {
+  candidateId?: number;
+  days?: number; // default 30
+  onDataLoaded?: (summary: { total: number; days: number }) => void;
 }
 
 const generateData = () => {
@@ -39,69 +43,87 @@ const generateData = () => {
 
 const sampleData = generateData();
 
-export default function AnalyticsChart() {
+export default function AnalyticsChart({
+  candidateId,
+  days = 30,
+  onDataLoaded,
+}: AnalyticsChartProps) {
   const [data, setData] = useState<DataPoint[] | []>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    // Option 1: Fetch from real API
-    // fetchVendorTrafficData().then(setData);
-
-    // Option 2: Generate fresh random data for demo purposes
-    setData(sampleData);
-  }, []);
+    if (!candidateId) {
+      // fallback demo data
+      setData(sampleData.map((d) => ({ date: d.date, views: d.views })));
+      return;
+    }
+    setLoading(true);
+    setError(null);
+    fetch(
+      `/api/candidateViews/timeseries?candidateID=${candidateId}&days=${days}`
+    )
+      .then((r) => {
+        if (!r.ok) throw new Error("Failed fetching timeseries");
+        return r.json();
+      })
+      .then((json) => {
+        setData(json.data);
+        if (onDataLoaded) {
+          onDataLoaded({
+            total:
+              json.totalViews ??
+              json.data.reduce((a: number, d: any) => a + (d.views || 0), 0),
+            days,
+          });
+        }
+      })
+      .catch((e) => setError(e.message))
+      .finally(() => setLoading(false));
+  }, [candidateId, days, onDataLoaded]);
   return (
     <div className="h-[300px] w-full">
-      <ResponsiveContainer width="100%" height="100%">
-        <AreaChart
-          data={data}
-          margin={{
-            top: 10,
-            right: 30,
-            left: 0,
-            bottom: 0,
-          }}
-        >
-          <CartesianGrid strokeDasharray="3 3" />
-          <XAxis
-            dataKey="timestamp"
-            type="number"
-            scale="time"
-            domain={["dataMin", "dataMax"]}
-            tickFormatter={(tick) => {
-              const d = new Date(tick);
-              return d.getMonth() + 1 + "/" + d.getDate();
+      {loading && <div className="text-xs text-gray-500">Loading chart...</div>}
+      {error && <div className="text-xs text-red-500">{error}</div>}
+      {!loading && !error && data.length > 0 && (
+        <ResponsiveContainer width="100%" height="100%">
+          <AreaChart
+            data={data}
+            margin={{
+              top: 10,
+              right: 30,
+              left: 0,
+              bottom: 0,
             }}
-            tick={{ fontSize: 12 }}
-          />
-          <YAxis tick={{ fontSize: 12 }} />
-          <Tooltip
-            formatter={(value: number, name: string) => [
-              value,
-              name === "views" ? "Profile Views" : "Interactions",
-            ]}
-            labelFormatter={(label) => {
-              const d = new Date(label);
-              return d.toLocaleDateString();
-            }}
-          />
-          <Area
-            type="monotone"
-            dataKey="views"
-            stackId="1"
-            stroke="#8884d8"
-            fill="#8884d8"
-            name="Profile Views"
-          />
-          <Area
-            type="monotone"
-            dataKey="interactions"
-            stackId="1"
-            stroke="#82ca9d"
-            fill="#82ca9d"
-            name="Interactions"
-          />
-        </AreaChart>
-      </ResponsiveContainer>
+          >
+            <CartesianGrid strokeDasharray="3 3" />
+            <XAxis
+              dataKey="date"
+              tickFormatter={(tick) => {
+                const d = new Date(tick);
+                return d.getMonth() + 1 + "/" + d.getDate();
+              }}
+              tick={{ fontSize: 12 }}
+            />
+            <YAxis tick={{ fontSize: 12 }} />
+            <Tooltip
+              formatter={(value: number) => [value, "Profile Views"]}
+              labelFormatter={(label) => {
+                const d = new Date(label);
+                return d.toLocaleDateString();
+              }}
+            />
+            <Area
+              type="monotone"
+              dataKey="views"
+              stroke="#8884d8"
+              fill="#8884d8"
+              name="Profile Views"
+              fillOpacity={0.4}
+            />
+          </AreaChart>
+        </ResponsiveContainer>
+      )}
     </div>
   );
 }

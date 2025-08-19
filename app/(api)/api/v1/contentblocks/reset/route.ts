@@ -5,7 +5,7 @@ import { davidWeinsteinTemplate } from "@/app/(templates)/basicwebpage";
 
 export async function POST(request: Request) {
   try {
-    const { userId } = await auth(); // await added as auth() returns a promise
+    const { userId } = await auth();
     if (!userId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
@@ -18,7 +18,7 @@ export async function POST(request: Request) {
       );
     }
 
-    // Ensure the candidate belongs to the authenticated user
+    // Ensure the candidate exists & check ownership rules
     const candidate = await prisma.candidate.findUnique({
       where: { id: candidateId },
       select: { id: true, clerkUserId: true },
@@ -29,14 +29,20 @@ export async function POST(request: Request) {
         { status: 404 }
       );
     }
+    // If already claimed by another user block reset
+    if (candidate.clerkUserId && candidate.clerkUserId !== userId) {
+      return NextResponse.json(
+        { error: "Forbidden: candidate already claimed" },
+        { status: 403 }
+      );
+    }
 
-    // Check Clerk user email verification status (invoke clerkClient())
+    // Properly instantiate the clerk client then fetch user
     const clerk = await clerkClient();
     const user = await clerk.users.getUser(userId);
-    const anyEmailVerified = user.emailAddresses?.some(
-      (addr: (typeof user.emailAddresses)[number]) =>
-        addr.verification?.status === "verified"
-    );
+    const anyEmailVerified = user.emailAddresses?.some((addr) => {
+      return addr.verification?.status === "verified";
+    });
     if (!anyEmailVerified) {
       return NextResponse.json(
         { error: "Email address not verified" },
@@ -49,7 +55,6 @@ export async function POST(request: Request) {
       where: { candidateId },
       select: { electionId: true },
     });
-
     if (links.length === 0) {
       return NextResponse.json(
         { error: "No election links found for candidate" },
@@ -57,7 +62,7 @@ export async function POST(request: Request) {
       );
     }
 
-    // Build all template blocks for every election link
+    // Prepare new blocks for each election link
     const allBlocksData = links.flatMap((link) =>
       davidWeinsteinTemplate.map((block, idx) => ({
         ...block,
