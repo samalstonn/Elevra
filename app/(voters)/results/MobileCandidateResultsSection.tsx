@@ -101,8 +101,8 @@ export default function MobileCandidateResultsSection({
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-2 items-stretch">
         {candidates.map((candidate) => (
           <Link key={candidate.id} href={`/candidate/${candidate.slug}`}>
-            <Card className="w-full flex items-center p-2">
-              <CardContent className="flex items-center gap-3 p-0">
+            <Card className="w-full flex items-center p-2 min-w-0">
+              <CardContent className="flex items-center gap-3 p-0 min-w-0">
                 <CandidateImage
                   clerkUserId={candidate.clerkUserId}
                   publicPhoto={candidate.photo}
@@ -110,7 +110,7 @@ export default function MobileCandidateResultsSection({
                   width={40}
                   height={40}
                 />
-                <div className="flex-1">
+                <div className="flex-1 min-w-0">
                   <div className="flex items-center">
                     <span className="font-medium text-gray-900 truncate">
                       {candidate.name}
@@ -121,7 +121,7 @@ export default function MobileCandidateResultsSection({
                       }`}
                     />
                   </div>
-                  <p className="text-sm text-purple-700 truncate">
+                  <p className="text-sm text-purple-700 break-words whitespace-normal leading-snug">
                     {candidate.currentRole}
                   </p>
                 </div>

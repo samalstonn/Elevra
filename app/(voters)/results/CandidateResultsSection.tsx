@@ -244,7 +244,7 @@ export default function CandidateSection({
         </div>
       ) : (
         /* Candidate Cards Section - Only shown if candidates exist */
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 min-w-0">
           {candidates.map((candidate, index) => (
             <motion.div key={index} variants={cardVariants}>
               <Link href={`/candidate/${candidate.slug}`}>
@@ -252,7 +252,7 @@ export default function CandidateSection({
                   whileHover={{ scale: 1.05 }}
                   transition={{ duration: 0.2, ease: "easeOut" }}
                 >
-                  <Card className="group transition-all rounded-lg cursor-pointer h-[250px] w-full flex flex-col relative">
+                  <Card className="group transition-all rounded-lg cursor-pointer min-h-[250px] w-full flex flex-col relative min-w-0">
                     <CardContent className="flex flex-col gap-2">
                       <div className="flex items-center">
                         <CandidateImage
@@ -271,7 +271,7 @@ export default function CandidateSection({
                           )}
                         </h2>
                       </div>
-                      <p className="w-[85%] text-purple-700 text-sm ">
+                      <p className="text-purple-700 text-sm break-words whitespace-normal leading-snug max-w-full">
                         {candidate.currentRole}
                       </p>
                       <p

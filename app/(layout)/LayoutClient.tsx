@@ -40,7 +40,9 @@ export default function LayoutClient({
   return (
     <ClerkProvider publishableKey={clerkKey || ""}>
       <html lang="en">
-        <body className={inter.className}>
+        <body className={`${inter.className} overflow-x-hidden`}>
+          {" "}
+          {/* Prevent global horizontal scroll */}
           <div className="flex flex-col min-h-screen">
             {/* Header Section */}
             <header className="w-full flex items-center justify-between gap-4 px-6 py-6">
@@ -80,7 +82,7 @@ export default function LayoutClient({
 
             {/* Main Content - Conditional styling for results page */}
             <main
-              className={`flex-grow w-full items-start justify-start min-h-[75vh]`}
+              className={`flex-grow w-full items-start justify-start min-h-[75vh] overflow-x-hidden`}
             >
               {children}
               <Analytics />

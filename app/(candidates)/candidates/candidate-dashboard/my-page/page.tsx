@@ -103,9 +103,8 @@ export default function MyPage() {
 
   return (
     <>
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {/* ContentBlocksEditor */}
-        <div className="md:col-span-4">
+      <div className="flex flex-col gap-6 w-full min-w-0">
+        <div className="w-full max-w-4xl mx-auto min-w-0">
           {activeElectionId != null && candidateData ? (
             <ContentBlocksEditor
               candidateSlug={candidateData.slug}

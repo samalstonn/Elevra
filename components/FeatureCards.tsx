@@ -57,7 +57,7 @@ const FeatureCards = () => {
         },
       }}
       viewport={{ once: true }}
-      className="w-screen pt-32 pb-16 px-6 bg-gray-100"
+      className="w-full pt-32 pb-16 px-6 bg-gray-100 mx-auto overflow-x-hidden"
     >
       {/* First Section Header */}
       <motion.div

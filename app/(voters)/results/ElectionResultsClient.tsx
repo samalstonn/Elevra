@@ -119,7 +119,7 @@ export default function ElectionResultsClient({
   if (!hasElections) {
     return (
       <motion.div
-        className="w-screen mx-auto px-4 flex flex-col items-center"
+        className="w-full mx-auto px-4 flex flex-col items-center max-w-full"
         style={{ marginTop: 0, paddingTop: 0 }}
         initial="hidden"
         animate="visible"
@@ -197,11 +197,14 @@ export default function ElectionResultsClient({
   return (
     <>
       {!mounted ? (
-        <div className="w-screen h-screen flex items-center justify-center">
+        <div className="w-full h-screen flex items-center justify-center px-4">
           Loading...
         </div>
       ) : (
-        <div className="w-screen flex flex-col" style={{ marginTop: "-1px" }}>
+        <div
+          className="w-full flex flex-col min-w-0"
+          style={{ marginTop: "-1px" }}
+        >
           {" "}
           {/* Negative margin to counteract any parent padding */}
           {/* Filter section with no top padding and explicit inline styles */}
@@ -219,7 +222,7 @@ export default function ElectionResultsClient({
               variants={fadeInVariants}
               initial="hidden"
               animate="visible"
-              className="flex flex-nowrap overflow-x-auto gap-4 p-4 no-scrollbar"
+              className="flex flex-nowrap overflow-x-auto gap-4 p-4 no-scrollbar min-w-0"
               style={{ marginTop: 0, paddingTop: "4px" }}
             >
               {sortedElections.map((elec) => (
@@ -321,7 +324,6 @@ export default function ElectionResultsClient({
                             })}
                             election={elec}
                             fallbackElections={[]}
-                            
                           />
                         </div>
                       </div>

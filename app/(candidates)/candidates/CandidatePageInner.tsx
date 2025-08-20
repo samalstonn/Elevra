@@ -125,7 +125,7 @@ export default function CandidatesPageInner() {
               <Button
                 variant="purple"
                 size="lg"
-                onClick={() => setActiveTab("signup")}
+                onClick={() => setActiveTab("login")}
               >
                 Join as a Candidate
               </Button>

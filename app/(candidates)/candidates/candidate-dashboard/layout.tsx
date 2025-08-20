@@ -93,7 +93,7 @@ export default function CandidateDashboardLayout({
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   return (
-    <div className="flex min-h-screen">
+    <div className="flex min-h-screen min-w-0 overflow-x-visible">
       {/* Mobile Menu Hamburger */}
       <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
         <SheetTrigger asChild>
@@ -136,7 +136,9 @@ export default function CandidateDashboardLayout({
       </aside>
 
       {/* Main Content Area - Full Width on Mobile */}
-      <main className="flex-1 p-4 md:p-6 lg:p-8">{children}</main>
+      <main className="flex-1 p-4 md:p-6 lg:p-8 min-w-0 overflow-x-visible">
+        {children}
+      </main>
     </div>
   );
 }
