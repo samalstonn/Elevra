@@ -82,11 +82,20 @@ export default function ViewsHeatmap({
           style={{ gridTemplateColumns: "40px repeat(24, 1fr)" }}
         >
           <div></div>
-          {Array.from({ length: 24 }, (_, h) => (
-            <div key={h} className="text-center text-[10px] text-gray-500">
-              {h}
-            </div>
-          ))}
+          {Array.from({ length: 24 }, (_, h) => {
+            const hour12 = ((h + 11) % 12) + 1; // 0 -> 12, 13 -> 1 etc
+            const isAM = h < 12;
+            const label = `${hour12}${isAM ? "a" : "p"}`; // compact label e.g. 12a, 1p
+            return (
+              <div
+                key={h}
+                className="text-center text-[10px] text-gray-500"
+                title={`${hour12}:00 ${isAM ? "AM" : "PM"}`}
+              >
+                {label}
+              </div>
+            );
+          })}
           {matrix.map((row, day) => (
             <React.Fragment key={day}>
               <div className="text-[11px] font-medium text-gray-600 flex items-center">
@@ -94,6 +103,9 @@ export default function ViewsHeatmap({
               </div>
               {row.map((val, hour) => {
                 const color = scaleColor(val);
+                const hour12 = ((hour + 11) % 12) + 1;
+                const isAM = hour < 12;
+                const hourSpoken = `${hour12}:00 ${isAM ? "AM" : "PM"}`;
                 return (
                   <button
                     key={hour}
@@ -101,7 +113,9 @@ export default function ViewsHeatmap({
                     onMouseLeave={() => setHover(null)}
                     className="relative h-5 w-full rounded-sm transition-colors focus:outline-none focus:ring-1 focus:ring-purple-500"
                     style={{ backgroundColor: color }}
-                    aria-label={`${val} views on ${dayLabels[day]} at ${hour}:00`}
+                    aria-label={`${val} view${val !== 1 ? "s" : ""} on ${
+                      dayLabels[day]
+                    } at ${hourSpoken}`}
                   >
                     {hover &&
                       hover.day === day &&
