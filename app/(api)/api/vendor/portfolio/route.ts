@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import prisma from "@/prisma/prisma";
 
-export async function POST(request: Request) {
+export async function POST(request: Request): Promise<Response> {
   try {
     // Get authenticated user
     const { userId } = await auth();
@@ -77,5 +77,10 @@ export async function POST(request: Request) {
       console.error("Error updating candidate:", error);
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
+    console.error("Unknown error updating candidate:", error);
+    return NextResponse.json(
+      { error: "Internal Server Error" },
+      { status: 500 }
+    );
   }
 }
