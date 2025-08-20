@@ -15,6 +15,13 @@ interface DataPoint {
   date: string;
   views: number;
 }
+interface BucketPoint extends DataPoint {
+  startDate: string;
+  endDate: string;
+  rangeLabel: string;
+  days: number;
+}
+type DisplayPoint = DataPoint | BucketPoint;
 
 interface AnalyticsChartProps {
   candidateId?: number;
@@ -80,10 +87,11 @@ export default function AnalyticsChart({
       .then((json) => {
         setData(json.data);
         if (onDataLoaded) {
+          const serverData: { date: string; views: number }[] = json.data;
           onDataLoaded({
             total:
               json.totalViews ??
-              json.data.reduce((a: number, d: any) => a + (d.views || 0), 0),
+              serverData.reduce((a: number, d) => a + (d.views || 0), 0),
             days,
           });
         }
@@ -92,10 +100,10 @@ export default function AnalyticsChart({
       .finally(() => setLoading(false));
   }, [candidateId, days, onDataLoaded]);
   // Build display data (aggregate into 3-day buckets on mobile)
-  const displayData = (() => {
+  const displayData: DisplayPoint[] = (() => {
     if (!isMobile) return data;
     const BUCKET = 3;
-    const buckets: any[] = [];
+    const buckets: BucketPoint[] = [];
     for (let i = 0; i < data.length; i += BUCKET) {
       const slice = data.slice(i, i + BUCKET);
       if (slice.length === 0) continue;
@@ -150,8 +158,7 @@ export default function AnalyticsChart({
                   const d = new Date(label);
                   return d.toLocaleDateString();
                 }
-                const bucket =
-                  payload && payload[0] && (payload[0].payload as any);
+                const bucket = payload?.[0]?.payload as BucketPoint | undefined;
                 if (bucket?.startDate) {
                   const s = new Date(bucket.startDate);
                   const e = new Date(bucket.endDate);

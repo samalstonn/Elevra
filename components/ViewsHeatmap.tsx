@@ -43,9 +43,10 @@ export default function ViewsHeatmap({
     }
     setLoading(true);
     setError(null);
-    // debug
-    // eslint-disable-next-line no-console
-    console.debug("Fetching heatmap", { candidateId, days });
+    if (process.env.NODE_ENV === "development") {
+      // Lightweight debug – only in dev
+      console.debug("Fetching heatmap", { candidateId, days });
+    }
     fetch(`/api/candidateViews/heatmap?candidateID=${candidateId}&days=${days}`)
       .then((r) => {
         if (!r.ok) throw new Error("Failed to load heatmap");

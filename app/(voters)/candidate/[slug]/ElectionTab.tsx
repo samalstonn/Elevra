@@ -12,6 +12,8 @@ import DOMPurify from "isomorphic-dompurify";
 import Image from "next/image";
 import { davidWeinsteinTemplate } from "@/app/(templates)/basicwebpage";
 
+type TemplateBlock = (typeof davidWeinsteinTemplate)[number];
+
 export type ElectionProfileTabProps = {
   link: ElectionLink & { ContentBlock: ContentBlock[] };
 };
@@ -43,18 +45,21 @@ export function ElectionProfileTab({ link }: ElectionProfileTabProps) {
     caption: (b.caption ?? "").trim() || null,
     color: b.color ?? null,
   });
-  const normalizeTemplate = (t: (typeof davidWeinsteinTemplate)[number]) => ({
+  const normalizeTemplate = (t: TemplateBlock) => ({
     order: t.order,
     type: t.type,
-    level: (t as any).level ?? null,
-    text: ((t as any).text ?? "").trim(),
-    body: ((t as any).body ?? "").trim(),
-    listStyle: (t as any).listStyle ?? null,
-    items: (t as any).items ?? [],
-    imageUrl: (t as any).imageUrl ?? null,
-    videoUrl: (t as any).videoUrl ?? null,
-    caption: ((t as any).caption ?? "").trim() || null,
-    color: (t as any).color ?? null,
+    level: (t as { level?: number }).level ?? null,
+    text: (t as { text?: string }).text?.trim() ?? "",
+    body: (t as { body?: string }).body?.trim() ?? "",
+    listStyle: (t as { listStyle?: ListStyle }).listStyle ?? null,
+    items: (t as { items?: string[] }).items ?? [],
+    imageUrl: (t as { imageUrl?: string }).imageUrl ?? null,
+    videoUrl: (t as { videoUrl?: string }).videoUrl ?? null,
+    caption:
+      ((t as { caption?: string }).caption?.trim() ?? "") === ""
+        ? null
+        : (t as { caption?: string }).caption!.trim(),
+    color: (t as { color?: keyof typeof colorClass }).color ?? null,
   });
 
   const sortedBlocks = [...link.ContentBlock].sort((a, b) => a.order - b.order);
