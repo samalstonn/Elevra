@@ -169,22 +169,30 @@ export default function AnalyticsChart({
                 isMobile ? "Views (3-day)" : "Profile Views",
               ]}
               labelFormatter={(label, payload) => {
+                const isoDayPattern = /^\d{4}-\d{2}-\d{2}$/;
+                const fmtIso = (str: string) => {
+                  if (isoDayPattern.test(str)) {
+                    const [, m, d] = str.split("-");
+                    return `${Number(m)}/${Number(d)}`;
+                  }
+                  const dt = new Date(str);
+                  if (!isNaN(dt.getTime())) {
+                    return `${dt.getMonth() + 1}/${dt.getDate()}`;
+                  }
+                  return str;
+                };
                 if (!isMobile) {
-                  const d = new Date(label);
-                  return d.toLocaleDateString();
+                  return fmtIso(String(label));
                 }
                 const bucket = payload?.[0]?.payload as BucketPoint | undefined;
                 if (bucket?.startDate) {
-                  const s = new Date(bucket.startDate);
-                  const e = new Date(bucket.endDate);
-                  const fmt = (dt: Date) =>
-                    `${dt.getMonth() + 1}/${dt.getDate()}`;
+                  const start = fmtIso(bucket.startDate);
+                  const end = fmtIso(bucket.endDate);
                   return bucket.startDate === bucket.endDate
-                    ? fmt(s)
-                    : `${fmt(s)} – ${fmt(e)}`;
+                    ? start
+                    : `${start} – ${end}`;
                 }
-                const d = new Date(label);
-                return d.toLocaleDateString();
+                return fmtIso(String(label));
               }}
             />
             <Area
