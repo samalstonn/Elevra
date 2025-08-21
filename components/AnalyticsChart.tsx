@@ -141,8 +141,23 @@ export default function AnalyticsChart({
               dataKey="date"
               interval={0}
               tickFormatter={(tick) => {
-                const d = new Date(tick);
-                return `${d.getMonth() + 1}/${d.getDate()}`;
+                // If tick is a plain YYYY-MM-DD string, avoid new Date() (which treats it as UTC and can shift the day locally)
+                if (typeof tick === "string") {
+                  const isoDayPattern = /^\d{4}-\d{2}-\d{2}$/;
+                  if (isoDayPattern.test(tick)) {
+                    const [, month, day] = tick.split("-"); // ignore year
+                    return `${Number(month)}/${Number(day)}`; // strip leading zeros
+                  }
+                }
+                // Fallback: attempt to construct a Date (handles numeric timestamps or other date-like strings)
+                const d = new Date(
+                  typeof tick === "number" ? tick : String(tick)
+                );
+                if (!isNaN(d.getTime())) {
+                  return `${d.getMonth() + 1}/${d.getDate()}`;
+                }
+                // Last resort: return raw tick
+                return String(tick);
               }}
               tick={{ fontSize: isMobile ? 10 : 12 }}
               minTickGap={isMobile ? 4 : 5}

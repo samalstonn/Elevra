@@ -88,11 +88,21 @@ export default function ViewsHeatmap({
         return grouped;
       })
     : matrix;
+  // Compute effective max for coloring. On mobile we bucket hours, so the max value should
+  // reflect the bucketed sums (which can exceed the per-hour max). On desktop keep original max.
+  const colorMax = isMobile
+    ? displayMatrix.reduce(
+        (acc, row) =>
+          row.reduce((innerAcc, v) => (v > innerAcc ? v : innerAcc), acc),
+        0
+      )
+    : max;
   const hoursCount = isMobile ? Math.ceil(24 / HOUR_GROUP) : 24;
   const scaleColor = (value: number) => {
-    if (max === 0) return "#f3f4f6"; // gray-100
-    const ratio = value / max; // 0..1
-    // interpolate light purple to deep purple
+    if (colorMax === 0) return "#f3f4f6"; // gray-100 when no data
+    const ratioRaw = value / colorMax;
+    const ratio = Math.min(1, Math.max(0, ratioRaw)); // clamp 0..1
+    // Interpolate light purple to deep purple (no overshoot due to clamp)
     const start = { r: 237, g: 233, b: 254 }; // indigo-50
     const end = { r: 91, g: 33, b: 182 }; // indigo-800
     const r = Math.round(start.r + (end.r - start.r) * ratio);
