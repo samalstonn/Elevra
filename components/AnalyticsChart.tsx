@@ -23,6 +23,16 @@ interface BucketPoint extends DataPoint {
 }
 type DisplayPoint = DataPoint | BucketPoint;
 
+interface TimeseriesPoint {
+  date: string;
+  views: number;
+}
+
+interface TimeseriesApiResponse {
+  data: TimeseriesPoint[];
+  totalViews?: number;
+}
+
 interface AnalyticsChartProps {
   candidateId?: number;
   days?: number; // default 30
@@ -82,7 +92,7 @@ export default function AnalyticsChart({
     )
       .then((r) => {
         if (!r.ok) throw new Error("Failed fetching timeseries");
-        return r.json();
+        return r.json() as Promise<TimeseriesApiResponse>;
       })
       .then((json) => {
         setData(json.data);
@@ -96,7 +106,13 @@ export default function AnalyticsChart({
           });
         }
       })
-      .catch((e) => setError(e.message))
+      .catch((e: unknown) => {
+        const message =
+          typeof e === "object" && e && "message" in e
+            ? (e as { message?: string }).message || "Unknown error"
+            : "Unknown error";
+        setError(message);
+      })
       .finally(() => setLoading(false));
   }, [candidateId, days, onDataLoaded]);
   // Build display data (aggregate into 3-day buckets on mobile)
