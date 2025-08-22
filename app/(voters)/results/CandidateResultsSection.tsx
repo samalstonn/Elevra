@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { CandidateImage } from "@/components/CandidateImage"; // Adjust the path as needed
 import { FaUserPlus, FaCheckCircle } from "react-icons/fa"; // Import icons from react-icons
 import { useState } from "react";
-import { isElectionActive } from "@/lib/functions";
+import { isElectionActive } from "@/lib/isElectionActive";
 
 interface CandidateSectionProps {
   candidates?: Candidate[];

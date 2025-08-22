@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import LiveElectionsSkeleton from "./LiveElectionsSkeleton";
-import { isElectionActive } from "@/lib/functions";
+import { isElectionActive } from "@/lib/isElectionActive";
 
 type GroupedElection = {
   city: string | null;

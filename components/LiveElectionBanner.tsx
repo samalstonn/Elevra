@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
-import { isElectionActive } from "@/lib/functions";
+import { isElectionActive } from "@/lib/isElectionActive";
 
 interface RawElectionSummary {
   city: string | null;
@@ -88,7 +88,8 @@ export const LiveElectionBanner: React.FC<LiveElectionBannerProps> = ({
       } catch (err: unknown) {
         // Swallow abort errors; show others
         if (!cancelled) {
-          if ((err as any)?.name === "AbortError") return;
+          // In browsers, an aborted fetch rejects with a DOMException named 'AbortError'.
+          if (err instanceof DOMException && err.name === "AbortError") return;
           setError(err instanceof Error ? err.message : String(err));
         }
       } finally {
@@ -148,7 +149,9 @@ export const LiveElectionBanner: React.FC<LiveElectionBannerProps> = ({
               const isDuplicate = idx >= suggested.length;
               const href =
                 e.city && e.city.length > 0
-                  ? `/results?city=${encodeURIComponent(e.city)}&state=${encodeURIComponent(e.state)}`
+                  ? `/results?city=${encodeURIComponent(
+                      e.city
+                    )}&state=${encodeURIComponent(e.state)}`
                   : `/results?state=${encodeURIComponent(e.state)}`;
 
               return (

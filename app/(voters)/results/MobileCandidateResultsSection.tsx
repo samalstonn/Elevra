@@ -6,7 +6,7 @@ import { Candidate, Election } from "@prisma/client";
 import { CandidateImage } from "@/components/CandidateImage";
 import { FaCheckCircle } from "react-icons/fa";
 import { useState } from "react";
-import { isElectionActive } from "@/lib/functions";
+import { isElectionActive } from "@/lib/isElectionActive";
 
 interface MobileCandidateResultsSectionProps {
   candidates?: Candidate[];

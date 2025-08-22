@@ -32,8 +32,6 @@ function HomePageContent() {
 
   return (
     <div className="min-h-screen flex flex-col items-center w-full overflow-x-hidden mx-auto">
-      {/* Live Elections Banner (below site header, above main content) */}
-      <LiveElectionBanner className="z-10" />
       {/* Hero Section */}
       <motion.main
         initial="hidden"
@@ -133,7 +131,9 @@ function HomePageContent() {
             <a href="/candidates">Launch Your Campaign</a>
           </Button>
         </motion.div>
+        <LiveElectionBanner className="z-10" />
       </motion.main>
+      {/* Live Elections Banner (below site header, above main content) */}
 
       {/* Showcase Section - Added here */}
       <motion.div
