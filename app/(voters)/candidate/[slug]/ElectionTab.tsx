@@ -12,8 +12,7 @@ import DOMPurify from "isomorphic-dompurify";
 import Image from "next/image";
 import { davidWeinsteinTemplate } from "@/app/(templates)/basicwebpage";
 
-// Define a template entry type derived from davidWeinsteinTemplate values
-type TemplateEntry = (typeof davidWeinsteinTemplate)[number];
+type TemplateBlock = (typeof davidWeinsteinTemplate)[number];
 
 export type ElectionProfileTabProps = {
   link: ElectionLink & { ContentBlock: ContentBlock[] };
@@ -46,23 +45,21 @@ export function ElectionProfileTab({ link }: ElectionProfileTabProps) {
     caption: (b.caption ?? "").trim() || null,
     color: b.color ?? null,
   });
-  const normalizeTemplate = (t: TemplateEntry) => ({
+  const normalizeTemplate = (t: TemplateBlock) => ({
     order: t.order,
     type: t.type,
-    level: "level" in t && typeof t.level === "number" ? t.level : null,
-    text: "text" in t && typeof t.text === "string" ? t.text.trim() : "",
-    body: "body" in t && typeof t.body === "string" ? t.body.trim() : "",
-    listStyle: "listStyle" in t ? t.listStyle ?? null : null,
-    items: "items" in t ? (t.items as string[]) ?? [] : [],
-    imageUrl:
-      "imageUrl" in t && typeof t.imageUrl === "string" ? t.imageUrl : null,
-    videoUrl:
-      "videoUrl" in t && typeof t.videoUrl === "string" ? t.videoUrl : null,
+    level: (t as { level?: number }).level ?? null,
+    text: (t as { text?: string }).text?.trim() ?? "",
+    body: (t as { body?: string }).body?.trim() ?? "",
+    listStyle: (t as { listStyle?: ListStyle }).listStyle ?? null,
+    items: (t as { items?: string[] }).items ?? [],
+    imageUrl: (t as { imageUrl?: string }).imageUrl ?? null,
+    videoUrl: (t as { videoUrl?: string }).videoUrl ?? null,
     caption:
-      "caption" in t && typeof t.caption === "string"
-        ? t.caption.trim() || null
-        : null,
-    color: "color" in t ? t.color ?? null : null,
+      ((t as { caption?: string }).caption?.trim() ?? "") === ""
+        ? null
+        : (t as { caption?: string }).caption!.trim(),
+    color: (t as { color?: keyof typeof colorClass }).color ?? null,
   });
 
   const sortedBlocks = [...link.ContentBlock].sort((a, b) => a.order - b.order);

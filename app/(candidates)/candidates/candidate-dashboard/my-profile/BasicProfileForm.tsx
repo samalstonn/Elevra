@@ -137,7 +137,10 @@ export default function BasicProfileForm() {
   if (!isLoaded) return <div>Loading...</div>;
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
+    <form
+      onSubmit={handleSubmit}
+      className="space-y-6 w-full text-left min-w-0"
+    >
       <div className="space-y-2 text-left">
         <label
           htmlFor="name"
@@ -151,14 +154,13 @@ export default function BasicProfileForm() {
           value={formData.name}
           onChange={handleInputChange}
           placeholder="Your full name"
-          className={errors.name ? "border-red-500" : ""}
-          style={{ width: "100%" }}
+          className={`w-full max-w-full ${errors.name ? "border-red-500" : ""}`}
         />
         {errors.name && (
           <p className="text-red-500 text-xs mt-1">{errors.name}</p>
         )}
       </div>
-      <div>
+      <div className="space-y-2">
         <label
           htmlFor="currentRole"
           className="block text-sm font-medium text-gray-700"
@@ -169,12 +171,13 @@ export default function BasicProfileForm() {
           name="currentRole"
           value={formData.currentRole}
           onChange={handleInputChange}
-          className={errors.currentRole ? "border-red-500" : ""}
-          style={{ width: "100%" }}
+          className={`w-full max-w-full ${
+            errors.currentRole ? "border-red-500" : ""
+          }`}
         />
       </div>
-      <div className="grid grid-cols-2 gap-4">
-        <div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className="space-y-2">
           <label
             htmlFor="currentCity"
             className="block text-sm font-medium text-gray-700"
@@ -186,15 +189,15 @@ export default function BasicProfileForm() {
             name="currentCity"
             value={formData.currentCity}
             onChange={handleInputChange}
-            className={errors.currentCity ? "border-red-500" : ""}
-            style={{ width: "100%" }}
+            className={`w-full max-w-full ${
+              errors.currentCity ? "border-red-500" : ""
+            }`}
           />
           {errors.currentCity && (
             <p className="text-red-500 text-xs mt-1">{errors.currentCity}</p>
           )}
         </div>
-        <br />
-        <div>
+        <div className="space-y-2">
           <label
             htmlFor="currentState"
             className="block text-sm font-medium text-gray-700"
@@ -206,8 +209,9 @@ export default function BasicProfileForm() {
             name="currentState"
             value={formData.currentState}
             onChange={handleInputChange}
-            className={errors.currentState ? "border-red-500" : ""}
-            style={{ width: "100%" }}
+            className={`w-full max-w-full ${
+              errors.currentState ? "border-red-500" : ""
+            }`}
           />
           {errors.currentState && (
             <p className="text-red-500 text-xs mt-1">{errors.currentState}</p>
@@ -225,7 +229,8 @@ export default function BasicProfileForm() {
           name="bio"
           value={formData.bio}
           onChange={handleInputChange}
-          className={errors.bio ? "border-red-500" : ""}
+          className={`w-full max-w-full ${errors.bio ? "border-red-500" : ""}`}
+          rows={5}
         />
       </div>
       <div className="flex flex-col gap-4">
@@ -242,7 +247,7 @@ export default function BasicProfileForm() {
             value={formData.website}
             onChange={handleInputChange}
             placeholder="Website"
-            style={{ width: "100%" }}
+            className="w-full max-w-full"
           />
         </div>
         <div>
@@ -258,7 +263,7 @@ export default function BasicProfileForm() {
             value={formData.linkedin}
             onChange={handleInputChange}
             placeholder="LinkedIn"
-            style={{ width: "100%" }}
+            className="w-full max-w-full"
           />
         </div>
       </div>
@@ -272,7 +277,11 @@ export default function BasicProfileForm() {
           {errorMessage}
         </div>
       )}
-      <Button type="submit" disabled={isSubmitting}>
+      <Button
+        type="submit"
+        disabled={isSubmitting}
+        className="w-full md:w-auto"
+      >
         {isSubmitting ? "Updating..." : "Update Profile"}
       </Button>
     </form>

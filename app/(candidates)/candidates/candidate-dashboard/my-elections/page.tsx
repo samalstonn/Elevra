@@ -117,63 +117,65 @@ export default function ProfileSettingsPage() {
       <div className="mb-6">
         <h2 className="text-xl font-semibold mb-2">Manage Your Elections</h2>
         {electionLinks.length > 0 ? (
-          <div>
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Election
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    City
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    State
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Action
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200 ">
-                {electionLinks.map((link) => (
-                  <tr key={link.electionId}>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {link.election?.position ?? "Unknown"}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {link.election?.city ?? "—"}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {link.election?.state ?? "—"}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm">
-                      {/* <button
+          <div className="w-full">
+            <div className="-mx-4 md:mx-0 overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-200 text-sm">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-4 md:px-6 py-2 md:py-3 text-left text-[10px] md:text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">
+                      Election
+                    </th>
+                    <th className="px-4 md:px-6 py-2 md:py-3 text-left text-[10px] md:text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">
+                      City
+                    </th>
+                    <th className="px-4 md:px-6 py-2 md:py-3 text-left text-[10px] md:text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">
+                      State
+                    </th>
+                    <th className="px-4 md:px-6 py-2 md:py-3 text-left text-[10px] md:text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">
+                      Action
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {electionLinks.map((link) => (
+                    <tr key={link.electionId} className="hover:bg-gray-50">
+                      <td className="px-4 md:px-6 py-3 whitespace-nowrap text-xs md:text-sm text-gray-900 overflow-wrap-anywhere">
+                        {link.election?.position ?? "Unknown"}
+                      </td>
+                      <td className="px-4 md:px-6 py-3 whitespace-nowrap text-xs md:text-sm text-gray-500">
+                        {link.election?.city ?? "—"}
+                      </td>
+                      <td className="px-4 md:px-6 py-3 whitespace-nowrap text-xs md:text-sm text-gray-500">
+                        {link.election?.state ?? "—"}
+                      </td>
+                      <td className="px-4 md:px-6 py-3 whitespace-nowrap text-xs md:text-sm">
+                        {/* <button
                   onClick={() => setActiveElectionId(link.electionId)}
                   className="px-3 py-1 bg-blue-600 text-white rounded"
                 >
                   Edit Profile
                 </button> */}
-                      <button
-                        onClick={async () => {
-                          if (!candidateData) return;
-                          await fetch(
-                            `/api/electionlinks/${candidateData.id}/${link.electionId}`,
-                            {
-                              method: "DELETE",
-                            }
-                          );
-                          refresh();
-                        }}
-                        className="ml-2 px-3 py-1 bg-red-600 text-white rounded"
-                      >
-                        Delete
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+                        <button
+                          onClick={async () => {
+                            if (!candidateData) return;
+                            await fetch(
+                              `/api/electionlinks/${candidateData.id}/${link.electionId}`,
+                              {
+                                method: "DELETE",
+                              }
+                            );
+                            refresh();
+                          }}
+                          className="ml-2 px-2 md:px-3 py-1 bg-red-600 text-white rounded text-xs md:text-sm"
+                        >
+                          Delete
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
             <div className="mt-6 p-4 bg-purple-50 rounded">
               <p className="text-sm text-gray-700">
                 You can customize your public campaign web page in the{" "}

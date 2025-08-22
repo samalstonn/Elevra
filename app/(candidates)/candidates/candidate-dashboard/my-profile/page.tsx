@@ -57,8 +57,8 @@ export default function BioSettingsPage() {
   }
 
   return (
-    <div className="w-full h-full ">
-      <div className="flex flex-col md:flex-row gap-6">
+    <div className="w-full h-full">
+      <div className="flex flex-col md:flex-row gap-6 min-w-0">
         <div className="flex flex-col space-y-4">
           <PhotoUploader
             clerkUserId={userId!}
@@ -78,8 +78,11 @@ export default function BioSettingsPage() {
           </Button>
         </div>
 
-        <div className="flex-1 mt-4 md:mt-0">
-          <BasicProfileForm />
+        <div className="flex-1 mt-4 md:mt-0 min-w-0">
+          {/* Full width on mobile with internal padding; desktop inherits natural width */}
+          <div className="w-full mx-auto md:mx-0 px-4 sm:px-0 min-w-0">
+            <BasicProfileForm />
+          </div>
         </div>
       </div>
     </div>

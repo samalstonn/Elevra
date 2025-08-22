@@ -48,7 +48,7 @@ const Showcase: React.FC<ShowcaseProps> = ({}) => {
   };
 
   return (
-    <section className="w-screen py-12 bg-gray-100">
+    <section className="w-full py-12 bg-gray-100 overflow-x-hidden">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         whileInView={{ opacity: 1, y: 0 }}

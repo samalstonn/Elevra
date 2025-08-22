@@ -15,6 +15,13 @@ interface DataPoint {
   date: string;
   views: number;
 }
+interface BucketPoint extends DataPoint {
+  startDate: string;
+  endDate: string;
+  rangeLabel: string;
+  days: number;
+}
+type DisplayPoint = DataPoint | BucketPoint;
 
 interface TimeseriesPoint {
   date: string;
@@ -61,6 +68,16 @@ export default function AnalyticsChart({
   const [data, setData] = useState<DataPoint[] | []>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const mq = window.matchMedia("(max-width: 640px)");
+    const listener = (e: MediaQueryListEvent) => setIsMobile(e.matches);
+    setIsMobile(mq.matches);
+    mq.addEventListener("change", listener);
+    return () => mq.removeEventListener("change", listener);
+  }, []);
 
   useEffect(() => {
     if (!candidateId) {
@@ -80,10 +97,13 @@ export default function AnalyticsChart({
       .then((json) => {
         setData(json.data);
         if (onDataLoaded) {
-          const total =
-            json.totalViews ??
-            json.data.reduce((a, d) => a + (d.views || 0), 0);
-          onDataLoaded({ total, days });
+          const serverData: { date: string; views: number }[] = json.data;
+          onDataLoaded({
+            total:
+              json.totalViews ??
+              serverData.reduce((a: number, d) => a + (d.views || 0), 0),
+            days,
+          });
         }
       })
       .catch((e: unknown) => {
@@ -95,6 +115,28 @@ export default function AnalyticsChart({
       })
       .finally(() => setLoading(false));
   }, [candidateId, days, onDataLoaded]);
+  // Build display data (aggregate into 3-day buckets on mobile)
+  const displayData: DisplayPoint[] = (() => {
+    if (!isMobile) return data;
+    const BUCKET = 3;
+    const buckets: BucketPoint[] = [];
+    for (let i = 0; i < data.length; i += BUCKET) {
+      const slice = data.slice(i, i + BUCKET);
+      if (slice.length === 0) continue;
+      const start = slice[0].date;
+      const end = slice[slice.length - 1].date;
+      const viewsSum = slice.reduce((a, d) => a + (d.views || 0), 0);
+      buckets.push({
+        date: start, // use start as key
+        startDate: start,
+        endDate: end,
+        rangeLabel: start === end ? start : `${start}__${end}`,
+        views: viewsSum,
+        days: slice.length,
+      });
+    }
+    return buckets;
+  })();
   return (
     <div className="h-[300px] w-full">
       {loading && <div className="text-xs text-gray-500">Loading chart...</div>}
@@ -102,7 +144,7 @@ export default function AnalyticsChart({
       {!loading && !error && data.length > 0 && (
         <ResponsiveContainer width="100%" height="100%">
           <AreaChart
-            data={data}
+            data={displayData}
             margin={{
               top: 10,
               right: 30,
@@ -113,18 +155,60 @@ export default function AnalyticsChart({
             <CartesianGrid strokeDasharray="3 3" />
             <XAxis
               dataKey="date"
+              interval={0}
               tickFormatter={(tick) => {
-                const d = new Date(tick);
-                return d.getMonth() + 1 + "/" + d.getDate();
+                // If tick is a plain YYYY-MM-DD string, avoid new Date() (which treats it as UTC and can shift the day locally)
+                if (typeof tick === "string") {
+                  const isoDayPattern = /^\d{4}-\d{2}-\d{2}$/;
+                  if (isoDayPattern.test(tick)) {
+                    const [, month, day] = tick.split("-"); // ignore year
+                    return `${Number(month)}/${Number(day)}`; // strip leading zeros
+                  }
+                }
+                // Fallback: attempt to construct a Date (handles numeric timestamps or other date-like strings)
+                const d = new Date(
+                  typeof tick === "number" ? tick : String(tick)
+                );
+                if (!isNaN(d.getTime())) {
+                  return `${d.getMonth() + 1}/${d.getDate()}`;
+                }
+                // Last resort: return raw tick
+                return String(tick);
               }}
-              tick={{ fontSize: 12 }}
+              tick={{ fontSize: isMobile ? 10 : 12 }}
+              minTickGap={isMobile ? 4 : 5}
             />
             <YAxis tick={{ fontSize: 12 }} />
             <Tooltip
-              formatter={(value: number) => [value, "Profile Views"]}
-              labelFormatter={(label) => {
-                const d = new Date(label);
-                return d.toLocaleDateString();
+              formatter={(value: number) => [
+                value,
+                isMobile ? "Views (3-day)" : "Profile Views",
+              ]}
+              labelFormatter={(label, payload) => {
+                const isoDayPattern = /^\d{4}-\d{2}-\d{2}$/;
+                const fmtIso = (str: string) => {
+                  if (isoDayPattern.test(str)) {
+                    const [, m, d] = str.split("-");
+                    return `${Number(m)}/${Number(d)}`;
+                  }
+                  const dt = new Date(str);
+                  if (!isNaN(dt.getTime())) {
+                    return `${dt.getMonth() + 1}/${dt.getDate()}`;
+                  }
+                  return str;
+                };
+                if (!isMobile) {
+                  return fmtIso(String(label));
+                }
+                const bucket = payload?.[0]?.payload as BucketPoint | undefined;
+                if (bucket?.startDate) {
+                  const start = fmtIso(bucket.startDate);
+                  const end = fmtIso(bucket.endDate);
+                  return bucket.startDate === bucket.endDate
+                    ? start
+                    : `${start} – ${end}`;
+                }
+                return fmtIso(String(label));
               }}
             />
             <Area

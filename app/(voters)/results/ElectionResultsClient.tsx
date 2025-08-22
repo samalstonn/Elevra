@@ -4,17 +4,12 @@ import { Election, Candidate } from "@prisma/client";
 import { motion } from "framer-motion";
 import { useState, useMemo, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
-import {
-  FaVoteYea,
-  FaChevronLeft,
-  FaChevronRight,
-  FaDonate,
-} from "react-icons/fa"; // Import all needed icons
+import { FaVoteYea, FaChevronLeft, FaChevronRight } from "react-icons/fa";
 import Link from "next/link";
 import { Card, CardContent } from "@/components/Card";
-
 import CandidateSection from "./CandidateResultsSection";
 import MobileCandidateResultsSection from "./MobileCandidateResultsSection";
+import LiveElectionBanner from "@/components/LiveElectionBanner";
 
 export type ElectionWithCandidates = Election & { candidates: Candidate[] };
 
@@ -25,56 +20,39 @@ export default function ElectionResultsClient({
   elections: ElectionWithCandidates[];
   initialElectionID?: string | null;
 }) {
-  // Check if there are any elections
-  const hasElections = Array.isArray(elections) && elections.length > 0;
+  const hasElections = elections && elections.length > 0;
 
   const sortedElections = useMemo(() => {
-    if (Array.isArray(elections)) {
-      const sorted = [...elections];
-      sorted.sort((a, b) => {
-        const aHasVerified = a.candidates.some((c) => c.verified);
-        const bHasVerified = b.candidates.some((c) => c.verified);
-
-        if (aHasVerified && !bHasVerified) {
-          return -1;
-        }
-        if (!aHasVerified && bHasVerified) {
-          return 1;
-        }
-        return b.candidates.length - a.candidates.length;
-      });
-      return sorted;
-    }
-    return [];
+    const list = [...(elections || [])];
+    list.sort((a, b) => {
+      const aHas = a.candidates.some((c) => c.verified);
+      const bHas = b.candidates.some((c) => c.verified);
+      if (aHas && !bHas) return -1;
+      if (!aHas && bHas) return 1;
+      return b.candidates.length - a.candidates.length;
+    });
+    return list;
   }, [elections]);
 
-  // New: Prevent hydration errors by tracking mount state
+  // Suggested elections moved to LiveElectionBanner component when !hasElections
+
   const [mounted, setMounted] = useState(false);
-  useEffect(() => {
-    setMounted(true);
-  }, []);
+  useEffect(() => setMounted(true), []);
 
-  // Initialize filter state for elections
   const [selectedElection, setSelectedElection] = useState<number | null>(null);
-
-  // Set default selected election when data loads
   useEffect(() => {
-    if (sortedElections.length > 0) {
-      const parsedID = parseInt(initialElectionID || "", 10);
-      if (!isNaN(parsedID) && sortedElections.some((e) => e.id === parsedID)) {
-        setSelectedElection(parsedID);
-      } else {
-        setSelectedElection(sortedElections[0].id);
-      }
+    if (sortedElections.length) {
+      const parsed = parseInt(initialElectionID || "", 10);
+      if (!isNaN(parsed) && sortedElections.some((e) => e.id === parsed))
+        setSelectedElection(parsed);
+      else setSelectedElection(sortedElections[0].id);
     }
   }, [sortedElections, initialElectionID]);
 
-  // Track the selected election filter: default to first filter
   const filteredElections = selectedElection
-    ? sortedElections.filter((elec) => elec.id === selectedElection)
+    ? sortedElections.filter((e) => e.id === selectedElection)
     : sortedElections;
 
-  // Animation Variants
   const fadeInVariants = {
     hidden: { opacity: 0 },
     visible: { opacity: 1, transition: { duration: 0.5, ease: "easeOut" } },
@@ -83,77 +61,62 @@ export default function ElectionResultsClient({
   const scrollRef = useRef<HTMLDivElement>(null);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(false);
-
   const updateScrollButtons = () => {
-    if (!scrollRef.current) return;
-
-    const { scrollLeft, scrollWidth, clientWidth } = scrollRef.current;
-    setCanScrollLeft(scrollLeft > 0);
-    setCanScrollRight(scrollLeft + clientWidth < scrollWidth - 5);
+    const el = scrollRef.current;
+    if (!el) return;
+    setCanScrollLeft(el.scrollLeft > 0);
+    setCanScrollRight(el.scrollLeft + el.clientWidth < el.scrollWidth - 5);
   };
-
-  const scrollLeft = () => {
-    if (scrollRef.current) {
-      scrollRef.current.scrollBy({ left: -1000, behavior: "smooth" });
-    }
-  };
-
-  const scrollRight = () => {
-    if (scrollRef.current) {
-      scrollRef.current.scrollBy({ left: 1000, behavior: "smooth" });
-    }
-  };
-
+  const scrollLeft = () =>
+    scrollRef.current?.scrollBy({ left: -1000, behavior: "smooth" });
+  const scrollRight = () =>
+    scrollRef.current?.scrollBy({ left: 1000, behavior: "smooth" });
   useEffect(() => {
-    const scroller = scrollRef.current;
-    if (scroller) {
-      updateScrollButtons();
-      scroller.addEventListener("scroll", updateScrollButtons);
-      return () => {
-        scroller.removeEventListener("scroll", updateScrollButtons);
-      };
-    }
+    const el = scrollRef.current;
+    if (!el) return;
+    updateScrollButtons();
+    el.addEventListener("scroll", updateScrollButtons);
+    return () => el.removeEventListener("scroll", updateScrollButtons);
   }, [mounted, elections]);
 
-  // No elections view
   if (!hasElections) {
     return (
       <motion.div
-        className="w-screen mx-auto px-4 flex flex-col items-center"
-        style={{ marginTop: 0, paddingTop: 0 }}
+        className="w-full min-h-screen overflow-y-auto overflow-x-hidden mx-auto flex flex-col items-center max-w-full"
         initial="hidden"
         animate="visible"
         variants={fadeInVariants}
       >
-        <div className="max-w-3xl text-center mb-8 mt-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-4">
+        <div className="w-full max-w-3xl text-center mb-6 mt-6 px-4">
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-3">
             No Elections Found
           </h1>
-          <p className="text-gray-600 mb-8">
+          <p className="text-gray-600 mb-6 px-1 text-sm sm:text-base leading-relaxed">
             There are no elections available for the selected location. Would
             you like to submit information about an upcoming election?
           </p>
-
-          <div className="flex justify-center">
+          <div className="flex flex-col md:flex-row md:justify-center gap-5 w-full items-stretch">
             <motion.div
-              whileHover={{ scale: 1.05 }}
-              transition={{ duration: 0.2, ease: "easeOut" }}
+              whileHover={{ scale: 1.03 }}
+              transition={{ duration: 0.2 }}
+              className="flex-1 md:max-w-sm"
             >
-              <Card className="group transition-all rounded-lg cursor-pointer h-[315px] w-[350px] flex flex-col relative">
-                <CardContent className="flex flex-col items-center justify-center gap-4 h-full">
-                  <div className="w-16 h-16 rounded-full bg-purple-100 flex items-center justify-center">
-                    <FaVoteYea size={28} className="text-purple-600" />
+              <Card className="group rounded-lg cursor-pointer h-full w-full flex flex-col shadow-md">
+                <CardContent className="flex flex-col items-center justify-center gap-3 py-6 md:py-8 px-5 h-full">
+                  <div className="w-14 h-14 rounded-full bg-purple-100 flex items-center justify-center">
+                    <FaVoteYea size={24} className="text-purple-600" />
                   </div>
-                  <h2 className="text-xl font-semibold text-gray-900 text-center">
+                  <h2 className="text-lg sm:text-xl font-semibold text-gray-900 text-center">
                     Submit a New Election
                   </h2>
-                  <p className="text-gray-500 text-sm text-center mb-4">
+                  <p className="text-gray-500 text-xs sm:text-sm text-center mb-1">
                     Help us keep the community informed
                   </p>
-                  <Link href="/submit" className="mt-auto mb-4">
+                  <Link href="/submit" className="mt-auto">
                     <Button
+                      size="sm"
                       variant="purple"
-                      className="flex items-center gap-2"
+                      className="flex items-center gap-2 text-sm font-medium"
                     >
                       <span>Submit Election Information</span>
                     </Button>
@@ -161,34 +124,10 @@ export default function ElectionResultsClient({
                 </CardContent>
               </Card>
             </motion.div>
-            <motion.div
-              whileHover={{ scale: 1.05 }}
-              transition={{ duration: 0.2, ease: "easeOut" }}
-            >
-              <Card className="group transition-all rounded-lg cursor-pointer h-[315px] w-[350px] flex flex-col relative">
-                <CardContent className="flex flex-col items-center justify-center gap-4 h-full">
-                  <div className="w-16 h-16 rounded-full bg-purple-100 flex items-center justify-center">
-                    <FaDonate size={28} className="text-purple-600" />
-                  </div>
-                  <h2 className="text-xl font-semibold text-gray-900 text-center">
-                    See Live Elections
-                  </h2>
-                  <p className="text-gray-500 text-sm text-center mb-4">
-                    Browse currently active elections across the U.S.
-                  </p>
-
-                  <Button variant="purple">
-                    <Link
-                      href={`${process.env.NEXT_PUBLIC_APP_URL}/live-elections`}
-                      className="flex items-center gap-2"
-                    >
-                      <span>Browse Elections</span>
-                    </Link>
-                  </Button>
-                </CardContent>
-              </Card>
-            </motion.div>
           </div>
+        </div>
+        <div className="mt-12 w-full">
+          <LiveElectionBanner />
         </div>
       </motion.div>
     );
@@ -197,30 +136,24 @@ export default function ElectionResultsClient({
   return (
     <>
       {!mounted ? (
-        <div className="w-screen h-screen flex items-center justify-center">
+        <div className="w-full h-screen flex items-center justify-center px-4">
           Loading...
         </div>
       ) : (
-        <div className="w-screen flex flex-col" style={{ marginTop: "-1px" }}>
-          {" "}
-          {/* Negative margin to counteract any parent padding */}
-          {/* Filter section with no top padding and explicit inline styles */}
+        <div
+          className="w-full flex flex-col min-w-0"
+          style={{ marginTop: "-1px" }}
+        >
           <div
             className="relative bg-white"
-            style={{
-              marginTop: 0,
-              paddingTop: 0,
-              position: "relative",
-              top: 0,
-            }}
+            style={{ marginTop: 0, paddingTop: 0 }}
           >
             <motion.div
               ref={scrollRef}
               variants={fadeInVariants}
               initial="hidden"
               animate="visible"
-              className="flex flex-nowrap overflow-x-auto gap-4 p-4 no-scrollbar"
-              style={{ marginTop: 0, paddingTop: "4px" }}
+              className="flex flex-nowrap overflow-x-auto gap-4 p-4 no-scrollbar min-w-0"
             >
               {sortedElections.map((elec) => (
                 <Button
@@ -235,48 +168,25 @@ export default function ElectionResultsClient({
                 </Button>
               ))}
             </motion.div>
-
-            {canScrollLeft && (
-              <div
-                className="pointer-events-none absolute top-0 left-0 h-full w-24 z-0"
-                style={{
-                  background:
-                    "linear-gradient(to right, rgba(255,255,255,1) 0%, rgba(255,255,255,0.9) 20%, rgba(255,255,255,0.7) 40%, rgba(255,255,255,0.5) 60%, rgba(255,255,255,0.3) 80%, rgba(255,255,255,0) 100%)",
-                }}
-              />
-            )}
-
-            {canScrollRight && (
-              <div
-                className="pointer-events-none absolute top-0 right-0 h-full w-24 z-0"
-                style={{
-                  background:
-                    "linear-gradient(to left, rgba(255,255,255,1) 0%, rgba(255,255,255,0.9) 20%, rgba(255,255,255,0.7) 40%, rgba(255,255,255,0.5) 60%, rgba(255,255,255,0.3) 80%, rgba(255,255,255,0) 100%)",
-                }}
-              />
-            )}
-
             {canScrollLeft && (
               <Button
                 onClick={scrollLeft}
-                className="absolute left-0 top-1/2 -translate-y-1/2 z-10 hover:bg-0"
+                className="absolute left-0 top-1/2 -translate-y-1/2 z-10"
                 variant="ghost"
               >
                 <FaChevronLeft className="w-5 h-5" />
               </Button>
             )}
-
             {canScrollRight && (
               <Button
                 onClick={scrollRight}
-                className="absolute right-2 top-1/2 -translate-y-1/2 z-10 hover:bg-0"
-                variant={"ghost"}
+                className="absolute right-2 top-1/2 -translate-y-1/2 z-10"
+                variant="ghost"
               >
                 <FaChevronRight className="w-5 h-5" />
               </Button>
             )}
           </div>
-          {/* Content section */}
           <motion.div
             className="px-4 mb-16"
             initial="hidden"
@@ -284,12 +194,11 @@ export default function ElectionResultsClient({
             variants={fadeInVariants}
           >
             <div className="mt-4">
-              {/* Candidate Sections */}
               <motion.div
                 variants={fadeInVariants}
                 className="grid grid-cols-1 gap-6"
               >
-                {(filteredElections || []).map((elec) => (
+                {filteredElections.map((elec) => (
                   <motion.div
                     key={elec.id}
                     variants={fadeInVariants}
@@ -321,7 +230,6 @@ export default function ElectionResultsClient({
                             })}
                             election={elec}
                             fallbackElections={[]}
-                            
                           />
                         </div>
                       </div>

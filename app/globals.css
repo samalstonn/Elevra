@@ -8,6 +8,12 @@ body {
   color: #333333;
 }
 
+/* Utility to aggressively wrap long uninterrupted tokens (URLs, long roles, etc.) */
+.overflow-wrap-anywhere {
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
 
 
 @layer base {

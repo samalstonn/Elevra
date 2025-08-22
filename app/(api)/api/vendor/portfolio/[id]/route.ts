@@ -1,9 +1,12 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import prisma from "@/prisma/prisma";
 
-export async function PUT(request: Request, context: unknown) {
-  const { params } = context as { params: { id: string } };
+// Update an existing portfolio item
+export async function PUT(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
   try {
     // Get authenticated user
     const { userId } = await auth();
@@ -11,7 +14,7 @@ export async function PUT(request: Request, context: unknown) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const itemId = parseInt(params.id);
+    const itemId = parseInt((await params).id, 10);
     if (isNaN(itemId)) {
       return NextResponse.json(
         { error: "Invalid portfolio item ID" },
@@ -62,17 +65,25 @@ export async function PUT(request: Request, context: unknown) {
       },
     });
 
-    return NextResponse.json(updatedItem);
+  return NextResponse.json(updatedItem);
   } catch (error: unknown) {
     if (error instanceof Error) {
       console.error("Error updating candidate:", error);
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
+    console.error("Unknown error updating candidate:", error);
+    return NextResponse.json(
+      { error: "Internal Server Error" },
+      { status: 500 }
+    );
   }
 }
 
-export async function DELETE(request: Request, context: unknown) {
-  const { params } = context as { params: { id: string } };
+// Delete a portfolio item
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
   try {
     // Get authenticated user
     const { userId } = await auth();
@@ -80,7 +91,7 @@ export async function DELETE(request: Request, context: unknown) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const itemId = parseInt(params.id);
+    const itemId = parseInt((await params).id, 10);
     if (isNaN(itemId)) {
       return NextResponse.json(
         { error: "Invalid portfolio item ID" },
@@ -120,5 +131,10 @@ export async function DELETE(request: Request, context: unknown) {
       console.error("Error updating candidate:", error);
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
+    console.error("Unknown error updating candidate:", error);
+    return NextResponse.json(
+      { error: "Internal Server Error" },
+      { status: 500 }
+    );
   }
 }

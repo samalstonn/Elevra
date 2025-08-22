@@ -8,7 +8,7 @@ const AboutUs = () => {
       whileInView={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.8, ease: "easeInOut" }}
       viewport={{ once: true }}
-      className="w-screen pt-16 pb-32 px-6"
+      className="w-full pt-16 pb-32 px-6 overflow-x-hidden"
     >
       <motion.h2
         initial={{ opacity: 0, y: 20 }}

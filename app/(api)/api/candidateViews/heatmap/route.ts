@@ -52,10 +52,7 @@ export async function GET(request: Request) {
     return NextResponse.json({ matrix, max, days });
   } catch (e: unknown) {
     console.error("/api/candidateViews/heatmap error", e);
-    const message =
-      typeof e === "object" && e && "message" in e
-        ? (e as { message?: string }).message || "Internal error"
-        : "Internal error";
+    const message = e instanceof Error ? e.message : "Internal error";
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }

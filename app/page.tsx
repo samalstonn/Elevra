@@ -9,6 +9,7 @@ import FeatureCards from "../components/FeatureCards";
 import AboutUs from "@/components/AboutUs";
 import { Button } from "@/components/ui/button";
 import { NormalizedLocation } from "@/types/geocoding";
+import LiveElectionBanner from "@/components/LiveElectionBanner";
 
 export default function HomePage() {
   return (
@@ -47,7 +48,7 @@ function HomePageContent() {
             },
           },
         }}
-        className="flex flex-col items-center text-center py-12 w-full max-w-screen mt-16"
+        className="flex flex-col items-center text-center py-10 w-full max-w-screen mt-4"
       >
         {/* Animated "Elevra" Header */}
         <motion.h1
@@ -130,14 +131,16 @@ function HomePageContent() {
             <a href="/candidates">Launch Your Campaign</a>
           </Button>
         </motion.div>
+        <LiveElectionBanner className="z-10" />
       </motion.main>
+      {/* Live Elections Banner (below site header, above main content) */}
 
       {/* Showcase Section - Added here */}
       <motion.div
         initial="hidden"
         whileInView="visible"
         viewport={{ once: true }}
-        className="max-w-screen"
+        className="w-full self-stretch"
       >
         <Showcase />
       </motion.div>
@@ -156,6 +159,7 @@ function HomePageContent() {
         initial="hidden"
         whileInView="visible"
         viewport={{ once: true }}
+        className="w-full self-stretch"
       >
         <FeatureCards />
       </motion.div>

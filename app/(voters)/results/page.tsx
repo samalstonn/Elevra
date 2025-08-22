@@ -2,7 +2,7 @@ import prisma from "@/prisma/prisma";
 import { Suspense } from "react";
 import ElectionResultsClient from "./ElectionResultsClient";
 import { Candidate } from "@prisma/client";
-import { isElectionActive } from "@/lib/functions";
+import { isElectionActive } from "@/lib/isElectionActive";
 
 interface ElectionResultsPageProps {
   searchParams: Promise<{
@@ -18,7 +18,7 @@ async function ElectionResultsPage({ searchParams }: ElectionResultsPageProps) {
 
   if (!city || !state) {
     return (
-      <div className="w-screen h-screen flex items-center justify-center">
+      <div className="w-full h-screen flex items-center justify-center px-4">
         Please provide a city and state.
       </div>
     );
@@ -75,7 +75,7 @@ export default function ElectionResults({
 
 function ResultsSkeleton() {
   return (
-    <div className="w-screen p-4 space-y-4 animate-pulse">
+    <div className="w-full p-4 space-y-4 animate-pulse">
       {/* Filter skeleton */}
       <div className="flex space-x-4 overflow-x-auto no-scrollbar mb-4">
         {[...Array(5)].map((_, i) => (

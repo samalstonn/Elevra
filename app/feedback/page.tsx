@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
@@ -16,6 +16,18 @@ export default function FeedbackPage() {
   });
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
+
+  useEffect(() => {
+    fetch("/api/send-email", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        to: "elevracommunity@gmail.com",
+        subject: "Feedback / Contact page visited",
+        html: `<p>A user visited the feedback/contact page at ${new Date().toISOString()}.</p>`,
+      }),
+    }).catch(() => {});
+  }, []);
 
   const handleChange = (
     e: React.ChangeEvent<
