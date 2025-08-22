@@ -141,16 +141,25 @@ export const LiveElectionBanner: React.FC<LiveElectionBannerProps> = ({
           <div
             className="flex gap-3 sm:gap-4 animate-election-ticker px-4"
             aria-label="Active elections ticker"
+            role="list"
           >
             {[...suggested, ...suggested].map((e, idx) => {
               const location = e.city ? `${e.city}, ${e.state}` : e.state;
+              const isDuplicate = idx >= suggested.length;
+              const href =
+                e.city && e.city.length > 0
+                  ? `/results?city=${encodeURIComponent(e.city)}&state=${encodeURIComponent(e.state)}`
+                  : `/results?state=${encodeURIComponent(e.state)}`;
+
               return (
                 <Link
                   key={`${location}-${idx}`}
-                  href={`/results?city=${encodeURIComponent(
-                    e.city || ""
-                  )}&state=${encodeURIComponent(e.state)}`}
-                  className="shrink-0 w-52 sm:w-60 md:w-64 bg-white rounded-md px-3 py-2.5 shadow-sm hover:shadow-md hover:bg-purple-100 transition flex flex-col justify-between"
+                  href={href}
+                  prefetch={false}
+                  aria-label={`View election results for ${location}`}
+                  aria-hidden={isDuplicate}
+                  role="listitem"
+                  className="shrink-0 w-52 sm:w-60 md:w-64 bg-white rounded-md px-3 py-2.5 shadow-sm hover:shadow-md hover:bg-purple-100 transition flex flex-col justify-between focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-500"
                 >
                   <span
                     className="font-medium text-xs sm:text-sm text-gray-900 truncate"
@@ -166,7 +175,6 @@ export const LiveElectionBanner: React.FC<LiveElectionBannerProps> = ({
               );
             })}
           </div>
-          <div className="pointer-events-none absolute inset-y-0 left-0 w-12 bg-gradient-to-r from-purple-50 to-transparent" />
           <div className="pointer-events-none absolute inset-y-0 right-0 w-12 bg-gradient-to-l from-purple-50 to-transparent" />
         </div>
       )}
