@@ -38,11 +38,15 @@ export const LiveElectionBanner: React.FC<LiveElectionBannerProps> = ({
 
   useEffect(() => {
     let cancelled = false;
+    const controller = new AbortController();
+
     const fetchSuggested = async () => {
       setLoading(true);
       setError(null);
       try {
-        const res = await fetch("/api/elections?city=all&state=all");
+        const res = await fetch("/api/elections?city=all&state=all", {
+          signal: controller.signal,
+        });
         if (!res.ok) throw new Error("Failed to fetch elections");
         let data: RawElectionSummary[] = await res.json();
         data = data.filter((e) => isElectionActive(new Date(e.date)));
@@ -82,8 +86,11 @@ export const LiveElectionBanner: React.FC<LiveElectionBannerProps> = ({
         );
         if (!cancelled) setSuggested(grouped.slice(0, limit));
       } catch (err: unknown) {
-        if (!cancelled)
+        // Swallow abort errors; show others
+        if (!cancelled) {
+          if ((err as any)?.name === "AbortError") return;
           setError(err instanceof Error ? err.message : String(err));
+        }
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -91,6 +98,7 @@ export const LiveElectionBanner: React.FC<LiveElectionBannerProps> = ({
     fetchSuggested();
     return () => {
       cancelled = true;
+      controller.abort();
     };
   }, [limit]);
 
