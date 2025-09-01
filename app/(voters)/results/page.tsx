@@ -2,7 +2,6 @@ import prisma from "@/prisma/prisma";
 import { Suspense } from "react";
 import ElectionResultsClient from "./ElectionResultsClient";
 import { Candidate } from "@prisma/client";
-import { isElectionActive } from "@/lib/isElectionActive";
 
 interface ElectionResultsPageProps {
   searchParams: Promise<{
