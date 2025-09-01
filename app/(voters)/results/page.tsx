@@ -30,6 +30,9 @@ async function ElectionResultsPage({ searchParams }: ElectionResultsPageProps) {
     },
     include: {
       candidates: {
+        where: {
+          candidate: { hidden: false },
+        },
         include: {
           candidate: true,
         },
@@ -37,9 +40,8 @@ async function ElectionResultsPage({ searchParams }: ElectionResultsPageProps) {
     },
   });
 
-  const activeElections = elections.filter((election) =>
-    isElectionActive(new Date(election.date))
-  );
+  // Include both past and future elections in results (no date filtering)
+  const activeElections = elections;
 
   interface ElectionCandidate {
     candidate: Candidate; // Relaxing the type to any

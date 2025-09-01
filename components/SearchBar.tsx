@@ -100,7 +100,7 @@ export default function SearchBar({ onSearch }: SearchBarProps) {
     try {
       const results = await getLocationSuggestions(input);
       // One-off suggestion for Cornell Business Review
-      if (input.toLowerCase().includes("cornell")) {
+      if (input.toLowerCase().includes("corn")) {
         results.unshift({
           id: "cornell-business-review",
           text: "Cornell Business Review",
@@ -108,6 +108,14 @@ export default function SearchBar({ onSearch }: SearchBarProps) {
           city: "Cornell Business Review",
           state: "NY",
           stateName: "NY",
+        });
+        results.unshift({
+          id: "cornell-student-assembly",
+          text: "Cornell Student Assembly",
+          placeName: "Cornell Student Assembly",
+          city: "Cornell Student Assembly",
+          state: "New York",
+          stateName: "New York",
         });
       }
       setSuggestions(results);

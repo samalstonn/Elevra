@@ -40,6 +40,7 @@ export default async function CandidatePage({
       election: {
         include: {
           candidates: {
+            where: { candidate: { hidden: false } },
             include: {
               candidate: true,
             },

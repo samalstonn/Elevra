@@ -57,7 +57,10 @@ export async function GET(request: Request) {
           state: normalizedState,
         },
         include: {
-          candidates: true,
+          candidates: {
+            where: { candidate: { hidden: false } },
+            include: { candidate: true },
+          },
         },
       });
     }
@@ -74,7 +77,10 @@ export async function GET(request: Request) {
           state: rawState,
         },
         include: {
-          candidates: true,
+          candidates: {
+            where: { candidate: { hidden: false } },
+            include: { candidate: true },
+          },
         },
       });
     }
