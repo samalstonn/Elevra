@@ -34,7 +34,8 @@ import { NextResponse } from "next/server";
 import prisma from "@/prisma/prisma";
 import { auth } from "@clerk/nextjs/server";
 import { Prisma, SubmissionStatus } from "@prisma/client";
-import nodemailer from "nodemailer";
+import { sendWithResend } from "@/lib/email/resend";
+import { renderAdminNotification } from "@/lib/email/templates/adminNotification";
 import { generateUniqueSlug } from "@/lib/functions";
 
 export async function GET(request: Request) {
@@ -196,36 +197,24 @@ export async function POST(request: Request) {
       const candidate = await prisma.candidate.create({
         data: createData,
       });
-      // Set up nodemailer transporter using your email service credentials
-      const transporter = nodemailer.createTransport({
-        service: "gmail", // or another service
-        auth: {
-          user: process.env.EMAIL_USER, // your email address
-          pass: process.env.EMAIL_PASS, // your email password or app password
-        },
-      });
-
-      // Define email options
-      const mailOptions = {
-        from: process.env.EMAIL_USER,
-        to: process.env.MY_EMAIL, // your email address to receive notifications
-        subject: `New Candidate Signup: ${candidate.name}`,
-        text: `A new candidate has signed up.\n\nName: ${candidate.name}\nLocation: ${candidate.currentCity}, ${candidate.currentState}
-        : ${body}`,
-      };
-
-      // Attempt to send the email
+      // Notify admin (Resend)
       try {
-        await transporter.sendMail(mailOptions);
+        await sendWithResend({
+          to: process.env.ADMIN_EMAIL!,
+          subject: `New Candidate Signup: ${candidate.name}`,
+          html: renderAdminNotification({
+            title: "New Candidate Signup",
+            rows: [
+              { label: "Name", value: candidate.name },
+              {
+                label: "Location",
+                value: `${candidate.currentCity}, ${candidate.currentState}`,
+              },
+            ],
+          }),
+        });
       } catch (emailError: unknown) {
-        if (emailError instanceof Error) {
-          console.error(
-            "Error sending notification email:",
-            emailError.message
-          );
-        } else {
-          console.error("Error sending notification email:", emailError);
-        }
+        console.error("Error sending notification email:", emailError);
       }
       return NextResponse.json(candidate);
     } catch (error: unknown) {

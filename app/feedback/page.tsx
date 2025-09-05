@@ -18,13 +18,16 @@ export default function FeedbackPage() {
   const [success, setSuccess] = useState(false);
 
   useEffect(() => {
-    fetch("/api/send-email", {
+    // Send admin ping using the admin email endpoint (defaults to ADMIN_EMAIL)
+    fetch("/api/admin/email", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        to: "elevracommunity@gmail.com",
         subject: "Feedback / Contact page visited",
-        html: `<p>A user visited the feedback/contact page at ${new Date().toISOString()}.</p>`,
+        data: {
+          title: "Feedback Page Visit",
+          intro: `A user visited the feedback/contact page at ${new Date().toISOString()}.`,
+        },
       }),
     }).catch(() => {});
   }, []);

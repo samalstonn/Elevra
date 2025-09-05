@@ -11,7 +11,8 @@ import {
 } from "@prisma/client"; // FIXED: Import Prisma namespace
 // Import the slug generation functions
 import { generateUniqueSlug } from "@/lib/functions"; // Adjust path if you put it elsewhere
-import nodemailer from "nodemailer";
+import { sendWithResend } from "@/lib/email/resend";
+import { renderAdminNotification } from "@/lib/email/templates/adminNotification";
 
 // GET handler remains the same...
 export async function GET(request: Request) {
@@ -198,25 +199,20 @@ export async function POST(request: Request) {
     // Return the created vendor (excluding sensitive info if needed)
     const { clerkUserId: _, ...safeVendorData } = newVendor;
 
-    // Set up nodemailer transporter using your email service credentials
-    const transporter = nodemailer.createTransport({
-      service: "gmail", // or another service
-      auth: {
-        user: process.env.EMAIL_USER, // your email address
-        pass: process.env.EMAIL_PASS, // your email password or app password
-      },
-    });
-
-    // Define email options
-    const mailOptions = {
-      from: process.env.EMAIL_USER,
-      to: process.env.MY_EMAIL, // your email address to receive notifications
+    // Notify admin (Resend)
+    await sendWithResend({
+      to: process.env.ADMIN_EMAIL!,
       subject: `New Vendor Signup: ${vendor.name}`,
-      text: `A new vendor has signed up.\n\nName: ${vendor.name}\nEmail: ${vendor.email}\nPhone: ${vendor.phone}\nBio: ${vendor.bio}`,
-    };
-
-    // Send the email
-    await transporter.sendMail(mailOptions);
+      html: renderAdminNotification({
+        title: "New Vendor Signup",
+        intro: "A vendor just created a profile.",
+        rows: [
+          { label: "Name", value: vendor.name },
+          { label: "Email", value: vendor.email },
+          { label: "Phone", value: vendor.phone || "" },
+        ],
+      }),
+    });
 
     return NextResponse.json(
       { success: true, vendor: safeVendorData },

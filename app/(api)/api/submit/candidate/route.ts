@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/prisma/prisma";
-import nodemailer from "nodemailer";
+import { sendWithResend } from "@/lib/email/resend";
+import { renderAdminNotification } from "@/lib/email/templates/adminNotification";
 
 export async function POST(request: NextRequest) {
   try {
@@ -67,25 +68,21 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    // Set up nodemailer transporter using your email service credentials
-    const transporter = nodemailer.createTransport({
-      service: "gmail", // or another service
-      auth: {
-        user: process.env.EMAIL_USER, // your email address
-        pass: process.env.EMAIL_PASS, // your email password or app password
-      },
-    });
-
-    // Define email options
-    const mailOptions = {
-      from: process.env.EMAIL_USER,
-      to: process.env.MY_EMAIL, // your email address to receive notifications
+    // Notify admin (Resend)
+    await sendWithResend({
+      to: process.env.ADMIN_EMAIL!,
       subject: `New Candidate Submission Request: ${candidateSubmission.name}`,
-      text: `Name: ${candidateSubmission.name}`,
-    };
-
-    // Send the email
-    await transporter.sendMail(mailOptions);
+      html: renderAdminNotification({
+        title: "New Candidate Submission",
+        rows: [
+          { label: "Name", value: candidateSubmission.name },
+          { label: "Party", value: candidateSubmission.party },
+          { label: "Position", value: candidateSubmission.position },
+          { label: "City", value: `${candidateSubmission.city}, ${candidateSubmission.state}` },
+        ],
+        intro: candidateSubmission.additionalNotes || undefined,
+      }),
+    });
 
     return NextResponse.json({
       success: true,

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/prisma/prisma";
-import nodemailer from "nodemailer";
+import { sendWithResend } from "@/lib/email/resend";
+import { renderAdminNotification } from "@/lib/email/templates/adminNotification";
 
 export async function POST(request: NextRequest) {
   try {
@@ -64,25 +65,21 @@ export async function POST(request: NextRequest) {
         active: true,
       },
     });
-    // Set up nodemailer transporter using your email service credentials
-    const transporter = nodemailer.createTransport({
-      service: "gmail", // or another service
-      auth: {
-        user: process.env.EMAIL_USER, // your email address
-        pass: process.env.EMAIL_PASS, // your email password or app password
-      },
-    });
-
-    // Define email options
-    const mailOptions = {
-      from: process.env.EMAIL_USER,
-      to: process.env.MY_EMAIL, // your email address to receive notifications
+    // Notify admin (Resend)
+    await sendWithResend({
+      to: process.env.ADMIN_EMAIL!,
       subject: `New Election Submission Request: ${election.position} ${clerkUserId}`,
-      text: `At: ${election.city}, ${election.state}\n\nDescription: ${election.description}\n\nPositions: ${election.positions}\n\nType: ${election.type}`,
-    };
-
-    // Send the email
-    await transporter.sendMail(mailOptions);
+      html: renderAdminNotification({
+        title: "New Election Submission",
+        rows: [
+          { label: "Position", value: election.position },
+          { label: "City", value: `${election.city}, ${election.state}` },
+          { label: "Positions", value: String(election.positions) },
+          { label: "Type", value: election.type },
+        ],
+        intro: election.description,
+      }),
+    });
     return NextResponse.json(election);
   } catch (error) {
     console.error("Error submitting election:", error);
