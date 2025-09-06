@@ -5,7 +5,7 @@ import { PhotoUploader } from "@/components/ProfilePhotoUploader";
 import { useAuth } from "@clerk/nextjs";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Eye, Terminal } from "lucide-react";
+import { Terminal } from "lucide-react";
 import BasicProfileForm from "./BasicProfileForm";
 import { Button } from "@/components/ui/button";
 import {
@@ -19,8 +19,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import Link from "next/link";
-import { useSearchParams, useRouter } from "next/navigation";
+import { useRouter } from "next/navigation";
 import TourModal from "@/components/tour/TourModal";
 import { usePageTitle } from "@/lib/usePageTitle";
 import EducationAdder from "@/components/EducationAdder";
@@ -28,7 +27,6 @@ import { extractEducation } from "@/lib/education";
 
 export default function BioSettingsPage() {
   usePageTitle("Candidate Dashboard – Profile");
-  const searchParams = useSearchParams();
   const router = useRouter();
   const { userId } = useAuth();
   const { data: candidateData, error, isLoading, refresh } = useCandidate();
@@ -178,8 +176,6 @@ function EducationList({
   const [graduationYear, setGraduationYear] = useState("");
   const [activities, setActivities] = useState("");
   const [website, setWebsite] = useState("");
-  const [editCity, setEditCity] = useState("");
-  const [editState, setEditState] = useState("");
   const [saving, setSaving] = useState(false);
 
   function openEdit(i: number) {
@@ -189,8 +185,6 @@ function EducationList({
     setGraduationYear(item.graduationYear ?? "");
     setActivities(item.activities ?? "");
     setWebsite(item.website ?? "");
-  setEditCity(item.city ?? "");
-  setEditState(item.state ?? "");
   }
 
   async function saveEdit() {
@@ -205,8 +199,8 @@ function EducationList({
           name: current.name,
           country: current.country,
           stateProvince: current.stateProvince ?? null,
-          city: editCity || null,
-          state: editState || null,
+          city: current.city ?? null,
+          state: current.state ?? null,
           website: website || null,
           degree: degree || null,
           graduationYear: graduationYear || null,

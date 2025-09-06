@@ -6,6 +6,10 @@ export type University = {
   country: string;
   alpha_two_code?: string;
   "state-province"?: string | null;
+  /** City where the university is located, if provided by the API */
+  city?: string | null;
+  /** State or region abbreviation, if provided directly by the API */
+  state?: string | null;
   domains?: string[];
   web_pages?: string[];
 };
@@ -46,11 +50,16 @@ export async function fetchUniversities({
   }
 
   const data = (await res.json()) as University[];
-  // Basic normalization to ensure optional arrays exist
+  // Basic normalization to ensure optional arrays exist and to surface
+  // location details when the upstream API provides them.
   return data.map((u) => ({
     ...u,
     domains: u.domains ?? [],
     web_pages: u.web_pages ?? [],
+    // Some providers may expose `state` directly in addition to
+    // `state-province`; fall back accordingly.
+    state: u.state ?? u["state-province"] ?? null,
+    city: u.city ?? null,
     "state-province": u["state-province"] ?? null,
   }));
 }
