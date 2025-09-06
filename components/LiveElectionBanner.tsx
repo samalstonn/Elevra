@@ -202,11 +202,12 @@ export const LiveElectionBanner: React.FC<LiveElectionBannerProps> = ({
         }
         .animate-election-ticker {
           width: max-content;
-          animation: election-ticker 40s linear infinite;
+          /* Slow, calm marquee speed */
+          animation: election-ticker 90s linear infinite;
         }
         @media (max-width: 640px) {
           .animate-election-ticker {
-            animation-duration: 30s;
+            animation-duration: 70s;
           }
         }
         @media (prefers-reduced-motion: reduce) {

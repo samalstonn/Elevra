@@ -7,6 +7,7 @@ import { TabButton } from "@/components/ui/tab-button";
 import { FeatureCard } from "@/components/ui/feature-card";
 import CandidateLoginForm from "@/app/(candidates)/candidates/CandidateLoginForm";
 import { useRouter, useSearchParams } from "next/navigation";
+import ResultsSearchBar from "@/components/ResultsSearchBar";
 
 export default function CandidatesPageInner() {
   const router = useRouter();
@@ -93,22 +94,18 @@ export default function CandidatesPageInner() {
               Join our platform to share information and manage your campaign.
             </motion.p>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 w-full my-12">
-              <FeatureCard
-                icon="🔍"
-                title="Become Discoverable"
-                description="Local voters can find you easily and learn about your campaign"
-              />
-              <FeatureCard
-                icon="🎯"
-                title="Strategize Effectively"
-                description="Access tools and expertise to sharpen your campaign strategy"
-              />
-              <FeatureCard
-                icon="📈"
-                title="Expand Your Reach"
-                description="Leverage professional services to increase voter engagement"
-              />
+            {/* Candidate self-search */}
+            <div className="bg-white rounded-lg p-4 w-full flex flex-col items-center">
+              <p className="text-sm text-gray-700 mb-3">
+                Heard of yourself on Elevra before? Search for your name below!
+              </p>
+              <div className="min-w-full">
+                <ResultsSearchBar
+                  placeholder="Search for your name..."
+                  apiEndpoint="/api/candidates"
+                  shadow={true}
+                />
+              </div>
             </div>
 
             <motion.div
@@ -130,6 +127,24 @@ export default function CandidatesPageInner() {
                 Join as a Candidate
               </Button>
             </motion.div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 w-full my-12">
+              <FeatureCard
+                icon="🔍"
+                title="Become Discoverable"
+                description="Local voters can find you easily and learn about your campaign"
+              />
+              <FeatureCard
+                icon="🎯"
+                title="Strategize Effectively"
+                description="Access tools and expertise to sharpen your campaign strategy"
+              />
+              <FeatureCard
+                icon="📈"
+                title="Expand Your Reach"
+                description="Leverage professional services to increase voter engagement"
+              />
+            </div>
           </div>
         )}
 

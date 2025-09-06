@@ -3,6 +3,25 @@ import { clerkClient } from "@clerk/clerk-sdk-node";
 import prisma from "@/prisma/prisma";
 import { redirect } from "next/navigation";
 import CandidateVerificationForm from "./CandidateVerificationForm";
+import type { Metadata } from "next";
+
+export async function generateMetadata({
+  searchParams,
+}: {
+  searchParams: Promise<{ [key: string]: string | string | undefined }>;
+}): Promise<Metadata> {
+  const resolved = await searchParams;
+  const idStr = resolved.candidateID as string | undefined;
+  if (!idStr) return { title: "Verify Your Candidate Profile" };
+  const id = parseInt(idStr, 10);
+  if (Number.isNaN(id)) return { title: "Verify Your Candidate Profile" };
+  const candidate = await prisma.candidate.findUnique({
+    where: { id },
+    select: { name: true },
+  });
+  if (!candidate?.name) return { title: "Verify Your Candidate Profile" };
+  return { title: `Verify ${candidate.name}` };
+}
 
 export default async function VerifyPage({
   searchParams,
@@ -50,15 +69,14 @@ export default async function VerifyPage({
       }
     );
     if (res.ok) {
-      redirect(
-        `/candidate/verify/success?candidate=${candidate}&candidateID=${candidateID}`
-      );
+      // On success, send them to their dashboard with a one-time flag and slug for onboarding popup
+      redirect(`/candidates/candidate-dashboard?verified=1&slug=${candidate}`);
     } else {
       console.error("Error auto-approving candidate:", res.statusText);
       redirect("/candidate/verify/error");
     }
   }
 
-  // 4b) If not matched, show the client‐side form
+  // 4b) If not matched, show the manual verification form
   return <CandidateVerificationForm />;
 }

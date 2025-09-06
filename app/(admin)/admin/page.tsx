@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { usePageTitle } from "@/lib/usePageTitle";
 
 interface BlogPost {
   id: number;
@@ -35,6 +36,7 @@ interface BlogPostUpsertRequest {
 }
 
 export default function AdminDashboard() {
+  usePageTitle("Admin – Dashboard");
   const sendTestEmail = async () => {
     try {
       const res = await fetch("/api/admin/email", {

@@ -19,6 +19,7 @@ export type CandidateDashboardData = Pick<
   | "photoUrl" // Assuming you add photoUrl to Candidate model like Vendor
   | "status"
   | "slug"
+  | "history"
   // Add any other fields relevant to the dashboard view
 > & {
   party?: string;

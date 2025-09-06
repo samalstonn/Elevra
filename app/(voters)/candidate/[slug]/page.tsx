@@ -5,10 +5,47 @@ import prisma from "@/prisma/prisma";
 import CandidateClient from "./CandidateClient";
 import { Candidate } from "@prisma/client";
 import { currentUser } from "@clerk/nextjs/server";
+import type { Metadata } from "next";
 
 interface CandidatePageProps {
   params: Promise<{ slug: string }>;
   searchParams: Promise<{ election?: string }>;
+}
+
+export async function generateMetadata({
+  params,
+  searchParams,
+}: CandidatePageProps): Promise<Metadata> {
+  const resolvedParams = await params;
+  const resolvedSearchParams = await searchParams;
+  const { slug } = resolvedParams;
+
+  const candidate = await prisma.candidate.findUnique({
+    where: { slug },
+    select: { name: true },
+  });
+
+  if (!candidate) {
+    return { title: "Candidate Not Found" };
+  }
+
+  let title = `${candidate.name} – Candidate`;
+  const electionIdParam = resolvedSearchParams?.election
+    ? parseInt(resolvedSearchParams.election, 10)
+    : undefined;
+
+  if (electionIdParam != null && !Number.isNaN(electionIdParam)) {
+    const election = await prisma.election.findUnique({
+      where: { id: electionIdParam },
+      select: { title: true, city: true, state: true },
+    });
+    if (election?.title) {
+      const loc = [election.city, election.state].filter(Boolean).join(", ");
+      title = `${candidate.name} – ${election.title}${loc ? ` (${loc})` : ""}`;
+    }
+  }
+
+  return { title };
 }
 
 export default async function CandidatePage({

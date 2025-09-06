@@ -74,6 +74,7 @@ export async function GET(request: Request) {
         website: true,
         linkedin: true,
         slug: true,
+        history: true,
         donations: {
           select: {
             id: true,

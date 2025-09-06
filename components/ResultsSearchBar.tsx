@@ -14,9 +14,12 @@ export type SearchResult = {
   slug: string;
   name?: string;
   electionId?: string;
-  position?: string;
-  city?: string;
-  state?: string;
+  position?: string; // for elections
+  city?: string; // for elections
+  state?: string; // for elections
+  currentRole?: string; // for candidates
+  currentCity?: string; // for candidates
+  currentState?: string; // for candidates
   date?: string;
   party?: string;
 };
@@ -80,16 +83,18 @@ export default function SearchBar({
 
             // Filter results based on the search term
             // Check for name property (candidates) or position property (elections)
-            const filteredData = data.filter(
-              (item: SearchResult) =>
-                item.name?.toLowerCase().includes(term) ||
-                false ||
-                item.position?.toLowerCase().includes(term) ||
-                false ||
-                item.city?.toLowerCase().includes(term) ||
-                false ||
-                item.state?.toLowerCase().includes(term) ||
-                false
+            const filteredData = data.filter((item: SearchResult) =>
+              [
+                item.name,
+                item.position,
+                item.city,
+                item.state,
+                item.currentRole,
+                item.currentCity,
+                item.currentState,
+              ]
+                .filter(Boolean)
+                .some((val) => (val as string).toLowerCase().includes(term))
             );
 
             // Sort filtered results by relevance
@@ -123,22 +128,36 @@ export default function SearchBar({
     }, 300);
 
     return () => clearTimeout(timeoutId);
-  }, [searchTerm, apiEndpoint]);
+  }, [searchTerm, apiEndpoint]); 
 
   // Handle rendering results based on data type
   const renderResult = (item: SearchResult) => {
-    // For candidates
-    if (item.name && item.electionId) {
+    // For candidates (identified by having a slug and name)
+    if (item.name && item.slug) {
       return (
-        <>
-          <div className="font-semibold">{item.name}</div>
-          {item.position && (
-            <div className="text-gray-600 text-sm">{item.position}</div>
-          )}
-          {item.party && (
-            <div className="text-purple-500 text-xs">{item.party}</div>
-          )}
-        </>
+        <ul className="py-1" role="listbox" style={{ textAlign: "left" }}>
+          <li
+            key={item.id}
+            role="option"
+            className={`px-4 py-2 text-sm cursor-pointer flex flex-col hover:bg-purple-50 transition-colors `}
+            style={{ textAlign: "left" }}
+          >
+            <span className="font-medium" style={{ textAlign: "left" }}>
+              {item.name}
+            </span>
+            <span
+              className="text-gray-500 text-xs"
+              style={{ textAlign: "left" }}
+            >
+              {item.currentRole} •{" "}
+              {item.currentCity && item.currentState ? (
+                <span className="text-purple-500">
+                  {item.currentCity}, {item.currentState}
+                </span>
+              ) : null}
+            </span>
+          </li>
+        </ul>
       );
     }
     // For elections

@@ -1,6 +1,11 @@
 import CandidateEndorsementsClient from "./EndorsementsClient";
 import { currentUser } from "@clerk/nextjs/server";
 import prisma from "@/prisma/prisma";
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Candidate Dashboard – Endorsements",
+};
 
 export default async function CandidateEndorsementsPage() {
   const user = await currentUser();

@@ -1,5 +1,5 @@
 "use client";
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { useCandidate } from "@/lib/useCandidate";
 import { PhotoUploader } from "@/components/ProfilePhotoUploader";
 import { useAuth } from "@clerk/nextjs";
@@ -8,11 +8,66 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Eye, Terminal } from "lucide-react";
 import BasicProfileForm from "./BasicProfileForm";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import Link from "next/link";
+import { useSearchParams, useRouter } from "next/navigation";
+import TourModal from "@/components/tour/TourModal";
+import { usePageTitle } from "@/lib/usePageTitle";
+import EducationAdder from "@/components/EducationAdder";
+import { extractEducation } from "@/lib/education";
 
 export default function BioSettingsPage() {
+  usePageTitle("Candidate Dashboard – Profile");
+  const searchParams = useSearchParams();
+  const router = useRouter();
   const { userId } = useAuth();
   const { data: candidateData, error, isLoading, refresh } = useCandidate();
+
+  // Tour state (Step 2)
+  const [showStep2, setShowStep2] = useState(false);
+  useEffect(() => {
+    try {
+      const optOut = localStorage.getItem("elevra_tour_opt_out");
+      if (optOut === "1") return;
+      const step = localStorage.getItem("elevra_tour_step");
+      if (step === "2") setShowStep2(true);
+    } catch {}
+  }, []);
+
+  const skipTour = () => {
+    try {
+      localStorage.setItem("elevra_tour_opt_out", "1");
+      localStorage.removeItem("elevra_tour_step");
+    } catch {}
+    setShowStep2(false);
+    // Show friendly opt-out on Overview next time
+    router.push("/candidates/candidate-dashboard");
+  };
+
+  const nextToCampaigns = () => {
+    try {
+      localStorage.setItem("elevra_tour_step", "3");
+    } catch {}
+    setShowStep2(false);
+    router.push("/candidates/candidate-dashboard/my-elections?tour=1");
+  };
+  const backToOverview = () => {
+    try {
+      localStorage.setItem("elevra_tour_step", "1");
+    } catch {}
+    setShowStep2(false);
+    router.push("/candidates/candidate-dashboard?tour=1");
+  };
 
   // Loading State
   if (isLoading) {
@@ -58,33 +113,261 @@ export default function BioSettingsPage() {
 
   return (
     <div className="w-full h-full">
+      {/* Tour: Step 2 (Profile) */}
+      <TourModal
+        open={showStep2}
+        onOpenChange={setShowStep2}
+        title="Profile (Step 2 of 5)"
+        backLabel="Back"
+        onBack={backToOverview}
+        primaryLabel="Next: Campaigns"
+        onPrimary={nextToCampaigns}
+        secondaryLabel="Skip tour"
+        onSecondary={skipTour}
+      >
+        <p>Keep your name, role, bio, and links accurate.</p>
+        <p>Voters will get to know you better when you share your story!</p>
+        <p>
+          Tip: Candidates with complete profiles receive much more traction!
+        </p>
+      </TourModal>
       <div className="flex flex-col md:flex-row gap-6 min-w-0">
-        <div className="flex flex-col space-y-4">
+        <div className="flex flex-col space-y-4 w-[40%]">
           <PhotoUploader
             clerkUserId={userId!}
             currentPhotoUrl={candidateData?.photoUrl || null}
             onUpload={() => refresh()}
           />
-          <Button variant="purple" asChild className="w-full">
-            <Link
-              href={
-                candidateData
-                  ? `/candidate/${candidateData.slug}`
-                  : "/candidates"
-              }
-            >
-              <Eye className="mr-2 h-4 w-4" /> View Public Profile
-            </Link>
-          </Button>
+          {/* Education moved under photo uploader */}
+          <div className="mt-2 ">
+            <h2 className="text-lg font-semibold mb-2">Education</h2>
+
+            <EducationList
+              history={candidateData.history ?? []}
+              onChanged={refresh}
+            />
+            <div className="mt-4 flex flex-row gap-2">
+              <EducationAdder onSaved={() => refresh()} />
+            </div>
+          </div>
         </div>
 
         <div className="flex-1 mt-4 md:mt-0 min-w-0">
           {/* Full width on mobile with internal padding; desktop inherits natural width */}
           <div className="w-full mx-auto md:mx-0 px-4 sm:px-0 min-w-0">
             <BasicProfileForm />
+            {/* Education moved to left column under photo uploader */}
           </div>
         </div>
       </div>
     </div>
+  );
+}
+
+function EducationList({
+  history,
+  onChanged,
+}: {
+  history: string[];
+  onChanged?: () => void;
+}) {
+  const items = extractEducation(history);
+  const [editIdx, setEditIdx] = useState<number | null>(null);
+  const current = editIdx !== null ? items[editIdx] : null;
+  const [degree, setDegree] = useState("");
+  const [graduationYear, setGraduationYear] = useState("");
+  const [activities, setActivities] = useState("");
+  const [website, setWebsite] = useState("");
+  const [editCity, setEditCity] = useState("");
+  const [editState, setEditState] = useState("");
+  const [saving, setSaving] = useState(false);
+
+  function openEdit(i: number) {
+    setEditIdx(i);
+    const item = items[i];
+    setDegree(item.degree ?? "");
+    setGraduationYear(item.graduationYear ?? "");
+    setActivities(item.activities ?? "");
+    setWebsite(item.website ?? "");
+  setEditCity(item.city ?? "");
+  setEditState(item.state ?? "");
+  }
+
+  async function saveEdit() {
+    if (editIdx === null || !current) return;
+    try {
+      setSaving(true);
+      const res = await fetch(`/api/candidate/education`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          index: editIdx,
+          name: current.name,
+          country: current.country,
+          stateProvince: current.stateProvince ?? null,
+          city: editCity || null,
+          state: editState || null,
+          website: website || null,
+          degree: degree || null,
+          graduationYear: graduationYear || null,
+          activities: activities || null,
+        }),
+      });
+      if (!res.ok) throw new Error("Failed to update");
+      setEditIdx(null);
+      onChanged?.();
+    } catch (e) {
+      console.error(e);
+      alert("Could not save changes. Please try again.");
+    } finally {
+      setSaving(false);
+    }
+  }
+  if (items.length === 0) {
+    return (
+      <div className="mt-4 p-4 border rounded-md">
+        <p className="text-sm text-muted-foreground">
+          You haven’t added any education yet. Add schools you’ve attended to
+          help voters learn more about your background.
+        </p>
+      </div>
+    );
+  }
+  return (
+    <>
+      <ul className="mt-4 divide-y rounded-md border">
+        {items.map((e, idx) => (
+          <li key={idx} className="p-3 text-sm">
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <div className="font-medium">{e.name}</div>
+                {e.degree ? (
+                  <div className="text-muted-foreground">
+                    {e.degree}
+                    {e.graduationYear ? `, ${e.graduationYear}` : ""}
+                  </div>
+                ) : e.graduationYear ? (
+                  <div className="text-muted-foreground">
+                    Class of {e.graduationYear}
+                  </div>
+                ) : null}
+              </div>
+              <div className="shrink-0 flex items-center gap-3">
+                <button
+                  className="text-blue-600 hover:underline"
+                  onClick={() => openEdit(idx)}
+                >
+                  Edit
+                </button>
+                {/* Delete */}
+                <button
+                  className="text-red-600 hover:underline"
+                  onClick={async () => {
+                    try {
+                      const res = await fetch(
+                        `/api/candidate/education?index=${idx}`,
+                        { method: "DELETE" }
+                      );
+                      if (!res.ok) throw new Error("Failed to delete");
+                      onChanged?.();
+                    } catch (err) {
+                      console.error(err);
+                      alert("Could not delete this entry. Please try again.");
+                    }
+                  }}
+                >
+                  Delete
+                </button>
+              </div>
+            </div>
+          </li>
+        ))}
+      </ul>
+      <Dialog
+        key="edit-dialog"
+        open={editIdx !== null}
+        onOpenChange={(o) => !o && setEditIdx(null)}
+      >
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Edit education</DialogTitle>
+            <DialogDescription>
+              Update details for this school.
+            </DialogDescription>
+          </DialogHeader>
+          {current && (
+            <div className="space-y-4">
+              <div>
+                <div className="font-medium">{current.name}</div>
+                <div className="text-sm text-muted-foreground">
+                  {current.stateProvince ? `${current.stateProvince}, ` : ""}
+                  {current.country}
+                </div>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="space-y-1.5">
+                  <Label htmlFor="degree-edit">Degree</Label>
+                  <Input
+                    id="degree-edit"
+                    value={degree}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                      setDegree(e.target.value)
+                    }
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="gradYear-edit">Graduation Year</Label>
+                  <Input
+                    id="gradYear-edit"
+                    inputMode="numeric"
+                    pattern="[0-9]*"
+                    value={graduationYear}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                      setGraduationYear(e.target.value)
+                    }
+                  />
+                </div>
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="activities-edit">
+                  Clubs, activities, honors
+                </Label>
+                <Textarea
+                  id="activities-edit"
+                  value={activities}
+                  onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) =>
+                    setActivities(e.target.value)
+                  }
+                  rows={3}
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="website-edit">Website</Label>
+                <Input
+                  id="website-edit"
+                  value={website}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                    setWebsite(e.target.value)
+                  }
+                  placeholder="https://example.edu"
+                />
+              </div>
+              <DialogFooter>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setEditIdx(null)}
+                >
+                  Cancel
+                </Button>
+                <Button type="button" onClick={saveEdit} disabled={saving}>
+                  {saving ? "Saving…" : "Save"}
+                </Button>
+              </DialogFooter>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }

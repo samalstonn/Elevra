@@ -12,7 +12,7 @@ import { Inter } from "next/font/google";
 import Link from "next/link";
 import { Analytics } from "@vercel/analytics/react";
 import { SpeedInsights } from "@vercel/speed-insights/next";
-import { usePathname } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 import SearchBar from "../../components/ResultsSearchBar";
 import { Toaster } from "@/components/ui/toaster";
 import Footer from "../(footer-pages)/Footer";
@@ -27,6 +27,11 @@ export default function LayoutClient({
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const fullPath = (() => {
+    const query = searchParams?.toString();
+    return query ? `${pathname}?${query}` : pathname;
+  })();
 
   const [_isMobile, setIsMobile] = useState<boolean>(false);
   useEffect(() => {
@@ -70,7 +75,7 @@ export default function LayoutClient({
               <div className="flex items-center gap-4 shrink-0">
                 <SignedIn>
                   <HeaderButtons pathname={pathname} />
-                  <UserButton />
+                  <UserButton afterSignOutUrl={fullPath} />
                 </SignedIn>
 
                 <SignedOut>

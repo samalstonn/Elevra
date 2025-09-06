@@ -5,6 +5,7 @@ import { useAuth } from "@clerk/nextjs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { useCandidate } from "@/lib/useCandidate";
 
 interface FormState {
   name: string;
@@ -45,6 +46,8 @@ export default function BasicProfileForm() {
   );
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const { data: candidate, electionLinks } = useCandidate();
 
   // Fetch existing candidate data
   useEffect(() => {
@@ -277,13 +280,23 @@ export default function BasicProfileForm() {
           {errorMessage}
         </div>
       )}
-      <Button
-        type="submit"
-        disabled={isSubmitting}
-        className="w-full md:w-auto"
-      >
-        {isSubmitting ? "Updating..." : "Update Profile"}
-      </Button>
+      <div className="flex flex-row gap-2">
+        <Button type="submit" disabled={isSubmitting} className="md:w-auto">
+          {isSubmitting ? "Updating..." : "Update Profile"}
+        </Button>
+        <Button
+          type="button"
+          variant="purple"
+          className=" md:w-auto"
+          onClick={() => {
+            if (userId) {
+              window.location.href = `/candidate/${candidate?.slug}`;
+            }
+          }}
+        >
+          View Public Profile
+        </Button>
+      </div>
     </form>
   );
 }
