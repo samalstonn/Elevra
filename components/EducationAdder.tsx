@@ -27,6 +27,7 @@ export default function EducationAdder({
   const [degree, setDegree] = useState("");
   const [graduationYear, setGraduationYear] = useState("");
   const [activities, setActivities] = useState("");
+  // City and state are now auto-populated from the selected university
   const [city, setCity] = useState("");
   const [stateStr, setStateStr] = useState("");
   const [saving, setSaving] = useState(false);
@@ -37,7 +38,7 @@ export default function EducationAdder({
     setSaving(true);
     setMessage(null);
     const website = selected.web_pages?.[0] ?? null;
-  const stateProvince = (selected as any)["state-province"] ?? null;
+    const stateProvince = selected["state-province"] ?? null;
     try {
       const res = await fetch("/api/candidate/education", {
         method: "POST",
@@ -98,8 +99,11 @@ export default function EducationAdder({
               <UniversitySearch
                 onSelect={(u) => {
                   setSelected(u);
-                  const sp = (u as any)["state-province"] ?? "";
-                  if (sp) setStateStr(sp);
+                  // Automatically populate city and state from the API
+                  const stateVal = u.state ?? u["state-province"] ?? "";
+                  const cityVal = u.city ?? "";
+                  setStateStr(stateVal);
+                  setCity(cityVal);
                 }}
               />
             </div>
@@ -107,6 +111,11 @@ export default function EducationAdder({
             <div className="space-y-4">
               <div className="p-3 border rounded-md">
                 <div className="font-medium">{selected.name}</div>
+                {(city || stateStr) && (
+                  <div className="text-sm text-muted-foreground">
+                    {[city, stateStr].filter(Boolean).join(", ")}
+                  </div>
+                )}
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div className="space-y-1.5">
@@ -132,28 +141,6 @@ export default function EducationAdder({
                       setGraduationYear(e.target.value)
                     }
                     placeholder="e.g., 2024"
-                    className="w-full"
-                  />
-                </div>
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div className="space-y-1.5">
-                  <Label htmlFor="city">City</Label>
-                  <Input
-                    id="city"
-                    value={city}
-                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setCity(e.target.value)}
-                    placeholder="e.g., Cambridge"
-                    className="w-[90%]"
-                  />
-                </div>
-                <div className="space-y-1.5 ">
-                  <Label htmlFor="state">State/Region</Label>
-                  <Input
-                    id="state"
-                    value={stateStr}
-                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setStateStr(e.target.value)}
-                    placeholder="e.g., MA"
                     className="w-full"
                   />
                 </div>
