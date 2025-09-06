@@ -589,7 +589,15 @@ export default function CandidateClient({
 function EducationPublic({ history }: { history: string[] }) {
   const items = history
     .map(decodeEducation)
-    .filter((e): e is ReturnType<typeof decodeEducation> extends infer T ? (T extends null ? never : T) : never => !!e && !!e.name && !!e.country);
+    .filter(
+      (
+        e
+      ): e is ReturnType<typeof decodeEducation> extends infer T
+        ? T extends null
+          ? never
+          : T
+        : never => !!e && !!e.name && !!e.country
+    );
   if (items.length === 0) return null;
   return (
     <ul className="mt-2 divide-y rounded-lg">

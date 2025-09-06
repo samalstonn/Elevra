@@ -185,6 +185,8 @@ function EducationList({
     setGraduationYear(item.graduationYear ?? "");
     setActivities(item.activities ?? "");
     setWebsite(item.website ?? "");
+    setEditCity(item.city ?? "");
+    setEditState(item.state ?? "");
   }
 
   async function saveEdit() {

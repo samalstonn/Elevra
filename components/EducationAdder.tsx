@@ -38,7 +38,7 @@ export default function EducationAdder({
     setSaving(true);
     setMessage(null);
     const website = selected.web_pages?.[0] ?? null;
-    const stateProvince = selected["state-province"] ?? null;
+    const stateProvince = (selected as any)["state-province"] ?? null;
     try {
       const res = await fetch("/api/candidate/education", {
         method: "POST",
@@ -62,9 +62,9 @@ export default function EducationAdder({
       setSelected(null);
       setDegree("");
       setGraduationYear("");
-  setActivities("");
-  setCity("");
-  setStateStr("");
+      setActivities("");
+      setCity("");
+      setStateStr("");
       setOpen(false);
     } catch (e) {
       const msg = e instanceof Error ? e.message : "Failed to save";
@@ -141,6 +141,32 @@ export default function EducationAdder({
                       setGraduationYear(e.target.value)
                     }
                     placeholder="e.g., 2024"
+                    className="w-full"
+                  />
+                </div>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="space-y-1.5">
+                  <Label htmlFor="city">City</Label>
+                  <Input
+                    id="city"
+                    value={city}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                      setCity(e.target.value)
+                    }
+                    placeholder="e.g., Cambridge"
+                    className="w-[90%]"
+                  />
+                </div>
+                <div className="space-y-1.5 ">
+                  <Label htmlFor="state">State/Region</Label>
+                  <Input
+                    id="state"
+                    value={stateStr}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                      setStateStr(e.target.value)
+                    }
+                    placeholder="e.g., MA"
                     className="w-full"
                   />
                 </div>
