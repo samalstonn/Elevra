@@ -61,9 +61,10 @@ export default function MyPage() {
       const optOut = localStorage.getItem("elevra_tour_opt_out");
       if (optOut === "1") return;
       const step = localStorage.getItem("elevra_tour_step");
-      if (step === "4") setShowStep4(true);
+      const forceTour = searchParams.get("tour") === "1";
+      if (step === "4" || forceTour) setShowStep4(true);
     } catch {}
-  }, []);
+  }, [searchParams]);
 
   // Finisher detection via query param
   useEffect(() => {
@@ -244,7 +245,7 @@ export default function MyPage() {
             />
           ) : (
             <div>
-              <h2 className="text-xl font-semibold mt-4 mb-2">
+              <h2 className="text-xl font-semibold mb-2">
                 No Election Selected
               </h2>
               <p className="text-sm text-gray-500 mb-4">

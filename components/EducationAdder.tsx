@@ -38,7 +38,9 @@ export default function EducationAdder({
     setSaving(true);
     setMessage(null);
     const website = selected.web_pages?.[0] ?? null;
-    const stateProvince = (selected as any)["state-province"] ?? null;
+    // Prefer normalized `state` (provided by our API) and fall back to raw `state-province`.
+    const stateProvince =
+      (selected as any).state ?? (selected as any)["state-province"] ?? null;
     try {
       const res = await fetch("/api/candidate/education", {
         method: "POST",
@@ -126,7 +128,7 @@ export default function EducationAdder({
                     onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                       setDegree(e.target.value)
                     }
-                    placeholder="e.g., B.S. Computer Science"
+                    placeholder="eg. B.S. Computer Science"
                     className="w-[90%]"
                   />
                 </div>
@@ -140,7 +142,7 @@ export default function EducationAdder({
                     onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                       setGraduationYear(e.target.value)
                     }
-                    placeholder="e.g., 2024"
+                    placeholder="eg. 2024"
                     className="w-full"
                   />
                 </div>
@@ -154,8 +156,8 @@ export default function EducationAdder({
                     onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                       setCity(e.target.value)
                     }
-                    placeholder="e.g., Cambridge"
-                    className="w-[90%]"
+                    placeholder="eg. Ithaca"
+                    className="w-full"
                   />
                 </div>
                 <div className="space-y-1.5 ">
@@ -166,7 +168,7 @@ export default function EducationAdder({
                     onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                       setStateStr(e.target.value)
                     }
-                    placeholder="e.g., MA"
+                    placeholder="eg. New York"
                     className="w-full"
                   />
                 </div>
@@ -177,7 +179,7 @@ export default function EducationAdder({
                   id="activities"
                   value={activities}
                   onChange={(e) => setActivities(e.target.value)}
-                  placeholder="e.g., Debate Team, Honors Program, Student Government"
+                  placeholder="eg. Rowing Team, Honors Program, Student Government"
                   rows={3}
                 />
               </div>

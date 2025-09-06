@@ -50,6 +50,7 @@ export async function fetchUniversities({
   }
 
   const data = (await res.json()) as University[];
+  console.log("fetchUniversities", { url, data: data });
   // Basic normalization to ensure optional arrays exist and to surface
   // location details when the upstream API provides them.
   return data.map((u) => ({

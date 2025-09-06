@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/prisma/prisma";
 import { sendWithResend } from "@/lib/email/resend";
 import { renderAdminNotification } from "@/lib/email/templates/adminNotification";
+import { clerkClient } from "@clerk/nextjs/server";
 
 export async function POST(request: NextRequest) {
   try {
@@ -68,6 +69,31 @@ export async function POST(request: NextRequest) {
       },
     });
 
+    // Prepare email details
+    let submitterEmail: string | null = null;
+    if (clerkUserId) {
+      try {
+        const client = await clerkClient();
+        const user = await client.users.getUser(clerkUserId);
+        const primaryEmail = user.emailAddresses.find(
+          (e: { id: string }) => e.id === user.primaryEmailAddressId
+        )?.emailAddress as string | undefined;
+        submitterEmail =
+          primaryEmail || user.emailAddresses[0]?.emailAddress || null;
+      } catch (e) {
+        console.error(
+          "Could not fetch Clerk user email for candidate submission",
+          e
+        );
+      }
+    }
+
+    // Try to find a matching candidate profile (for CTA)
+    const candidateProfile = clerkUserId
+      ? await prisma.candidate.findUnique({ where: { clerkUserId } })
+      : null;
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+
     // Notify admin (Resend)
     await sendWithResend({
       to: process.env.ADMIN_EMAIL!,
@@ -76,11 +102,15 @@ export async function POST(request: NextRequest) {
         title: "New Candidate Submission",
         rows: [
           { label: "Name", value: candidateSubmission.name },
+          { label: "Email", value: submitterEmail || "N/A" },
           { label: "Party", value: candidateSubmission.party },
           { label: "Position", value: candidateSubmission.position },
-          { label: "City", value: `${candidateSubmission.city}, ${candidateSubmission.state}` },
         ],
         intro: candidateSubmission.additionalNotes || undefined,
+        ctaLabel: candidateProfile ? "View Candidate Profile" : undefined,
+        ctaUrl: candidateProfile
+          ? `${appUrl}/candidate/${candidateProfile.slug}`
+          : undefined,
       }),
     });
 

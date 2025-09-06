@@ -400,7 +400,7 @@ export default function CandidateClient({
             </div>
             {/* Education */}
             {candidate.history && candidate.history.length > 0 && (
-              <div className="mt-6 text-sm text-gray-700">
+              <div className="mt-4 text-sm text-gray-700">
                 <h2 className="text-lg font-semibold text-gray-900">
                   Education
                 </h2>
@@ -600,7 +600,7 @@ function EducationPublic({ history }: { history: string[] }) {
     );
   if (items.length === 0) return null;
   return (
-    <ul className="mt-2 divide-y rounded-lg">
+    <ul className="divide-y rounded-lg">
       {items.map((e, idx) => {
         const homepage = e.website ?? "";
         let host = "";
@@ -616,43 +616,86 @@ function EducationPublic({ history }: { history: string[] }) {
           ? `https://logo.clearbit.com/${host}`
           : "/default-image-college.png";
         return (
-          <li key={idx} className="py-2 text-sm">
-            <div className="flex flex-col items-start gap-1">
-              <div className="flex items-center gap-2">
-                <div className="shrink-0">
-                  <ImageWithFallback
-                    src={clearbit}
-                    alt={`${e.name} logo`}
-                    width={40}
-                    height={40}
-                    className="rounded bg-white"
-                    fallbackSrc={[ddg, "/default-image-college.png"]}
-                  />
-                </div>
+          <li key={idx} className="py-1 text-sm">
+            <div className="flex flex-col items-start gap-2">
+              {/* Move logo to the top */}
+              <div className="flex items-center gap-3">
+                <ImageWithFallback
+                  src={clearbit}
+                  alt={`${e.name} logo`}
+                  width={40}
+                  height={40}
+                  className="rounded bg-white shrink-0"
+                  fallbackSrc={[ddg, "/default-image-college.png"]}
+                />
                 <div className="min-w-0">
-                  <div className="font-medium truncate">{e.name}</div>
-                  <div className="text-muted-foreground">
-                    {e.city || e.state
-                      ? `${e.city ? `${e.city}, ` : ""}${e.state ?? ""}`
-                      : e.stateProvince || e.country}
+                  <div className="font-medium text-base truncate">{e.name}</div>
+                  {/* Location: locality in black, country gray with dot */}
+                  <div className="text-sm">
+                    {(() => {
+                      const parts: React.ReactNode[] = [];
+                      const hasLocality = !!(
+                        e.city ||
+                        e.state ||
+                        e.stateProvince
+                      );
+                      if (e.city || e.state) {
+                        parts.push(
+                          <span key="locality" className="text-gray-900">
+                            {e.city ? `${e.city}, ` : ""}
+                            {e.state ?? ""}
+                          </span>
+                        );
+                      } else if (e.stateProvince) {
+                        parts.push(
+                          <span key="province" className="text-gray-900">
+                            {e.stateProvince}
+                          </span>
+                        );
+                      }
+                      if (e.country) {
+                        if (hasLocality) {
+                          parts.push(
+                            <span key="dot" className="text-gray-500">
+                              {" "}
+                              {" · "}
+                            </span>
+                          );
+                        }
+                        parts.push(
+                          <span key="country" className="text-gray-500">
+                            {e.country}
+                          </span>
+                        );
+                      }
+                      return parts.length ? <>{parts}</> : null;
+                    })()}
                   </div>
-                  {e.degree ? (
-                    <div className="text-muted-foreground">
-                      {e.degree}
-                      {e.graduationYear ? `, ${e.graduationYear}` : ""}
-                    </div>
-                  ) : e.graduationYear ? (
-                    <div className="text-muted-foreground">
-                      Class of {e.graduationYear}
-                    </div>
-                  ) : null}
-                  {e.activities && (
-                    <div className="text-muted-foreground line-clamp-2">
-                      {e.activities}
-                    </div>
-                  )}
                 </div>
               </div>
+              {/* Degree and year: year gray; others black */}
+              {e.degree ? (
+                <div className="text-sm mt-1">
+                  <span className="font-medium text-gray-900">Degree:</span>{" "}
+                  <span className="text-gray-900">{e.degree}</span>
+                  {e.graduationYear ? (
+                    <span className="text-gray-500"> · {e.graduationYear}</span>
+                  ) : null}
+                </div>
+              ) : e.graduationYear ? (
+                <div className="text-sm mt-1">
+                  <span className="font-medium text-gray-900">Graduation:</span>{" "}
+                  <span className="text-gray-500">{e.graduationYear}</span>
+                </div>
+              ) : null}
+              {e.activities && (
+                <div className="text-smline-clamp-2">
+                  <span className="font-medium text-gray-900">
+                    Activities and Achievements:
+                  </span>{" "}
+                  <span className="text-gray-900">{e.activities}</span>
+                </div>
+              )}
             </div>
           </li>
         );

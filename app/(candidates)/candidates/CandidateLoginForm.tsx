@@ -197,9 +197,7 @@ export default function CandidateLoginForm() {
                 <h3 className="text-xl font-medium text-green-700 mb-2">
                   Login Successful!
                 </h3>
-                <p className="text-gray-600 mb-4">
-                  Welcome back, {candidate?.name}.
-                </p>
+                <p className="text-gray-600 mb-4">Welcome!</p>
                 <p className="text-gray-600">
                   Redirecting to your dashboard...
                 </p>

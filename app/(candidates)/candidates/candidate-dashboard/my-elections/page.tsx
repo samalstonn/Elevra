@@ -40,14 +40,16 @@ export default function ProfileSettingsPage() {
   const router = useRouter();
   // Tour state (Step 3)
   const [showStep3, setShowStep3] = useState(false);
+  const searchParams = useSearchParams();
   useEffect(() => {
     try {
       const optOut = localStorage.getItem("elevra_tour_opt_out");
       if (optOut === "1") return;
       const step = localStorage.getItem("elevra_tour_step");
-      if (step === "3") setShowStep3(true);
+      const forceTour = searchParams.get("tour") === "1";
+      if (step === "3" || forceTour) setShowStep3(true);
     } catch {}
-  }, []);
+  }, [searchParams]);
 
   const skipTour = () => {
     try {

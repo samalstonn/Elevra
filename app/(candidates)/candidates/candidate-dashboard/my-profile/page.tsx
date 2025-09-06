@@ -19,15 +19,17 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import TourModal from "@/components/tour/TourModal";
 import { usePageTitle } from "@/lib/usePageTitle";
 import EducationAdder from "@/components/EducationAdder";
 import { extractEducation } from "@/lib/education";
+import ImageWithFallback from "@/components/ui/ImageWithFallback";
 
 export default function BioSettingsPage() {
   usePageTitle("Candidate Dashboard – Profile");
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { userId } = useAuth();
   const { data: candidateData, error, isLoading, refresh } = useCandidate();
 
@@ -38,9 +40,10 @@ export default function BioSettingsPage() {
       const optOut = localStorage.getItem("elevra_tour_opt_out");
       if (optOut === "1") return;
       const step = localStorage.getItem("elevra_tour_step");
-      if (step === "2") setShowStep2(true);
+      const forceTour = searchParams.get("tour") === "1";
+      if (step === "2" || forceTour) setShowStep2(true);
     } catch {}
-  }, []);
+  }, [searchParams]);
 
   const skipTour = () => {
     try {
@@ -123,14 +126,14 @@ export default function BioSettingsPage() {
         secondaryLabel="Skip tour"
         onSecondary={skipTour}
       >
-        <p>Keep your name, role, bio, and links accurate.</p>
+        <p>Keep your name, role, bio, education, and links accurate.</p>
         <p>Voters will get to know you better when you share your story!</p>
         <p>
           Tip: Candidates with complete profiles receive much more traction!
         </p>
       </TourModal>
       <div className="flex flex-col md:flex-row gap-6 min-w-0">
-        <div className="flex flex-col space-y-4 w-[40%]">
+        <div className="flex flex-col space-y-4 w-full md:w-[40%]">
           <PhotoUploader
             clerkUserId={userId!}
             currentPhotoUrl={candidateData?.photoUrl || null}
@@ -185,8 +188,6 @@ function EducationList({
     setGraduationYear(item.graduationYear ?? "");
     setActivities(item.activities ?? "");
     setWebsite(item.website ?? "");
-    setEditCity(item.city ?? "");
-    setEditState(item.state ?? "");
   }
 
   async function saveEdit() {
@@ -232,52 +233,106 @@ function EducationList({
   return (
     <>
       <ul className="mt-4 divide-y rounded-md border">
-        {items.map((e, idx) => (
-          <li key={idx} className="p-3 text-sm">
-            <div className="flex items-start justify-between gap-3">
-              <div>
-                <div className="font-medium">{e.name}</div>
-                {e.degree ? (
-                  <div className="text-muted-foreground">
-                    {e.degree}
-                    {e.graduationYear ? `, ${e.graduationYear}` : ""}
+        {items.map((e, idx) => {
+          const homepage = e.website ?? "";
+          let host = "";
+          try {
+            host = homepage ? new URL(homepage).hostname : "";
+          } catch {
+            host = "";
+          }
+          const ddg = host
+            ? `https://icons.duckduckgo.com/ip3/${host}.ico`
+            : "/default-image-college.png";
+          const clearbit = host
+            ? `https://logo.clearbit.com/${host}`
+            : "/default-image-college.png";
+
+          return (
+            <li key={idx} className="p-3 text-sm">
+              <div className="flex items-start justify-between gap-3">
+                <div className="flex gap-3 min-w-0">
+                  <div className="shrink-0 mt-0.5">
+                    <ImageWithFallback
+                      src={clearbit}
+                      alt={`${e.name} logo`}
+                      width={40}
+                      height={40}
+                      className="rounded bg-white"
+                      fallbackSrc={[ddg, "/default-image-college.png"]}
+                    />
                   </div>
-                ) : e.graduationYear ? (
-                  <div className="text-muted-foreground">
-                    Class of {e.graduationYear}
+                  <div className="min-w-0">
+                    <div className="font-medium truncate">{e.name}</div>
+                    <div className="text-xs text-muted-foreground">
+                      {e.city || e.state
+                        ? `${e.city ? `${e.city}, ` : ""}${e.state ?? ""}`
+                        : e.stateProvince || e.country}
+                    </div>
+                    {e.degree ? (
+                      <div className="text-sm mt-1">
+                        <span className="text-gray-500 font-medium">
+                          Degree:
+                        </span>{" "}
+                        <span className="text-gray-800">{e.degree}</span>
+                        {e.graduationYear ? (
+                          <span className="text-muted-foreground">
+                            {" "}
+                            · {e.graduationYear}
+                          </span>
+                        ) : null}
+                      </div>
+                    ) : e.graduationYear ? (
+                      <div className="text-sm mt-1">
+                        <span className="text-gray-500 font-medium">
+                          Graduation:
+                        </span>{" "}
+                        <span className="text-gray-800">
+                          {e.graduationYear}
+                        </span>
+                      </div>
+                    ) : null}
+                    {e.activities && (
+                      <div className="text-sm mt-1 line-clamp-2">
+                        <span className="text-gray-500 font-medium">
+                          Activities and societies:
+                        </span>{" "}
+                        <span className="text-gray-700">{e.activities}</span>
+                      </div>
+                    )}
                   </div>
-                ) : null}
+                </div>
+                <div className="shrink-0 flex items-center gap-3">
+                  <button
+                    className="text-blue-600 hover:underline"
+                    onClick={() => openEdit(idx)}
+                  >
+                    Edit
+                  </button>
+                  {/* Delete */}
+                  <button
+                    className="text-red-600 hover:underline"
+                    onClick={async () => {
+                      try {
+                        const res = await fetch(
+                          `/api/candidate/education?index=${idx}`,
+                          { method: "DELETE" }
+                        );
+                        if (!res.ok) throw new Error("Failed to delete");
+                        onChanged?.();
+                      } catch (err) {
+                        console.error(err);
+                        alert("Could not delete this entry. Please try again.");
+                      }
+                    }}
+                  >
+                    Delete
+                  </button>
+                </div>
               </div>
-              <div className="shrink-0 flex items-center gap-3">
-                <button
-                  className="text-blue-600 hover:underline"
-                  onClick={() => openEdit(idx)}
-                >
-                  Edit
-                </button>
-                {/* Delete */}
-                <button
-                  className="text-red-600 hover:underline"
-                  onClick={async () => {
-                    try {
-                      const res = await fetch(
-                        `/api/candidate/education?index=${idx}`,
-                        { method: "DELETE" }
-                      );
-                      if (!res.ok) throw new Error("Failed to delete");
-                      onChanged?.();
-                    } catch (err) {
-                      console.error(err);
-                      alert("Could not delete this entry. Please try again.");
-                    }
-                  }}
-                >
-                  Delete
-                </button>
-              </div>
-            </div>
-          </li>
-        ))}
+            </li>
+          );
+        })}
       </ul>
       <Dialog
         key="edit-dialog"

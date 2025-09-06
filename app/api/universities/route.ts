@@ -39,8 +39,22 @@ export async function GET(req: NextRequest) {
       );
     }
 
-    const data = await res.json();
-    return NextResponse.json(data, {
+    const data = (await res.json()) as any[];
+
+    // Normalize basic fields so downstream UI can rely on them.
+    const normalized = Array.isArray(data)
+      ? data.map((u) => ({
+          ...u,
+          domains: u?.domains ?? [],
+          web_pages: u?.web_pages ?? [],
+          // Some results only provide `state-province`; surface a `state` fallback
+          state: u?.state ?? u?.["state-province"] ?? null,
+          city: u?.city ?? null,
+          "state-province": u?.["state-province"] ?? null,
+        }))
+      : [];
+
+    return NextResponse.json(normalized, {
       headers: {
         "Cache-Control": `public, s-maxage=${revalidate}, stale-while-revalidate=${revalidate}`,
       },

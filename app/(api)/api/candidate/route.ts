@@ -32,7 +32,7 @@ export async function PUT(request: Request) {
 //
 import { NextResponse } from "next/server";
 import prisma from "@/prisma/prisma";
-import { auth } from "@clerk/nextjs/server";
+import { auth, clerkClient } from "@clerk/nextjs/server";
 import { Prisma, SubmissionStatus } from "@prisma/client";
 import { sendWithResend } from "@/lib/email/resend";
 import { renderAdminNotification } from "@/lib/email/templates/adminNotification";
@@ -180,6 +180,19 @@ export async function POST(request: Request) {
     const uniqueSlug = await generateUniqueSlug(name, undefined, "candidate");
     console.info("Generated unique slug:", uniqueSlug);
 
+    // Attempt to capture the user's primary email and persist it on Candidate
+    try {
+      const client = await clerkClient();
+      const user = await client.users.getUser(userId);
+      const primaryEmail = user.emailAddresses.find(
+        (e: { id: string }) => e.id === user.primaryEmailAddressId
+      )?.emailAddress as string | undefined;
+      const fallbackEmail = user.emailAddresses[0]?.emailAddress;
+      body.email = primaryEmail || fallbackEmail || null;
+    } catch (e) {
+      console.error("Could not fetch Clerk user email for candidate signup", e);
+    }
+
     body.status = "APPROVED" as SubmissionStatus;
     body.slug = uniqueSlug;
     body.verified = true;
@@ -200,6 +213,8 @@ export async function POST(request: Request) {
       });
       // Notify admin (Resend)
       try {
+        const appUrl =
+          process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
         await sendWithResend({
           to: process.env.ADMIN_EMAIL!,
           subject: `New Candidate Signup: ${candidate.name}`,
@@ -207,11 +222,10 @@ export async function POST(request: Request) {
             title: "New Candidate Signup",
             rows: [
               { label: "Name", value: candidate.name },
-              {
-                label: "Location",
-                value: `${candidate.currentCity}, ${candidate.currentState}`,
-              },
+              { label: "Email", value: candidate.email || "N/A" },
             ],
+            ctaLabel: "View Candidate Profile",
+            ctaUrl: `${appUrl}/candidate/${candidate.slug}`,
           }),
         });
       } catch (emailError: unknown) {

@@ -4,7 +4,7 @@ import React, { useEffect, useState } from "react";
 import { StatsCard } from "@/components/StatsCard";
 import { UserCircle2 } from "lucide-react";
 import TourModal from "@/components/tour/TourModal";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 
 export type Endorsement = {
   id: number;
@@ -29,6 +29,7 @@ type Props = {
 
 export default function CandidateEndorsementsClient({ user, data }: Props) {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [endorsements, setEndorsements] = useState<Endorsement[]>(
     data.endorsements
   );
@@ -41,9 +42,10 @@ export default function CandidateEndorsementsClient({ user, data }: Props) {
       const optOut = localStorage.getItem("elevra_tour_opt_out");
       if (optOut === "1") return;
       const step = localStorage.getItem("elevra_tour_step");
-      if (step === "5") setShowStep5(true);
+      const forceTour = searchParams.get("tour") === "1";
+      if (step === "5" || forceTour) setShowStep5(true);
     } catch {}
-  }, []);
+  }, [searchParams]);
 
   const skipTour = () => {
     try {
