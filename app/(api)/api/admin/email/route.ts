@@ -54,12 +54,48 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const to = body.to || process.env.ADMIN_EMAIL;
+  // Sanitize and validate recipient(s)
+  const stripQuotes = (s: string) => s.trim().replace(/^['"]|['"]$/g, "");
+  const normalizeTo = (v: unknown): string | string[] | null => {
+    if (!v) return null;
+    if (typeof v === "string") return stripQuotes(v);
+    if (Array.isArray(v)) {
+      const list = v
+        .map((x) => (typeof x === "string" ? stripQuotes(x) : ""))
+        .filter(Boolean);
+      return list.length ? list : null;
+    }
+    return null;
+  };
+  const rawTo = body.to ?? process.env.ADMIN_EMAIL;
+  const to = normalizeTo(rawTo);
   if (!to) {
     return NextResponse.json(
       { error: "Missing 'to' and ADMIN_EMAIL is not set" },
       { status: 400 }
     );
+  }
+
+  const EMAIL_RE = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
+  const isValidAddr = (s: string) => {
+    const m = /<([^>]+)>/.exec(s);
+    const core = m ? m[1] : s;
+    return EMAIL_RE.test(core.trim());
+  };
+  if (typeof to === "string") {
+    if (!isValidAddr(to)) {
+      return NextResponse.json(
+        { error: "Invalid 'to' format. Use email@example.com or Name <email@example.com>" },
+        { status: 400 }
+      );
+    }
+  } else if (Array.isArray(to)) {
+    if (!to.every(isValidAddr)) {
+      return NextResponse.json(
+        { error: "One or more 'to' addresses are invalid." },
+        { status: 400 }
+      );
+    }
   }
 
   if (!body.subject) {
