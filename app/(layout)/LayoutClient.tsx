@@ -20,6 +20,11 @@ import HeaderButtons from "./HeaderButtons";
 
 const inter = Inter({ subsets: ["latin"] });
 const clerkKey = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
+if (!clerkKey || clerkKey.trim() === "") {
+  throw new Error(
+    "Missing NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY environment variable"
+  );
+}
 
 function HeaderNav() {
   const pathname = usePathname();

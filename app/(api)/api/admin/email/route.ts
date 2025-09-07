@@ -21,6 +21,25 @@ type AdminEmailPayload = {
 };
 
 export async function POST(req: NextRequest) {
+  // Minimal header-based guard
+  const configured = process.env.ADMIN_EMAIL_SECRET;
+  if (!configured) {
+    return NextResponse.json(
+      { error: "Missing ADMIN_EMAIL_SECRET env var" },
+      { status: 500 }
+    );
+  }
+  const provided = req.headers.get("x-admin-secret");
+  if (!provided) {
+    return NextResponse.json(
+      { error: "Missing x-admin-secret header" },
+      { status: 401 }
+    );
+  }
+  if (provided !== configured) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+
   let body: AdminEmailPayload;
   try {
     body = await req.json();

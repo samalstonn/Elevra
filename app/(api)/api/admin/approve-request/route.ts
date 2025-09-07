@@ -1,9 +1,8 @@
 import { NextResponse } from "next/server";
-import { PrismaClient, SubmissionStatus } from "@prisma/client";
+import { SubmissionStatus } from "@prisma/client";
+import { prisma } from "@/lib/prisma";
 import { sendWithResend } from "@/lib/email/resend";
 import { renderAdminNotification } from "@/lib/email/templates/adminNotification";
-
-const prisma = new PrismaClient();
 
 export async function POST(req: Request) {
   try {

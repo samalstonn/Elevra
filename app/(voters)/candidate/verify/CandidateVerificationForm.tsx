@@ -139,6 +139,29 @@ export default function CandidateVerificationForm() {
                 ? candidateData.name
                 : prevData.fullName,
             }));
+
+            // Client-side fallback: if user is signed in and emails match, auto-approve and redirect
+            const userEmail = user?.emailAddresses?.[0]?.emailAddress;
+            if (
+              userEmail &&
+              candidateData.email &&
+              userEmail.toLowerCase() === candidateData.email.toLowerCase()
+            ) {
+              try {
+                await fetch(`/api/userValidationRequest/auto-approve`, {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({ slug, clerkUserId: user?.id }),
+                });
+              } catch (e) {
+                console.warn("Client-side auto-approve failed", e);
+              }
+              // Navigate to dashboard verified view
+              router.replace(
+                `/candidates/candidate-dashboard?verified=1&slug=${slug}`
+              );
+              return;
+            }
           } else {
             console.error(`Failed to fetch candidate data: ${res.status}`);
           }
