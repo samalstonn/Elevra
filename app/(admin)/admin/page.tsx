@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { usePageTitle } from "@/lib/usePageTitle";
+import { useToast } from "@/hooks/use-toast";
 
 interface BlogPost {
   id: number;
@@ -37,6 +38,7 @@ interface BlogPostUpsertRequest {
 
 export default function AdminDashboard() {
   usePageTitle("Admin – Dashboard");
+  const { toast } = useToast();
   const sendTestEmail = async () => {
     try {
       const res = await fetch("/api/admin/email-proxy", {
@@ -56,13 +58,26 @@ export default function AdminDashboard() {
 
       const data = await res.json();
       if (data.success) {
-        alert("Email sent successfully!");
+        toast({
+          title: data.dryRun ? "Email dry-run" : "Email sent",
+          description: data.dryRun
+            ? "Message captured (no email sent in development)."
+            : "Email sent successfully!",
+        });
       } else {
-        alert("Email failed: " + data.error);
+        toast({
+          title: "Email failed",
+          description: String(data.error || "Unknown error"),
+          variant: "destructive",
+        });
       }
     } catch (err) {
       console.error(err);
-      alert("Email failed");
+      toast({
+        title: "Email failed",
+        description: "Unexpected error while sending test email.",
+        variant: "destructive",
+      });
     }
   };
 

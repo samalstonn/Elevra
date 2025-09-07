@@ -170,7 +170,7 @@ export default function CandidateVerificationForm() {
         }
       })();
     }
-  }, [searchParams]);
+  }, [searchParams, user, router]);
 
   const [errors, setErrors] = useState<FormErrors>({});
   const [isSubmitting, setIsSubmitting] = useState(false);

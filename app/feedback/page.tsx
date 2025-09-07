@@ -1,12 +1,14 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
+import { useToast } from "@/hooks/use-toast";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { FaPaperPlane } from "react-icons/fa";
 
 export default function FeedbackPage() {
+  const { toast } = useToast();
   const [form, setForm] = useState({
     name: "",
     email: "",
@@ -16,8 +18,11 @@ export default function FeedbackPage() {
   });
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
+  const didPing = useRef(false);
 
   useEffect(() => {
+    if (didPing.current) return;
+    didPing.current = true;
     // Send admin ping using the admin email endpoint (defaults to ADMIN_EMAIL)
     fetch("/api/admin/email-proxy", {
       method: "POST",
@@ -29,8 +34,19 @@ export default function FeedbackPage() {
           intro: `A user visited the feedback/contact page at ${new Date().toISOString()}.`,
         },
       }),
-    }).catch(() => {});
-  }, []);
+    })
+      .then(async (r) => {
+        const data = await r.json().catch(() => ({}));
+        if (data?.dryRun) {
+          toast({
+            title: "Email dry-run",
+            description:
+              "Visit ping captured (no email sent in development).",
+          });
+        }
+      })
+      .catch(() => {});
+  }, [toast]);
 
   const handleChange = (
     e: React.ChangeEvent<
@@ -51,6 +67,21 @@ export default function FeedbackPage() {
     setLoading(false);
     if (res.ok) {
       setSuccess(true);
+      try {
+        const data = await res.json();
+        if (data?.dryRun) {
+          toast({
+            title: "Email dry-run",
+            description:
+              "In development, no email was sent. Your message was captured.",
+          });
+        } else {
+          toast({
+            title: "Feedback sent",
+            description: "Thanks for your message! We'll be in touch.",
+          });
+        }
+      } catch {}
       setForm({
         name: "",
         email: "",
@@ -59,7 +90,11 @@ export default function FeedbackPage() {
         anonymous: false,
       });
     } else {
-      alert("There was an error sending your feedback.");
+      toast({
+        title: "Send failed",
+        description: "There was an error sending your feedback.",
+        variant: "destructive",
+      });
     }
   };
 

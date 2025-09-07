@@ -27,6 +27,10 @@ export default defineConfig({
     timeout: 120 * 1000,
     // Reuse the server between tests
     reuseExistingServer: !process.env.CI,
+    // Ensure emails are not actually sent during tests
+    env: {
+      EMAIL_DRY_RUN: "1",
+    },
   },
   use: {
     // Base URL to use in actions like `await page.goto('/')`.
@@ -57,6 +61,14 @@ export default defineConfig({
     {
       name: "This is Me",
       testMatch: "this-is-me.ts",
+      use: {
+        ...devices["Desktop Chrome"], // or your browser of choice
+      },
+      dependencies: ["global setup"],
+    },
+    {
+      name: "This is Me",
+      testMatch: "admin-email.spec.ts",
       use: {
         ...devices["Desktop Chrome"], // or your browser of choice
       },

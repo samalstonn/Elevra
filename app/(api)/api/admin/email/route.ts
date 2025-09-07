@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { sendWithResend } from "@/lib/email/resend";
+import { sendWithResend, isEmailDryRun } from "@/lib/email/resend";
 import { renderAdminNotification } from "@/lib/email/templates/adminNotification";
 
 export const runtime = "nodejs";
@@ -86,7 +86,11 @@ export async function POST(req: NextRequest) {
 
   try {
     const result = await sendWithResend({ to, subject: body.subject, html });
-    return NextResponse.json({ success: true, id: result?.id || null });
+    return NextResponse.json({
+      success: true,
+      id: result?.id || null,
+      dryRun: isEmailDryRun(),
+    });
   } catch (err: unknown) {
     return NextResponse.json(
       { error: err instanceof Error ? err.message : String(err) },

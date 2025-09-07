@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { sendWithResend } from "@/lib/email/resend";
+import { sendWithResend, isEmailDryRun } from "@/lib/email/resend";
 import { renderAdminNotification } from "@/lib/email/templates/adminNotification";
 
 export async function POST(req: NextRequest) {
@@ -13,7 +13,7 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    await sendWithResend({
+    const result = await sendWithResend({
       to: process.env.ADMIN_EMAIL!,
       subject: `Elevra Feedback: ${subject}`,
       html: renderAdminNotification({
@@ -25,7 +25,7 @@ export async function POST(req: NextRequest) {
         ],
       }),
     });
-    return NextResponse.json({ success: true });
+    return NextResponse.json({ success: true, id: result?.id || null, dryRun: isEmailDryRun() });
   } catch (err) {
     console.error("Email error:", err);
     return NextResponse.json(

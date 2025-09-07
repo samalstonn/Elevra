@@ -47,7 +47,7 @@ export default function MyPage() {
     const tourStep = localStorage.getItem("elevra_tour_step");
     const finishing = searchParams.get("tour_finish") === "1";
     if (hide !== "true" && !tourStep && !finishing) setShowTutorial(true);
-  }, []);
+  }, [searchParams]);
   const closeTutorial = () => {
     if (dontShowAgain && typeof window !== "undefined") {
       localStorage.setItem("mypage_tutorial_hide", "true");
