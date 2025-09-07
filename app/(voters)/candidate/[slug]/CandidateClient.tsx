@@ -523,7 +523,7 @@ export default function CandidateClient({
       >
         <div className="flex justify-between items-center mb-3 ">
           <h2 className="text-sm font-semibold text-gray-600">
-            Your Suggested Candidates
+            People who viewed {candidate.name} also viewed
           </h2>
         </div>
         <div className="grid grid-cols-1 gap-3">

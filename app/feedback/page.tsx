@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -18,35 +18,7 @@ export default function FeedbackPage() {
   });
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
-  const didPing = useRef(false);
-
-  useEffect(() => {
-    if (didPing.current) return;
-    didPing.current = true;
-    // Send admin ping using the admin email endpoint (defaults to ADMIN_EMAIL)
-    fetch("/api/admin/email-proxy", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        subject: "Feedback / Contact page visited",
-        data: {
-          title: "Feedback Page Visit",
-          intro: `A user visited the feedback/contact page at ${new Date().toISOString()}.`,
-        },
-      }),
-    })
-      .then(async (r) => {
-        const data = await r.json().catch(() => ({}));
-        if (data?.dryRun) {
-          toast({
-            title: "Email dry-run",
-            description:
-              "Visit ping captured (no email sent in development).",
-          });
-        }
-      })
-      .catch(() => {});
-  }, [toast]);
+  // Note: Email sending and visit ping are disabled for now on this page.
 
   const handleChange = (
     e: React.ChangeEvent<
@@ -59,29 +31,15 @@ export default function FeedbackPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    const res = await fetch("/api/feedback", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(form),
-    });
-    setLoading(false);
-    if (res.ok) {
+    // Temporarily disable email submission; just acknowledge receipt locally
+    try {
+      console.info("Feedback captured (email disabled)", form);
       setSuccess(true);
-      try {
-        const data = await res.json();
-        if (data?.dryRun) {
-          toast({
-            title: "Email dry-run",
-            description:
-              "In development, no email was sent. Your message was captured.",
-          });
-        } else {
-          toast({
-            title: "Feedback sent",
-            description: "Thanks for your message! We'll be in touch.",
-          });
-        }
-      } catch {}
+      toast({
+        title: "Thanks for your feedback!",
+        description:
+          "We’ve recorded your message. Email notifications are temporarily disabled.",
+      });
       setForm({
         name: "",
         email: "",
@@ -89,12 +47,8 @@ export default function FeedbackPage() {
         message: "",
         anonymous: false,
       });
-    } else {
-      toast({
-        title: "Send failed",
-        description: "There was an error sending your feedback.",
-        variant: "destructive",
-      });
+    } finally {
+      setLoading(false);
     }
   };
 
