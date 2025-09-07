@@ -6,6 +6,7 @@
     "dev": "NODE_ENV=development next dev --turbopack",
     "build": "prisma generate && next build",
     "start": "NODE_ENV=production next start",
+    "test:playwright": "playwright test -ui",
     "lint": "next lint"
   },
   "dependencies": {
@@ -47,7 +48,6 @@
     "lucide-react": "^0.474.0",
     "marked": "^15.0.11",
     "next": "^15.2.4",
-    "nodemailer": "^6.10.0",
     "pg": "^8.14.1",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
@@ -55,6 +55,7 @@
     "react-hook-form": "^7.55.0",
     "react-icons": "^5.4.0",
     "recharts": "^2.15.1",
+    "resend": "^6.0.2",
     "stripe": "^17.7.0",
     "tailwind-merge": "^3.0.2",
     "tailwindcss-animate": "^1.0.7",
@@ -63,13 +64,13 @@
   },
   "devDependencies": {
     "@clerk/clerk-sdk-node": "^5.1.6",
+    "@clerk/testing": "^1.12.4",
     "@eslint/eslintrc": "^3",
     "@faker-js/faker": "^9.6.0",
     "@playwright/test": "^1.51.1",
     "@tailwindcss/typography": "^0.5.16",
     "@types/bcrypt": "^5.0.2",
     "@types/node": "^20",
-    "@types/nodemailer": "^6.4.17",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "@types/uuid": "^10.0.0",

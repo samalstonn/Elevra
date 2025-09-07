@@ -8,8 +8,10 @@ import { BasicAnalyticsDisplay } from "./BasicAnalyticsDisplay";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { CreditCard } from "lucide-react";
 import Link from "next/link";
+import { usePageTitle } from "@/lib/usePageTitle";
 
 export default function AnalyticsPage() {
+  usePageTitle("Candidate Dashboard – Analytics");
   // TODO: Replace with actual subscription check from Clerk user metadata
   const isPremiumUser = false; // Placeholder
 

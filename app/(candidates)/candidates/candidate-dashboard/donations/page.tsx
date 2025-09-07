@@ -1,5 +1,10 @@
 import CandidateDonationsClient from "./DonationsClient";
 import { currentUser } from "@clerk/nextjs/server";
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Candidate Dashboard – Donations",
+};
 
 export default async function CandidateDonationsPage() {
   const user = await currentUser();

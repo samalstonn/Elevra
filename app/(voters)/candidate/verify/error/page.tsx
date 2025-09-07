@@ -1,6 +1,11 @@
 // /candidate/verify/error/page.tsx
 
 import Link from "next/link";
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Verification Failed",
+};
 
 export default function VerifyErrorPage() {
   return (

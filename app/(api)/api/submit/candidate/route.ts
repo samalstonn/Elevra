@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/prisma/prisma";
-import nodemailer from "nodemailer";
+import { sendWithResend } from "@/lib/email/resend";
+import { renderAdminNotification } from "@/lib/email/templates/adminNotification";
+import { clerkClient } from "@clerk/nextjs/server";
 
 export async function POST(request: NextRequest) {
   try {
@@ -67,25 +69,50 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    // Set up nodemailer transporter using your email service credentials
-    const transporter = nodemailer.createTransport({
-      service: "gmail", // or another service
-      auth: {
-        user: process.env.EMAIL_USER, // your email address
-        pass: process.env.EMAIL_PASS, // your email password or app password
-      },
-    });
+    // Prepare email details
+    let submitterEmail: string | null = null;
+    if (clerkUserId) {
+      try {
+        const client = await clerkClient();
+        const user = await client.users.getUser(clerkUserId);
+        const primaryEmail = user.emailAddresses.find(
+          (e: { id: string }) => e.id === user.primaryEmailAddressId
+        )?.emailAddress as string | undefined;
+        submitterEmail =
+          primaryEmail || user.emailAddresses[0]?.emailAddress || null;
+      } catch (e) {
+        console.error(
+          "Could not fetch Clerk user email for candidate submission",
+          e
+        );
+      }
+    }
 
-    // Define email options
-    const mailOptions = {
-      from: process.env.EMAIL_USER,
-      to: process.env.MY_EMAIL, // your email address to receive notifications
+    // Try to find a matching candidate profile (for CTA)
+    const candidateProfile = clerkUserId
+      ? await prisma.candidate.findUnique({ where: { clerkUserId } })
+      : null;
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+
+    // Notify admin (Resend)
+    await sendWithResend({
+      to: process.env.ADMIN_EMAIL!,
       subject: `New Candidate Submission Request: ${candidateSubmission.name}`,
-      text: `Name: ${candidateSubmission.name}`,
-    };
-
-    // Send the email
-    await transporter.sendMail(mailOptions);
+      html: renderAdminNotification({
+        title: "New Candidate Submission",
+        rows: [
+          { label: "Name", value: candidateSubmission.name },
+          { label: "Email", value: submitterEmail || "N/A" },
+          { label: "Party", value: candidateSubmission.party },
+          { label: "Position", value: candidateSubmission.position },
+        ],
+        intro: candidateSubmission.additionalNotes || undefined,
+        ctaLabel: candidateProfile ? "View Candidate Profile" : undefined,
+        ctaUrl: candidateProfile
+          ? `${appUrl}/candidate/${candidateProfile.slug}`
+          : undefined,
+      }),
+    });
 
     return NextResponse.json({
       success: true,

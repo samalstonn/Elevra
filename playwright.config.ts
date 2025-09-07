@@ -1,79 +1,66 @@
-import { defineConfig, devices } from '@playwright/test';
+import { defineConfig, devices } from "@playwright/test";
+import dotenv from "dotenv";
+import path from "path";
 
-/**
- * Read environment variables from file.
- * https://github.com/motdotla/dotenv
- */
-// import dotenv from 'dotenv';
-// import path from 'path';
-// dotenv.config({ path: path.resolve(__dirname, '.env') });
+// Read env files to populate process.env for tests
+// Load .env first, then override with .env.local if present
+dotenv.config({ path: path.resolve(__dirname, ".env") });
+dotenv.config({ path: path.resolve(__dirname, ".env.local"), override: true });
 
-/**
- * See https://playwright.dev/docs/test-configuration.
- */
+// Set the port for the server
+const PORT = process.env.PORT || 3000;
+
+// App URL used for navigation & assertions in tests
+const baseURL = process.env.NEXT_PUBLIC_APP_URL || `http://localhost:${PORT}`;
+
 export default defineConfig({
-  testDir: './tests',
-  /* Run tests in files in parallel */
-  fullyParallel: true,
-  /* Fail the build on CI if you accidentally left test.only in the source code. */
-  forbidOnly: !!process.env.CI,
-  /* Retry on CI only */
-  retries: process.env.CI ? 2 : 0,
-  /* Opt out of parallel tests on CI. */
-  workers: process.env.CI ? 1 : undefined,
-  /* Reporter to use. See https://playwright.dev/docs/test-reporters */
-  reporter: 'html',
-  /* Shared settings for all the projects below. See https://playwright.dev/docs/api/class-testoptions. */
+  // Look for tests in the "e2e" directory
+  testDir: "./tests/e2e",
+  // Set the number of retries for each, in case of failure
+  retries: 1,
+  // Run your local dev server before starting the tests.
+  webServer: {
+    command: "npm run dev",
+    // Base URL to use in actions like `await page.goto('/')`
+    url: baseURL,
+    // Set the timeout for the server to start
+    timeout: 120 * 1000,
+    // Reuse the server between tests
+    reuseExistingServer: !process.env.CI,
+  },
   use: {
-    /* Base URL to use in actions like `await page.goto('/')`. */
-    // baseURL: 'http://127.0.0.1:3000',
+    // Base URL to use in actions like `await page.goto('/')`.
+    baseURL,
 
-    /* Collect trace when retrying the failed test. See https://playwright.dev/docs/trace-viewer */
-    trace: 'on-first-retry',
+    // Collect trace when retrying the failed test.
+    // See https://playwright.dev/docs/trace-viewer
+    trace: "retry-with-trace",
+
+    // Ignore HTTPS errors for localhost dev server with self-signed cert
+    bypassCSP: true,
   },
 
-  /* Configure projects for major browsers */
+  // Configure projects for major browsers
   projects: [
     {
-      name: 'chromium',
-      use: { ...devices['Desktop Chrome'] },
+      name: "global setup",
+      testMatch: /global\.setup\.ts/,
     },
-
     {
-      name: 'firefox',
-      use: { ...devices['Desktop Firefox'] },
+      name: "Clerk Login",
+      testMatch: "login-with-clerk.ts",
+      use: {
+        ...devices["Desktop Chrome"], // or your browser of choice
+      },
+      dependencies: ["global setup"],
     },
-
     {
-      name: 'webkit',
-      use: { ...devices['Desktop Safari'] },
+      name: "This is Me",
+      testMatch: "this-is-me.ts",
+      use: {
+        ...devices["Desktop Chrome"], // or your browser of choice
+      },
+      dependencies: ["global setup"],
     },
-
-    /* Test against mobile viewports. */
-    // {
-    //   name: 'Mobile Chrome',
-    //   use: { ...devices['Pixel 5'] },
-    // },
-    // {
-    //   name: 'Mobile Safari',
-    //   use: { ...devices['iPhone 12'] },
-    // },
-
-    /* Test against branded browsers. */
-    // {
-    //   name: 'Microsoft Edge',
-    //   use: { ...devices['Desktop Edge'], channel: 'msedge' },
-    // },
-    // {
-    //   name: 'Google Chrome',
-    //   use: { ...devices['Desktop Chrome'], channel: 'chrome' },
-    // },
   ],
-
-  /* Run your local dev server before starting the tests */
-  // webServer: {
-  //   command: 'npm run start',
-  //   url: 'http://127.0.0.1:3000',
-  //   reuseExistingServer: !process.env.CI,
-  // },
 });

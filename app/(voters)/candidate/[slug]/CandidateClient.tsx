@@ -17,6 +17,8 @@ import { ContactTab } from "./ContactTab";
 import { ElectionProfileTab } from "./ElectionTab";
 import { useAuth } from "@clerk/nextjs";
 import { useUser } from "@clerk/nextjs";
+import ImageWithFallback from "@/components/ui/ImageWithFallback";
+import { decodeEducation } from "@/lib/education";
 
 export type ElectionWithCandidates = Election & {
   candidates: Candidate[];
@@ -40,6 +42,17 @@ export default function CandidateClient({
   const router = useRouter();
   const { isSignedIn } = useAuth();
   const { user } = useUser();
+
+  // E2E test override: allow bypassing Clerk in CI by setting
+  // NEXT_PUBLIC_E2E_TEST_MODE=1 and localStorage flags
+  const e2eSignedIn =
+    typeof window !== "undefined" &&
+    process.env.NEXT_PUBLIC_E2E_TEST_MODE === "1" &&
+    localStorage.getItem("E2E_SIGNED_IN") === "1";
+  const getE2EEmail = () =>
+    typeof window !== "undefined"
+      ? localStorage.getItem("E2E_USER_EMAIL") || undefined
+      : undefined;
   const [popupMessage, setPopupMessage] = useState<{
     type: "success" | "error";
     message: string;
@@ -120,26 +133,21 @@ export default function CandidateClient({
   // Abstracted function to reset content blocks and navigate to verify flow
   const handleThisIsMe = async () => {
     if (isResetting) return;
-    if (!isSignedIn) {
-      alert("Please sign in first to verify this profile.");
-      const back = window.location.pathname + window.location.search;
-      router.push(`/sign-in?redirect_url=${encodeURIComponent(back)}`);
+    if (!isSignedIn && !e2eSignedIn) {
+      // Redirect immediately to Clerk sign-in, then to verification flow
+      const verifyUrl = `/candidate/verify?candidate=${candidate.slug}&candidateID=${candidate.id}`;
+      router.push(`/sign-in?redirect_url=${encodeURIComponent(verifyUrl)}`);
       return;
     }
     try {
       setIsResetting(true);
-      const resp = await fetch("/api/v1/contentblocks/reset", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ candidateId: candidate.id }),
-      });
-      if (!resp.ok) {
-        const data = await resp.json().catch(() => ({}));
-        throw new Error(data.error || "Failed to reset");
-      }
-      // After reset, attempt immediate auto-approve if email matches
+      // Attempt immediate auto-approve if email matches (no content reset)
       const candidateEmail = candidate.email;
-      const userEmail = user?.emailAddresses?.[0]?.emailAddress;
+      let userEmail = user?.emailAddresses?.[0]?.emailAddress;
+      const override = getE2EEmail();
+      if (process.env.NEXT_PUBLIC_E2E_TEST_MODE === "1" && override) {
+        userEmail = override;
+      }
       if (candidateEmail && userEmail && candidateEmail === userEmail) {
         try {
           const approve = await fetch(
@@ -149,14 +157,17 @@ export default function CandidateClient({
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify({
                 slug: candidate.slug,
-                clerkUserId: user.id,
+                clerkUserId:
+                  process.env.NEXT_PUBLIC_E2E_TEST_MODE === "1"
+                    ? "e2e-user"
+                    : user?.id,
               }),
             }
           );
           if (approve.ok) {
             router.refresh();
             router.push(
-              `/candidate/verify/success?candidate=${candidate.slug}&candidateID=${candidate.id}`
+              `/candidates/candidate-dashboard?verified=1&slug=${candidate.slug}`
             );
             return;
           }
@@ -174,7 +185,7 @@ export default function CandidateClient({
       );
     } catch (e) {
       console.error(e);
-      alert("Could not reset content blocks.");
+      alert("Could not start verification. Please try again.");
     } finally {
       setIsResetting(false);
     }
@@ -387,6 +398,15 @@ export default function CandidateClient({
               <h2 className="text-lg font-semibold text-gray-900">Biography</h2>
               <p>{candidate.bio}</p>
             </div>
+            {/* Education */}
+            {candidate.history && candidate.history.length > 0 && (
+              <div className="mt-4 text-sm text-gray-700">
+                <h2 className="text-lg font-semibold text-gray-900">
+                  Education
+                </h2>
+                <EducationPublic history={candidate.history} />
+              </div>
+            )}
           </>
         )}
         {activeTab === "endorsements" && (
@@ -563,5 +583,123 @@ export default function CandidateClient({
         </div>
       )}
     </motion.div>
+  );
+}
+
+function EducationPublic({ history }: { history: string[] }) {
+  const items = history
+    .map(decodeEducation)
+    .filter(
+      (
+        e
+      ): e is ReturnType<typeof decodeEducation> extends infer T
+        ? T extends null
+          ? never
+          : T
+        : never => !!e && !!e.name && !!e.country
+    );
+  if (items.length === 0) return null;
+  return (
+    <ul className="divide-y rounded-lg">
+      {items.map((e, idx) => {
+        const homepage = e.website ?? "";
+        let host = "";
+        try {
+          host = homepage ? new URL(homepage).hostname : "";
+        } catch {
+          host = "";
+        }
+        const ddg = host
+          ? `https://icons.duckduckgo.com/ip3/${host}.ico`
+          : "/default-image-college.png";
+        const clearbit = host
+          ? `https://logo.clearbit.com/${host}`
+          : "/default-image-college.png";
+        return (
+          <li key={idx} className="py-1 text-sm">
+            <div className="flex flex-col items-start gap-2">
+              {/* Move logo to the top */}
+              <div className="flex items-center gap-3">
+                <ImageWithFallback
+                  src={clearbit}
+                  alt={`${e.name} logo`}
+                  width={40}
+                  height={40}
+                  className="rounded bg-white shrink-0"
+                  fallbackSrc={[ddg, "/default-image-college.png"]}
+                />
+                <div className="min-w-0">
+                  <div className="font-medium text-base truncate">{e.name}</div>
+                  {/* Location: locality in black, country gray with dot */}
+                  <div className="text-sm">
+                    {(() => {
+                      const parts: React.ReactNode[] = [];
+                      const hasLocality = !!(
+                        e.city ||
+                        e.state ||
+                        e.stateProvince
+                      );
+                      if (e.city || e.state) {
+                        parts.push(
+                          <span key="locality" className="text-gray-900">
+                            {e.city ? `${e.city}, ` : ""}
+                            {e.state ?? ""}
+                          </span>
+                        );
+                      } else if (e.stateProvince) {
+                        parts.push(
+                          <span key="province" className="text-gray-900">
+                            {e.stateProvince}
+                          </span>
+                        );
+                      }
+                      if (e.country) {
+                        if (hasLocality) {
+                          parts.push(
+                            <span key="dot" className="text-gray-500">
+                              {" "}
+                              {" · "}
+                            </span>
+                          );
+                        }
+                        parts.push(
+                          <span key="country" className="text-gray-500">
+                            {e.country}
+                          </span>
+                        );
+                      }
+                      return parts.length ? <>{parts}</> : null;
+                    })()}
+                  </div>
+                </div>
+              </div>
+              {/* Degree and year: year gray; others black */}
+              {e.degree ? (
+                <div className="text-sm mt-1">
+                  <span className="font-medium text-gray-900">Degree:</span>{" "}
+                  <span className="text-gray-900">{e.degree}</span>
+                  {e.graduationYear ? (
+                    <span className="text-gray-500"> · {e.graduationYear}</span>
+                  ) : null}
+                </div>
+              ) : e.graduationYear ? (
+                <div className="text-sm mt-1">
+                  <span className="font-medium text-gray-900">Graduation:</span>{" "}
+                  <span className="text-gray-500">{e.graduationYear}</span>
+                </div>
+              ) : null}
+              {e.activities && (
+                <div className="text-smline-clamp-2">
+                  <span className="font-medium text-gray-900">
+                    Activities and Achievements:
+                  </span>{" "}
+                  <span className="text-gray-900">{e.activities}</span>
+                </div>
+              )}
+            </div>
+          </li>
+        );
+      })}
+    </ul>
   );
 }

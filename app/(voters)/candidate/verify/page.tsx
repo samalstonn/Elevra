@@ -1,8 +1,31 @@
 import { auth } from "@clerk/nextjs/server";
 import { clerkClient } from "@clerk/clerk-sdk-node";
 import prisma from "@/prisma/prisma";
+import { SubmissionStatus } from "@prisma/client";
+import { sendWithResend } from "@/lib/email/resend";
+import { renderAdminNotification } from "@/lib/email/templates/adminNotification";
 import { redirect } from "next/navigation";
 import CandidateVerificationForm from "./CandidateVerificationForm";
+import { Suspense } from "react";
+import type { Metadata } from "next";
+
+export async function generateMetadata({
+  searchParams,
+}: {
+  searchParams: Promise<{ [key: string]: string | string | undefined }>;
+}): Promise<Metadata> {
+  const resolved = await searchParams;
+  const idStr = resolved.candidateID as string | undefined;
+  if (!idStr) return { title: "Verify Your Candidate Profile" };
+  const id = parseInt(idStr, 10);
+  if (Number.isNaN(id)) return { title: "Verify Your Candidate Profile" };
+  const candidate = await prisma.candidate.findUnique({
+    where: { id },
+    select: { name: true },
+  });
+  if (!candidate?.name) return { title: "Verify Your Candidate Profile" };
+  return { title: `Verify ${candidate.name}` };
+}
 
 export default async function VerifyPage({
   searchParams,
@@ -39,26 +62,55 @@ export default async function VerifyPage({
   // 3) Fetch Clerk user email
   const clerkUser = await clerkClient.users.getUser(userId);
   const userEmail = clerkUser.emailAddresses?.[0]?.emailAddress;
-  if (userEmail === candidateRec.email) {
-    // Auto-approve via API
-    const res = await fetch(
-      `${process.env.NEXT_PUBLIC_APP_URL}/api/userValidationRequest/auto-approve`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ slug: candidate, clerkUserId: userId }),
-      }
-    );
-    if (res.ok) {
-      redirect(
-        `/candidate/verify/success?candidate=${candidate}&candidateID=${candidateID}`
-      );
-    } else {
-      console.error("Error auto-approving candidate:", res.statusText);
+  const matchesEmail =
+    !!candidateRec.email &&
+    !!userEmail &&
+    candidateRec.email.toLowerCase() === userEmail.toLowerCase();
+
+  if (matchesEmail) {
+    // Auto-approve directly (avoid extra network + blank page during sign-in return)
+    try {
+      await prisma.candidate.update({
+        where: { id: candidateRec.id },
+        data: {
+          status: SubmissionStatus.APPROVED,
+          verified: true,
+          clerkUserId: userId,
+        },
+      });
+    } catch (err) {
+      console.error("Direct auto-approve failed:", err);
       redirect("/candidate/verify/error");
     }
+
+    // Fire-and-forget admin notification (do not block redirect)
+    try {
+      void sendWithResend({
+        to: process.env.ADMIN_EMAIL!,
+        subject: `${candidateRec.name} profile approved on Elevra`,
+        html: renderAdminNotification({
+          title: "Candidate Profile Approved",
+          intro: "An auto-approve action verified a candidate profile.",
+          rows: [
+            { label: "Name", value: candidateRec.name },
+            { label: "Slug", value: candidateRec.slug },
+          ],
+          ctaLabel: "View Profile",
+          ctaUrl: `${process.env.NEXT_PUBLIC_APP_URL}/candidate/${candidateRec.slug}`,
+        }),
+      });
+    } catch (e) {
+      console.warn("Admin email failed (non-blocking)", e);
+    }
+
+    // Redirect to dashboard with success flag
+    redirect(`/candidates/candidate-dashboard?verified=1&slug=${candidate}`);
   }
 
-  // 4b) If not matched, show the client‐side form
-  return <CandidateVerificationForm />;
+  // 4b) If not matched, show the manual verification form
+  return (
+    <Suspense fallback={null}>
+      <CandidateVerificationForm />
+    </Suspense>
+  );
 }

@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import Stripe from "stripe";
 import prisma from "@/prisma/prisma";
 import { headers } from "next/headers";
-import nodemailer from "nodemailer";
+import { sendWithResend } from "@/lib/email/resend";
 import { SubmissionStatus, Donation, Candidate } from "@prisma/client";
 import { calculateFee } from "@/lib/functions";
 
@@ -17,35 +17,22 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
 // Webhook secret for validating the event
 const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET!;
 
-// Set up nodemailer transporter using your email service credentials
-const transporter = nodemailer.createTransport({
-  service: "gmail", // or another service
-  auth: {
-    user: process.env.EMAIL_USER, // your email address
-    pass: process.env.EMAIL_PASS, // your email password or app password
-  },
-});
-
 // Function to send confirmation email
 async function sendConfirmationEmail(
   donationDetails: Donation,
   candidate: Candidate
 ) {
   console.log("Attempting to send confirmation emails", {
-    from: process.env.EMAIL_USER,
-    toAdmin: process.env.MY_EMAIL,
+    toAdmin: process.env.ADMIN_EMAIL,
     toDonor: donationDetails.donorEmail,
     subject: `New Donation: ${donationDetails.donorName} to ${candidate.name}`,
-    emailUser: Boolean(process.env.EMAIL_USER),
-    emailPass: Boolean(process.env.EMAIL_PASS),
-    myEmail: Boolean(process.env.MY_EMAIL),
+    hasResendKey: Boolean(process.env.RESEND_API_KEY),
   });
 
   try {
     // 1. Send email to admin
-    const adminEmailResult = await transporter.sendMail({
-      from: `"Elevra Donations" <${process.env.EMAIL_USER}>`,
-      to: process.env.MY_EMAIL,
+    await sendWithResend({
+      to: process.env.ADMIN_EMAIL!,
       subject: `New Donation Received: ${donationDetails.donorName} donated to ${candidate.name}`,
       html: `
           <div style="font-family: Arial, sans-serif; padding: 20px; max-width: 600px;">
@@ -79,23 +66,13 @@ async function sendConfirmationEmail(
           </div>
         `,
     });
-
-    console.log("Admin confirmation email sent successfully", {
-      messageId: adminEmailResult.messageId,
-      response: adminEmailResult.response,
-    });
+    console.log("Admin confirmation email sent successfully");
 
     // 2. Send receipt email to donor
     if (donationDetails.donorEmail) {
-      const donorEmailResult = await transporter.sendMail({
-        from: `"Elevra Community" <${process.env.EMAIL_USER}>`,
+      await sendWithResend({
         to: donationDetails.donorEmail,
-        subject: `Thank you for supporting ${candidate.name}`, // Less spammy subject
-        headers: {
-          "X-Priority": "1", // Mark as important
-          Precedence: "Bulk",
-          "List-Unsubscribe": `<mailto:unsubscribe@elevracommunity.com?subject=Unsubscribe>`,
-        },
+        subject: `Thank you for supporting ${candidate.name}`,
         html: `
               <div style="font-family: Arial, sans-serif; padding: 20px; max-width: 600px;">
               <h2 style="color: #6200ee;">Thank You for Your Support!</h2>
@@ -141,11 +118,7 @@ async function sendConfirmationEmail(
             </div>
           `,
       });
-
-      console.log("Donor receipt email sent successfully", {
-        messageId: donorEmailResult.messageId,
-        response: donorEmailResult.response,
-      });
+      console.log("Donor receipt email sent successfully");
     }
 
     return true;

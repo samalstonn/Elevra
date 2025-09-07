@@ -1,15 +1,8 @@
 import { NextResponse } from "next/server";
-import { PrismaClient, SubmissionStatus } from "@prisma/client";
-import nodemailer from "nodemailer";
-
-const prisma = new PrismaClient();
-const transporter = nodemailer.createTransport({
-  service: "gmail",
-  auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS,
-  },
-});
+import { SubmissionStatus } from "@prisma/client";
+import { prisma } from "@/lib/prisma";
+import { sendWithResend } from "@/lib/email/resend";
+import { renderAdminNotification } from "@/lib/email/templates/adminNotification";
 
 export async function POST(req: Request) {
   try {
@@ -52,12 +45,20 @@ export async function POST(req: Request) {
       where: { id: request.id },
       data: { status: SubmissionStatus.APPROVED },
     });
-    // Notify admin of approval
-    await transporter.sendMail({
-      from: process.env.EMAIL_USER,
-      to: process.env.MY_EMAIL,
+    // Notify admin of approval (Resend)
+    await sendWithResend({
+      to: process.env.ADMIN_EMAIL!,
       subject: `${request.fullName} Elevra profile is now verified`,
-      text: `${process.env.NEXT_PUBLIC_APP_URL}/candidate/${candidate.slug}`,
+      html: renderAdminNotification({
+        title: "Candidate Profile Verified",
+        intro: "A candidate profile has been approved.",
+        rows: [
+          { label: "Name", value: request.fullName },
+          { label: "Slug", value: candidate.slug },
+        ],
+        ctaLabel: "View Profile",
+        ctaUrl: `${process.env.NEXT_PUBLIC_APP_URL}/candidate/${candidate.slug}`,
+      }),
     });
   } catch (err) {
     console.error(err);

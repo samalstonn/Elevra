@@ -20,6 +20,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { PlusCircle } from "lucide-react";
+import { usePageTitle } from "@/lib/usePageTitle";
 
 // Placeholder data - replace with actual fetched data
 const placeholderLists = [
@@ -38,6 +39,7 @@ const placeholderLists = [
 ];
 
 export default function MailingListsPage() {
+  usePageTitle("Candidate Dashboard – Mailing Lists");
   const [lists, setLists] = React.useState(placeholderLists); // Use state to manage lists
   const [isCreateDialogOpen, setIsCreateDialogOpen] = React.useState(false);
 

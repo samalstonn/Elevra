@@ -1,4 +1,5 @@
 import prisma from "@/prisma/prisma";
+import type { Metadata } from "next";
 import { Suspense } from "react";
 import ElectionResultsClient from "./ElectionResultsClient";
 import { Candidate } from "@prisma/client";
@@ -8,6 +9,20 @@ interface ElectionResultsPageProps {
     city?: string;
     state?: string;
   }>;
+}
+
+export async function generateMetadata({
+  searchParams,
+}: ElectionResultsPageProps): Promise<Metadata> {
+  const resolvedSearchParams = await searchParams;
+  const city = resolvedSearchParams.city;
+  const state = resolvedSearchParams.state;
+
+  if (city && state) {
+    const loc = city ? `${city}, ${state}` : state;
+    return { title: `Election Results – ${loc}` };
+  }
+  return { title: "Election Results" };
 }
 
 async function ElectionResultsPage({ searchParams }: ElectionResultsPageProps) {

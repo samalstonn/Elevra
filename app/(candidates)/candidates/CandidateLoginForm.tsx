@@ -29,7 +29,7 @@ interface Candidate {
 
 export default function CandidateLoginForm() {
   const [isLoading, setIsLoading] = useState(false);
-  const [candidate, setCandidate] = useState<Candidate | null>(null);
+  const [_candidate, setCandidate] = useState<Candidate | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loginStatus, setLoginStatus] = useState<
     null | "success" | "pending" | "rejected" | "error"
@@ -197,9 +197,7 @@ export default function CandidateLoginForm() {
                 <h3 className="text-xl font-medium text-green-700 mb-2">
                   Login Successful!
                 </h3>
-                <p className="text-gray-600 mb-4">
-                  Welcome back, {candidate?.name}.
-                </p>
+                <p className="text-gray-600 mb-4">Welcome!</p>
                 <p className="text-gray-600">
                   Redirecting to your dashboard...
                 </p>

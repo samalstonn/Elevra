@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Terminal } from "lucide-react";
@@ -17,13 +17,17 @@ import {
 } from "@/components/ui/dialog";
 import { X } from "lucide-react";
 import Link from "next/link";
+import { useSearchParams, useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
+import TourModal from "@/components/tour/TourModal";
+import { usePageTitle } from "@/lib/usePageTitle";
 
 interface SearchResultItem {
   id: string | number;
 }
 
 export default function ProfileSettingsPage() {
+  usePageTitle("Candidate Dashboard – Campaigns");
   const {
     data: candidateData,
     electionLinks = [],
@@ -33,6 +37,43 @@ export default function ProfileSettingsPage() {
   } = useCandidate();
 
   const [showJoinedModal, setShowJoinedModal] = useState(false);
+  const router = useRouter();
+  // Tour state (Step 3)
+  const [showStep3, setShowStep3] = useState(false);
+  const searchParams = useSearchParams();
+  useEffect(() => {
+    try {
+      const optOut = localStorage.getItem("elevra_tour_opt_out");
+      if (optOut === "1") return;
+      const step = localStorage.getItem("elevra_tour_step");
+      const forceTour = searchParams.get("tour") === "1";
+      if (step === "3" || forceTour) setShowStep3(true);
+    } catch {}
+  }, [searchParams]);
+
+  const skipTour = () => {
+    try {
+      localStorage.setItem("elevra_tour_opt_out", "1");
+      localStorage.removeItem("elevra_tour_step");
+    } catch {}
+    setShowStep3(false);
+    router.push("/candidates/candidate-dashboard");
+  };
+
+  const nextToPublicPage = () => {
+    try {
+      localStorage.setItem("elevra_tour_step", "4");
+    } catch {}
+    setShowStep3(false);
+    router.push("/candidates/candidate-dashboard/my-page?tour=1");
+  };
+  const backToProfile = () => {
+    try {
+      localStorage.setItem("elevra_tour_step", "2");
+    } catch {}
+    setShowStep3(false);
+    router.push("/candidates/candidate-dashboard/my-profile?tour=1");
+  };
 
   if (isLoading) {
     return (
@@ -75,6 +116,29 @@ export default function ProfileSettingsPage() {
 
   return (
     <div className="space-y-6">
+      {/* Tour: Step 3 (Campaigns) */}
+      <TourModal
+        open={showStep3}
+        onOpenChange={setShowStep3}
+        title="Campaigns (Step 3 of 5)"
+        backLabel="Back"
+        onBack={backToProfile}
+        primaryLabel="Next: Public Campaign Page"
+        onPrimary={nextToPublicPage}
+        secondaryLabel="Skip tour"
+        onSecondary={skipTour}
+      >
+        <p>Use the search bar to find the election you&apos;re running in.</p>
+        <p>
+          <strong>Once added,</strong> you can customize your{" "}
+          <strong>Public Campaign Page</strong> for each election and get voters
+          excited about your run.
+        </p>
+        <p>
+          Tip: No need to worry about starting from scratch! We have templates
+          to help you get started.
+        </p>
+      </TourModal>
       <h1 className="text-3xl font-semibold">My Elections</h1>
       {/* <p className="text-sm text-gray-500 mt-2 mb-2 max-w-2xl">
         Add elections you are participating in. Manage your web page and content

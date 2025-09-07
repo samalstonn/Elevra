@@ -15,6 +15,7 @@ import { Check, Star, Zap } from "lucide-react"; // Icons
 import { useToast } from "@/hooks/use-toast";
 import getStripe from "@/lib/get-stripe"; // Your Stripe utility
 // import { useAuth } from "@clerk/nextjs"; // To check current plan later
+import { usePageTitle } from "@/lib/usePageTitle";
 
 // Define the features for each plan
 const freeFeatures = [
@@ -81,6 +82,7 @@ export interface Plan {
 }
 
 export default function UpgradePage() {
+  usePageTitle("Candidate Dashboard – Upgrade");
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   // TODO: Fetch user's current subscription status from Clerk/DB

@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { usePageTitle } from "@/lib/usePageTitle";
 
 interface BlogPost {
   id: number;
@@ -35,17 +36,21 @@ interface BlogPostUpsertRequest {
 }
 
 export default function AdminDashboard() {
+  usePageTitle("Admin – Dashboard");
   const sendTestEmail = async () => {
     try {
-      const res = await fetch("/api/send-email", {
+      const res = await fetch("/api/admin/email", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          to: "adam@elevracommunity.com",
           subject: "Test Email",
-          html: "<p>This is a test email with <a href='https://elevracommunity.com'>a link</a></p>",
+          data: {
+            title: "Admin Test Email",
+            intro:
+              "This is a test email with a link to elevracommunity.com",
+          },
         }),
       });
 

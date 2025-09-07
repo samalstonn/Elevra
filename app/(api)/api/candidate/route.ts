@@ -32,9 +32,10 @@ export async function PUT(request: Request) {
 //
 import { NextResponse } from "next/server";
 import prisma from "@/prisma/prisma";
-import { auth } from "@clerk/nextjs/server";
+import { auth, clerkClient } from "@clerk/nextjs/server";
 import { Prisma, SubmissionStatus } from "@prisma/client";
-import nodemailer from "nodemailer";
+import { sendWithResend } from "@/lib/email/resend";
+import { renderAdminNotification } from "@/lib/email/templates/adminNotification";
 import { generateUniqueSlug } from "@/lib/functions";
 
 export async function GET(request: Request) {
@@ -73,6 +74,7 @@ export async function GET(request: Request) {
         website: true,
         linkedin: true,
         slug: true,
+        history: true,
         donations: {
           select: {
             id: true,
@@ -178,6 +180,19 @@ export async function POST(request: Request) {
     const uniqueSlug = await generateUniqueSlug(name, undefined, "candidate");
     console.info("Generated unique slug:", uniqueSlug);
 
+    // Attempt to capture the user's primary email and persist it on Candidate
+    try {
+      const client = await clerkClient();
+      const user = await client.users.getUser(userId);
+      const primaryEmail = user.emailAddresses.find(
+        (e: { id: string }) => e.id === user.primaryEmailAddressId
+      )?.emailAddress as string | undefined;
+      const fallbackEmail = user.emailAddresses[0]?.emailAddress;
+      body.email = primaryEmail || fallbackEmail || null;
+    } catch (e) {
+      console.error("Could not fetch Clerk user email for candidate signup", e);
+    }
+
     body.status = "APPROVED" as SubmissionStatus;
     body.slug = uniqueSlug;
     body.verified = true;
@@ -196,36 +211,25 @@ export async function POST(request: Request) {
       const candidate = await prisma.candidate.create({
         data: createData,
       });
-      // Set up nodemailer transporter using your email service credentials
-      const transporter = nodemailer.createTransport({
-        service: "gmail", // or another service
-        auth: {
-          user: process.env.EMAIL_USER, // your email address
-          pass: process.env.EMAIL_PASS, // your email password or app password
-        },
-      });
-
-      // Define email options
-      const mailOptions = {
-        from: process.env.EMAIL_USER,
-        to: process.env.MY_EMAIL, // your email address to receive notifications
-        subject: `New Candidate Signup: ${candidate.name}`,
-        text: `A new candidate has signed up.\n\nName: ${candidate.name}\nLocation: ${candidate.currentCity}, ${candidate.currentState}
-        : ${body}`,
-      };
-
-      // Attempt to send the email
+      // Notify admin (Resend)
       try {
-        await transporter.sendMail(mailOptions);
+        const appUrl =
+          process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+        await sendWithResend({
+          to: process.env.ADMIN_EMAIL!,
+          subject: `New Candidate Signup: ${candidate.name}`,
+          html: renderAdminNotification({
+            title: "New Candidate Signup",
+            rows: [
+              { label: "Name", value: candidate.name },
+              { label: "Email", value: candidate.email || "N/A" },
+            ],
+            ctaLabel: "View Candidate Profile",
+            ctaUrl: `${appUrl}/candidate/${candidate.slug}`,
+          }),
+        });
       } catch (emailError: unknown) {
-        if (emailError instanceof Error) {
-          console.error(
-            "Error sending notification email:",
-            emailError.message
-          );
-        } else {
-          console.error("Error sending notification email:", emailError);
-        }
+        console.error("Error sending notification email:", emailError);
       }
       return NextResponse.json(candidate);
     } catch (error: unknown) {

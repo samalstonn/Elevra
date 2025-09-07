@@ -1,16 +1,10 @@
 import { NextResponse } from "next/server";
 import prisma from "@/prisma/prisma";
-import nodemailer from "nodemailer";
 import { SubmissionStatus } from "@prisma/client";
+import { sendWithResend } from "@/lib/email/resend";
+import { renderAdminNotification } from "@/lib/email/templates/adminNotification";
 
-// set up transporter (reuse your admin route setup)
-const transporter = nodemailer.createTransport({
-  service: "gmail",
-  auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS,
-  },
-});
+// Using Resend helper; no transporter needed
 
 export async function POST(req: Request) {
   try {
@@ -43,12 +37,20 @@ export async function POST(req: Request) {
       },
     });
 
-    // Notify admin
-    await transporter.sendMail({
-      from: process.env.EMAIL_USER,
-      to: process.env.MY_EMAIL,
+    // Notify admin (Resend)
+    await sendWithResend({
+      to: process.env.ADMIN_EMAIL!,
       subject: `${candidate.name} profile approved on Elevra`,
-      text: `${process.env.NEXT_PUBLIC_APP_URL}/candidate/${candidate.slug}`,
+      html: renderAdminNotification({
+        title: "Candidate Profile Approved",
+        intro: "An auto-approve action verified a candidate profile.",
+        rows: [
+          { label: "Name", value: candidate.name },
+          { label: "Slug", value: candidate.slug },
+        ],
+        ctaLabel: "View Profile",
+        ctaUrl: `${process.env.NEXT_PUBLIC_APP_URL}/candidate/${candidate.slug}`,
+      }),
     });
 
     return NextResponse.json({ success: true });
