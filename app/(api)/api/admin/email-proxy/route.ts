@@ -1,0 +1,46 @@
+import { NextRequest, NextResponse } from "next/server";
+
+export const runtime = "nodejs";
+
+// Server-side proxy that forwards to /api/admin/email with x-admin-secret.
+// Uses the incoming request origin so it works in dev, preview, and prod
+// without needing NEXT_PUBLIC_APP_URL.
+export async function POST(req: NextRequest) {
+  const secret = process.env.ADMIN_EMAIL_SECRET;
+  const { origin } = new URL(req.url);
+
+  if (!secret) {
+    return NextResponse.json(
+      { error: "Missing ADMIN_EMAIL_SECRET env var" },
+      { status: 500 }
+    );
+  }
+
+  let body: unknown;
+  try {
+    body = await req.json();
+  } catch {
+    return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
+  }
+
+  try {
+    const res = await fetch(`${origin}/api/admin/email`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-admin-secret": secret,
+      },
+      body: JSON.stringify(body),
+      // no-store to avoid caching
+      cache: "no-store",
+    });
+    const data = await res.json().catch(() => ({}));
+    return NextResponse.json(data, { status: res.status });
+  } catch (e) {
+    console.error("[email-proxy] forward failed", e);
+    return NextResponse.json(
+      { error: "Failed to forward email request" },
+      { status: 500 }
+    );
+  }
+}

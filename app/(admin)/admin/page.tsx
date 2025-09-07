@@ -39,7 +39,7 @@ export default function AdminDashboard() {
   usePageTitle("Admin – Dashboard");
   const sendTestEmail = async () => {
     try {
-      const res = await fetch("/api/admin/email", {
+      const res = await fetch("/api/admin/email-proxy", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

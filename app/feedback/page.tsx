@@ -19,7 +19,7 @@ export default function FeedbackPage() {
 
   useEffect(() => {
     // Send admin ping using the admin email endpoint (defaults to ADMIN_EMAIL)
-    fetch("/api/admin/email", {
+    fetch("/api/admin/email-proxy", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
