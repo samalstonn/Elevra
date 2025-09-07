@@ -74,7 +74,6 @@ const navItems = [
     icon: Mail,
     premium: true,
   },
-
   {
     href: "/candidates/candidate-dashboard/videos",
     label: "Videos",

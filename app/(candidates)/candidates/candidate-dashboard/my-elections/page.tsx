@@ -128,9 +128,9 @@ export default function ProfileSettingsPage() {
         secondaryLabel="Skip tour"
         onSecondary={skipTour}
       >
-        <p>Use the search bar to find the election you're running in.</p>
+        <p>Use the search bar to find the election you&apos;re running in.</p>
         <p>
-          Once added, you can customize your{" "}
+          <strong>Once added,</strong> you can customize your{" "}
           <strong>Public Campaign Page</strong> for each election and get voters
           excited about your run.
         </p>

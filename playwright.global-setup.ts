@@ -1,9 +1,16 @@
 import { chromium } from '@playwright/test'
+import type { BrowserContext } from '@playwright/test'
 
 const BASE_URL = process.env.E2E_BASE_URL || 'http://127.0.0.1:3000'
 const CANDIDATE_SLUG = process.env.E2E_CANDIDATE_SLUG || ''
 
-async function clerkTwoStepSignIn(context, email: string, password: string, finalPathAfterLogin: string, storagePath: string) {
+async function clerkTwoStepSignIn(
+  context: BrowserContext,
+  email: string,
+  password: string,
+  finalPathAfterLogin: string,
+  storagePath: string
+) {
   const page = await context.newPage()
   // Step 1: email on app sign-in page
   await page.goto(`${BASE_URL}/sign-in?redirect_url=${encodeURIComponent(finalPathAfterLogin)}`)
@@ -68,4 +75,3 @@ async function globalSetup() {
 }
 
 export default globalSetup
-

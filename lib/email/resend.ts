@@ -10,14 +10,14 @@ type SendEmailParams = {
 // Use a safe default for local testing. You can override via RESEND_FROM env.
 // For production, set RESEND_FROM to a verified domain address.
 const defaultFrom =
-  process.env.RESEND_FROM || "Elevra Community <onboarding@resend.dev>";
+  process.env.RESEND_FROM || "Team @Elevra <onboarding@resend.dev>";
 
 export async function sendWithResend({
   to,
   subject,
   html,
   from,
-}: SendEmailParams) {
+}: SendEmailParams): Promise<{ id: string } | null> {
   if (!process.env.RESEND_API_KEY) {
     throw new Error("Missing RESEND_API_KEY environment variable");
   }
@@ -32,10 +32,11 @@ export async function sendWithResend({
     html,
   });
 
-  const maybeError = (result as any)?.error;
+  const maybeError = (result as { error?: unknown }).error;
   if (maybeError) {
+    const err = maybeError as { message?: string; error?: string; name?: string };
     const message =
-      (maybeError && (maybeError.message || maybeError.error || maybeError.name)) ||
+      err.message || err.error || err.name ||
       (typeof maybeError === "string" ? maybeError : "Unknown Resend error");
     const details = (() => {
       try {
@@ -47,5 +48,6 @@ export async function sendWithResend({
     throw new Error(`${message}${details ? ` | details: ${details}` : ""}`);
   }
 
-  return result.data;
+  const data = (result as { data?: { id: string } | null }).data ?? null;
+  return data;
 }

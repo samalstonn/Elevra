@@ -29,7 +29,7 @@ interface Candidate {
 
 export default function CandidateLoginForm() {
   const [isLoading, setIsLoading] = useState(false);
-  const [candidate, setCandidate] = useState<Candidate | null>(null);
+  const [_candidate, setCandidate] = useState<Candidate | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loginStatus, setLoginStatus] = useState<
     null | "success" | "pending" | "rejected" | "error"

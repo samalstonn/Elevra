@@ -6,6 +6,7 @@
     "dev": "NODE_ENV=development next dev --turbopack",
     "build": "prisma generate && next build",
     "start": "NODE_ENV=production next start",
+    "test:playwright": "playwright test -ui",
     "lint": "next lint"
   },
   "dependencies": {
@@ -63,6 +64,7 @@
   },
   "devDependencies": {
     "@clerk/clerk-sdk-node": "^5.1.6",
+    "@clerk/testing": "^1.12.4",
     "@eslint/eslintrc": "^3",
     "@faker-js/faker": "^9.6.0",
     "@playwright/test": "^1.51.1",

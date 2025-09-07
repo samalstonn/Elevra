@@ -139,6 +139,7 @@ export default function SearchBar({
           <li
             key={item.id}
             role="option"
+            aria-selected={selectedItems.some((s) => s.id === item.id)}
             className={`px-4 py-2 text-sm cursor-pointer flex flex-col hover:bg-purple-50 transition-colors `}
             style={{ textAlign: "left" }}
           >

@@ -178,7 +178,8 @@ function EducationList({
   const [degree, setDegree] = useState("");
   const [graduationYear, setGraduationYear] = useState("");
   const [activities, setActivities] = useState("");
-  const [website, setWebsite] = useState("");
+  const [city, setCity] = useState("");
+  const [stateStr, setStateStr] = useState("");
   const [saving, setSaving] = useState(false);
 
   function openEdit(i: number) {
@@ -187,7 +188,8 @@ function EducationList({
     setDegree(item.degree ?? "");
     setGraduationYear(item.graduationYear ?? "");
     setActivities(item.activities ?? "");
-    setWebsite(item.website ?? "");
+    setCity(item.city ?? "");
+    setStateStr(item.state ?? "");
   }
 
   async function saveEdit() {
@@ -202,9 +204,9 @@ function EducationList({
           name: current.name,
           country: current.country,
           stateProvince: current.stateProvince ?? null,
-          city: current.city ?? null,
-          state: current.state ?? null,
-          website: website || null,
+          city: city || null,
+          state: stateStr || null,
+          website: current.website || null,
           degree: degree || null,
           graduationYear: graduationYear || null,
           activities: activities || null,
@@ -379,6 +381,30 @@ function EducationList({
                   />
                 </div>
               </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="space-y-1.5">
+                  <Label htmlFor="city-edit">City</Label>
+                  <Input
+                    id="city-edit"
+                    value={city}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                      setCity(e.target.value)
+                    }
+                    placeholder="eg. Ithaca"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="state-edit">State/Region</Label>
+                  <Input
+                    id="state-edit"
+                    value={stateStr}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                      setStateStr(e.target.value)
+                    }
+                    placeholder="eg. New York"
+                  />
+                </div>
+              </div>
               <div className="space-y-1.5">
                 <Label htmlFor="activities-edit">
                   Clubs, activities, honors
@@ -392,17 +418,7 @@ function EducationList({
                   rows={3}
                 />
               </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="website-edit">Website</Label>
-                <Input
-                  id="website-edit"
-                  value={website}
-                  onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                    setWebsite(e.target.value)
-                  }
-                  placeholder="https://example.edu"
-                />
-              </div>
+              {/* Website is inferred from the selected school and not editable here */}
               <DialogFooter>
                 <Button
                   type="button"

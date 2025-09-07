@@ -47,7 +47,7 @@ export default function BasicProfileForm() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const { data: candidate, electionLinks } = useCandidate();
+  const { data: candidate } = useCandidate();
 
   // Fetch existing candidate data
   useEffect(() => {

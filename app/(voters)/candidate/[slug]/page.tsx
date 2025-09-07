@@ -37,11 +37,11 @@ export async function generateMetadata({
   if (electionIdParam != null && !Number.isNaN(electionIdParam)) {
     const election = await prisma.election.findUnique({
       where: { id: electionIdParam },
-      select: { title: true, city: true, state: true },
+      select: { position: true, city: true, state: true },
     });
-    if (election?.title) {
+    if (election?.position) {
       const loc = [election.city, election.state].filter(Boolean).join(", ");
-      title = `${candidate.name} – ${election.title}${loc ? ` (${loc})` : ""}`;
+      title = `${candidate.name} – ${election.position}${loc ? ` (${loc})` : ""}`;
     }
   }
 

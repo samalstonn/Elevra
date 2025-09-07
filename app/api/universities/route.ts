@@ -39,19 +39,23 @@ export async function GET(req: NextRequest) {
       );
     }
 
-    const data = (await res.json()) as any[];
+    const data = (await res.json()) as Array<Record<string, unknown>>;
 
     // Normalize basic fields so downstream UI can rely on them.
     const normalized = Array.isArray(data)
-      ? data.map((u) => ({
-          ...u,
-          domains: u?.domains ?? [],
-          web_pages: u?.web_pages ?? [],
-          // Some results only provide `state-province`; surface a `state` fallback
-          state: u?.state ?? u?.["state-province"] ?? null,
-          city: u?.city ?? null,
-          "state-province": u?.["state-province"] ?? null,
-        }))
+      ? data.map((u) => {
+          const stateProvince = u["state-province"] as string | null | undefined;
+          return {
+            ...u,
+            domains: (u["domains"] as unknown[] | undefined) ?? [],
+            web_pages: (u["web_pages"] as unknown[] | undefined) ?? [],
+            // Some results only provide `state-province`; surface a `state` fallback
+            state:
+              (u["state"] as string | null | undefined) ?? stateProvince ?? null,
+            city: (u["city"] as string | null | undefined) ?? null,
+            "state-province": stateProvince ?? null,
+          };
+        })
       : [];
 
     return NextResponse.json(normalized, {

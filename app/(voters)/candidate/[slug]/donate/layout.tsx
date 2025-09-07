@@ -8,7 +8,7 @@ interface Params {
 export async function generateMetadata({
   params,
 }: {
-  params: Params | Promise<Params>;
+  params: Promise<Params>;
 }): Promise<Metadata> {
   const resolved = await params;
   const candidate = await prisma.candidate.findUnique({
@@ -25,4 +25,3 @@ export default function DonateLayout({
 }) {
   return children;
 }
-

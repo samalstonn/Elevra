@@ -10,7 +10,7 @@ export async function POST() {
     }
 
     const user = await clerkClient.users.getUser(userId);
-    const current = (user.publicMetadata as any) || {};
+    const current = (user.publicMetadata ?? {}) as Record<string, unknown>;
 
     await clerkClient.users.updateUser(userId, {
       publicMetadata: {
@@ -25,4 +25,3 @@ export async function POST() {
     return NextResponse.json({ error: "Server error" }, { status: 500 });
   }
 }
-

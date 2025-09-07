@@ -27,7 +27,7 @@ import {
 import { FaCheckCircle } from "react-icons/fa";
 import TourModal from "@/components/tour/TourModal";
 import { usePageTitle } from "@/lib/usePageTitle";
-import ResultsSearchBar from "@/components/ResultsSearchBar";
+// import ResultsSearchBar from "@/components/ResultsSearchBar";
 
 export type CandidateWithDonations = Candidate & { donations: Donation[] };
 
@@ -36,7 +36,7 @@ export default function OverviewPage() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const { user, isLoaded } = useUser();
-  const verifiedSlug = searchParams.get("slug");
+  const _verifiedSlug = searchParams.get("slug");
   const [profileViews, setProfileViews] = useState<number | string>(
     "Please create a campaign to have a visible profile"
   );
@@ -57,8 +57,10 @@ export default function OverviewPage() {
   // First-visit Welcome via Clerk metadata (always on first dashboard visit)
   useEffect(() => {
     if (!isLoaded || !user) return;
-    const visited =
-      (user.publicMetadata as any)?.visitedCandidateDashboard === true;
+    const visited = Boolean(
+      (user.publicMetadata as Record<string, unknown>)?.
+        visitedCandidateDashboard === true
+    );
     if (visited) return;
     const verifiedParam = searchParams.get("verified");
     if (verifiedParam === "1") {
@@ -71,8 +73,8 @@ export default function OverviewPage() {
     (async () => {
       try {
         await fetch("/api/user/metadata/visited-dashboard", { method: "POST" });
-      } catch (e) {
-        console.error("Failed to persist visitedDashboard via API", e);
+      } catch (_e) {
+        console.error("Failed to persist visitedDashboard via API", _e);
       }
     })();
   }, [isLoaded, user, searchParams]);
@@ -88,7 +90,7 @@ export default function OverviewPage() {
           setShowWelcome(false);
           setShowVerifiedModal(true);
         }
-      } catch (e) {
+      } catch {
         // no-op if window/URL not available
       }
     }
@@ -309,7 +311,7 @@ export default function OverviewPage() {
               onClick={() => {
                 try {
                   localStorage.setItem("elevra_hide_verified_onboarding", "1");
-                } catch (e) {
+                } catch {
                   // ignore storage errors
                 }
                 setShowVerifiedModal(false);

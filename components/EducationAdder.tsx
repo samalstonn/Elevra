@@ -39,8 +39,7 @@ export default function EducationAdder({
     setMessage(null);
     const website = selected.web_pages?.[0] ?? null;
     // Prefer normalized `state` (provided by our API) and fall back to raw `state-province`.
-    const stateProvince =
-      (selected as any).state ?? (selected as any)["state-province"] ?? null;
+    const stateProvince = selected.state ?? selected["state-province"] ?? null;
     try {
       const res = await fetch("/api/candidate/education", {
         method: "POST",

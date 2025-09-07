@@ -3,12 +3,7 @@
 import { ReactNode, useEffect, useRef, useState } from "react";
 import * as DialogPrimitive from "@radix-ui/react-dialog";
 import { GripVertical } from "lucide-react";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { Dialog, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 
 type TourModalProps = {
@@ -64,7 +59,7 @@ export function TourModal({
     if (!draggable) return;
     const onMove = (e: MouseEvent) => {
       if (!dragging.current) return;
-      setPos((prev) => ({
+      setPos((_prev) => ({
         x: e.clientX - dragOffset.current.dx,
         y: e.clientY - dragOffset.current.dy,
       }));
