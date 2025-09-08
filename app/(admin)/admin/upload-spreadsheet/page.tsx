@@ -69,7 +69,36 @@ export default function UploadSpreadsheetPage() {
   }, []);
   const [inserting, setInserting] = useState(false);
   const [insertResult, setInsertResult] = useState<string>("");
-  const [_goingLive, setGoingLive] = useState(false);
+  const [goingLive, setGoingLive] = useState(false);
+  type StepStatus = "pending" | "in_progress" | "completed" | "error";
+  type Step = { key: string; label: string; status: StepStatus; detail?: string };
+  const [goLiveSteps, setGoLiveSteps] = useState<Step[]>([]);
+  const [goLiveLog, setGoLiveLog] = useState<
+    { ts: number; level: "info" | "success" | "error"; message: string }[]
+  >([]);
+
+  function resetGoLiveProgress() {
+    setGoLiveSteps([
+      { key: "analyze", label: "Analyze with Gemini", status: "pending" },
+      { key: "structure", label: "Build structured output", status: "pending" },
+      { key: "insert", label: "Insert data into DB", status: "pending" },
+      { key: "post", label: "Build result sheet", status: "pending" },
+    ]);
+    setGoLiveLog([]);
+  }
+
+  function updateStep(key: string, status: StepStatus, detail?: string) {
+    setGoLiveSteps((prev) =>
+      prev.map((s) => (s.key === key ? { ...s, status, detail } : s))
+    );
+  }
+
+  function logProgress(
+    message: string,
+    level: "info" | "success" | "error" = "info"
+  ) {
+    setGoLiveLog((prev) => [...prev, { ts: Date.now(), level, message }]);
+  }
 
   function normalizeHeader(h: string): string {
     return h.replace(/[^a-zA-Z0-9]/g, "").toLowerCase();
@@ -292,8 +321,11 @@ export default function UploadSpreadsheetPage() {
     setGoingLive(true);
     setError("");
     setInsertResult("");
+    resetGoLiveProgress();
     try {
       // 1) Analyze with Gemini
+      updateStep("analyze", "in_progress");
+      logProgress("Starting Gemini analysis…");
       const analyzeRes = await fetch("/api/gemini/analyze", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -301,6 +333,11 @@ export default function UploadSpreadsheetPage() {
       });
       if (!analyzeRes.ok || !analyzeRes.body) {
         const txt = await analyzeRes.text().catch(() => "");
+        updateStep("analyze", "error", txt);
+        logProgress(
+          `Gemini analyze failed (${analyzeRes.status}) ${txt || ""}`,
+          "error"
+        );
         throw new Error(txt || `Gemini request failed (${analyzeRes.status})`);
       }
       const isMock = analyzeRes.headers.get("x-gemini-mock") === "1";
@@ -315,11 +352,16 @@ export default function UploadSpreadsheetPage() {
           const { done, value } = await reader.read();
           if (done) break;
           buf += decoder.decode(value, { stream: true });
+          if (buf.length % 5000 < 100) logProgress("…receiving analysis chunks");
         }
         const analysisText = buf;
         setGeminiOutput(analysisText);
+        updateStep("analyze", "completed");
+        logProgress("Gemini analysis complete", "success");
         // 2) Run structured output using the fresh local analysis text (avoid stale state)
         let structured = "";
+        updateStep("structure", "in_progress");
+        logProgress("Building structured output…");
         const structRes = await fetch("/api/gemini/structure", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -330,6 +372,11 @@ export default function UploadSpreadsheetPage() {
         });
         if (!structRes.ok || !structRes.body) {
           const txt = await structRes.text().catch(() => "");
+          updateStep("structure", "error", txt);
+          logProgress(
+            `Structured output failed (${structRes.status}) ${txt || ""}`,
+            "error"
+          );
           throw new Error(
             txt || `Gemini structured request failed (${structRes.status})`
           );
@@ -349,16 +396,27 @@ export default function UploadSpreadsheetPage() {
           structured = sBuf;
         }
         setStructuredOutput(structured);
+        updateStep("structure", "completed");
+        logProgress("Structured output ready", "success");
 
         // 3) Insert into DB
+        updateStep("insert", "in_progress");
+        logProgress("Inserting records into database…");
         const insertRes = await fetch("/api/admin/seed-structured", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ structured }),
         });
         const text = await insertRes.text();
-        if (!insertRes.ok)
+        if (!insertRes.ok) {
+          updateStep("insert", "error", text);
+          logProgress(
+            `Insert failed (${insertRes.status}) ${text || ""}`,
+            "error"
+          );
           throw new Error(text || `Insert failed (${insertRes.status})`);
+        }
+        updateStep("insert", "completed");
         try {
           const obj = JSON.parse(text) as {
             results?: Array<{
@@ -387,20 +445,32 @@ export default function UploadSpreadsheetPage() {
                 }`;
               }
             }
+            const totalCandidates = obj.results
+              .map((r) => (r.candidateSlugs || []).length)
+              .reduce((a, b) => a + b, 0);
+            logProgress(
+              `DB insert complete: ${obj.results.length} elections, ${totalCandidates} candidates`,
+              "success"
+            );
           }
           setInsertResult(JSON.stringify(obj, null, 2));
+          updateStep("post", "in_progress");
+          logProgress("Building and downloading result sheet…");
           await buildAndDownloadResultSheet(obj, structured);
+          updateStep("post", "completed");
+          logProgress("Go Live completed successfully", "success");
         } catch {
           setInsertResult(text);
         }
         return; // early return since we've completed the rest of the flow
       }
-    } catch (e) {
-      console.error(e);
-      setError(e instanceof Error ? e.message : "Go Live failed");
-    } finally {
-      setGoingLive(false);
-    }
+  } catch (e) {
+    console.error(e);
+    setError(e instanceof Error ? e.message : "Go Live failed");
+    logProgress(e instanceof Error ? e.message : "Go Live failed", "error");
+  } finally {
+    setGoingLive(false);
+  }
   }
 
   // --- Dry-run DB plan builder ---
@@ -1056,12 +1126,96 @@ export default function UploadSpreadsheetPage() {
               >
                 {inserting ? "Inserting…" : "Insert Into DB (Live)"}
               </button>
+              <button
+                type="button"
+                onClick={goLive}
+                disabled={!parsedRows.length || goingLive}
+                className="px-4 py-2 bg-purple-600 text-white rounded hover:bg-purple-700 disabled:opacity-50"
+                title="Analyze, structure, insert, and export in one flow"
+              >
+                {goingLive ? "Going Live…" : "Go Live"}
+              </button>
               {!!parsedRows.length && (
                 <span className="text-xs text-gray-600 self-center">
                   Rows ready: {parsedRows.length}
                 </span>
               )}
             </div>
+            {(goingLive || goLiveLog.length > 0) && (
+              <div className="mt-3 border rounded p-3 bg-white/60">
+                <div className="flex items-center justify-between mb-2">
+                  <h3 className="text-sm font-semibold text-gray-800">
+                    Go Live Progress
+                  </h3>
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      onClick={() => resetGoLiveProgress()}
+                      className="text-xs text-gray-600 underline"
+                    >
+                      Clear
+                    </button>
+                  </div>
+                </div>
+                {goLiveSteps.length > 0 && (
+                  <ul className="mb-2">
+                    {goLiveSteps.map((s) => (
+                      <li key={s.key} className="flex items-start gap-2 py-1">
+                        <span
+                          className={
+                            s.status === "completed"
+                              ? "text-green-600"
+                              : s.status === "error"
+                              ? "text-red-600"
+                              : s.status === "in_progress"
+                              ? "text-blue-600"
+                              : "text-gray-500"
+                          }
+                        >
+                          {s.status === "completed"
+                            ? "✓"
+                            : s.status === "error"
+                            ? "✕"
+                            : s.status === "in_progress"
+                            ? "…"
+                            : "•"}
+                        </span>
+                        <div>
+                          <div className="text-sm text-gray-900">{s.label}</div>
+                          {s.detail && (
+                            <div className="text-xs text-gray-600 break-all">
+                              {s.detail}
+                            </div>
+                          )}
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+                {goLiveLog.length > 0 && (
+                  <div className="max-h-40 overflow-auto border-t pt-2">
+                    {goLiveLog.map((l, i) => (
+                      <div key={i} className="text-xs mb-1">
+                        <span className="text-gray-500 mr-2">
+                          {new Date(l.ts).toLocaleTimeString()}
+                        </span>
+                        <span
+                          className={
+                            l.level === "error"
+                              ? "text-red-700"
+                              : l.level === "success"
+                              ? "text-green-700"
+                              : "text-gray-800"
+                          }
+                        >
+                          {l.message}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
           </>
         </div>
         {geminiOutput && (
