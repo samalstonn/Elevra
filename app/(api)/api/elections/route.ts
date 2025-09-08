@@ -55,6 +55,7 @@ export async function GET(request: Request) {
         where: {
           city,
           state: normalizedState,
+          ...(process.env.NODE_ENV === "production" ? { hidden: false } : {}),
         },
         include: {
           candidates: {
@@ -75,6 +76,7 @@ export async function GET(request: Request) {
         where: {
           city,
           state: rawState,
+          ...(process.env.NODE_ENV === "production" ? { hidden: false } : {}),
         },
         include: {
           candidates: {

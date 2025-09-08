@@ -186,6 +186,12 @@ export default function AdminDashboard() {
         >
           View User Validation Requests
         </Link>
+        <Link
+          href="/admin/upload-spreadsheet"
+          className="inline-block px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700 transition"
+        >
+          Upload Spreadsheet
+        </Link>
         <button
           onClick={sendTestEmail}
           className="inline-block px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 transition"

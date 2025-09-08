@@ -36,7 +36,10 @@ export async function generateMetadata({
 
   if (electionIdParam != null && !Number.isNaN(electionIdParam)) {
     const election = await prisma.election.findUnique({
-      where: { id: electionIdParam },
+      where: {
+        id: electionIdParam,
+        ...(process.env.NODE_ENV === "production" ? { hidden: false } : {}),
+      },
       select: { position: true, city: true, state: true },
     });
     if (election?.position) {
@@ -67,11 +70,21 @@ export default async function CandidatePage({
     notFound();
   }
 
+  // In production, do not expose candidates marked as hidden
+  if (process.env.NODE_ENV === "production" && candidate.hidden) {
+    notFound();
+  }
+
   const candidateID = candidate.id;
 
   // Fetch all election links for this candidate, including election details and full candidate info
   const links = await prisma.electionLink.findMany({
-    where: { candidateId: candidateID },
+    where: {
+      candidateId: candidateID,
+      ...(process.env.NODE_ENV === "production"
+        ? { election: { hidden: false } }
+        : {}),
+    },
     include: {
       ContentBlock: true,
       election: {
@@ -86,6 +99,12 @@ export default async function CandidatePage({
       },
     },
   });
+
+  // In production, if this candidate only has links to hidden elections,
+  // treat as not found to prevent public visibility.
+  if (process.env.NODE_ENV === "production" && links.length === 0) {
+    notFound();
+  }
 
   interface ElectionCandidate {
     candidate: Candidate;
