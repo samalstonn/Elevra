@@ -1,6 +1,5 @@
 export const dynamic = "force-dynamic";
 import { notFound } from "next/navigation";
-import { headers } from "next/headers";
 import prisma from "@/prisma/prisma";
 import CandidateClient from "./CandidateClient";
 import { Candidate } from "@prisma/client";
@@ -22,7 +21,14 @@ export async function generateMetadata({
 
   const candidate = await prisma.candidate.findUnique({
     where: { slug },
-    select: { name: true },
+    select: {
+      name: true,
+      bio: true,
+      photo: true,
+      photoUrl: true,
+      currentCity: true,
+      currentState: true,
+    },
   });
 
   if (!candidate) {
@@ -45,7 +51,43 @@ export async function generateMetadata({
     }
   }
 
-  return { title };
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "https://elevra.com";
+  const imageUrl = candidate.photoUrl
+    ? candidate.photoUrl
+    : candidate.photo
+    ? `${baseUrl}/${candidate.photo}`
+    : undefined;
+  const description = candidate.bio?.trim()
+    ? candidate.bio.substring(0, 160)
+    : `Learn about ${candidate.name} on Elevra.`;
+  const keywords = [
+    candidate.name,
+    `${candidate.name} school board`,
+    candidate.currentCity ? `${candidate.name} ${candidate.currentCity}` : null,
+    candidate.currentState ? `${candidate.name} ${candidate.currentState}` : null,
+    "election",
+    "school board",
+    "Elevra",
+    "elevra community",
+    "elevracommunity",
+  ].filter(Boolean) as string[];
+
+  return {
+    title,
+    description,
+    keywords,
+    openGraph: {
+      title,
+      description,
+      images: imageUrl ? [imageUrl] : undefined,
+    },
+    twitter: {
+      card: imageUrl ? "summary_large_image" : "summary",
+      title,
+      description,
+      images: imageUrl ? [imageUrl] : undefined,
+    },
+  };
 }
 
 export default async function CandidatePage({
@@ -149,8 +191,27 @@ export default async function CandidatePage({
   const isEditable =
     currentUserId !== null && currentUserId === candidate.clerkUserId;
 
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "https://elevra.com";
+  const imageUrl = candidate.photoUrl
+    ? candidate.photoUrl
+    : candidate.photo
+    ? `${baseUrl}/${candidate.photo}`
+    : undefined;
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "Person",
+    name: candidate.name,
+    description: candidate.bio || undefined,
+    image: imageUrl,
+    url: `${baseUrl}/candidate/${slug}`,
+  };
+
   return (
     <div className="md:px-40">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
       <CandidateClient
         candidate={candidate}
         electionLinks={linksWithFullCandidates}
@@ -160,3 +221,4 @@ export default async function CandidatePage({
     </div>
   );
 }
+
