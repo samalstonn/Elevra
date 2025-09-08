@@ -110,7 +110,8 @@ export default function UploadSpreadsheetPage() {
           mapped.position = asStr(val);
           break;
         case "year":
-          if (typeof val === "number" || typeof val === "string") mapped.year = val;
+          if (typeof val === "number" || typeof val === "string")
+            mapped.year = val;
           break;
         case "email":
         case "emailaddress":
@@ -323,11 +324,16 @@ export default function UploadSpreadsheetPage() {
         const structRes = await fetch("/api/gemini/structure", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ previousOutput: analysisText, originalRows: parsedRows }),
+          body: JSON.stringify({
+            previousOutput: analysisText,
+            originalRows: parsedRows,
+          }),
         });
         if (!structRes.ok || !structRes.body) {
           const txt = await structRes.text().catch(() => "");
-          throw new Error(txt || `Gemini structured request failed (${structRes.status})`);
+          throw new Error(
+            txt || `Gemini structured request failed (${structRes.status})`
+          );
         }
         const sReader = structRes.body.getReader();
         const sDecoder = new TextDecoder();
@@ -352,7 +358,8 @@ export default function UploadSpreadsheetPage() {
           body: JSON.stringify({ structured }),
         });
         const text = await insertRes.text();
-        if (!insertRes.ok) throw new Error(text || `Insert failed (${insertRes.status})`);
+        if (!insertRes.ok)
+          throw new Error(text || `Insert failed (${insertRes.status})`);
         try {
           const obj = JSON.parse(text) as {
             results?: Array<{
@@ -364,12 +371,21 @@ export default function UploadSpreadsheetPage() {
             }>;
             [k: string]: unknown;
           };
-          const base = typeof window !== "undefined" ? window.location.origin : "http://localhost:3000";
+          const base =
+            typeof window !== "undefined"
+              ? window.location.origin
+              : "http://localhost:3000";
           if (obj?.results) {
             for (const r of obj.results) {
-              r.candidateUrls = (r.candidateSlugs || []).map((s: string) => `${base}/candidate/${s}`);
+              r.candidateUrls = (r.candidateSlugs || []).map(
+                (s: string) => `${base}/candidate/${s}`
+              );
               if (r.city && r.state && r.electionId) {
-                r.electionResultsUrl = `${base}/results?city=${encodeURIComponent(r.city as string)}&state=${encodeURIComponent(r.state as string)}&electionID=${r.electionId as number}`;
+                r.electionResultsUrl = `${base}/results?city=${encodeURIComponent(
+                  r.city as string
+                )}&state=${encodeURIComponent(r.state as string)}&electionID=${
+                  r.electionId as number
+                }`;
               }
             }
           }
@@ -471,7 +487,10 @@ export default function UploadSpreadsheetPage() {
       .trim();
   }
   // Read a value from a raw row by matching any header variant (case/spacing-insensitive)
-  function getRawValue(raw: Record<string, unknown>, variants: string[]): string {
+  function getRawValue(
+    raw: Record<string, unknown>,
+    variants: string[]
+  ): string {
     const want = new Set(variants.map((v) => normalizeHeader(v)));
     for (const k of Object.keys(raw)) {
       if (want.has(normalizeHeader(k))) {
@@ -521,7 +540,12 @@ export default function UploadSpreadsheetPage() {
       if (!data || !Array.isArray(data.elections)) {
         throw new Error("Structured output is missing 'elections' array");
       }
-      const plan: { elections: Array<{ electionCreate: ElectionCreatePlan; candidates: CandidateUpsertPlan[] }> } = {
+      const plan: {
+        elections: Array<{
+          electionCreate: ElectionCreatePlan;
+          candidates: CandidateUpsertPlan[];
+        }>;
+      } = {
         elections: [],
       };
       for (const item of data.elections as StructuredElection[]) {
@@ -599,7 +623,9 @@ export default function UploadSpreadsheetPage() {
       await buildAndDownloadPreviewSheet(plan);
     } catch (err: unknown) {
       console.error(err);
-      setError(err instanceof Error ? err.message : "Failed to build DB dry run plan");
+      setError(
+        err instanceof Error ? err.message : "Failed to build DB dry run plan"
+      );
     }
   }
 
@@ -612,7 +638,10 @@ export default function UploadSpreadsheetPage() {
   }) {
     try {
       if (!rawRows.length) return;
-      const base = typeof window !== "undefined" ? window.location.origin : "http://localhost:3000";
+      const base =
+        typeof window !== "undefined"
+          ? window.location.origin
+          : "http://localhost:3000";
       const norm = (s?: string | null) => (s || "").trim().toLowerCase();
       const municipalities = new Set<string>();
 
@@ -624,9 +653,7 @@ export default function UploadSpreadsheetPage() {
           "town",
           "village",
         ]);
-        const stateRaw = getRawValue(raw as Record<string, unknown>, [
-          "state",
-        ]);
+        const stateRaw = getRawValue(raw as Record<string, unknown>, ["state"]);
         const first = getRawValue(raw as Record<string, unknown>, [
           "firstName",
           "First Name",
@@ -646,7 +673,9 @@ export default function UploadSpreadsheetPage() {
         if (String(cityRaw)) municipalities.add(String(cityRaw));
 
         const planned = plan.elections.find(
-          (e) => norm(e.electionCreate.city) === city && norm(e.electionCreate.state) === state
+          (e) =>
+            norm(e.electionCreate.city) === city &&
+            norm(e.electionCreate.state) === state
         );
 
         if (planned) {
@@ -656,8 +685,12 @@ export default function UploadSpreadsheetPage() {
           )}&state=${encodeURIComponent(planned.electionCreate.state)}`;
           // Derive slug and generate candidate URL if present in planned candidates
           const derivedSlug = slugify(`${first} ${last}`.trim());
-          const match = planned.candidates.find((c) => c.slugDraft === derivedSlug);
-          out["candidate_link"] = match ? `${base}/candidate/${match.slugDraft}` : "";
+          const match = planned.candidates.find(
+            (c) => c.slugDraft === derivedSlug
+          );
+          out["candidate_link"] = match
+            ? `${base}/candidate/${match.slugDraft}`
+            : "";
         } else {
           out["election_link"] = "";
           out["candidate_link"] = "";
@@ -670,14 +703,23 @@ export default function UploadSpreadsheetPage() {
       const wb = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(wb, ws, "Preview");
       const ab = XLSX.write(wb, { type: "array", bookType: "xlsx" });
-      const blob = new Blob([ab], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+      const blob = new Blob([ab], {
+        type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      });
 
       const cities = Array.from(municipalities).filter(Boolean);
-      const safe = (s: string) => s.replace(/[^a-z0-9]+/gi, "-").replace(/-+/g, "-").replace(/^-|-$/g, "").toLowerCase();
+      const safe = (s: string) =>
+        s
+          .replace(/[^a-z0-9]+/gi, "-")
+          .replace(/-+/g, "-")
+          .replace(/^-|-$/g, "")
+          .toLowerCase();
       const cityPart = cities.length ? safe(cities.join("_")) : "upload";
       const ts = new Date();
       const pad = (n: number) => String(n).padStart(2, "0");
-      const stamp = `${ts.getFullYear()}${pad(ts.getMonth() + 1)}${pad(ts.getDate())}-${pad(ts.getHours())}${pad(ts.getMinutes())}`;
+      const stamp = `${ts.getFullYear()}${pad(ts.getMonth() + 1)}${pad(
+        ts.getDate()
+      )}-${pad(ts.getHours())}${pad(ts.getMinutes())}`;
       const fname = `elevra-preview-${cityPart}-${stamp}.xlsx`;
 
       const url = URL.createObjectURL(blob);
@@ -763,9 +805,7 @@ export default function UploadSpreadsheetPage() {
           "town",
           "village",
         ]);
-        const stateRaw = getRawValue(raw as Record<string, unknown>, [
-          "state",
-        ]);
+        const stateRaw = getRawValue(raw as Record<string, unknown>, ["state"]);
         const first = getRawValue(raw as Record<string, unknown>, [
           "firstName",
           "First Name",
@@ -791,7 +831,9 @@ export default function UploadSpreadsheetPage() {
         const state = norm(String(stateRaw));
         if (String(cityRaw)) municipalities.add(String(cityRaw));
 
-        let em = electionMaps.find((m) => norm(m.city) === city && norm(m.state) === state);
+        let em = electionMaps.find(
+          (m) => norm(m.city) === city && norm(m.state) === state
+        );
         if (!em && city) em = electionMaps.find((m) => norm(m.city) === city);
 
         let candidateLink = "";
@@ -827,14 +869,23 @@ export default function UploadSpreadsheetPage() {
       const wb = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(wb, ws, "Results");
       const ab = XLSX.write(wb, { type: "array", bookType: "xlsx" });
-      const blob = new Blob([ab], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+      const blob = new Blob([ab], {
+        type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      });
 
       const cities = Array.from(municipalities).filter(Boolean);
-      const safe = (s: string) => s.replace(/[^a-z0-9]+/gi, "-").replace(/-+/g, "-").replace(/^-|-$/g, "").toLowerCase();
+      const safe = (s: string) =>
+        s
+          .replace(/[^a-z0-9]+/gi, "-")
+          .replace(/-+/g, "-")
+          .replace(/^-|-$/g, "")
+          .toLowerCase();
       const cityPart = cities.length ? safe(cities.join("_")) : "upload";
       const ts = new Date();
       const pad = (n: number) => String(n).padStart(2, "0");
-      const stamp = `${ts.getFullYear()}${pad(ts.getMonth() + 1)}${pad(ts.getDate())}-${pad(ts.getHours())}${pad(ts.getMinutes())}`;
+      const stamp = `${ts.getFullYear()}${pad(ts.getMonth() + 1)}${pad(
+        ts.getDate()
+      )}-${pad(ts.getHours())}${pad(ts.getMinutes())}`;
       const fname = `elevra-${cityPart}-${stamp}.xlsx`;
 
       const url = URL.createObjectURL(blob);
@@ -971,59 +1022,48 @@ export default function UploadSpreadsheetPage() {
         {status && <p className="text-green-700 text-sm">{status}</p>}
         {error && <p className="text-red-700 text-sm">{error}</p>}
         <div className="pt-2 flex flex-col gap-3">
-          {isProd ? (
+          <>
             <button
               type="button"
-              onClick={goLive}
-              disabled={!parsedRows.length || goingLive}
-              className="px-4 py-2 bg-green-700 text-white rounded hover:bg-green-800 disabled:opacity-50 text-left"
+              onClick={sendToGemini}
+              disabled={!parsedRows.length || sending}
+              className="px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700 disabled:opacity-50 text-left"
             >
-              {goingLive ? "Going Live…" : "Go Live"}
+              {sending ? "Sending to Gemini…" : "Analyze with Gemini"}
             </button>
-          ) : (
-            <>
+            <button
+              type="button"
+              onClick={sendToGeminiStructured}
+              disabled={!geminiOutput || sendingStructured}
+              className="px-4 py-2 bg-emerald-600 text-white rounded hover:bg-emerald-700 disabled:opacity-50 text-left"
+            >
+              {sendingStructured ? "Structuring…" : "Run Structured Output"}
+            </button>
+            <div className="flex gap-3 flex-wrap">
               <button
                 type="button"
-                onClick={sendToGemini}
-                disabled={!parsedRows.length || sending}
-                className="px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700 disabled:opacity-50 text-left"
+                onClick={buildDbDryRun}
+                disabled={!structuredOutput}
+                className="px-4 py-2 bg-slate-700 text-white rounded hover:bg-slate-800 disabled:opacity-50"
               >
-                {sending ? "Sending to Gemini…" : "Analyze with Gemini"}
+                Preview DB Insert (Dry Run)
               </button>
               <button
                 type="button"
-                onClick={sendToGeminiStructured}
-                disabled={!geminiOutput || sendingStructured}
-                className="px-4 py-2 bg-emerald-600 text-white rounded hover:bg-emerald-700 disabled:opacity-50 text-left"
+                onClick={insertIntoDb}
+                disabled={!structuredOutput || inserting}
+                className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 disabled:opacity-50"
+                title="Performs actual Prisma inserts"
               >
-                {sendingStructured ? "Structuring…" : "Run Structured Output"}
+                {inserting ? "Inserting…" : "Insert Into DB (Live)"}
               </button>
-              <div className="flex gap-3 flex-wrap">
-                <button
-                  type="button"
-                  onClick={buildDbDryRun}
-                  disabled={!structuredOutput}
-                  className="px-4 py-2 bg-slate-700 text-white rounded hover:bg-slate-800 disabled:opacity-50"
-                >
-                  Preview DB Insert (Dry Run)
-                </button>
-                <button
-                  type="button"
-                  onClick={insertIntoDb}
-                  disabled={!structuredOutput || inserting}
-                  className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 disabled:opacity-50"
-                  title="Performs actual Prisma inserts"
-                >
-                  {inserting ? "Inserting…" : "Insert Into DB (Live)"}
-                </button>
-                {!!parsedRows.length && (
-                  <span className="text-xs text-gray-600 self-center">
-                    Rows ready: {parsedRows.length}
-                  </span>
-                )}
-              </div>
-            </>
-          )}
+              {!!parsedRows.length && (
+                <span className="text-xs text-gray-600 self-center">
+                  Rows ready: {parsedRows.length}
+                </span>
+              )}
+            </div>
+          </>
         </div>
         {geminiOutput && (
           <div className="mt-4">
