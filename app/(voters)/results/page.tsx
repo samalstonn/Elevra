@@ -8,6 +8,7 @@ interface ElectionResultsPageProps {
   searchParams: Promise<{
     city?: string;
     state?: string;
+    electionID?: string;
   }>;
 }
 
@@ -29,6 +30,9 @@ async function ElectionResultsPage({ searchParams }: ElectionResultsPageProps) {
   const resolvedSearchParams = await searchParams;
   const city = resolvedSearchParams.city;
   const state = resolvedSearchParams.state;
+  const electionIDParam = resolvedSearchParams.electionID
+    ? parseInt(resolvedSearchParams.electionID, 10)
+    : undefined;
 
   if (!city || !state) {
     return (
@@ -41,6 +45,11 @@ async function ElectionResultsPage({ searchParams }: ElectionResultsPageProps) {
     where: {
       city: city,
       state: state,
+      ...(electionIDParam != null
+        ? { id: electionIDParam }
+        : process.env.NODE_ENV === "production"
+        ? { hidden: false }
+        : {}),
     },
     include: {
       candidates: {
@@ -73,7 +82,11 @@ async function ElectionResultsPage({ searchParams }: ElectionResultsPageProps) {
     <div className="p-0 m-0">
       <ElectionResultsClient
         elections={reshapedElections}
-        initialElectionID={null}
+        initialElectionID={
+          electionIDParam != null && !Number.isNaN(electionIDParam)
+            ? String(electionIDParam)
+            : null
+        }
       />
     </div>
   );

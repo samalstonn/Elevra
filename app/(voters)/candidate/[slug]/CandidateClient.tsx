@@ -495,7 +495,7 @@ export default function CandidateClient({
           <Button
             variant="outline"
             size="sm"
-            className="w-full mt-4 text-purple-600 border-purple-300 hover:bg-purple-50"
+            className="mt-4 text-purple-600 border-purple-300 hover:bg-purple-50"
             onClick={() => {
               if (
                 activeElectionTab.election.city &&
@@ -509,7 +509,7 @@ export default function CandidateClient({
               }
             }}
           >
-            View Election
+            View Entire Election
           </Button>
         </motion.div>
       )}

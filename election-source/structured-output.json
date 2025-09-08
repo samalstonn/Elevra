@@ -1,0 +1,73 @@
+{
+  "type": "object",
+  "properties": {
+    "elections": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "election": {
+            "type": "object",
+            "properties": {
+              "title": { "type": "string" },
+              "type": {
+                "type": "string",
+                "enum": ["LOCAL", "UNIVERSITY", "STATE"]
+              },
+              "date": { "type": "string" },
+              "city": { "type": "string" },
+              "state": { "type": "string" },
+              "number_of_seats": { "type": "string" },
+              "description": { "type": "string" }
+            },
+            "required": [
+              "title",
+              "type",
+              "date",
+              "city",
+              "state",
+              "description"
+            ]
+          },
+          "candidates": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "name": { "type": "string" },
+                "currentRole": { "type": "string" },
+                "party": { "type": "string" },
+                "image_url": { "type": "string" },
+                "linkedin_url": { "type": "string" },
+                "campaign_website_url": { "type": "string" },
+                "email": { "type": "string" },
+                "bio": { "type": "string" },
+                "key_policies": {
+                  "type": "array",
+                  "items": { "type": "string" },
+                  "maxItems": 5
+                },
+                "home_city": { "type": "string" },
+                "hometown_state": { "type": "string" },
+                "additional_notes": { "type": "string" },
+                "sources": {
+                  "type": "array",
+                  "items": { "type": "string" }
+                }
+              },
+              "required": [
+                "name",
+                "currentRole",
+                "bio",
+                "key_policies",
+                "home_city",
+                "hometown_state",
+                "sources"
+              ]
+            }
+          }
+        }
+      }
+    }
+  }
+}

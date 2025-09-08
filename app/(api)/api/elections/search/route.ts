@@ -9,6 +9,7 @@ export async function GET(request: NextRequest) {
     // If no search term is provided, return a limited number of elections
     if (!searchTerm) {
       const elections = await prisma.election.findMany({
+        where: process.env.NODE_ENV === "production" ? { hidden: false } : {},
         take: 10,
         orderBy: {
           date: "desc",
@@ -28,6 +29,7 @@ export async function GET(request: NextRequest) {
     // Search for elections by position, city, or state
     const elections = await prisma.election.findMany({
       where: {
+        ...(process.env.NODE_ENV === "production" ? { hidden: false } : {}),
         OR: [
           {
             position: {
