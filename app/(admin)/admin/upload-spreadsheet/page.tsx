@@ -69,8 +69,7 @@ export default function UploadSpreadsheetPage() {
   }, []);
   const [inserting, setInserting] = useState(false);
   const [insertResult, setInsertResult] = useState<string>("");
-  const [goingLive, setGoingLive] = useState(false);
-  const isProd = process.env.NODE_ENV === "production";
+  const [_goingLive, setGoingLive] = useState(false);
 
   function normalizeHeader(h: string): string {
     return h.replace(/[^a-zA-Z0-9]/g, "").toLowerCase();
