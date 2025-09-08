@@ -1,28 +1,33 @@
 export const dynamic = "force-dynamic";
 import { notFound } from "next/navigation";
-import { headers } from "next/headers";
 import prisma from "@/prisma/prisma";
 import CandidateClient from "./CandidateClient";
 import { Candidate } from "@prisma/client";
 import { currentUser } from "@clerk/nextjs/server";
 import type { Metadata } from "next";
+import { headers } from "next/headers";
 
 interface CandidatePageProps {
-  params: Promise<{ slug: string }>;
-  searchParams: Promise<{ election?: string }>;
+  params: { slug: string };
+  searchParams: { election?: string };
 }
 
 export async function generateMetadata({
   params,
   searchParams,
 }: CandidatePageProps): Promise<Metadata> {
-  const resolvedParams = await params;
-  const resolvedSearchParams = await searchParams;
-  const { slug } = resolvedParams;
+  const { slug } = params;
 
   const candidate = await prisma.candidate.findUnique({
     where: { slug },
-    select: { name: true },
+    select: {
+      name: true,
+      bio: true,
+      photo: true,
+      photoUrl: true,
+      currentCity: true,
+      currentState: true,
+    },
   });
 
   if (!candidate) {
@@ -30,8 +35,8 @@ export async function generateMetadata({
   }
 
   let title = `${candidate.name} – Candidate`;
-  const electionIdParam = resolvedSearchParams?.election
-    ? parseInt(resolvedSearchParams.election, 10)
+  const electionIdParam = searchParams?.election
+    ? parseInt(searchParams.election, 10)
     : undefined;
 
   if (electionIdParam != null && !Number.isNaN(electionIdParam)) {
@@ -45,16 +50,50 @@ export async function generateMetadata({
     }
   }
 
-  return { title };
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "https://elevra.com";
+  const imageUrl = candidate.photoUrl
+    ? candidate.photoUrl
+    : candidate.photo
+    ? `${baseUrl}/${candidate.photo}`
+    : undefined;
+  const description = candidate.bio?.trim()
+    ? candidate.bio.substring(0, 160)
+    : `Learn about ${candidate.name} on Elevra.`;
+  const keywords = [
+    candidate.name,
+    `${candidate.name} school board`,
+    candidate.currentCity ? `${candidate.name} ${candidate.currentCity}` : null,
+    candidate.currentState ? `${candidate.name} ${candidate.currentState}` : null,
+    "election",
+    "school board",
+    "Elevra",
+    "elevra community",
+    "elevracommunity",
+  ].filter(Boolean) as string[];
+
+  return {
+    title,
+    description,
+    keywords,
+    openGraph: {
+      title,
+      description,
+      images: imageUrl ? [imageUrl] : undefined,
+    },
+    twitter: {
+      card: imageUrl ? "summary_large_image" : "summary",
+      title,
+      description,
+      images: imageUrl ? [imageUrl] : undefined,
+    },
+  };
 }
 
 export default async function CandidatePage({
   params,
   searchParams,
 }: CandidatePageProps) {
-  const resolvedParams = await params;
-  const resolvedSearchParams = await searchParams;
-  const { slug } = resolvedParams;
+  const { slug } = params;
 
   // Fetch candidate by slug
   const candidate = await prisma.candidate.findUnique({
@@ -103,8 +142,8 @@ export default async function CandidatePage({
   }));
 
   // Pick the active link by query param or default if only one
-  const electionIdParam = resolvedSearchParams.election
-    ? parseInt(resolvedSearchParams.election, 10)
+  const electionIdParam = searchParams.election
+    ? parseInt(searchParams.election, 10)
     : undefined;
 
   let selectedLink = null;
@@ -117,9 +156,9 @@ export default async function CandidatePage({
 
   // Track page view
   const reqHeaders = headers();
-  const viewerIp = (await reqHeaders).get("x-forwarded-for") || undefined;
-  const userAgent = (await reqHeaders).get("user-agent") || undefined;
-  const referrer = (await reqHeaders).get("referer") || undefined;
+  const viewerIp = reqHeaders.get("x-forwarded-for") || undefined;
+  const userAgent = reqHeaders.get("user-agent") || undefined;
+  const referrer = reqHeaders.get("referer") || undefined;
 
   await prisma.candidateProfileView.create({
     data: {
@@ -149,8 +188,27 @@ export default async function CandidatePage({
   const isEditable =
     currentUserId !== null && currentUserId === candidate.clerkUserId;
 
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "https://elevra.com";
+  const imageUrl = candidate.photoUrl
+    ? candidate.photoUrl
+    : candidate.photo
+    ? `${baseUrl}/${candidate.photo}`
+    : undefined;
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "Person",
+    name: candidate.name,
+    description: candidate.bio || undefined,
+    image: imageUrl,
+    url: `${baseUrl}/candidate/${slug}`,
+  };
+
   return (
     <div className="md:px-40">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
       <CandidateClient
         candidate={candidate}
         electionLinks={linksWithFullCandidates}
@@ -160,3 +218,4 @@ export default async function CandidatePage({
     </div>
   );
 }
+

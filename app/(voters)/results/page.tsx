@@ -5,30 +5,55 @@ import ElectionResultsClient from "./ElectionResultsClient";
 import { Candidate } from "@prisma/client";
 
 interface ElectionResultsPageProps {
-  searchParams: Promise<{
+  searchParams: {
     city?: string;
     state?: string;
-  }>;
+  };
 }
 
 export async function generateMetadata({
   searchParams,
 }: ElectionResultsPageProps): Promise<Metadata> {
-  const resolvedSearchParams = await searchParams;
-  const city = resolvedSearchParams.city;
-  const state = resolvedSearchParams.state;
+  const city = searchParams.city;
+  const state = searchParams.state;
 
   if (city && state) {
-    const loc = city ? `${city}, ${state}` : state;
-    return { title: `Election Results – ${loc}` };
+    const loc = `${city}, ${state}`;
+    const title = `Election Results – ${loc}`;
+    const description = `See election results for ${loc} on Elevra and explore candidate profiles.`;
+    const keywords = [
+      `${city} ${state} school board`,
+      `${city} ${state} election results`,
+      "school board election",
+      "election results",
+      "Elevra",
+      "elevra community",
+      "elevracommunity",
+    ];
+    return {
+      title,
+      description,
+      keywords,
+      openGraph: { title, description },
+      twitter: { title, description },
+    };
   }
-  return { title: "Election Results" };
+  return {
+    title: "Election Results",
+    description: "Discover local election results and candidate information on Elevra.",
+    keywords: [
+      "election results",
+      "school board election",
+      "Elevra",
+      "elevra community",
+      "elevracommunity",
+    ],
+  };
 }
 
 async function ElectionResultsPage({ searchParams }: ElectionResultsPageProps) {
-  const resolvedSearchParams = await searchParams;
-  const city = resolvedSearchParams.city;
-  const state = resolvedSearchParams.state;
+  const city = searchParams.city;
+  const state = searchParams.state;
 
   if (!city || !state) {
     return (
@@ -58,7 +83,7 @@ async function ElectionResultsPage({ searchParams }: ElectionResultsPageProps) {
   const activeElections = elections;
 
   interface ElectionCandidate {
-    candidate: Candidate; // Relaxing the type to any
+    candidate: Candidate;
   }
 
   // Reshape the candidates array for each election to be a flat array of Candidate objects
