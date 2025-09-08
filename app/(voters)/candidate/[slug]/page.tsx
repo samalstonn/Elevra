@@ -44,7 +44,9 @@ export async function generateMetadata({
     });
     if (election?.position) {
       const loc = [election.city, election.state].filter(Boolean).join(", ");
-      title = `${candidate.name} – ${election.position}${loc ? ` (${loc})` : ""}`;
+      title = `${candidate.name} – ${election.position}${
+        loc ? ` (${loc})` : ""
+      }`;
     }
   }
 
@@ -99,12 +101,6 @@ export default async function CandidatePage({
       },
     },
   });
-
-  // In production, if this candidate only has links to hidden elections,
-  // treat as not found to prevent public visibility.
-  if (process.env.NODE_ENV === "production" && links.length === 0) {
-    notFound();
-  }
 
   interface ElectionCandidate {
     candidate: Candidate;
