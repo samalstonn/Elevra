@@ -1,3 +1,8 @@
-Turn the attached data into the given structured output format. For "N/A" or blank values return null. Remove all source references (eg. [17]). Clean all URLs.
+Turn the attached data into the given structured output format. 
+For "N/A" or blank values return null. 
+Remove all source references (eg. [17]). 
+Clean all URLs.
+Make sure all dates are in the format mm/dd/YYYY eg. 01/01/2025
 
 Important: If an email address is present in the original spreadsheet rows for a candidate, include it in that candidate's `email` field in the output. If no email is available, use null.
+
