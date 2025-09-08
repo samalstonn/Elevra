@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { NextRequest } from "next/server";
+import { auth, clerkClient } from "@clerk/nextjs/server";
 import prisma from "@/prisma/prisma";
 import { generateUniqueSlug, isElectionActive } from "@/lib/functions";
 
@@ -32,6 +33,13 @@ type StructuredElection = {
   candidates: StructuredCandidate[];
 };
 
+function cleanOptional(value?: string | null): string | null {
+  if (value == null) return null;
+  const s = String(value).trim();
+  if (!s || s.toUpperCase() === "N/A") return null;
+  return s;
+}
+
 function parseDateMMDDYYYY(s: string): Date | null {
   const m = /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/.exec(s?.trim?.() || "");
   if (!m) return null;
@@ -57,6 +65,25 @@ function coerceType(t: string | undefined): "LOCAL" | "STATE" | "UNIVERSITY" | "
 
 export async function POST(req: NextRequest) {
   try {
+    // Authorization: only admins may seed structured data
+    const { userId } = await auth();
+    async function isAdmin(u: string | null): Promise<boolean> {
+      if (!u) return false;
+      // Allow env-based admin list (e.g., ADMIN_USER_IDS="user_abc user_def")
+      const raw = process.env.ADMIN_USER_IDS || "";
+      const matches: string[] = raw.match(/user_[A-Za-z0-9]+/g) || [];
+      if (matches.includes(u)) return true;
+      try {
+        const client = await clerkClient();
+        const user = await client.users.getUser(u);
+        return Boolean(user.privateMetadata?.isAdmin);
+      } catch {
+        return false;
+      }
+    }
+    if (!(await isAdmin(userId))) {
+      return new Response("Unauthorized", { status: 401 });
+    }
     const body = (await req.json()) as { structured?: string; data?: any };
     const payload = body?.data ?? body?.structured;
     let input: any;
@@ -113,27 +140,27 @@ export async function POST(req: NextRequest) {
           where: { slug },
           update: {
             currentRole: c.currentRole ?? null,
-            website: c.campaign_website_url && c.campaign_website_url !== "N/A" ? c.campaign_website_url : null,
-            linkedin: c.linkedin_url && c.linkedin_url !== "N/A" ? c.linkedin_url : null,
+            website: cleanOptional(c.campaign_website_url),
+            linkedin: cleanOptional(c.linkedin_url),
             bio: c.bio ?? "",
             currentCity: c.home_city ?? null,
             currentState: c.hometown_state ?? null,
             status: "APPROVED",
             verified: false,
-            email: c.email ?? null,
+            email: cleanOptional(c.email ?? null),
           },
           create: {
             name,
             slug,
             currentRole: c.currentRole ?? null,
-            website: c.campaign_website_url && c.campaign_website_url !== "N/A" ? c.campaign_website_url : null,
-            linkedin: c.linkedin_url && c.linkedin_url !== "N/A" ? c.linkedin_url : null,
+            website: cleanOptional(c.campaign_website_url),
+            linkedin: cleanOptional(c.linkedin_url),
             bio: c.bio ?? "",
             currentCity: c.home_city ?? null,
             currentState: c.hometown_state ?? null,
             status: "APPROVED",
             verified: false,
-            email: c.email ?? null,
+            email: cleanOptional(c.email ?? null),
           },
         });
 

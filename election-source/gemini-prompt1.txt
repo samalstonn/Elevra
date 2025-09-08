@@ -5,7 +5,7 @@ differing municipality.
 
 Please take your time to verify every piece of information carefully to avoid inaccuracies—especially for URLs. If a link cannot be confirmed as accurate or is not available, mark it as "N/A."
 
-Please provide the output as a list of objects in the following JSON format:
+Please provide the output as a JSON array of objects. Each array item must match:
 {
   "election": {
     "title": "Official title of the election (e.g., 'School Board')",

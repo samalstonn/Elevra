@@ -316,77 +316,69 @@ export default function UploadSpreadsheetPage() {
           if (done) break;
           buf += decoder.decode(value, { stream: true });
         }
-        setGeminiOutput(buf);
-      }
-
-      // 2) Run structured output
-      let structured = "";
-      const structRes = await fetch("/api/gemini/structure", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ previousOutput: geminiOutput, originalRows: parsedRows }),
-      });
-      if (!structRes.ok || !structRes.body) {
-        const txt = await structRes.text().catch(() => "");
-        throw new Error(txt || `Gemini structured request failed (${structRes.status})`);
-      }
-      {
-        const reader = structRes.body.getReader();
-        const decoder = new TextDecoder();
-        let buf = "";
+        const analysisText = buf;
+        setGeminiOutput(analysisText);
+        // 2) Run structured output using the fresh local analysis text (avoid stale state)
+        let structured = "";
+        const structRes = await fetch("/api/gemini/structure", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ previousOutput: analysisText, originalRows: parsedRows }),
+        });
+        if (!structRes.ok || !structRes.body) {
+          const txt = await structRes.text().catch(() => "");
+          throw new Error(txt || `Gemini structured request failed (${structRes.status})`);
+        }
+        const sReader = structRes.body.getReader();
+        const sDecoder = new TextDecoder();
+        let sBuf = "";
         while (true) {
-          const { done, value } = await reader.read();
+          const { done, value } = await sReader.read();
           if (done) break;
-          buf += decoder.decode(value, { stream: true });
+          sBuf += sDecoder.decode(value, { stream: true });
         }
         try {
-          const obj = JSON.parse(buf);
+          const obj = JSON.parse(sBuf);
           structured = JSON.stringify(obj, null, 2);
         } catch {
-          structured = buf;
+          structured = sBuf;
         }
         setStructuredOutput(structured);
-      }
 
-      // 3) Insert into DB
-      const insertRes = await fetch("/api/admin/seed-structured", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ structured: structuredOutput || structured }),
-      });
-      const text = await insertRes.text();
-      if (!insertRes.ok) throw new Error(text || `Insert failed (${insertRes.status})`);
-      try {
-        const obj = JSON.parse(text) as {
-          results?: Array<{
-            candidateSlugs?: string[];
-            city?: string;
-            state?: string;
-            electionId?: number;
+        // 3) Insert into DB
+        const insertRes = await fetch("/api/admin/seed-structured", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ structured }),
+        });
+        const text = await insertRes.text();
+        if (!insertRes.ok) throw new Error(text || `Insert failed (${insertRes.status})`);
+        try {
+          const obj = JSON.parse(text) as {
+            results?: Array<{
+              candidateSlugs?: string[];
+              city?: string;
+              state?: string;
+              electionId?: number;
+              [k: string]: unknown;
+            }>;
             [k: string]: unknown;
-          }>;
-          [k: string]: unknown;
-        };
-        const base =
-          typeof window !== "undefined" ? window.location.origin : "http://localhost:3000";
-        if (obj?.results) {
-          for (const r of obj.results) {
-            r.candidateUrls = (r.candidateSlugs || []).map(
-              (s: string) => `${base}/candidate/${s}`
-            );
-            if (r.city && r.state && r.electionId) {
-              r.electionResultsUrl = `${base}/results?city=${encodeURIComponent(
-                r.city as string
-              )}&state=${encodeURIComponent(r.state as string)}&electionID=${
-                r.electionId as number
-              }`;
+          };
+          const base = typeof window !== "undefined" ? window.location.origin : "http://localhost:3000";
+          if (obj?.results) {
+            for (const r of obj.results) {
+              r.candidateUrls = (r.candidateSlugs || []).map((s: string) => `${base}/candidate/${s}`);
+              if (r.city && r.state && r.electionId) {
+                r.electionResultsUrl = `${base}/results?city=${encodeURIComponent(r.city as string)}&state=${encodeURIComponent(r.state as string)}&electionID=${r.electionId as number}`;
+              }
             }
           }
+          setInsertResult(JSON.stringify(obj, null, 2));
+          await buildAndDownloadResultSheet(obj, structured);
+        } catch {
+          setInsertResult(text);
         }
-        setInsertResult(JSON.stringify(obj, null, 2));
-        await buildAndDownloadResultSheet(obj, structured);
-      } catch {
-        setInsertResult(text);
+        return; // early return since we've completed the rest of the flow
       }
     } catch (e) {
       console.error(e);
