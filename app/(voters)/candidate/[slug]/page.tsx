@@ -102,6 +102,11 @@ export default async function CandidatePage({
     },
   });
 
+  // Note: Previously, production returned 404 when a candidate had only
+  // links to hidden elections. To allow direct access by slug while still
+  // preventing discovery, we no longer 404 in this case. The page will
+  // render without election context if all linked elections are hidden.
+
   interface ElectionCandidate {
     candidate: Candidate;
   }

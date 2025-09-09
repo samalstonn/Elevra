@@ -5,6 +5,8 @@ import path from "node:path";
 import { promises as fs } from "node:fs";
 
 export const dynamic = "force-dynamic";
+export const runtime = "nodejs"; // ensure Node runtime (Edge has short limits)
+export const maxDuration = 60; // extend serverless timeout (plan-dependent)
 
 export async function POST(req: NextRequest) {
   try {
