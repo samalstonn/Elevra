@@ -44,7 +44,9 @@ export async function generateMetadata({
     });
     if (election?.position) {
       const loc = [election.city, election.state].filter(Boolean).join(", ");
-      title = `${candidate.name} – ${election.position}${loc ? ` (${loc})` : ""}`;
+      title = `${candidate.name} – ${election.position}${
+        loc ? ` (${loc})` : ""
+      }`;
     }
   }
 
