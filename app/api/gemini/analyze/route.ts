@@ -33,13 +33,18 @@ export async function POST(req: NextRequest) {
       ? process.env.GEMINI_ENABLED === "true"
       : isProd; // default: enabled in prod, disabled elsewhere
     const model = process.env.GEMINI_MODEL || "gemini-2.5-pro";
+    const maxOutputTokens = Number(
+      process.env.GEMINI_MAX_OUTPUT_TOKENS ?? "4096"
+    );
 
     if (geminiEnabled && !process.env.GEMINI_API_KEY) {
       return new Response("Missing GEMINI_API_KEY", { status: 500 });
     }
 
     // Determine row limit now that isProd is known
-    const maxRows = Number(process.env.GEMINI_MAX_ROWS ?? (isProd ? "30" : "100"));
+    const maxRows = Number(
+      process.env.GEMINI_MAX_ROWS ?? (isProd ? "30" : "100")
+    );
     const limitedRows = rows.slice(0, isNaN(maxRows) ? (isProd ? 30 : 100) : maxRows);
 
     if (!geminiEnabled) {
@@ -89,12 +94,19 @@ export async function POST(req: NextRequest) {
     }
 
     const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
-    const fallbackModel = process.env.GEMINI_MODEL_FALLBACK || "gemini-2.0-flash";
+    const fallbackModel =
+      process.env.GEMINI_MODEL_FALLBACK || "gemini-2.0-flash";
     const useThinking = (process.env.GEMINI_THINKING || "").toLowerCase() === "true";
     const thinkingBudget = Number(process.env.GEMINI_THINKING_BUDGET ?? "0");
     const useSearch = (process.env.GEMINI_TOOLS_GOOGLE_SEARCH || "").toLowerCase() === "true";
 
-    const baseConfig: any = { temperature: 0, maxOutputTokens: 1024 };
+    // Note: Do NOT set responseMimeType when tools are enabled; Gemini rejects
+    // tool use combined with responseMimeType. We keep analyze as free‑form text
+    // and let the next step (structure) enforce JSON.
+    const baseConfig: any = {
+      temperature: 0,
+      maxOutputTokens: isNaN(maxOutputTokens) ? 4096 : maxOutputTokens,
+    };
     if (useThinking) baseConfig.thinkingConfig = { thinkingBudget: isNaN(thinkingBudget) ? 0 : thinkingBudget };
     if (useSearch) baseConfig.tools = [{ googleSearch: {} }];
 
@@ -115,7 +127,11 @@ export async function POST(req: NextRequest) {
     ];
 
     async function tryStream(m: string, c: any) {
-      return ai.models.generateContentStream({ model: m, config: c, contents } as any);
+      return ai.models.generateContentStream({
+        model: m,
+        config: c,
+        contents,
+      } as any);
     }
 
     let response: any;
@@ -125,7 +141,10 @@ export async function POST(req: NextRequest) {
       const msg = String(err?.message || err);
       console.warn("Gemini stream failed (primary)", msg);
       // Fallback: minimal config
-      const minimalConfig: any = { temperature: 0 };
+      const minimalConfig: any = {
+        temperature: 0,
+        maxOutputTokens: isNaN(maxOutputTokens) ? 4096 : maxOutputTokens,
+      };
       try {
         response = await tryStream(model, minimalConfig);
       } catch (err2: any) {
