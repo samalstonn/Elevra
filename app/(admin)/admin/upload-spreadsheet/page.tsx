@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { usePageTitle } from "@/lib/usePageTitle";
 
 type Row = {
@@ -33,6 +33,7 @@ export default function UploadSpreadsheetPage() {
   const [structuredOutput, setStructuredOutput] = useState<string>("");
   const [sendingStructured, setSendingStructured] = useState(false);
   const [dbPlan, setDbPlan] = useState<string>("");
+  const [forceHidden, setForceHidden] = useState<boolean>(false);
   // Badge state sourced from server status so only one env is needed
   const [mockMode, setMockMode] = useState(false);
   const [modelName, setModelName] = useState<string>("");
@@ -71,17 +72,70 @@ export default function UploadSpreadsheetPage() {
   const [insertResult, setInsertResult] = useState<string>("");
   const [goingLive, setGoingLive] = useState(false);
   type StepStatus = "pending" | "in_progress" | "completed" | "error";
-  type Step = { key: string; label: string; status: StepStatus; detail?: string };
+  type Step = {
+    key: string;
+    label: string;
+    status: StepStatus;
+    detail?: string;
+  };
   const [goLiveSteps, setGoLiveSteps] = useState<Step[]>([]);
   const [goLiveLog, setGoLiveLog] = useState<
     { ts: number; level: "info" | "success" | "error"; message: string }[]
   >([]);
+  // Insert API result item shape (subset)
+  type InsertResultItem = {
+    city?: string;
+    state?: string;
+    electionId?: number;
+    electionResultsUrl?: string;
+    candidateSlugs?: string[];
+    candidateUrls?: string[];
+    candidateEmails?: (string | null)[];
+    hidden?: boolean;
+  };
+  // Grouped pipeline shared state for 3-button parity
+  const [analysisGroups, setAnalysisGroups] = useState<
+    Array<{ key: string; municipality: string; state: string; text: string }>
+  >([]);
+  const [structuredGroups, setStructuredGroups] = useState<
+    Array<{
+      key: string;
+      municipality: string;
+      state: string;
+      elections: unknown[];
+    }>
+  >([]);
+
+  // Simple confirmation toast state for fallback model warnings
+  const [confirmPrompt, setConfirmPrompt] = useState<{
+    visible: boolean;
+    message: string;
+  }>({ visible: false, message: "" });
+  const confirmResolveRef = useRef<((v: boolean) => void) | null>(null);
+  function askConfirmation(message: string): Promise<boolean> {
+    return new Promise((resolve) => {
+      confirmResolveRef.current = resolve;
+      setConfirmPrompt({ visible: true, message });
+    });
+  }
+  function confirmYes() {
+    confirmResolveRef.current?.(true);
+    confirmResolveRef.current = null;
+    setConfirmPrompt({ visible: false, message: "" });
+  }
+  function confirmNo() {
+    confirmResolveRef.current?.(false);
+    confirmResolveRef.current = null;
+    setConfirmPrompt({ visible: false, message: "" });
+  }
 
   function resetGoLiveProgress() {
     setGoLiveSteps([
-      { key: "analyze", label: "Analyze with Gemini", status: "pending" },
-      { key: "structure", label: "Build structured output", status: "pending" },
-      { key: "insert", label: "Insert data into DB", status: "pending" },
+      {
+        key: "process",
+        label: "Process groups (analyze → structure → insert)",
+        status: "pending",
+      },
       { key: "post", label: "Build result sheet", status: "pending" },
     ]);
     setGoLiveLog([]);
@@ -156,6 +210,61 @@ export default function UploadSpreadsheetPage() {
     return REQUIRED_HEADERS.every((h) => sample[h as keyof Row] !== undefined);
   }
 
+  // --- Grouping utilities ---
+  function normalizeMunicipalityKey(r: Row): string {
+    const city = (r.municipality || "").trim().toLowerCase();
+    const state = (r.state || "").trim().toLowerCase();
+    return `${city}|${state}`;
+  }
+
+  // --- Helpers for parsing structured JSON safely ---
+  type ElectionsEnvelope = { elections: unknown[] };
+  function hasElectionsArray(v: unknown): v is ElectionsEnvelope {
+    if (typeof v !== "object" || v === null) return false;
+    if (!("elections" in v)) return false;
+    const e = (v as { elections: unknown }).elections;
+    return Array.isArray(e);
+  }
+  function extractElectionsFromJson(text: string): unknown[] {
+    try {
+      const parsed: unknown = JSON.parse(text);
+      if (hasElectionsArray(parsed)) return parsed.elections;
+      if (Array.isArray(parsed)) return parsed as unknown[];
+      return [];
+    } catch {
+      return [];
+    }
+  }
+
+  function groupRowsByMunicipality(rows: Row[]): Array<{
+    key: string;
+    municipality: string;
+    state: string;
+    rows: Row[];
+  }> {
+    const map = new Map<
+      string,
+      { key: string; municipality: string; state: string; rows: Row[] }
+    >();
+    for (const r of rows) {
+      const key = normalizeMunicipalityKey(r);
+      if (!map.has(key)) {
+        map.set(key, {
+          key,
+          municipality: (r.municipality || "").trim(),
+          state: (r.state || "").trim(),
+          rows: [],
+        });
+      }
+      map.get(key)!.rows.push(r);
+    }
+    return Array.from(map.values()).sort((a, b) => {
+      const s = (a.state || "").localeCompare(b.state || "");
+      if (s !== 0) return s;
+      return (a.municipality || "").localeCompare(b.municipality || "");
+    });
+  }
+
   async function handleFile(file: File) {
     setError("");
     setStatus("Parsing file…");
@@ -224,36 +333,78 @@ export default function UploadSpreadsheetPage() {
     setParsedRows(mapped);
   }
 
+  // Derived groups preview based on current parsed rows
+  const rowGroups = useMemo(
+    () => groupRowsByMunicipality(parsedRows),
+    [parsedRows, groupRowsByMunicipality]
+  );
+
   async function sendToGemini() {
     setSending(true);
     setGeminiOutput("");
     setError("");
+    setAnalysisGroups([]);
     try {
-      const res = await fetch("/api/gemini/analyze", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ rows: parsedRows }),
-      });
-      if (!res.ok || !res.body) {
-        const txt = await res.text().catch(() => "");
-        throw new Error(txt || `Gemini request failed (${res.status})`);
+      const groups = rowGroups.length
+        ? rowGroups
+        : [{ key: "all|", municipality: "", state: "", rows: parsedRows }];
+      const analyses: Array<{
+        key: string;
+        municipality: string;
+        state: string;
+        text: string;
+      }> = [];
+      for (const g of groups) {
+        const res = await fetch("/api/gemini/analyze", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ rows: g.rows }),
+        });
+        if (!res.ok || !res.body) {
+          const txt = await res.text().catch(() => "");
+          throw new Error(txt || `Gemini request failed (${res.status})`);
+        }
+        const isMock = res.headers.get("x-gemini-mock") === "1";
+        const model = res.headers.get("x-gemini-model") || "";
+        setMockMode(isMock);
+        setModelName(model);
+        const fallbackHeader = res.headers.get("x-gemini-fallback");
+        if (fallbackHeader) {
+          const proceed = await askConfirmation(
+            `WARNING: Using ${
+              model || "fallback model"
+            } as fallback model. Continue?`
+          );
+          if (!proceed) {
+            throw new Error("Aborted due to fallback model");
+          }
+        }
+        const reader = res.body.getReader();
+        const decoder = new TextDecoder();
+        let buf = "";
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          buf += decoder.decode(value, { stream: true });
+        }
+        analyses.push({
+          key: g.key,
+          municipality: g.municipality,
+          state: g.state,
+          text: buf,
+        });
       }
-      const isMock = res.headers.get("x-gemini-mock") === "1";
-      const model = res.headers.get("x-gemini-model") || "";
-      setMockMode(isMock);
-      setModelName(model);
-      const reader = res.body.getReader();
-      const decoder = new TextDecoder();
-      let buf = "";
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        const chunk = decoder.decode(value, { stream: true });
-        buf += chunk;
-        setGeminiOutput((prev) => prev + chunk);
-      }
-      // Final flush
-      setGeminiOutput(buf);
+      setAnalysisGroups(analyses);
+      // Present a compact aggregated view in the textarea
+      const combined = analyses
+        .map(
+          (a) =>
+            `--- ${a.municipality || "(unknown)"}${
+              a.state ? ", " + a.state : ""
+            } ---\n${a.text}`
+        )
+        .join("\n\n");
+      setGeminiOutput(combined);
     } catch (e: unknown) {
       console.error(e);
       setError(e instanceof Error ? e.message : "Failed to call Gemini API");
@@ -267,41 +418,72 @@ export default function UploadSpreadsheetPage() {
     setError("");
     setStructuredOutput("");
     try {
-      const res = await fetch("/api/gemini/structure", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          previousOutput: geminiOutput,
-          originalRows: parsedRows,
-        }),
-      });
-      if (!res.ok || !res.body) {
-        const txt = await res.text().catch(() => "");
-        throw new Error(
-          txt || `Gemini structured request failed (${res.status})`
-        );
+      const groups = analysisGroups.length
+        ? analysisGroups.map((a) => ({
+            key: a.key,
+            municipality: a.municipality,
+            state: a.state,
+            analysisText: a.text,
+            rows: rowGroups.find((g) => g.key === a.key)?.rows || parsedRows,
+          }))
+        : [
+            {
+              key: "all|",
+              municipality: "",
+              state: "",
+              analysisText: geminiOutput,
+              rows: parsedRows,
+            },
+          ];
+
+      const structuredAgg: unknown[] = [];
+      const sGroups: Array<{
+        key: string;
+        municipality: string;
+        state: string;
+        elections: unknown[];
+      }> = [];
+      for (const g of groups) {
+        const res = await fetch("/api/gemini/structure", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            previousOutput: g.analysisText,
+            originalRows: g.rows,
+          }),
+        });
+        if (!res.ok || !res.body) {
+          const txt = await res.text().catch(() => "");
+          throw new Error(
+            txt || `Gemini structured request failed (${res.status})`
+          );
+        }
+        const isMock = res.headers.get("x-gemini-mock") === "1";
+        const model = res.headers.get("x-gemini-model") || modelName;
+        setMockMode(isMock || mockMode);
+        setModelName(model);
+        const reader = res.body.getReader();
+        const decoder = new TextDecoder();
+        let buf = "";
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          buf += decoder.decode(value, { stream: true });
+        }
+        const elections = extractElectionsFromJson(buf);
+        const groupStruct: { elections: unknown[] } = { elections };
+        sGroups.push({
+          key: g.key,
+          municipality: g.municipality,
+          state: g.state,
+          elections: groupStruct.elections,
+        });
+        structuredAgg.push(...groupStruct.elections);
       }
-      const isMock = res.headers.get("x-gemini-mock") === "1";
-      const model = res.headers.get("x-gemini-model") || modelName;
-      setMockMode(isMock || mockMode);
-      setModelName(model);
-      const reader = res.body.getReader();
-      const decoder = new TextDecoder();
-      let buf = "";
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        const chunk = decoder.decode(value, { stream: true });
-        buf += chunk;
-        setStructuredOutput((prev) => prev + chunk);
-      }
-      // Pretty print if possible
-      try {
-        const obj = JSON.parse(buf);
-        setStructuredOutput(JSON.stringify(obj, null, 2));
-      } catch {
-        // leave as is
-      }
+      setStructuredGroups(sGroups);
+      setStructuredOutput(
+        JSON.stringify({ elections: structuredAgg }, null, 2)
+      );
     } catch (e: unknown) {
       console.error(e);
       setError(
@@ -312,73 +494,119 @@ export default function UploadSpreadsheetPage() {
     }
   }
 
-  // Production one-click flow
+  // Production one-click flow (grouped + sequential)
   async function goLive() {
     if (!parsedRows.length) {
       setError("Please upload a spreadsheet first.");
+      return;
+    }
+    const groups = groupRowsByMunicipality(parsedRows);
+    if (!groups.length) {
+      setError("No valid municipality groups found.");
       return;
     }
     setGoingLive(true);
     setError("");
     setInsertResult("");
     resetGoLiveProgress();
+    const aggregatedElections: unknown[] = [];
+    const aggregatedResults: InsertResultItem[] = [];
+
     try {
-      // 1) Analyze with Gemini
-      updateStep("analyze", "in_progress");
-      logProgress("Starting Gemini analysis…");
-      const analyzeRes = await fetch("/api/gemini/analyze", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ rows: parsedRows }),
-      });
-      if (!analyzeRes.ok || !analyzeRes.body) {
-        const txt = await analyzeRes.text().catch(() => "");
-        updateStep("analyze", "error", txt);
-        logProgress(
-          `Gemini analyze failed (${analyzeRes.status}) ${txt || ""}`,
-          "error"
-        );
-        throw new Error(txt || `Gemini request failed (${analyzeRes.status})`);
-      }
-      const isMock = analyzeRes.headers.get("x-gemini-mock") === "1";
-      const model = analyzeRes.headers.get("x-gemini-model") || "";
-      setMockMode(isMock);
-      setModelName(model);
-      {
-        const reader = analyzeRes.body.getReader();
-        const decoder = new TextDecoder();
-        let buf = "";
-        while (true) {
-          const { done, value } = await reader.read();
-          if (done) break;
-          buf += decoder.decode(value, { stream: true });
-          if (buf.length % 5000 < 100) logProgress("…receiving analysis chunks");
+      updateStep(
+        "process",
+        "in_progress",
+        `Found ${groups.length} group${
+          groups.length === 1 ? "" : "s"
+        }. Starting…`
+      );
+      logProgress(`Processing ${groups.length} group(s) sequentially…`);
+
+      for (let i = 0; i < groups.length; i++) {
+        const g = groups[i];
+        const label = `${g.municipality || "(unknown)"}${
+          g.state ? ", " + g.state : ""
+        } (${g.rows.length} rows) [${i + 1}/${groups.length}]`;
+        updateStep("process", "in_progress", `Current: ${label}`);
+        logProgress(`Analyze → Structure → Insert: ${label}`);
+
+        // 1) Analyze with Gemini for this group
+        const analyzeRes = await fetch("/api/gemini/analyze", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ rows: g.rows }),
+        });
+        if (!analyzeRes.ok || !analyzeRes.body) {
+          const txt = await analyzeRes.text().catch(() => "");
+          updateStep(
+            "process",
+            "error",
+            `Analyze failed (${analyzeRes.status}) ${txt || ""}`
+          );
+          logProgress(
+            `Analyze failed (${analyzeRes.status}) ${txt || ""}`,
+            "error"
+          );
+          throw new Error(
+            txt || `Gemini analyze failed (${analyzeRes.status})`
+          );
         }
-        const analysisText = buf;
+        const isMock = analyzeRes.headers.get("x-gemini-mock") === "1";
+        const model = analyzeRes.headers.get("x-gemini-model") || "";
+        setMockMode(isMock);
+        setModelName(model);
+
+        // Detect fallback usage and ask for confirmation
+        const fallbackHeader = analyzeRes.headers.get("x-gemini-fallback");
+        if (fallbackHeader) {
+          const warnMsg = `WARNING: Using ${
+            model || "fallback model"
+          } as fallback model. Continue?`;
+          logProgress(warnMsg, "error");
+          const proceed = await askConfirmation(warnMsg);
+          if (!proceed) {
+            updateStep(
+              "process",
+              "error",
+              "User canceled due to fallback model"
+            );
+            logProgress("Aborted by user on fallback warning", "error");
+            throw new Error("Aborted due to fallback model");
+          }
+          logProgress("User confirmed fallback model continuation");
+        }
+        const aReader = analyzeRes.body.getReader();
+        const aDecoder = new TextDecoder();
+        let analysisText = "";
+        while (true) {
+          const { done, value } = await aReader.read();
+          if (done) break;
+          analysisText += aDecoder.decode(value, { stream: true });
+        }
         setGeminiOutput(analysisText);
-        updateStep("analyze", "completed");
-        logProgress("Gemini analysis complete", "success");
-        // 2) Run structured output using the fresh local analysis text (avoid stale state)
-        let structured = "";
-        updateStep("structure", "in_progress");
-        logProgress("Building structured output…");
+
+        // 2) Structure for this group
         const structRes = await fetch("/api/gemini/structure", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             previousOutput: analysisText,
-            originalRows: parsedRows,
+            originalRows: g.rows,
           }),
         });
         if (!structRes.ok || !structRes.body) {
           const txt = await structRes.text().catch(() => "");
-          updateStep("structure", "error", txt);
+          updateStep(
+            "process",
+            "error",
+            `Structure failed (${structRes.status}) ${txt || ""}`
+          );
           logProgress(
-            `Structured output failed (${structRes.status}) ${txt || ""}`,
+            `Structure failed (${structRes.status}) ${txt || ""}`,
             "error"
           );
           throw new Error(
-            txt || `Gemini structured request failed (${structRes.status})`
+            txt || `Gemini structure failed (${structRes.status})`
           );
         }
         const sReader = structRes.body.getReader();
@@ -389,88 +617,85 @@ export default function UploadSpreadsheetPage() {
           if (done) break;
           sBuf += sDecoder.decode(value, { stream: true });
         }
-        try {
-          const obj = JSON.parse(sBuf);
-          structured = JSON.stringify(obj, null, 2);
-        } catch {
-          structured = sBuf;
-        }
-        setStructuredOutput(structured);
-        updateStep("structure", "completed");
-        logProgress("Structured output ready", "success");
+        const elections = extractElectionsFromJson(sBuf);
+        const structuredForGroup: { elections: unknown[] } = { elections };
+        setStructuredOutput(JSON.stringify(structuredForGroup, null, 2));
 
-        // 3) Insert into DB
-        updateStep("insert", "in_progress");
-        logProgress("Inserting records into database…");
+        // 3) Insert only this group's elections into DB
         const insertRes = await fetch("/api/admin/seed-structured", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ structured }),
+          body: JSON.stringify({
+            structured: JSON.stringify(structuredForGroup),
+            hidden: forceHidden,
+          }),
         });
-        const text = await insertRes.text();
+        const insertText = await insertRes.text();
         if (!insertRes.ok) {
-          updateStep("insert", "error", text);
+          updateStep(
+            "process",
+            "error",
+            `Insert failed (${insertRes.status}) ${insertText || ""}`
+          );
           logProgress(
-            `Insert failed (${insertRes.status}) ${text || ""}`,
+            `Insert failed (${insertRes.status}) ${insertText || ""}`,
             "error"
           );
-          throw new Error(text || `Insert failed (${insertRes.status})`);
+          throw new Error(insertText || `Insert failed (${insertRes.status})`);
         }
-        updateStep("insert", "completed");
+        let insertObj: { results?: InsertResultItem[] } | null = null;
         try {
-          const obj = JSON.parse(text) as {
-            results?: Array<{
-              candidateSlugs?: string[];
-              city?: string;
-              state?: string;
-              electionId?: number;
-              [k: string]: unknown;
-            }>;
-            [k: string]: unknown;
-          };
-          const base =
-            typeof window !== "undefined"
-              ? window.location.origin
-              : "http://localhost:3000";
-          if (obj?.results) {
-            for (const r of obj.results) {
-              r.candidateUrls = (r.candidateSlugs || []).map(
-                (s: string) => `${base}/candidate/${s}`
-              );
-              if (r.city && r.state && r.electionId) {
-                r.electionResultsUrl = `${base}/results?city=${encodeURIComponent(
-                  r.city as string
-                )}&state=${encodeURIComponent(r.state as string)}&electionID=${
-                  r.electionId as number
-                }`;
-              }
-            }
-            const totalCandidates = obj.results
-              .map((r) => (r.candidateSlugs || []).length)
-              .reduce((a, b) => a + b, 0);
-            logProgress(
-              `DB insert complete: ${obj.results.length} elections, ${totalCandidates} candidates`,
-              "success"
-            );
-          }
-          setInsertResult(JSON.stringify(obj, null, 2));
-          updateStep("post", "in_progress");
-          logProgress("Building and downloading result sheet…");
-          await buildAndDownloadResultSheet(obj, structured);
-          updateStep("post", "completed");
-          logProgress("Go Live completed successfully", "success");
+          insertObj = JSON.parse(insertText) as { results?: InsertResultItem[] };
         } catch {
-          setInsertResult(text);
+          insertObj = null;
         }
-        return; // early return since we've completed the rest of the flow
+        if (Array.isArray(structuredForGroup.elections)) {
+          aggregatedElections.push(...structuredForGroup.elections);
+        }
+        if (insertObj?.results) {
+          aggregatedResults.push(...insertObj.results);
+        }
+        const addedCandidates = (insertObj?.results || [])
+          .map((r: InsertResultItem) => (r.candidateSlugs || []).length)
+          .reduce((a: number, b: number) => a + b, 0);
+        logProgress(
+          `Group inserted: ${
+            (insertObj?.results || []).length
+          } elections, ${addedCandidates} candidates`,
+          "success"
+        );
       }
-  } catch (e) {
-    console.error(e);
-    setError(e instanceof Error ? e.message : "Go Live failed");
-    logProgress(e instanceof Error ? e.message : "Go Live failed", "error");
-  } finally {
-    setGoingLive(false);
-  }
+
+      // All groups complete, aggregate and finalize
+      const aggregatedStructured = { elections: aggregatedElections };
+      const aggregatedInsert: { results: InsertResultItem[] } = {
+        results: aggregatedResults,
+      };
+      setStructuredOutput(JSON.stringify(aggregatedStructured, null, 2));
+      setInsertResult(JSON.stringify(aggregatedInsert, null, 2));
+      updateStep(
+        "process",
+        "completed",
+        `Processed ${groups.length} group${groups.length === 1 ? "" : "s"}`
+      );
+
+      updateStep("post", "in_progress");
+      logProgress("Building and downloading result sheet…");
+      await buildAndDownloadResultSheet(
+        aggregatedInsert,
+        JSON.stringify(aggregatedStructured),
+        rawRows,
+        parsedRows
+      );
+      updateStep("post", "completed");
+      logProgress("Go Live completed successfully", "success");
+    } catch (e) {
+      console.error(e);
+      setError(e instanceof Error ? e.message : "Go Live failed");
+      logProgress(e instanceof Error ? e.message : "Go Live failed", "error");
+    } finally {
+      setGoingLive(false);
+    }
   }
 
   // --- Dry-run DB plan builder ---
@@ -805,6 +1030,7 @@ export default function UploadSpreadsheetPage() {
   }
 
   // Build and download a spreadsheet with election_link and candidate_link columns
+  // Accepts optional rows to use for sheet building (raw) and parsed rows for fallback matching
   async function buildAndDownloadResultSheet(
     insertObj: {
       results?: Array<{
@@ -816,10 +1042,13 @@ export default function UploadSpreadsheetPage() {
         candidateUrls?: string[];
       }>;
     },
-    structuredJsonText?: string
+    structuredJsonText?: string,
+    rowsForSheet?: Array<Record<string, unknown>>,
+    parsedRowsForSheet?: Row[]
   ) {
     try {
-      if (!rawRows.length) return;
+      const sourceRows = rowsForSheet && rowsForSheet.length ? rowsForSheet : rawRows;
+      if (!sourceRows.length) return;
       type StructuredJson = {
         elections: Array<{
           election: { city: string; state: string };
@@ -837,9 +1066,22 @@ export default function UploadSpreadsheetPage() {
       const results = insertObj.results || [];
       const norm = (s?: string | null) => (s || "").trim().toLowerCase();
       const municipalities = new Set<string>();
-      const electionMaps = results.map((r, idx) => {
-        const candidateUrls = (r.candidateUrls || []) as string[];
+      const base =
+        typeof window !== "undefined" ? window.location.origin : "http://localhost:3000";
+      const electionMaps = results.map((r: InsertResultItem, idx: number) => {
         const candidateSlugs = (r.candidateSlugs || []) as string[];
+        let candidateUrls = (r.candidateUrls || []) as string[];
+        if (!candidateUrls.length && candidateSlugs.length) {
+          candidateUrls = candidateSlugs.map((slug) => `${base}/candidate/${slug}`);
+        }
+        const resultsUrl =
+          r.electionResultsUrl && r.electionResultsUrl.length
+            ? r.electionResultsUrl
+            : r.city && r.state && r.electionId
+            ? `${base}/results?city=${encodeURIComponent(r.city)}&state=${encodeURIComponent(
+                r.state
+              )}&electionID=${r.electionId}`
+            : "";
         const nameToUrl = new Map<string, string>();
         const emailToUrl = new Map<string, string>();
         const slugToUrl = new Map<string, string>();
@@ -851,14 +1093,20 @@ export default function UploadSpreadsheetPage() {
             if (c.email) emailToUrl.set(norm(c.email), url);
           });
         }
+        if (Array.isArray(r?.candidateEmails)) {
+          r.candidateEmails.forEach((eml: string | null, i: number) => {
+            const url = candidateUrls[i] || "";
+            if (eml) emailToUrl.set(norm(eml), url);
+          });
+        }
         candidateSlugs.forEach((slug, i) => {
-          const url = candidateUrls[i] || "";
+          const url = candidateUrls[i] || `${base}/candidate/${slug}`;
           slugToUrl.set(norm(slug), url);
         });
         return {
           city: r.city || se?.election?.city || "",
           state: r.state || se?.election?.state || "",
-          resultsUrl: r.electionResultsUrl || "",
+          resultsUrl,
           nameToUrl,
           emailToUrl,
           slugToUrl,
@@ -866,7 +1114,7 @@ export default function UploadSpreadsheetPage() {
         };
       });
 
-      const newRows = rawRows.map((raw) => {
+      const newRows = sourceRows.map((raw, idx) => {
         const out: Record<string, unknown> = { ...raw };
         const cityRaw = getRawValue(raw as Record<string, unknown>, [
           "municipality",
@@ -889,13 +1137,16 @@ export default function UploadSpreadsheetPage() {
           "last",
           "surname",
         ]).trim();
-        const email = norm(
+        let email = norm(
           getRawValue(raw as Record<string, unknown>, [
             "email",
             "Email",
             "emailaddress",
           ])
         );
+        if (!email && parsedRowsForSheet?.[idx]?.email) {
+          email = norm(parsedRowsForSheet[idx].email);
+        }
         const city = norm(String(cityRaw));
         const state = norm(String(stateRaw));
         if (String(cityRaw)) municipalities.add(String(cityRaw));
@@ -975,50 +1226,95 @@ export default function UploadSpreadsheetPage() {
     setInsertResult("");
     setError("");
     try {
-      const res = await fetch("/api/admin/seed-structured", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ structured: structuredOutput }),
-      });
-      const text = await res.text();
-      if (!res.ok) {
-        throw new Error(text || `Insert failed (${res.status})`);
-      }
-      // pretty print if JSON
-      try {
-        const obj = JSON.parse(text) as {
-          results?: Array<{
-            candidateSlugs?: string[];
-            city?: string;
-            state?: string;
-            electionId?: number;
-            [k: string]: unknown;
-          }>;
-          [k: string]: unknown;
-        };
+      // If we have structured groups, insert per group sequentially (parity with Go Live)
+      if (structuredGroups.length > 0) {
+        const aggregatedResults: InsertResultItem[] = [];
         const base =
           typeof window !== "undefined"
             ? window.location.origin
             : "http://localhost:3000";
-        // Append candidate URLs for convenience
-        if (obj?.results) {
-          for (const r of obj.results) {
-            r.candidateUrls = (r.candidateSlugs || []).map(
-              (s: string) => `${base}/candidate/${s}`
-            );
-            if (r.city && r.state && r.electionId) {
-              r.electionResultsUrl = `${base}/results?city=${encodeURIComponent(
-                r.city
-              )}&state=${encodeURIComponent(r.state)}&electionID=${
-                r.electionId
-              }`;
+        for (const sg of structuredGroups) {
+          const payload = { elections: sg.elections };
+          const res = await fetch("/api/admin/seed-structured", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              structured: JSON.stringify(payload),
+              hidden: forceHidden,
+            }),
+          });
+          const text = await res.text();
+          if (!res.ok) {
+            throw new Error(text || `Insert failed (${res.status})`);
+          }
+          let obj: { results?: InsertResultItem[] } = { results: [] };
+          try {
+            obj = JSON.parse(text) as { results?: InsertResultItem[] };
+          } catch {
+            obj = { results: [] };
+          }
+          // Enrich with URLs
+          if (obj?.results) {
+            for (const r of obj.results) {
+              r.candidateUrls = (r.candidateSlugs || []).map(
+                (s: string) => `${base}/candidate/${s}`
+              );
+              if (r.city && r.state && r.electionId) {
+                r.electionResultsUrl = `${base}/results?city=${encodeURIComponent(
+                  r.city
+                )}&state=${encodeURIComponent(r.state)}&electionID=${
+                  r.electionId
+                }`;
+              }
             }
           }
+          aggregatedResults.push(...(obj?.results || []));
         }
-        setInsertResult(JSON.stringify(obj, null, 2));
-        await buildAndDownloadResultSheet(obj);
-      } catch {
-        setInsertResult(text);
+        const aggregated = { results: aggregatedResults };
+        setInsertResult(JSON.stringify(aggregated, null, 2));
+        await buildAndDownloadResultSheet(aggregated, structuredOutput, rawRows, parsedRows);
+      } else {
+        // Fallback: insert whole structured output at once
+
+        const res = await fetch("/api/admin/seed-structured", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            structured: structuredOutput,
+            hidden: forceHidden,
+          }),
+        });
+        const text = await res.text();
+        if (!res.ok) {
+          throw new Error(text || `Insert failed (${res.status})`);
+        }
+        // pretty print if JSON
+        try {
+          const obj = JSON.parse(text) as { results?: InsertResultItem[] };
+          const base =
+            typeof window !== "undefined"
+              ? window.location.origin
+              : "http://localhost:3000";
+          // Append candidate URLs for convenience
+          if (obj?.results) {
+            for (const r of obj.results) {
+              r.candidateUrls = (r.candidateSlugs || []).map(
+                (s: string) => `${base}/candidate/${s}`
+              );
+              if (r.city && r.state && r.electionId) {
+                r.electionResultsUrl = `${base}/results?city=${encodeURIComponent(
+                  r.city
+                )}&state=${encodeURIComponent(r.state)}&electionID=${
+                  r.electionId
+                }`;
+              }
+            }
+          }
+          setInsertResult(JSON.stringify(obj, null, 2));
+        await buildAndDownloadResultSheet(obj, structuredOutput, rawRows, parsedRows);
+        } catch {
+          setInsertResult(text);
+        }
       }
     } catch (e: unknown) {
       console.error(e);
@@ -1038,6 +1334,27 @@ export default function UploadSpreadsheetPage() {
       </p>
 
       <div className="space-y-3 bg-white/70 p-4 rounded border">
+        {confirmPrompt.visible && (
+          <div className="rounded border border-red-300 bg-red-50 text-red-800 p-3 text-sm flex items-center justify-between">
+            <span className="font-semibold mr-3">{confirmPrompt.message}</span>
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={confirmNo}
+                className="px-3 py-1 rounded border border-red-300 text-red-800 bg-white hover:bg-red-100"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={confirmYes}
+                className="px-3 py-1 rounded bg-red-600 text-white hover:bg-red-700"
+              >
+                Continue
+              </button>
+            </div>
+          </div>
+        )}
         <div className="flex gap-2 flex-wrap">
           {mockMode && (
             <span className="inline-flex items-center gap-2 text-xs font-medium bg-yellow-100 text-yellow-800 px-2 py-1 rounded">
@@ -1090,6 +1407,34 @@ export default function UploadSpreadsheetPage() {
         />
         {status && <p className="text-green-700 text-sm">{status}</p>}
         {error && <p className="text-red-700 text-sm">{error}</p>}
+        <div className="flex items-center gap-2 text-xs text-gray-700">
+          <input
+            id="forceHiddenToggle"
+            type="checkbox"
+            className="h-4 w-4"
+            checked={forceHidden}
+            onChange={(e) => setForceHidden(e.target.checked)}
+          />
+          <label htmlFor="forceHiddenToggle" className="select-none">
+            Mark inserted elections and candidates as hidden
+          </label>
+        </div>
+        {rowGroups.length > 0 && (
+          <div className="text-xs text-gray-700 bg-gray-50 border rounded p-2">
+            <div className="font-medium mb-1">
+              Found {rowGroups.length} group{rowGroups.length === 1 ? "" : "s"}
+            </div>
+            <ul className="list-disc ml-5 space-y-0.5">
+              {rowGroups.map((g) => (
+                <li key={g.key}>
+                  {(g.municipality || "(unknown)") +
+                    (g.state ? ", " + g.state : "")}{" "}
+                  — {g.rows.length} rows
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
         <div className="pt-2 flex flex-col gap-3">
           <>
             <button

@@ -56,4 +56,5 @@ node_modules/
 .env*.local
 
 # Test csv files
+test-*.xlsx
 test-*.csv
