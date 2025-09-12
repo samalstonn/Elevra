@@ -18,7 +18,6 @@ export default function FeedbackPage() {
   });
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
-  // Note: Email sending and visit ping are disabled for now on this page.
 
   const handleChange = (
     e: React.ChangeEvent<
@@ -30,15 +29,23 @@ export default function FeedbackPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setSuccess(false);
     setLoading(true);
-    // Temporarily disable email submission; just acknowledge receipt locally
     try {
-      console.info("Feedback captured (email disabled)", form);
+      const res = await fetch("/api/feedback", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(form),
+      });
+
+      if (!res.ok) {
+        throw new Error("Failed to send feedback");
+      }
+
       setSuccess(true);
       toast({
         title: "Thanks for your feedback!",
-        description:
-          "We’ve recorded your message. Email notifications are temporarily disabled.",
+        description: "We've received your message and will review it shortly.",
       });
       setForm({
         name: "",
@@ -46,6 +53,13 @@ export default function FeedbackPage() {
         subject: "",
         message: "",
         anonymous: false,
+      });
+    } catch (err) {
+      console.error("Feedback submission error", err);
+      toast({
+        title: "Something went wrong",
+        description: "We couldn't send your feedback. Please try again later.",
+        variant: "destructive",
       });
     } finally {
       setLoading(false);
