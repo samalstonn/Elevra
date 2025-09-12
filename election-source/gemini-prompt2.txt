@@ -1,5 +1,7 @@
 Turn the attached data into the given structured output format. 
-For "N/A" or blank values return null. 
+Do not leave any "N/A" or blank values, give a reasonable value.
+- For example, if a candidate's role is blank: write "Candidate"
+- For example, if a candidate's bio is blank: write "Information regarding this canidate's education, experience, and career history is not publicly available."
 Remove all source references (eg. [17]). 
 Clean all URLs.
 Make sure all dates are in the format mm/dd/YYYY eg. 01/01/2025

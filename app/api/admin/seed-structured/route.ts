@@ -57,7 +57,9 @@ function parseSeats(s?: string | null): number | null {
   return m ? parseInt(m[0], 10) : null;
 }
 
-function coerceType(t: string | undefined): "LOCAL" | "STATE" | "UNIVERSITY" | "NATIONAL" {
+function coerceType(
+  t: string | undefined
+): "LOCAL" | "STATE" | "UNIVERSITY" | "NATIONAL" {
   const v = (t || "").toUpperCase();
   if (v === "STATE" || v === "UNIVERSITY" || v === "NATIONAL") return v as any;
   return "LOCAL";
@@ -84,7 +86,12 @@ export async function POST(req: NextRequest) {
     if (!(await isAdmin(userId))) {
       return new Response("Unauthorized", { status: 401 });
     }
-    const body = (await req.json()) as { structured?: string; data?: any; hidden?: boolean; forceHidden?: boolean };
+    const body = (await req.json()) as {
+      structured?: string;
+      data?: any;
+      hidden?: boolean;
+      forceHidden?: boolean;
+    };
     const payload = body?.data ?? body?.structured;
     let input: any;
     if (typeof payload === "string") {
@@ -93,7 +100,9 @@ export async function POST(req: NextRequest) {
       input = payload;
     }
     if (!input || !Array.isArray(input.elections)) {
-      return new Response("Invalid input: missing elections array", { status: 400 });
+      return new Response("Invalid input: missing elections array", {
+        status: 400,
+      });
     }
 
     const hiddenInProd = process.env.NODE_ENV === "production";
@@ -114,7 +123,10 @@ export async function POST(req: NextRequest) {
       const e = item.election;
       const date = parseDateMMDDYYYY(e.date);
       if (!date) {
-        return new Response(`Invalid date for election '${e.title}': '${e.date}'`, { status: 400 });
+        return new Response(
+          `Invalid date for election '${e.title}': '${e.date}'`,
+          { status: 400 }
+        );
       }
       const positions = parseSeats(e.number_of_seats ?? undefined) ?? 1;
       const position = e.title || "Election";
