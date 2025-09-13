@@ -67,7 +67,7 @@ export default defineConfig({
       dependencies: ["global setup"],
     },
     {
-      name: "This is Me",
+      name: "Admin Emails",
       testMatch: "admin-email.spec.ts",
       use: {
         ...devices["Desktop Chrome"], // or your browser of choice

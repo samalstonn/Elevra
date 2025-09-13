@@ -95,7 +95,9 @@ export async function POST(req: NextRequest) {
   }
 
   const state = (body.state || "").trim() || undefined;
-  const subject = (body.subject || `Your Candidate Profile is Live on Elevra`).trim();
+  const subject = (
+    body.subject || `Your Candidate Profile is Live on Elevra`
+  ).trim();
   // Parse schedule time if provided
   let scheduledAt: Date | undefined = undefined;
   if (typeof body.scheduledAtIso === "string" && body.scheduledAtIso.trim()) {

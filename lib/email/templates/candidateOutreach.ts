@@ -27,6 +27,41 @@ export function renderCandidateOutreach({
 
   const html = `
     <div style="font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,\\"Helvetica Neue\\",Arial,\\"Noto Sans\\",\\"Apple Color Emoji\\",\\"Segoe UI Emoji\\";padding:24px;max-width:640px;">
+      <p style="margin:0 0 16px 0;">Hi ${greetingName},</p>
+      <p style="margin:0 0 16px 0;line-height:1.55;">
+        Your election is live on Elevra – a platform created by Cornell University students from New Jersey to make elections easier to run for candidates and easier to access for voters. Just click 
+        <a href="${claimUrl}" style="color:#6d28d9;text-decoration:underline;">this link</a> and hit “This is Me” to claim and customize your profile.
+      </p>
+      <p style="margin:0 0 16px 0;line-height:1.55;">
+        Voters have been viewing and comparing candidates ${locationFragment} on our site and we would love for you to be part of the conversation.
+      </p>
+      <p style="margin:0 0 20px 0;line-height:1.55;">
+        Best,<br/>
+        Adam Rose<br/>
+        Elevra | Cornell ’25
+        <br/>
+        <a href="https://www.linkedin.com/in/adamtherose/" style="color:#6d28d9;text-decoration:underline;">LinkedIn</a>
+      </p>
+    </div>`;
+
+  return html;
+}
+
+export function renderCandidateOutreach1({
+  candidateFirstName = "there",
+  state,
+  claimUrl,
+  contactName = "Sam Alston",
+  contactRole = "Elevra",
+  contactSubline = "Cornell ’25",
+  contactPhone = "732-547-3519",
+  ctaLabel = "Claim My Profile",
+}: CandidateOutreachParams) {
+  const greetingName = candidateFirstName.trim() || "there";
+  const locationFragment = state ? `in ${state}` : "";
+
+  const html = `
+    <div style="font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,\\"Helvetica Neue\\",Arial,\\"Noto Sans\\",\\"Apple Color Emoji\\",\\"Segoe UI Emoji\\";padding:24px;max-width:640px;">
         <p style="margin:0 0 16px 0;">Hi ${greetingName},</p>
         <p style="margin:0 0 16px 0;line-height:1.55;">Your election is now live on Elevra – a platform created by Cornell University students from New Jersey to make elections easier to run for candidates and easier to access for voters. Just click the button below to view your template profile and hit “This is Me” to claim and customize.</p>
         <p style="margin:0 0 16px 0;line-height:1.55;">Voters have already been viewing and comparing candidates ${locationFragment} on our site and we'd love for you to be part of the conversation. Reply to this email or reach out to me personally below with any feedback or insights you have - we're building Elevra for local candidates like you and truly want to hear what you have to say.</p>

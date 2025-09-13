@@ -1,7 +1,10 @@
 import { test, expect } from "@playwright/test";
 
 test.describe("Admin email endpoints", () => {
-  test("proxy forwards and returns success (dry-run)", async ({ request, baseURL }) => {
+  test("proxy forwards and returns success (dry-run)", async ({
+    request,
+    baseURL,
+  }) => {
     const res = await request.post(`${baseURL}/api/admin/email-proxy`, {
       data: {
         subject: "Proxy Test from Playwright",
@@ -13,7 +16,10 @@ test.describe("Admin email endpoints", () => {
     expect(body).toMatchObject({ success: true });
   });
 
-  test("direct route requires secret and succeeds with it (dry-run)", async ({ request, baseURL }) => {
+  test("direct route requires secret and succeeds with it (dry-run)", async ({
+    request,
+    baseURL,
+  }) => {
     // Without secret should fail
     const bad = await request.post(`${baseURL}/api/admin/email`, {
       data: { subject: "Bad", data: { intro: "no secret" } },
@@ -24,11 +30,13 @@ test.describe("Admin email endpoints", () => {
     const secret = process.env.ADMIN_EMAIL_SECRET || "local-dev-admin-secret";
     const ok = await request.post(`${baseURL}/api/admin/email`, {
       headers: { "x-admin-secret": secret, "Content-Type": "application/json" },
-      data: { subject: "Direct OK from Playwright", data: { intro: "with secret" } },
+      data: {
+        subject: "Direct OK from Playwright",
+        data: { intro: "with secret" },
+      },
     });
     expect(ok.ok()).toBeTruthy();
     const body = await ok.json();
     expect(body).toMatchObject({ success: true });
   });
 });
-
