@@ -160,6 +160,11 @@ export default async function CandidatePage({
           election: { type: ElectionType.LOCAL },
         },
       },
+      NOT: [
+        { name: { contains: "Cornell", mode: "insensitive" } },
+        { currentRole: { contains: "Cornell", mode: "insensitive" } },
+        { bio: { contains: "Cornell", mode: "insensitive" } },
+      ],
     },
   });
   const suggestedCandidates = suggestedCandidatesRaw.filter(
