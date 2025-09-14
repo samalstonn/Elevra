@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { headers } from "next/headers";
 import prisma from "@/prisma/prisma";
 import CandidateClient from "./CandidateClient";
-import { Candidate } from "@prisma/client";
+import { Candidate, ElectionType } from "@prisma/client";
 import { currentUser } from "@clerk/nextjs/server";
 import type { Metadata } from "next";
 
@@ -155,6 +155,11 @@ export default async function CandidatePage({
     where: {
       id: { not: candidateID },
       hidden: false,
+      elections: {
+        some: {
+          election: { type: ElectionType.LOCAL },
+        },
+      },
     },
   });
   const suggestedCandidates = suggestedCandidatesRaw.filter(
