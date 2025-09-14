@@ -150,8 +150,8 @@ export default async function CandidatePage({
     },
   });
 
-  // Get suggested candidates (only those with actual images)
-  const suggestedCandidatesRaw = await prisma.candidate.findMany({
+  // Get suggested candidates, excluding Cornell-affiliated profiles
+  const suggestedCandidates = await prisma.candidate.findMany({
     where: {
       id: { not: candidateID },
       hidden: false,
@@ -160,18 +160,23 @@ export default async function CandidatePage({
           election: { type: ElectionType.LOCAL },
         },
       },
-      NOT: [
-        { name: { contains: "Cornell", mode: "insensitive" } },
-        { currentRole: { contains: "Cornell", mode: "insensitive" } },
-        { bio: { contains: "Cornell", mode: "insensitive" } },
+      AND: [
+        {
+          name: {
+            not: { contains: "Cornell", mode: "insensitive" },
+          },
+        },
+        {
+          currentRole: {
+            not: { contains: "Cornell", mode: "insensitive" },
+          },
+        },
+        {
+          bio: { not: { contains: "Cornell", mode: "insensitive" } },
+        },
       ],
     },
   });
-  const suggestedCandidates = suggestedCandidatesRaw.filter(
-    (c) =>
-      (c.photo && c.photo.trim() !== "") ||
-      (c.photoUrl && c.photoUrl.trim() !== "")
-  );
 
   // Check if current user can edit this candidate profile
   const user = await currentUser();
