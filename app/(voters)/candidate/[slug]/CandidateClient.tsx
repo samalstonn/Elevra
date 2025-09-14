@@ -20,6 +20,15 @@ import { useUser } from "@clerk/nextjs";
 import ImageWithFallback from "@/components/ui/ImageWithFallback";
 import { decodeEducation } from "@/lib/education";
 
+function fisherYates<T>(arr: T[]): T[] {
+  const array = [...arr];
+  for (let i = array.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [array[i], array[j]] = [array[j], array[i]];
+  }
+  return array;
+}
+
 export type ElectionWithCandidates = Election & {
   candidates: Candidate[];
 };
@@ -74,12 +83,20 @@ export default function CandidateClient({
   );
 
   const randomSuggestedCandidates = useMemo(() => {
-    const verified = suggestedCandidates.filter((c) => c.verified);
-    const unverified = suggestedCandidates.filter((c) => !c.verified);
-    const shuffledVerified = [...verified].sort(() => 0.5 - Math.random());
-    const shuffledUnverified = [...unverified].sort(() => 0.5 - Math.random());
+    const verified: Candidate[] = [];
+    const unverified: Candidate[] = [];
+    for (const c of suggestedCandidates) {
+      if (c.id === candidate.id) continue;
+      if (c.verified) {
+        verified.push(c);
+      } else {
+        unverified.push(c);
+      }
+    }
+    const shuffledVerified = fisherYates(verified);
+    const shuffledUnverified = fisherYates(unverified);
     return [...shuffledVerified, ...shuffledUnverified].slice(0, 3);
-  }, [suggestedCandidates]);
+  }, [candidate.id, suggestedCandidates]);
 
   useEffect(() => {
     setHydrated(true);
