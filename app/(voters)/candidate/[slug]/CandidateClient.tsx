@@ -84,18 +84,13 @@ export default function CandidateClient({
 
   const randomSuggestedCandidates = useMemo(() => {
     const verified: Candidate[] = [];
-    const unverified: Candidate[] = [];
     for (const c of suggestedCandidates) {
       if (c.id === candidate.id) continue;
       if (c.verified) {
         verified.push(c);
-      } else {
-        unverified.push(c);
       }
     }
-    const shuffledVerified = fisherYates(verified);
-    const shuffledUnverified = fisherYates(unverified);
-    return [...shuffledVerified, ...shuffledUnverified].slice(0, 3);
+    return fisherYates(verified).slice(0, 3);
   }, [candidate.id, suggestedCandidates]);
 
   useEffect(() => {

@@ -155,6 +155,7 @@ export default async function CandidatePage({
     where: {
       id: { not: candidateID },
       hidden: false,
+      verified: true,
       elections: {
         some: {
           election: { type: ElectionType.LOCAL },
