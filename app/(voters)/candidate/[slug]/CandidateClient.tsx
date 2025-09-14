@@ -74,8 +74,11 @@ export default function CandidateClient({
   );
 
   const randomSuggestedCandidates = useMemo(() => {
-    const shuffled = [...suggestedCandidates].sort(() => 0.5 - Math.random());
-    return shuffled.slice(0, 3);
+    const verified = suggestedCandidates.filter((c) => c.verified);
+    const unverified = suggestedCandidates.filter((c) => !c.verified);
+    const shuffledVerified = [...verified].sort(() => 0.5 - Math.random());
+    const shuffledUnverified = [...unverified].sort(() => 0.5 - Math.random());
+    return [...shuffledVerified, ...shuffledUnverified].slice(0, 3);
   }, [suggestedCandidates]);
 
   useEffect(() => {
