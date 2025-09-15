@@ -66,7 +66,6 @@ export async function GET(req: NextRequest) {
         candidate: d.candidate,
       })),
     });
-    console.log(res);
     return res;
   } catch (error) {
     console.error("[GET_CANDIDATE_DONATIONS_ERROR]", error);

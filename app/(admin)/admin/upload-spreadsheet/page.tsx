@@ -115,8 +115,6 @@ export default function UploadSpreadsheetPage() {
     const aggregatedElections: unknown[] = [];
     const aggregatedResults: InsertResultItem[] = [];
 
-    console.log(groups);
-
     try {
       updateStep(
         "process",

@@ -39,7 +39,6 @@ import { renderAdminNotification } from "@/lib/email/templates/adminNotification
 import { generateUniqueSlug } from "@/lib/functions";
 
 export async function GET(request: Request) {
-  console.log("GET request to /api/candidate");
   try {
     // Get auth session to verify the request
     const { userId } = await auth();
@@ -50,7 +49,6 @@ export async function GET(request: Request) {
     // Get the clerkUserId from query parameters
     const url = new URL(request.url);
     const clerkUserId = url.searchParams.get("clerkUserId");
-    console.log("clerkUserId", clerkUserId);
 
     // Ensure the requested clerkUserId matches the authenticated user
     if (!clerkUserId || clerkUserId !== userId) {

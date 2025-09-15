@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/prisma/prisma";
 
 export async function GET(request: NextRequest) {
-  console.log("GET request received");
   try {
     const { searchParams, pathname } = new URL(request.url);
     const _ = searchParams.get("search");
@@ -15,8 +14,6 @@ export async function GET(request: NextRequest) {
       );
     }
     const electionId = parseInt(idStr);
-
-    console.log("Election ID:", electionId);
 
     const election = await prisma.election.findUnique({
       where: {

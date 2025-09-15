@@ -68,7 +68,6 @@ export default function ContentBlocksEditor({
   initialBlocks,
   onSave,
 }: Props) {
-  console.log("initialBlocks", initialBlocks);
   const [blocks, setBlocks] = useState<ContentBlockInput[]>(
     [...initialBlocks]
       .sort((a, b) => a.order - b.order)

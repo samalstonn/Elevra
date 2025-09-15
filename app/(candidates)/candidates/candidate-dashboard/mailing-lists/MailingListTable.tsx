@@ -39,14 +39,12 @@ interface MailingListTableProps {
 export function MailingListTable({ lists }: MailingListTableProps) {
   const handleDelete = (listId: number) => {
     // Placeholder for delete functionality
-    console.log("Delete list:", listId);
     alert(`Placeholder: Delete list ${listId} (backend not implemented)`);
     // TODO: Call API to delete the list and update state in parent component
   };
 
   const handleViewSubscribers = (listId: number) => {
     // Placeholder for navigation or modal
-    console.log("View subscribers for list:", listId);
     alert(
       `Placeholder: View subscribers for ${listId} (feature not implemented)`
     );
