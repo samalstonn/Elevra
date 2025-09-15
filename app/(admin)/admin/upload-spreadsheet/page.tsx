@@ -647,7 +647,8 @@ export default function UploadSpreadsheetPage() {
               )}
               {!emailValidation.ok && (
                 <span className="text-xs text-red-600 self-center">
-                  Email validation failed ({emailValidation.errors.length})
+                  Email validation failed ({emailValidation.errors.length}){" "}
+                  {emailValidation.errors.join(", ")}
                 </span>
               )}
             </div>
