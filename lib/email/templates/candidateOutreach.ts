@@ -16,12 +16,12 @@ export function renderCandidateOutreach({
   candidateFirstName = "there",
   state,
   claimUrl,
-  contactName = "Sam Alston",
-  contactRole = "Elevra",
-  contactSubline = "Cornell ’25",
-  contactPhone = "732-547-3519",
-  ctaLabel = "Claim My Profile",
-}: CandidateOutreachParams) {
+}: // contactName = "Sam Alston",
+// contactRole = "Elevra",
+// contactSubline = "Cornell ’25",
+// contactPhone = "732-547-3519",
+// ctaLabel = "Claim My Profile",
+CandidateOutreachParams) {
   const greetingName = candidateFirstName.trim() || "there";
   const locationFragment = state ? `in ${state}` : "";
 

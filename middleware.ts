@@ -29,12 +29,21 @@ export default clerkMiddleware(async (auth, req) => {
 
     const user = await client.users.getUser(userId);
 
+    const isSubAdmin = user.privateMetadata?.isSubAdmin;
     const isAdmin = user.privateMetadata?.isAdmin;
 
-    if (req.url.includes("/admin") && !isAdmin) {
-      // redirect to homepage
-      const homeUrl = new URL("/", req.url);
-      return NextResponse.redirect(homeUrl);
+    if (req.url.includes("/admin/upload-spreadsheet")) {
+      // allow sub-admins OR admins
+      if (!isSubAdmin && !isAdmin) {
+        const homeUrl = new URL("/", req.url);
+        return NextResponse.redirect(homeUrl);
+      }
+    } else if (req.url.includes("/admin")) {
+      // only admins can access other /admin routes
+      if (!isAdmin) {
+        const homeUrl = new URL("/", req.url);
+        return NextResponse.redirect(homeUrl);
+      }
     }
 
     return NextResponse.next();

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { usePageTitle } from "@/lib/usePageTitle";
 import {
   type Row,
@@ -384,11 +384,11 @@ export default function UploadSpreadsheetPage() {
   }
 
   // --- Grouping utilities ---
-  function normalizeMunicipalityKey(r: Row): string {
+  const normalizeMunicipalityKey = useCallback((r: Row): string => {
     const city = (r.municipality || "").trim().toLowerCase();
     const state = (r.state || "").trim().toLowerCase();
     return `${city}|${state}`;
-  }
+  }, []);
 
   // --- Helpers for parsing structured JSON safely ---
   type ElectionsEnvelope = { elections: unknown[] };
@@ -409,34 +409,39 @@ export default function UploadSpreadsheetPage() {
     }
   }
 
-  function groupRowsByMunicipality(rows: Row[]): Array<{
-    key: string;
-    municipality: string;
-    state: string;
-    rows: Row[];
-  }> {
-    const map = new Map<
-      string,
-      { key: string; municipality: string; state: string; rows: Row[] }
-    >();
-    for (const r of rows) {
-      const key = normalizeMunicipalityKey(r);
-      if (!map.has(key)) {
-        map.set(key, {
-          key,
-          municipality: (r.municipality || "").trim(),
-          state: (r.state || "").trim(),
-          rows: [],
-        });
+  const groupRowsByMunicipality = useCallback(
+    (
+      rows: Row[]
+    ): Array<{
+      key: string;
+      municipality: string;
+      state: string;
+      rows: Row[];
+    }> => {
+      const map = new Map<
+        string,
+        { key: string; municipality: string; state: string; rows: Row[] }
+      >();
+      for (const r of rows) {
+        const key = normalizeMunicipalityKey(r);
+        if (!map.has(key)) {
+          map.set(key, {
+            key,
+            municipality: (r.municipality || "").trim(),
+            state: (r.state || "").trim(),
+            rows: [],
+          });
+        }
+        map.get(key)!.rows.push(r);
       }
-      map.get(key)!.rows.push(r);
-    }
-    return Array.from(map.values()).sort((a, b) => {
-      const s = (a.state || "").localeCompare(b.state || "");
-      if (s !== 0) return s;
-      return (a.municipality || "").localeCompare(b.municipality || "");
-    });
-  }
+      return Array.from(map.values()).sort((a, b) => {
+        const s = (a.state || "").localeCompare(b.state || "");
+        if (s !== 0) return s;
+        return (a.municipality || "").localeCompare(b.municipality || "");
+      });
+    },
+    [normalizeMunicipalityKey]
+  );
 
   async function handleFile(file: File) {
     setError("");
