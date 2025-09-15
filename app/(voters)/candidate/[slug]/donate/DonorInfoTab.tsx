@@ -94,7 +94,6 @@ export default function DonorInfoTab({
 
     if (aptNumber.trim()) {
       const newAddress = aptNumber + ", " + formState.address;
-      console.log("Updated address:", newAddress);
       onChange("address", newAddress);
       // Directly update the formState address so that subsequent logic uses the updated value
       formState.address = newAddress;

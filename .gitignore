@@ -54,3 +54,10 @@ node_modules/
 /blob-report/
 /playwright/.cache/
 .env*.local
+
+# Test csv files
+test-*.xlsx
+test-*.csv
+
+# Logs
+/lib/email/logs/.test-emails.log

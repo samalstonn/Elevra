@@ -85,6 +85,9 @@ export async function POST(req: NextRequest) {
       ? process.env.GEMINI_ENABLED === "true"
       : isProd; // default: enabled in prod, disabled elsewhere
     const model = process.env.GEMINI_MODEL || "gemini-2.5-pro";
+    const maxOutputTokens = Number(
+      process.env.GEMINI_MAX_OUTPUT_TOKENS ?? "4096"
+    );
 
     if (geminiEnabled && !process.env.GEMINI_API_KEY) {
       return new Response("Missing GEMINI_API_KEY", { status: 500 });
@@ -152,6 +155,7 @@ export async function POST(req: NextRequest) {
       temperature: 0,
       responseMimeType: "application/json",
       responseSchema,
+      maxOutputTokens: isNaN(maxOutputTokens) ? 4096 : maxOutputTokens,
     };
     if (useThinking) baseConfig.thinkingConfig = { thinkingBudget: isNaN(thinkingBudget) ? 0 : thinkingBudget };
 
@@ -168,7 +172,7 @@ export async function POST(req: NextRequest) {
                 {
                   text:
                     "\n\nOriginal spreadsheet rows (may include email to preserve):\n" +
-                    JSON.stringify(originalRows.slice(0, 200), null, 2),
+                    JSON.stringify(originalRows, null, 2),
                 } as const,
               ]
             : []),

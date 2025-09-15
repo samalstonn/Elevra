@@ -24,13 +24,19 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const res = await fetch(`${origin}/api/admin/email`, {
+    // Allow optional override of target admin API path via __proxyPath in body.
+    // Defaults to /api/admin/email for backward compatibility.
+    const { __proxyPath, ...payload } = (body || {}) as Record<string, unknown>;
+    const targetPath = typeof __proxyPath === "string" && __proxyPath.startsWith("/api/admin/")
+      ? __proxyPath
+      : "/api/admin/email";
+    const res = await fetch(`${origin}${targetPath}`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         "x-admin-secret": secret,
       },
-      body: JSON.stringify(body),
+      body: JSON.stringify(payload),
       // no-store to avoid caching
       cache: "no-store",
     });

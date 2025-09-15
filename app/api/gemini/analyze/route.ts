@@ -95,7 +95,7 @@ export async function POST(req: NextRequest) {
 
     const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
     const fallbackModel =
-      process.env.GEMINI_MODEL_FALLBACK || "gemini-2.0-flash";
+      process.env.GEMINI_MODEL_FALLBACK || "gemini-1.5-pro";
     const useThinking = (process.env.GEMINI_THINKING || "").toLowerCase() === "true";
     const thinkingBudget = Number(process.env.GEMINI_THINKING_BUDGET ?? "0");
     const useSearch = (process.env.GEMINI_TOOLS_GOOGLE_SEARCH || "").toLowerCase() === "true";

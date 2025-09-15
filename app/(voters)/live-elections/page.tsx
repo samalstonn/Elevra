@@ -54,8 +54,6 @@ export default function LiveElectionsPage() {
           return isElectionActive(new Date(election.date));
         });
 
-        console.log("Future elections:", futureElections);
-
         const sorted = futureElections.sort((a, b) => {
           const placeA = `${a.city || ""}, ${a.state}`.toLowerCase();
           const placeB = `${b.city || ""}, ${b.state}`.toLowerCase();

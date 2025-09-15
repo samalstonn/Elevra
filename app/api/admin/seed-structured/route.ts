@@ -57,7 +57,9 @@ function parseSeats(s?: string | null): number | null {
   return m ? parseInt(m[0], 10) : null;
 }
 
-function coerceType(t: string | undefined): "LOCAL" | "STATE" | "UNIVERSITY" | "NATIONAL" {
+function coerceType(
+  t: string | undefined
+): "LOCAL" | "STATE" | "UNIVERSITY" | "NATIONAL" {
   const v = (t || "").toUpperCase();
   if (v === "STATE" || v === "UNIVERSITY" || v === "NATIONAL") return v as any;
   return "LOCAL";
@@ -84,7 +86,12 @@ export async function POST(req: NextRequest) {
     if (!(await isAdmin(userId))) {
       return new Response("Unauthorized", { status: 401 });
     }
-    const body = (await req.json()) as { structured?: string; data?: any };
+    const body = (await req.json()) as {
+      structured?: string;
+      data?: any;
+      hidden?: boolean;
+      forceHidden?: boolean;
+    };
     const payload = body?.data ?? body?.structured;
     let input: any;
     if (typeof payload === "string") {
@@ -93,10 +100,14 @@ export async function POST(req: NextRequest) {
       input = payload;
     }
     if (!input || !Array.isArray(input.elections)) {
-      return new Response("Invalid input: missing elections array", { status: 400 });
+      return new Response("Invalid input: missing elections array", {
+        status: 400,
+      });
     }
 
     const hiddenInProd = process.env.NODE_ENV === "production";
+    const forceHidden = Boolean(body?.hidden ?? body?.forceHidden);
+    const hiddenFlag = forceHidden || hiddenInProd;
 
     const results: Array<{
       electionId: number;
@@ -105,13 +116,17 @@ export async function POST(req: NextRequest) {
       state: string;
       hidden: boolean;
       candidateSlugs: string[];
+      candidateEmails?: (string | null)[];
     }> = [];
 
     for (const item of input.elections as StructuredElection[]) {
       const e = item.election;
       const date = parseDateMMDDYYYY(e.date);
       if (!date) {
-        return new Response(`Invalid date for election '${e.title}': '${e.date}'`, { status: 400 });
+        return new Response(
+          `Invalid date for election '${e.title}': '${e.date}'`,
+          { status: 400 }
+        );
       }
       const positions = parseSeats(e.number_of_seats ?? undefined) ?? 1;
       const position = e.title || "Election";
@@ -128,11 +143,12 @@ export async function POST(req: NextRequest) {
           positions,
           state: e.state,
           type,
-          hidden: hiddenInProd,
+          hidden: hiddenFlag,
         },
       });
 
       const candidateSlugs: string[] = [];
+      const candidateEmails: (string | null)[] = [];
       for (const c of item.candidates || []) {
         const name = c.name?.trim?.() || "Unnamed";
         const slug = await generateUniqueSlug(name, undefined, "candidate");
@@ -148,6 +164,7 @@ export async function POST(req: NextRequest) {
             status: "APPROVED",
             verified: false,
             email: cleanOptional(c.email ?? null),
+            hidden: hiddenFlag,
           },
           create: {
             name,
@@ -161,10 +178,12 @@ export async function POST(req: NextRequest) {
             status: "APPROVED",
             verified: false,
             email: cleanOptional(c.email ?? null),
+            hidden: hiddenFlag,
           },
         });
 
         candidateSlugs.push(candidate.slug);
+        candidateEmails.push(candidate.email ?? null);
 
         await prisma.electionLink.upsert({
           where: {
@@ -192,15 +211,16 @@ export async function POST(req: NextRequest) {
         state: election.state,
         hidden: election.hidden,
         candidateSlugs,
+        candidateEmails,
       });
     }
 
     return Response.json({
       success: true,
       results,
-      message: hiddenInProd
-        ? "Election(s) created as hidden in production."
-        : "Election(s) created (visible in non‑prod).",
+      message: hiddenFlag
+        ? "Election(s) and candidates created as hidden."
+        : "Election(s) created (visible).",
     });
   } catch (err: any) {
     console.error("/api/admin/seed-structured error", err);
