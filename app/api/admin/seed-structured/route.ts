@@ -67,7 +67,11 @@ function coerceType(
 
 export async function POST(req: NextRequest) {
   try {
-    // Authorization: only admins may seed structured data
+    // Authorization: allow E2E header secret or fallback to admin check
+    const headerSecret = req.headers.get("x-e2e-seed-secret") || req.headers.get("x-seed-secret");
+    const envSecret = process.env.E2E_SEED_SECRET || "";
+    const bypassAuth = Boolean(headerSecret && envSecret && headerSecret === envSecret);
+
     const { userId } = await auth();
     async function isAdmin(u: string | null): Promise<boolean> {
       if (!u) return false;
@@ -78,12 +82,14 @@ export async function POST(req: NextRequest) {
       try {
         const client = await clerkClient();
         const user = await client.users.getUser(u);
-        return Boolean(user.privateMetadata?.isAdmin);
+        return Boolean(
+          user.privateMetadata?.isAdmin || user.privateMetadata?.isSubAdmin
+        );
       } catch {
         return false;
       }
     }
-    if (!(await isAdmin(userId))) {
+    if (!bypassAuth && !(await isAdmin(userId))) {
       return new Response("Unauthorized", { status: 401 });
     }
     const body = (await req.json()) as {
