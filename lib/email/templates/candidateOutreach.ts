@@ -73,7 +73,7 @@ export function renderCandidateOutreachFollowup({
     followupIntro ??
     `Following up on the note below in case it got buried. Voters ${
       locationFragment ? ` ${locationFragment} ` : " "
-    }have been viewing and comparing candidates on Elevra, and you can claim your profile: <a href="${claimUrl}" style="color:#6d28d9;text-decoration:underline;">here</a>.`;
+    }have been viewing and comparing candidates on Elevra, and you can claim your profile <a href="${claimUrl}" style="color:#6d28d9;text-decoration:underline;">here</a>.`;
 
   const html = `
     <div style="font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,\\"Helvetica Neue\\",Arial,\\"Noto Sans\\",\\"Apple Color Emoji\\",\\"Segoe UI Emoji\\";padding:24px;max-width:640px;">
