@@ -3,6 +3,7 @@ import prisma from "@/prisma/prisma";
 import { SubmissionStatus } from "@prisma/client";
 import { sendWithResend } from "@/lib/email/resend";
 import { renderAdminNotification } from "@/lib/email/templates/adminNotification";
+import { davidWeinsteinTemplate } from "@/app/(templates)/basicwebpage";
 
 // Using Resend helper; no transporter needed
 
@@ -36,6 +37,26 @@ export async function POST(req: Request) {
         clerkUserId,
       },
     });
+
+    // Ensure each existing election link for this candidate has seeded content blocks
+    const links = await prisma.electionLink.findMany({
+      where: { candidateId: candidate.id },
+      select: { electionId: true },
+    });
+    for (const link of links) {
+      const count = await prisma.contentBlock.count({
+        where: { candidateId: candidate.id, electionId: link.electionId },
+      });
+      if (count === 0) {
+        await prisma.contentBlock.createMany({
+          data: davidWeinsteinTemplate.map((block) => ({
+            ...block,
+            candidateId: candidate.id,
+            electionId: link.electionId,
+          })),
+        });
+      }
+    }
 
     // Notify admin (Resend)
     await sendWithResend({
