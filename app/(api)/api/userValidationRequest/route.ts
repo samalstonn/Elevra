@@ -76,7 +76,14 @@ export async function POST(request: Request) {
         where: { id: Number(candidateId) },
         select: { slug: true, name: true },
       });
-      const subject = `New Candidate Verification Request: ${fullName || candidate?.name || "Unknown"}`;
+      const subject = `New Candidate Verification Request: ${
+        fullName || candidate?.name || "Unknown"
+      }`;
+      const profileUrl = `${process.env.NEXT_PUBLIC_APP_URL}/candidate/${
+        candidate?.slug || ""
+      }`;
+      const adminUrl = `${process.env.NEXT_PUBLIC_APP_URL}/admin/user-validation`;
+
       await sendWithResend({
         to: process.env.ADMIN_EMAIL!,
         subject,
@@ -86,12 +93,23 @@ export async function POST(request: Request) {
             additionalInfo ||
             "A user has submitted a candidate verification request.",
           rows: [
-            { label: "Name", value: fullName },
-            { label: "Email", value: email },
-            { label: "CandidateId", value: String(candidateId) },
-            { label: "Candidate Slug", value: candidate?.slug || "" },
-            { label: "Clerk User", value: clerkUserId },
+            { label: "Full Name", value: String(fullName || "") },
+            { label: "Email", value: String(email || "") },
+            { label: "Phone", value: String(phone || "") },
+            { label: "Position", value: String(position || "") },
+            { label: "Website", value: String(website || "") },
+            { label: "LinkedIn", value: String(linkedin || "") },
+            { label: "City", value: String(city || "") },
+            { label: "State", value: String(state || "") },
+            { label: "Candidate Name", value: String(candidate?.name || "") },
+            { label: "Candidate Slug", value: String(candidate?.slug || "") },
+            { label: "Candidate ID", value: String(candidateId) },
+            { label: "Clerk User", value: String(clerkUserId) },
+            { label: "View Profile", value: `<a href="${profileUrl}">${profileUrl}</a>` },
+            { label: "Review in Admin", value: `<a href="${adminUrl}">${adminUrl}</a>` },
           ],
+          ctaLabel: "Open Admin Verification Queue",
+          ctaUrl: adminUrl,
         }),
       });
     } catch (e) {
