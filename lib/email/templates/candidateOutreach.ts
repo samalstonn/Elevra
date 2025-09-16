@@ -95,3 +95,83 @@ export function renderCandidateOutreachFollowup({
   // Return both subject and html so the caller can set the email subject line to an "RE:" style
   return { subject, html };
 }
+
+export type VerifiedCandidateTemplateExample = { name: string; url: string };
+
+export type VerifiedCandidateTemplateUpdateParams = {
+  candidateFirstName?: string; // fallback "there"
+  templatesUrl: string; // link to template/builder flow
+  profileUrl?: string; // optional profile link
+  subject?: string; // override subject
+  ctaLabel?: string; // override CTA label (default: "Create My Webpage")
+  examples?: VerifiedCandidateTemplateExample[]; // optional example pages to showcase
+};
+
+export function renderVerifiedCandidateTemplateUpdate({
+  candidateFirstName = "there",
+  templatesUrl,
+  profileUrl,
+  subject = "Update: Templates are back — create your candidate webpage",
+  ctaLabel = "Create My Webpage",
+  examples = [
+    {
+      name: "John Fluet",
+      url: "https://www.elevracommunity.com/candidate/john-fluet",
+    },
+    {
+      name: "Amanda Stylianou",
+      url: "https://www.elevracommunity.com/candidate/amanda-stylianou",
+    },
+  ],
+}: VerifiedCandidateTemplateUpdateParams) {
+  const name = (candidateFirstName || "").trim() || "there";
+
+  const examplesHtml =
+    examples.length > 0
+      ? `
+        <p style="margin:0 0 8px 0;line-height:1.55;">Want to see what it looks like? Here are a couple awesome examples from candidates near you:</p>
+        <ul style="margin:0 0 16px 20px;padding:0;line-height:1.55;">
+          ${examples
+            .map(
+              (e) =>
+                `<li><a href="${e.url}" style="color:#6d28d9;text-decoration:underline;">${e.name}</a></li>`
+            )
+            .join("")}
+        </ul>`
+      : "";
+
+  const profileBlurb = `Once published, your page will be discoverable under the <strong>School Board Tab</strong> on your Elevra profile${
+    profileUrl
+      ? ` (<a href="${profileUrl}" style="color:#6d28d9;text-decoration:underline;">view profile</a>)`
+      : ""
+  }.`;
+
+  const html = `
+    <div style="font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,\\"Helvetica Neue\\",Arial,\\"Noto Sans\\",\\"Apple Color Emoji\\",\\"Segoe UI Emoji\\";padding:24px;max-width:640px;">
+      <p style="margin:0 0 16px 0;">Hi ${name},</p>
+      <p style="margin:0 0 16px 0;line-height:1.55;">
+        Due to a surge in new signups, our Templates feature didn’t work as expected.
+      </p>
+      <p style="margin:0 0 16px 0;line-height:1.55;">
+        You can once again create a modern, effective candidate webpage for voters in just a few minutes. ${profileBlurb}
+      </p>
+      ${examplesHtml}
+      <p style="margin:0 20px 20px 0;">
+        <a href="${templatesUrl}" style="display:inline-block;padding:10px 16px;border-radius:10px;background:#6d28d9;color:#fff;text-decoration:none;font-weight:600;">
+          ${ctaLabel}
+        </a>
+      </p>
+      <p style="margin:0 0 16px 0;line-height:1.55;color:#6b7280;font-size:13px;">
+        Prefer a direct link? Copy and paste: <br/>
+        <a href="${templatesUrl}" style="color:#6d28d9;text-decoration:underline;">${templatesUrl}</a>
+      </p>
+      <p style="margin:0 0 20px 0;line-height:1.55;">
+        Best,<br/>
+        Adam Rose<br/>
+        Elevra | Cornell ’25<br/>
+        <a href="https://www.linkedin.com/in/adamtherose/" style="color:#6d28d9;text-decoration:underline;">LinkedIn</a>
+      </p>
+    </div>`;
+
+  return { subject, html };
+}

@@ -29,7 +29,9 @@ export default function CandidateOutreachPage() {
   const [sending, setSending] = useState(false);
   const [showAll, setShowAll] = useState(false);
   const [result, setResult] = useState<string>("");
-  const [useFollowup, setUseFollowup] = useState<boolean>(false);
+  const [templateType, setTemplateType] = useState<
+    "initial" | "followup" | "verifiedUpdate"
+  >("initial");
   const [emailValidation, setEmailValidation] = useState<{
     ok: boolean;
     errors: string[];
@@ -147,7 +149,7 @@ export default function CandidateOutreachPage() {
           __proxyPath: "/api/admin/candidate-outreach",
           state: stateInput.trim() || undefined,
           rows,
-          followup: useFollowup || undefined,
+          templateType,
           scheduledAtIso,
         }),
       });
@@ -188,7 +190,7 @@ export default function CandidateOutreachPage() {
           className="block w-full text-sm"
         />
 
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 items-end">
+        <div className="grid grid-cols-1 sm:grid-cols-4 gap-3 items-end">
           <div className="sm:col-span-2">
             <label className="block text-sm font-medium mb-1">State</label>
             <input
@@ -197,15 +199,22 @@ export default function CandidateOutreachPage() {
               placeholder="NJ (default if none inputted)"
               className="w-full rounded border px-3 py-2"
             />
-            <label className="mt-3 flex items-center gap-2 text-sm text-gray-800">
-              <input
-                type="checkbox"
-                className="h-4 w-4"
-                checked={useFollowup}
-                onChange={(e) => setUseFollowup(e.target.checked)}
-              />
-              Use follow-up template
-            </label>
+          </div>
+          <div>
+            <label className="block text-sm font-medium mb-1">Email Template</label>
+            <select
+              value={templateType}
+              onChange={(e) =>
+                setTemplateType(
+                  (e.target.value as "initial" | "followup" | "verifiedUpdate")
+                )
+              }
+              className="w-full rounded border px-3 py-2"
+            >
+              <option value="initial">Initial Outreach</option>
+              <option value="followup">Follow-up</option>
+              <option value="verifiedUpdate">Verified: Templates Update</option>
+            </select>
           </div>
           <button
             type="button"

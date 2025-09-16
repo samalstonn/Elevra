@@ -3,6 +3,7 @@ import { sendWithResend, isEmailDryRun } from "@/lib/email/resend";
 import {
   renderCandidateOutreach,
   renderCandidateOutreachFollowup,
+  renderVerifiedCandidateTemplateUpdate,
 } from "@/lib/email/templates/candidateOutreach";
 
 export const runtime = "nodejs";
@@ -20,7 +21,8 @@ type OutreachPayload = {
   from?: string;
   rows: OutreachRow[];
   scheduledAtIso?: string; // Optional ISO timestamp for scheduling
-  followup?: boolean; // If true, send the follow-up template
+  followup?: boolean; // legacy flag for follow-up
+  templateType?: "initial" | "followup" | "verifiedUpdate"; // preferred selector
 };
 
 const EMAIL_RE = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
@@ -115,16 +117,27 @@ export async function POST(req: NextRequest) {
   const sent: { index: number; email: string; id: string | null }[] = [];
   const failures: { index: number; email: string; error: string }[] = [];
 
+  const selectedType: "initial" | "followup" | "verifiedUpdate" =
+    (body.templateType as any) || (body.followup ? "followup" : "initial");
+
   for (let i = 0; i < recipients.length; i++) {
     const r = recipients[i];
     try {
       let subjectToUse: string;
       let html: string;
-      if (body.followup) {
+      if (selectedType === "followup") {
         const fr = renderCandidateOutreachFollowup({
           candidateFirstName: r.firstName || undefined,
           state,
           claimUrl: r.candidateLink,
+        });
+        subjectToUse = (body.subject || fr.subject).trim();
+        html = fr.html;
+      } else if (selectedType === "verifiedUpdate") {
+        const fr = renderVerifiedCandidateTemplateUpdate({
+          candidateFirstName: r.firstName || undefined,
+          templatesUrl: r.candidateLink, // Reuse CandidateLink as templates URL input
+          profileUrl: r.candidateLink,
         });
         subjectToUse = (body.subject || fr.subject).trim();
         html = fr.html;
