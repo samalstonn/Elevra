@@ -118,7 +118,8 @@ export async function POST(req: NextRequest) {
   const failures: { index: number; email: string; error: string }[] = [];
 
   const selectedType: "initial" | "followup" | "verifiedUpdate" =
-    (body.templateType as any) || (body.followup ? "followup" : "initial");
+    (body.templateType as "initial" | "followup" | "verifiedUpdate") ||
+    (body.followup ? "followup" : "initial");
 
   for (let i = 0; i < recipients.length; i++) {
     const r = recipients[i];
