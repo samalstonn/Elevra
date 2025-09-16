@@ -29,6 +29,7 @@ export default function CandidateOutreachPage() {
   const [sending, setSending] = useState(false);
   const [showAll, setShowAll] = useState(false);
   const [result, setResult] = useState<string>("");
+  const [useFollowup, setUseFollowup] = useState<boolean>(false);
   const [emailValidation, setEmailValidation] = useState<{
     ok: boolean;
     errors: string[];
@@ -146,6 +147,7 @@ export default function CandidateOutreachPage() {
           __proxyPath: "/api/admin/candidate-outreach",
           state: stateInput.trim() || undefined,
           rows,
+          followup: useFollowup || undefined,
           scheduledAtIso,
         }),
       });
@@ -195,6 +197,15 @@ export default function CandidateOutreachPage() {
               placeholder="NJ (default if none inputted)"
               className="w-full rounded border px-3 py-2"
             />
+            <label className="mt-3 flex items-center gap-2 text-sm text-gray-800">
+              <input
+                type="checkbox"
+                className="h-4 w-4"
+                checked={useFollowup}
+                onChange={(e) => setUseFollowup(e.target.checked)}
+              />
+              Use follow-up template
+            </label>
           </div>
           <button
             type="button"

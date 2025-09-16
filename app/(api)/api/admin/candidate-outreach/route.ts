@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { sendWithResend, isEmailDryRun } from "@/lib/email/resend";
-import { renderCandidateOutreach } from "@/lib/email/templates/candidateOutreach";
+import {
+  renderCandidateOutreach,
+  renderCandidateOutreachFollowup,
+} from "@/lib/email/templates/candidateOutreach";
 
 export const runtime = "nodejs";
 
@@ -17,6 +20,7 @@ type OutreachPayload = {
   from?: string;
   rows: OutreachRow[];
   scheduledAtIso?: string; // Optional ISO timestamp for scheduling
+  followup?: boolean; // If true, send the follow-up template
 };
 
 const EMAIL_RE = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
@@ -95,9 +99,7 @@ export async function POST(req: NextRequest) {
   }
 
   const state = (body.state || "").trim() || undefined;
-  const subject = (
-    body.subject || `Your Candidate Profile is Live on Elevra`
-  ).trim();
+  const defaultInitialSubject = `Your Candidate Profile is Live on Elevra`;
   // Parse schedule time if provided
   let scheduledAt: Date | undefined = undefined;
   if (typeof body.scheduledAtIso === "string" && body.scheduledAtIso.trim()) {
@@ -116,14 +118,27 @@ export async function POST(req: NextRequest) {
   for (let i = 0; i < recipients.length; i++) {
     const r = recipients[i];
     try {
-      const html = renderCandidateOutreach({
-        candidateFirstName: r.firstName || undefined,
-        state,
-        claimUrl: r.candidateLink,
-      });
+      let subjectToUse: string;
+      let html: string;
+      if (body.followup) {
+        const fr = renderCandidateOutreachFollowup({
+          candidateFirstName: r.firstName || undefined,
+          state,
+          claimUrl: r.candidateLink,
+        });
+        subjectToUse = (body.subject || fr.subject).trim();
+        html = fr.html;
+      } else {
+        html = renderCandidateOutreach({
+          candidateFirstName: r.firstName || undefined,
+          state,
+          claimUrl: r.candidateLink,
+        });
+        subjectToUse = (body.subject || defaultInitialSubject).trim();
+      }
       const result = await sendWithResend({
         to: r.email,
-        subject,
+        subject: subjectToUse,
         html,
         from: body.from,
         scheduledAt,
