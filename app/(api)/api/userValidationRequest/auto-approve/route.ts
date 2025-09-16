@@ -74,6 +74,46 @@ export async function POST(req: Request) {
       }),
     });
 
+    // Notify user (non-blocking). Prefer Clerk user email; fallback to candidate.email
+    try {
+      let userEmail: string | null = null;
+      try {
+        const { clerkClient } = await import("@clerk/nextjs/server");
+        const client = await clerkClient();
+        const user = await client.users.getUser(clerkUserId);
+        const primary = user.emailAddresses.find(
+          (e: { id: string }) => e.id === user.primaryEmailAddressId
+        )?.emailAddress as string | undefined;
+        userEmail = primary || user.emailAddresses[0]?.emailAddress || null;
+      } catch {
+        userEmail = candidate.email || null;
+      }
+      if (userEmail) {
+        const dashboardUrl = `${process.env.NEXT_PUBLIC_APP_URL}/candidates/candidate-dashboard?verified=1&slug=${candidate.slug}`;
+        await sendWithResend({
+          from: process.env.RESEND_FROM,
+          to: userEmail,
+          subject: "You're Verified on Elevra!",
+          html: renderAdminNotification({
+            title: "You're Verified on Elevra!",
+            intro:
+              "Your candidate profile has been approved. Visit your dashboard to customize your page and manage content.",
+            rows: [
+              { label: "Candidate", value: candidate.name },
+              {
+                label: "Profile",
+                value: `${process.env.NEXT_PUBLIC_APP_URL}/candidate/${candidate.slug}`,
+              },
+            ],
+            ctaLabel: "Open Candidate Dashboard",
+            ctaUrl: dashboardUrl,
+          }),
+        });
+      }
+    } catch (e) {
+      console.warn("User approval email failed (non-blocking)", e);
+    }
+
     return NextResponse.json({ success: true });
   } catch (err) {
     console.error("Error in auto-approve:", err);

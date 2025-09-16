@@ -123,6 +123,32 @@ export default async function VerifyPage({
       console.warn("Admin email failed (non-blocking)", e);
     }
 
+    // Fire-and-forget user confirmation email
+    try {
+      const dashboardUrl = `${process.env.NEXT_PUBLIC_APP_URL}/candidates/candidate-dashboard?verified=1&slug=${candidateRec.slug}`;
+      void sendWithResend({
+        from: process.env.RESEND_FROM,
+        to: candidateRec.email || process.env.ADMIN_EMAIL!, // fallback to admin in rare cases
+        subject: "You're Verified on Elevra!",
+        html: renderAdminNotification({
+          title: "You're Verified on Elevra!",
+          intro:
+            "Your candidate profile has been approved. Visit your dashboard to customize your page and manage content.",
+          rows: [
+            { label: "Candidate", value: candidateRec.name },
+            {
+              label: "Profile",
+              value: `${process.env.NEXT_PUBLIC_APP_URL}/candidate/${candidateRec.slug}`,
+            },
+          ],
+          ctaLabel: "Open Candidate Dashboard",
+          ctaUrl: dashboardUrl,
+        }),
+      });
+    } catch (e) {
+      console.warn("User email failed (non-blocking)", e);
+    }
+
     // Redirect to dashboard with success flag
     redirect(`/candidates/candidate-dashboard?verified=1&slug=${candidate}`);
   }

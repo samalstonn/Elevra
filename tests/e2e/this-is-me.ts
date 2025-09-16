@@ -136,6 +136,8 @@ test("Correct Email - Already Signed In: Successful Verification and Sent to Das
   await expect(
     page.getByRole("dialog", { name: "You’re Verified on Elevra!" })
   ).toBeVisible();
+  // Expect user email sent for auto-approve flow
+  await expectEmailLogged("You're Verified on Elevra!");
   await expectHasWeinsteinTemplateBlocks();
 });
 
@@ -232,6 +234,10 @@ test(
     await expect(
       page.getByRole("heading", { name: "Verification Request Submitted!" })
     ).toBeVisible();
+
+    // Expect user confirmation email and admin notification emails to be logged
+    await expectEmailLogged("We received your Elevra verification request");
+    await expectEmailLogged("New Candidate Verification Request");
   }
 );
 
@@ -388,8 +394,9 @@ test("Manual Verification: create request then admin approves -> verified + temp
   const created = await createRes.json();
   expect(created?.id).toBeTruthy();
 
-  // Expect admin email for "new verification request" to be logged
+  // Expect admin + user emails for the new verification request
   await expectEmailLogged("New Candidate Verification Request");
+  await expectEmailLogged("We received your Elevra verification request");
 
   // 3) Admin approves the request
   const approveRes = await request.post(
@@ -408,6 +415,8 @@ test("Manual Verification: create request then admin approves -> verified + temp
 
   // Expect admin email for approval to be logged
   await expectEmailLogged("profile is now verified");
+  // Expect user email for approval to be logged
+  await expectEmailLogged("You're Verified on Elevra!");
 
   // 4) Verify candidate is now verified in DB and template blocks exist
   const candidate = await prisma.candidate.findUnique({
@@ -471,6 +480,8 @@ test("Correct Email - Not Signed In: Successful Verification and Sent to Dashboa
   await expect(
     page.getByRole("dialog", { name: "You’re Verified on Elevra!" })
   ).toBeVisible();
+  // Expect user email sent for auto-approve flow
+  await expectEmailLogged("You're Verified on Elevra!");
   await expectHasWeinsteinTemplateBlocks();
 });
 

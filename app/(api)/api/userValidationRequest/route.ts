@@ -116,6 +116,47 @@ export async function POST(request: Request) {
       console.warn("Admin email for verification request failed (non-blocking)", e);
     }
 
+    // Send confirmation email to the user (non-blocking)
+    try {
+      // Use provided email, or fall back to Clerk user email if provided
+      let recipient = email || null;
+      if (!recipient && clerkUserId) {
+        try {
+          const { clerkClient } = await import("@clerk/nextjs/server");
+          const client = await clerkClient();
+          const user = await client.users.getUser(clerkUserId);
+          const primary = user.emailAddresses.find(
+            (e: { id: string }) => e.id === user.primaryEmailAddressId
+          )?.emailAddress as string | undefined;
+          recipient = primary || user.emailAddresses[0]?.emailAddress || null;
+        } catch {}
+      }
+      if (recipient) {
+        const candidate = await prisma.candidate.findUnique({
+          where: { id: Number(candidateId) },
+          select: { slug: true, name: true },
+        });
+        const profileUrl = `${process.env.NEXT_PUBLIC_APP_URL}/candidate/${candidate?.slug || ""}`;
+        await sendWithResend({
+          from: process.env.RESEND_FROM,
+          to: recipient,
+          subject: "We received your Elevra verification request",
+          html: renderAdminNotification({
+            title: "Verification Request Received",
+            intro:
+              "Thanks for submitting your verification request. Our team will review it and notify you when your profile is approved.",
+            rows: [
+              { label: "Candidate", value: String(candidate?.name || fullName || "") },
+              { label: "Submitted Email", value: String(email || recipient) },
+              { label: "Profile", value: `<a href="${profileUrl}">${profileUrl}</a>` },
+            ],
+          }),
+        });
+      }
+    } catch (e) {
+      console.warn("User confirmation email failed (non-blocking)", e);
+    }
+
     return NextResponse.json({ id: newRequest.id });
   } catch (err) {
     console.error("Error in POST /api/userValidationRequest:", err);
