@@ -46,7 +46,7 @@ export async function POST(req: Request) {
       data: { status: SubmissionStatus.APPROVED },
     });
     // Notify admin of approval (Resend)
-    await sendWithResend({
+    const emailResult = await sendWithResend({
       to: process.env.ADMIN_EMAIL!,
       subject: `${request.fullName} Elevra profile is now verified`,
       html: renderAdminNotification({
@@ -60,6 +60,13 @@ export async function POST(req: Request) {
         ctaUrl: `${process.env.NEXT_PUBLIC_APP_URL}/candidate/${candidate.slug}`,
       }),
     });
+    if (!emailResult?.id) {
+      console.error("Admin approval email did not return an id from Resend");
+      return NextResponse.json(
+        { error: "Approval email failed to send" },
+        { status: 500 }
+      );
+    }
   } catch (err) {
     console.error(err);
     return NextResponse.redirect(new URL("/candidate/verify/error", req.url));

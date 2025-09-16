@@ -1,6 +1,8 @@
 // /api/userValidationRequest/route.ts
 import { NextResponse } from "next/server";
 import prisma from "@/prisma/prisma";
+import { sendWithResend } from "@/lib/email/resend";
+import { renderAdminNotification } from "@/lib/email/templates/adminNotification";
 
 export async function POST(request: Request) {
   try {
@@ -67,6 +69,34 @@ export async function POST(request: Request) {
         status: "PENDING",
       },
     });
+
+    // Notify admin a manual verification request was submitted (Resend)
+    try {
+      const candidate = await prisma.candidate.findUnique({
+        where: { id: Number(candidateId) },
+        select: { slug: true, name: true },
+      });
+      const subject = `New Candidate Verification Request: ${fullName || candidate?.name || "Unknown"}`;
+      await sendWithResend({
+        to: process.env.ADMIN_EMAIL!,
+        subject,
+        html: renderAdminNotification({
+          title: "New Verification Request Submitted",
+          intro:
+            additionalInfo ||
+            "A user has submitted a candidate verification request.",
+          rows: [
+            { label: "Name", value: fullName },
+            { label: "Email", value: email },
+            { label: "CandidateId", value: String(candidateId) },
+            { label: "Candidate Slug", value: candidate?.slug || "" },
+            { label: "Clerk User", value: clerkUserId },
+          ],
+        }),
+      });
+    } catch (e) {
+      console.warn("Admin email for verification request failed (non-blocking)", e);
+    }
 
     return NextResponse.json({ id: newRequest.id });
   } catch (err) {
