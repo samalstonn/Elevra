@@ -1,7 +1,39 @@
 /**
  * Handles POST requests to backfill content blocks for candidate-election links.
- * Only accessible by admin users. Supports dry run mode and filtering by candidate or election.
+ * Only accessible by admin or subAdmin users. Supports dry run mode and filtering by candidate or election.
  * Returns a summary of processed, seeded, and skipped links.
+ * 
+ * All verified candidates (dry run, print slugs + election):
+fetch('/api/admin/backfill-contentblocks', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({ dryRun: true, onlyVerified: true })
+})
+.then(r => r.json())
+.then(d => {
+  console.log(`Verified candidates with zero blocks: ${d.seeded.length}`);
+  console.table(d.seeded.map(s => ({
+    slug: s.candidateSlug,
+    election: `${s.election.position} — ${s.election.city}, ${s.election.state} (${s.election.date})`
+  })));
+  return d;
+});
+
+Specific candidate by slug (dry run, print slug + election):
+fetch('/api/admin/backfill-contentblocks', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({ slug: 'existing-candidate-slug', dryRun: true, onlyVerified: true })
+})
+.then(r => r.json())
+.then(d => {
+  console.table(d.seeded.map(s => ({
+    slug: s.candidateSlug,
+    election: `${s.election.position} — ${s.election.city}, ${s.election.state} (${s.election.date})`
+  })));
+  return d;
+});
+ *
  */
 import { NextRequest } from "next/server";
 import { auth, clerkClient } from "@clerk/nextjs/server";
@@ -13,7 +45,19 @@ type BackfillBody = {
   candidateId?: number;
   slug?: string;
   electionId?: number;
+  onlyVerified?: boolean;
 };
+
+type BackfilledCandidateList = Array<{
+  candidateId: number;
+  candidateSlug: string | null;
+  candidateName: string | null;
+  candidateVerified: boolean;
+  electionId: number;
+  election: { position: string; city: string; state: string; date: string };
+  count?: number;
+  reason?: string;
+}>;
 
 async function isAdmin(userId: string | null): Promise<boolean> {
   if (!userId) return false;
@@ -68,7 +112,9 @@ export async function POST(req: NextRequest) {
       select: {
         candidateId: true,
         electionId: true,
-        candidate: { select: { id: true, slug: true, name: true } },
+        candidate: {
+          select: { id: true, slug: true, name: true, verified: true },
+        },
         election: {
           select: {
             id: true,
@@ -81,27 +127,19 @@ export async function POST(req: NextRequest) {
       },
     });
 
+    // Optional: restrict to verified candidates only
+    const onlyVerified = Boolean(body?.onlyVerified);
+    const filteredLinks = onlyVerified
+      ? links.filter((l) => l.candidate?.verified)
+      : links;
+
     let processed = 0;
     let seededLinks = 0;
     let insertedBlocks = 0;
-    const seeded: Array<{
-      candidateId: number;
-      candidateSlug: string | null;
-      candidateName: string | null;
-      electionId: number;
-      election: { position: string; city: string; state: string; date: string };
-      count: number;
-    }> = [];
-    const skipped: Array<{
-      candidateId: number;
-      candidateSlug: string | null;
-      candidateName: string | null;
-      electionId: number;
-      election: { position: string; city: string; state: string; date: string };
-      reason: string;
-    }> = [];
+    const seeded: BackfilledCandidateList = [];
+    const skipped: BackfilledCandidateList = [];
 
-    for (const link of links) {
+    for (const link of filteredLinks) {
       processed++;
       const count = await prisma.contentBlock.count({
         where: { candidateId: link.candidateId, electionId: link.electionId },
@@ -116,12 +154,14 @@ export async function POST(req: NextRequest) {
       };
       const cSlug = link.candidate?.slug || null;
       const cName = link.candidate?.name || null;
+      const cVerified = Boolean(link.candidate?.verified);
 
       if (count > 0) {
         skipped.push({
           candidateId: link.candidateId,
           candidateSlug: cSlug,
           candidateName: cName,
+          candidateVerified: cVerified,
           electionId: link.electionId,
           election: eInfo,
           reason: `has ${count} block(s)`,
@@ -142,6 +182,7 @@ export async function POST(req: NextRequest) {
         candidateId: link.candidateId,
         candidateSlug: cSlug,
         candidateName: cName,
+        candidateVerified: cVerified,
         electionId: link.electionId,
         election: eInfo,
         count: davidWeinsteinTemplate.length,
