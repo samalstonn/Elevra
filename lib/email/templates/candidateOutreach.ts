@@ -50,6 +50,7 @@ CandidateOutreachParams) {
 export type CandidateOutreachFollowupParams = CandidateOutreachParams & {
   subject?: string; // Optional subject override (defaults to an "RE:" style)
   followupIntro?: string; // Optional custom intro paragraph for the follow-up
+  base?: "initial" | "verifiedUpdate"; // Which base email to quote
 };
 
 export function renderCandidateOutreachFollowup({
@@ -58,16 +59,24 @@ export function renderCandidateOutreachFollowup({
   claimUrl,
   followupIntro,
   subject = "RE: Claim your Elevra profile",
+  base = "initial",
 }: CandidateOutreachFollowupParams) {
   const greetingName = candidateFirstName.trim() || "there";
   const locationFragment = state ? `in ${state}` : "";
 
   // Reuse the original outreach content so the thread looks like a real follow-up
-  const originalHtml = renderCandidateOutreach({
-    candidateFirstName,
-    state,
-    claimUrl,
-  });
+  const originalHtml =
+    base === "verifiedUpdate"
+      ? renderVerifiedCandidateTemplateUpdate({
+          candidateFirstName,
+          templatesUrl: claimUrl,
+          profileUrl: claimUrl,
+        }).html
+      : renderCandidateOutreach({
+          candidateFirstName,
+          state,
+          claimUrl,
+        });
 
   const introHtml =
     followupIntro ??

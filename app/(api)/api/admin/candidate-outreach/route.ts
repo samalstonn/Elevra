@@ -1,10 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { sendWithResend, isEmailDryRun } from "@/lib/email/resend";
-import {
-  renderCandidateOutreach,
-  renderCandidateOutreachFollowup,
-  renderVerifiedCandidateTemplateUpdate,
-} from "@/lib/email/templates/candidateOutreach";
+import { renderEmailTemplate, TemplateKey } from "@/lib/email/templates/render";
 
 export const runtime = "nodejs";
 
@@ -22,7 +18,10 @@ type OutreachPayload = {
   rows: OutreachRow[];
   scheduledAtIso?: string; // Optional ISO timestamp for scheduling
   followup?: boolean; // legacy flag for follow-up
-  templateType?: "initial" | "followup" | "verifiedUpdate"; // preferred selector
+  templateType?: TemplateKey; // preferred selector
+  baseTemplate?: TemplateKey; // which base to quote for followups
+  composeAsFollowup?: boolean; // if true, send a single follow-up that quotes base
+  sequence?: { template: TemplateKey; offsetDays?: number }[]; // optional multi-step sequence
 };
 
 const EMAIL_RE = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
@@ -117,50 +116,57 @@ export async function POST(req: NextRequest) {
   const sent: { index: number; email: string; id: string | null }[] = [];
   const failures: { index: number; email: string; error: string }[] = [];
 
-  const selectedType: "initial" | "followup" | "verifiedUpdate" =
-    (body.templateType as "initial" | "followup" | "verifiedUpdate") ||
-    (body.followup ? "followup" : "initial");
+  const selectedType: TemplateKey =
+    (body.templateType as TemplateKey) || (body.followup ? "followup" : "initial");
+  const hasSequence = Array.isArray(body.sequence) && body.sequence.length > 0;
+  const steps: { template: TemplateKey; offsetDays?: number }[] = hasSequence
+    ? (body.sequence as { template: TemplateKey; offsetDays?: number }[])
+    : body.composeAsFollowup
+    ? [{ template: "followup" as const, offsetDays: 0 }]
+    : [{ template: selectedType, offsetDays: 0 }];
 
   for (let i = 0; i < recipients.length; i++) {
     const r = recipients[i];
-    try {
-      let subjectToUse: string;
-      let html: string;
-      if (selectedType === "followup") {
-        const fr = renderCandidateOutreachFollowup({
-          candidateFirstName: r.firstName || undefined,
-          state,
-          claimUrl: r.candidateLink,
+    for (const step of steps) {
+      try {
+        const { subject, html } = renderEmailTemplate(
+          step.template,
+          {
+            candidateFirstName: r.firstName || undefined,
+            state,
+            claimUrl: r.candidateLink,
+            templatesUrl: r.candidateLink,
+            profileUrl: r.candidateLink,
+          },
+          { baseForFollowup: body.baseTemplate || "initial" }
+        );
+        const subjectToUse = (body.subject || subject || defaultInitialSubject).trim();
+
+        // Compute scheduledAt per step (offset from base scheduledAtIso or now)
+        let stepScheduledAt = scheduledAt;
+        if (step.offsetDays && (scheduledAt || true)) {
+          const base = scheduledAt ? scheduledAt : new Date();
+          const offsetMs = Math.max(0, Math.floor(step.offsetDays * 24 * 60 * 60 * 1000));
+          const offset = new Date(base.getTime() + offsetMs);
+          if (offset.getTime() >= Date.now() + 60_000) {
+            stepScheduledAt = offset;
+          } else if (!scheduledAt) {
+            stepScheduledAt = undefined;
+          }
+        }
+
+        const result = await sendWithResend({
+          to: r.email,
+          subject: subjectToUse,
+          html,
+          from: body.from,
+          scheduledAt: stepScheduledAt,
         });
-        subjectToUse = (body.subject || fr.subject).trim();
-        html = fr.html;
-      } else if (selectedType === "verifiedUpdate") {
-        const fr = renderVerifiedCandidateTemplateUpdate({
-          candidateFirstName: r.firstName || undefined,
-          templatesUrl: r.candidateLink, // Reuse CandidateLink as templates URL input
-          profileUrl: r.candidateLink,
-        });
-        subjectToUse = (body.subject || fr.subject).trim();
-        html = fr.html;
-      } else {
-        html = renderCandidateOutreach({
-          candidateFirstName: r.firstName || undefined,
-          state,
-          claimUrl: r.candidateLink,
-        });
-        subjectToUse = (body.subject || defaultInitialSubject).trim();
+        sent.push({ index: i, email: r.email, id: result?.id || null });
+      } catch (err: unknown) {
+        const msg = err instanceof Error ? err.message : String(err);
+        failures.push({ index: i, email: r.email, error: msg });
       }
-      const result = await sendWithResend({
-        to: r.email,
-        subject: subjectToUse,
-        html,
-        from: body.from,
-        scheduledAt,
-      });
-      sent.push({ index: i, email: r.email, id: result?.id || null });
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : String(err);
-      failures.push({ index: i, email: r.email, error: msg });
     }
   }
 

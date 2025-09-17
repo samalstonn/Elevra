@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { usePageTitle } from "@/lib/usePageTitle";
 import { buildScheduledIso, buildScheduleDisplay } from "./helpers";
 import { normalizeHeader, validateEmails } from "@/election-source/helpers";
@@ -32,6 +32,9 @@ export default function CandidateOutreachPage() {
   const [templateType, setTemplateType] = useState<
     "initial" | "followup" | "verifiedUpdate"
   >("initial");
+  const [baseForFollowup, setBaseForFollowup] = useState<
+    "initial" | "verifiedUpdate"
+  >("initial");
   const [emailValidation, setEmailValidation] = useState<{
     ok: boolean;
     errors: string[];
@@ -41,6 +44,8 @@ export default function CandidateOutreachPage() {
   const [confirmVisible, setConfirmVisible] = useState(false);
   const [confirmMessage, setConfirmMessage] = useState("");
   const [pendingScheduledIso, setPendingScheduledIso] = useState<string | undefined>(undefined);
+  const [previewHtml, setPreviewHtml] = useState<string>("");
+  const [previewSubject, setPreviewSubject] = useState<string>("");
 
   async function handleFile(file: File) {
     setError("");
@@ -150,6 +155,7 @@ export default function CandidateOutreachPage() {
           state: stateInput.trim() || undefined,
           rows,
           templateType,
+          baseTemplate: templateType === "followup" ? baseForFollowup : undefined,
           scheduledAtIso,
         }),
       });
@@ -169,6 +175,45 @@ export default function CandidateOutreachPage() {
   }
 
   const previewRows = showAll ? rows : rows.slice(0, 5);
+
+  useEffect(() => {
+    // Auto-update preview when inputs change
+    if (!rows.length) {
+      setPreviewHtml("");
+      setPreviewSubject("");
+      return;
+    }
+    const r = rows[0];
+    const candidateFirstName = (r.firstName || "").trim() || undefined;
+    const controller = new AbortController();
+    (async () => {
+      try {
+        const res = await fetch("/api/admin/email-template-preview", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          signal: controller.signal,
+          body: JSON.stringify({
+            template: templateType,
+            baseForFollowup: baseForFollowup,
+            data: {
+              candidateFirstName,
+              state: stateInput.trim() || undefined,
+              claimUrl: r.candidateLink,
+              templatesUrl: r.candidateLink,
+              profileUrl: r.candidateLink,
+            },
+          }),
+        });
+        if (!res.ok) return;
+        const data = await res.json();
+        setPreviewSubject(String(data.subject || ""));
+        setPreviewHtml(String(data.html || ""));
+      } catch (e) {
+        if ((e as any)?.name !== "AbortError") console.warn(e);
+      }
+    })();
+    return () => controller.abort();
+  }, [rows, stateInput, templateType, baseForFollowup]);
 
   return (
     <main className="max-w-3xl mx-auto mt-10 p-4">
@@ -216,6 +261,23 @@ export default function CandidateOutreachPage() {
               <option value="verifiedUpdate">Verified: Templates Update</option>
             </select>
           </div>
+          {templateType === "followup" && (
+            <div>
+              <label className="block text-sm font-medium mb-1">Base for Follow-up</label>
+              <select
+                value={baseForFollowup}
+                onChange={(e) =>
+                  setBaseForFollowup(
+                    (e.target.value as "initial" | "verifiedUpdate")
+                  )
+                }
+                className="w-full rounded border px-3 py-2"
+              >
+                <option value="initial">Initial Outreach</option>
+                <option value="verifiedUpdate">Verified: Templates Update</option>
+              </select>
+            </div>
+          )}
           <button
             type="button"
             onClick={onClickSend}
@@ -225,6 +287,10 @@ export default function CandidateOutreachPage() {
             {sending ? "Sending…" : "Send Emails"}
           </button>
         </div>
+
+        {rows.length > 0 && (
+          <div className="text-xs text-gray-500">Preview updates automatically using the first CSV row.</div>
+        )}
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div>
@@ -314,6 +380,25 @@ export default function CandidateOutreachPage() {
               className="w-full h-64 rounded border px-3 py-2 font-mono text-xs"
               value={result}
             />
+          </div>
+        )}
+
+        {(previewHtml || previewSubject) && (
+          <div className="mt-4">
+            <label className="text-sm font-medium mb-1 inline-block">
+              Preview
+            </label>
+            <div className="rounded border bg-white/60">
+              {previewSubject && (
+                <div className="px-3 py-2 border-b text-sm font-medium">
+                  Subject: <span className="font-normal">{previewSubject}</span>
+                </div>
+              )}
+              <div
+                className="p-3 text-sm"
+                dangerouslySetInnerHTML={{ __html: previewHtml }}
+              />
+            </div>
           </div>
         )}
       </div>
