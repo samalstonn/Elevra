@@ -11,6 +11,7 @@ import { marked } from "marked";
 import DOMPurify from "isomorphic-dompurify";
 import Image from "next/image";
 import { davidWeinsteinTemplate } from "@/app/(templates)/basicwebpage";
+import { EmptyState } from "@/components/ui/empty-state";
 
 type TemplateBlock = (typeof davidWeinsteinTemplate)[number];
 
@@ -90,14 +91,10 @@ export function ElectionProfileTab({ link }: ElectionProfileTabProps) {
   return (
     <div className="space-y-6 mx-auto max-w-4xl px-4">
       {blocksToRender.length === 0 && (
-        <div className="border border-dashed rounded p-6 bg-white/70 text-center">
-          <p className="text-gray-600 text-sm">
-            Candidate overview is not available yet for this election.
-          </p>
-          <p className="text-gray-500 text-xs mt-2">
-            Check back soon as the candidate adds details.
-          </p>
-        </div>
+        <EmptyState
+          primary="Candidate overview is not available yet for this election."
+          secondary="Check back soon as the candidate adds details."
+        />
       )}
       {blocksToRender.map((block) => {
         const color = block.color ? colorClass[block.color] : "";

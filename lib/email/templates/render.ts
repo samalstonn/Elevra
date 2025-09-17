@@ -21,8 +21,8 @@ function readTemplateFile(key: TemplateKey): string {
 }
 
 function interpolate(html: string, vars: Record<string, string>): string {
-  return html.replace(/\{\{\s*([a-zA-Z0-9_]+)\s*\}\}/g, (_, k) => {
-    const v = (vars as any)[k];
+  return html.replace(/\{\{\s*([a-zA-Z0-9_]+)\s*\}\}/g, (_: string, k: string) => {
+    const v = vars[k];
     return v != null ? String(v) : "";
   });
 }
@@ -86,4 +86,3 @@ export function renderEmailTemplate(
   });
   return { subject: SUBJECTS.initial, html };
 }
-
