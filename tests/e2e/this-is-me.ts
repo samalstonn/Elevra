@@ -143,105 +143,104 @@ test("Correct Email - Already Signed In: Successful Verification and Sent to Das
   await expectHasWeinsteinTemplateBlocks();
 });
 
-test(
-  "Manual Verification via UI: non-matching user submits form and sees success",
-  async ({ page }) => {
-    // Skip if alternate test user credentials are not configured
-    test.skip(
-      !process.env.E2E_NONMATCH_EMAIL || !process.env.E2E_NONMATCH_PASSWORD,
-      "Missing E2E_NONMATCH_* environment variables"
-    );
+test("Manual Verification via UI: non-matching user submits form and sees success", async ({
+  page,
+}) => {
+  // Skip if alternate test user credentials are not configured
+  test.skip(
+    !process.env.E2E_NONMATCH_EMAIL || !process.env.E2E_NONMATCH_PASSWORD,
+    "Missing E2E_NONMATCH_* environment variables"
+  );
 
-    // Sign in as non-matching user and navigate to verify page
-    await page.goto(`/candidate/${TEST_SLUG}`);
-    await clerk.signIn({
-      page,
-      signInParams: {
-        strategy: "password",
-        identifier: process.env.E2E_NONMATCH_EMAIL!,
-        password: process.env.E2E_NONMATCH_PASSWORD!,
-      },
+  // Sign in as non-matching user and navigate to verify page
+  await page.goto(`/candidate/${TEST_SLUG}`);
+  await clerk.signIn({
+    page,
+    signInParams: {
+      strategy: "password",
+      identifier: process.env.E2E_NONMATCH_EMAIL!,
+      password: process.env.E2E_NONMATCH_PASSWORD!,
+    },
+  });
+  await page.getByRole("button", { name: "This is me" }).click();
+  await expect(page).toHaveURL(
+    new RegExp(
+      `^${(process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000").replace(
+        /[-/\\^$*+?.()|[\]{}]/g,
+        "\\$&"
+      )}/candidate/verify\\?candidate=${TEST_SLUG}&candidateID=${seededCandidateId}$`
+    )
+  );
+
+  // Stub Mapbox geocoding to enable location selection without network
+  await page.route("https://api.mapbox.com/**", async (route) => {
+    const json = {
+      type: "FeatureCollection",
+      query: ["Testville"],
+      features: [
+        {
+          id: "place.testville",
+          type: "Feature",
+          place_type: ["place"],
+          text: "Testville",
+          place_name: "Testville, TS, United States",
+          center: [-74.0, 40.0],
+          context: [
+            { id: "region.us-ts", short_code: "US-TS", text: "Test State" },
+          ],
+          properties: {},
+        },
+      ],
+    };
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify(json),
     });
-    await page.getByRole("button", { name: "This is me" }).click();
-    await expect(page).toHaveURL(
-      new RegExp(
-        `^${(process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000").replace(
-          /[-/\\^$*+?.()|[\]{}]/g,
-          "\\$&"
-        )}/candidate/verify\\?candidate=${TEST_SLUG}&candidateID=${seededCandidateId}$`
-      )
-    );
+  });
 
-    // Stub Mapbox geocoding to enable location selection without network
-    await page.route("https://api.mapbox.com/**", async (route) => {
-      const json = {
-        type: "FeatureCollection",
-        query: ["Testville"],
-        features: [
-          {
-            id: "place.testville",
-            type: "Feature",
-            place_type: ["place"],
-            text: "Testville",
-            place_name: "Testville, TS, United States",
-            center: [-74.0, 40.0],
-            context: [
-              { id: "region.us-ts", short_code: "US-TS", text: "Test State" },
-            ],
-            properties: {},
-          },
-        ],
-      };
-      await route.fulfill({
-        status: 200,
-        contentType: "application/json",
-        body: JSON.stringify(json),
-      });
-    });
+  // Fill the form fields (overwrite if prefilled)
+  await page.getByLabel("Full Legal Name*").fill("Existing Candidate Slug");
+  await page
+    .getByLabel(
+      "Current Role* (Eg. Running for Mayor, Incumbent Mayor, Business Owner, etc.)"
+    )
+    .fill("Test Role");
+  await page
+    .getByLabel("Campaign Website (optional)")
+    .fill("https://example.com");
+  await page
+    .getByLabel("LinkedIn (optional)")
+    .fill("https://linkedin.com/in/example");
 
-    // Fill the form fields (overwrite if prefilled)
-    await page.getByLabel("Full Legal Name*").fill("Existing Candidate Slug");
-    await page
-      .getByLabel(
-        "Current Role* (Eg. Running for Mayor, Incumbent Mayor, Business Owner, etc.)"
-      )
-      .fill("Test Role");
-    await page
-      .getByLabel("Campaign Website (optional)")
-      .fill("https://example.com");
-    await page
-      .getByLabel("LinkedIn (optional)")
-      .fill("https://linkedin.com/in/example");
+  // Location input triggers suggestions (debounced)
+  const locationBox = page.getByPlaceholder(
+    "Enter your hometown (e.g., Ithaca, NY)"
+  );
+  await locationBox.fill("Testv");
+  // Wait for suggestions list and pick the first
+  await page.waitForTimeout(650);
+  await page.locator("ul li", { hasText: "Testville" }).first().click();
+  await expect(
+    page.getByText("Selected: Testville, TS", { exact: false })
+  ).toBeVisible();
 
-    // Location input triggers suggestions (debounced)
-    const locationBox = page.getByPlaceholder(
-      "Enter your hometown (e.g., Ithaca, NY)"
-    );
-    await locationBox.fill("Testv");
-    // Wait for suggestions list and pick the first
-    await page.waitForTimeout(650);
-    await page.locator("ul li", { hasText: "Testville" }).first().click();
-    await expect(
-      page.getByText("Selected: Testville, TS", { exact: false })
-    ).toBeVisible();
+  // Agree to terms and submit
+  await page
+    .getByLabel("I certify that all information provided is accurate*")
+    .check();
+  await page
+    .getByRole("button", { name: "Continue Verification Request" })
+    .click();
 
-    // Agree to terms and submit
-    await page
-      .getByLabel("I certify that all information provided is accurate*")
-      .check();
-    await page
-      .getByRole("button", { name: "Continue Verification Request" })
-      .click();
+  await expect(
+    page.getByRole("heading", { name: "Verification Request Submitted!" })
+  ).toBeVisible();
 
-    await expect(
-      page.getByRole("heading", { name: "Verification Request Submitted!" })
-    ).toBeVisible();
-
-    // Expect user confirmation email and admin notification emails to be logged
-    await expectEmailLogged("We received your Elevra verification request");
-    await expectEmailLogged("New Candidate Verification Request");
-  }
-);
+  // Expect user confirmation email and admin notification emails to be logged
+  await expectEmailLogged("We received your Elevra verification request");
+  await expectEmailLogged("New Candidate Verification Request");
+});
 
 test("Incorrect Email - Already Signed In: Redirected to Candidate Verification Request", async ({
   page,
@@ -504,6 +503,34 @@ async function resetCandidateVerification(slug: string) {
   } catch (err) {
     // Non-fatal in CI/local if record is already reset or missing
     console.warn("resetCandidateVerification failed:", err);
+  }
+  // Remove any template/content blocks created by previous tests
+  try {
+    if (seededCandidateId && seededElectionId) {
+      await prisma.contentBlock.deleteMany({
+        where: { candidateId: seededCandidateId, electionId: seededElectionId },
+      });
+    } else {
+      const c = await prisma.candidate.findUnique({ where: { slug } });
+      if (c) {
+        const links = await prisma.electionLink.findMany({
+          where: { candidateId: c.id },
+        });
+        for (const link of links) {
+          await prisma.contentBlock.deleteMany({
+            where: {
+              candidateId: link.candidateId,
+              electionId: link.electionId,
+            },
+          });
+        }
+      }
+    }
+  } catch (err) {
+    console.warn(
+      "resetCandidateVerification contentBlock cleanup failed:",
+      err
+    );
   }
 }
 
