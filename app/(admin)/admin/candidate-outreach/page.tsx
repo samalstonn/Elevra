@@ -209,11 +209,14 @@ export default function CandidateOutreachPage() {
         setPreviewSubject(String(data.subject || ""));
         setPreviewHtml(String(data.html || ""));
       } catch (e) {
-        if (e instanceof DOMException && e.name === "AbortError") {
-          // ignore aborted requests
-        } else {
-          console.warn(e);
+        // Ignore aborts from the preview request; log other errors
+        if (
+          (e instanceof DOMException && e.name === "AbortError") ||
+          (e instanceof Error && e.name === "AbortError")
+        ) {
+          return;
         }
+        console.warn(e);
       }
     })();
     return () => controller.abort();

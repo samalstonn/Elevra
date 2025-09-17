@@ -19,6 +19,7 @@ import { useAuth } from "@clerk/nextjs";
 import { useUser } from "@clerk/nextjs";
 import ImageWithFallback from "@/components/ui/ImageWithFallback";
 import { decodeEducation } from "@/lib/education";
+import { EmptyState } from "@/components/ui/empty-state";
 
 export type ElectionWithCandidates = Election & {
   candidates: Candidate[];
@@ -399,14 +400,19 @@ export default function CandidateClient({
               <p>{candidate.bio}</p>
             </div>
             {/* Education */}
-            {candidate.history && candidate.history.length > 0 && (
-              <div className="mt-4 text-sm text-gray-700">
-                <h2 className="text-lg font-semibold text-gray-900">
-                  Education
-                </h2>
+            <div className="mt-4 text-sm text-gray-700">
+              <h2 className="text-lg font-semibold text-gray-900">
+                Education
+              </h2>
+              {candidate.history && candidate.history.length > 0 ? (
                 <EducationPublic history={candidate.history} />
-              </div>
-            )}
+              ) : (
+                <EmptyState
+                  primary="Education details are not available yet."
+                  secondary="Check back soon as the candidate adds details."
+                />
+              )}
+            </div>
           </>
         )}
         {activeTab === "endorsements" && (
