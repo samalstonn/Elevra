@@ -108,6 +108,8 @@ test("Correct Email - Already Signed In: Successful Verification and Sent to Das
   page,
 }) => {
   await page.goto("/candidate/existing-candidate-slug");
+  // Before verification, there should be no content blocks
+  await expectNoTemplateBlocks();
   await clerk.signIn({
     page,
     signInParams: {
@@ -399,6 +401,8 @@ test("Manual Verification: create request then admin approves -> verified + temp
   await expectEmailLogged("We received your Elevra verification request");
 
   // 3) Admin approves the request
+  // Before approval, there should still be no content blocks
+  await expectNoTemplateBlocks();
   const approveRes = await request.post(
     `${
       process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"
@@ -534,6 +538,16 @@ async function expectHasWeinsteinTemplateBlocks() {
   if (tmpl0.text) {
     expect(first?.text?.trim()).toBe(tmpl0.text);
   }
+}
+
+// Helper: assert no template content blocks are present yet
+async function expectNoTemplateBlocks() {
+  expect(seededCandidateId).toBeTruthy();
+  expect(seededElectionId).toBeTruthy();
+  const count = await prisma.contentBlock.count({
+    where: { candidateId: seededCandidateId!, electionId: seededElectionId! },
+  });
+  expect(count).toBe(0);
 }
 
 async function readEmailLog(): Promise<string> {
