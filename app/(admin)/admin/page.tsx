@@ -95,6 +95,44 @@ export default function AdminDashboard() {
   const [form, setForm] = useState<BlogForm>({ ...emptyForm });
   const [saving, setSaving] = useState(false);
   const [preview, setPreview] = useState(false);
+  // Danger zone (cascade deletes)
+  const [delCandidateSlug, setDelCandidateSlug] = useState("");
+  const [delElectionId, setDelElectionId] = useState("");
+  const [deleting, setDeleting] = useState(false);
+  const [deleteResult, setDeleteResult] = useState<string>("");
+  // Bulk candidate deletion via .txt slugs (one per line)
+  const [bulkSlugs, setBulkSlugs] = useState<string[]>([]);
+  const [bulkDeleting, setBulkDeleting] = useState(false);
+  const [bulkError, setBulkError] = useState<string>("");
+  const [showBulkConfirm, setShowBulkConfirm] = useState(false);
+  const [bulkDetails, setBulkDetails] = useState<Record<string, { email?: string | null; name?: string | null }>>({});
+
+  useEffect(() => {
+    let alive = true;
+    (async () => {
+      if (!showBulkConfirm || bulkSlugs.length === 0) return;
+      try {
+        const params = new URLSearchParams();
+        for (const s of bulkSlugs) params.append("slug", s);
+        const res = await fetch(`/api/admin/cascade-delete?${params.toString()}`, {
+          method: "GET",
+          headers: { "Content-Type": "application/json" },
+        });
+        if (!res.ok) return;
+        const data = (await res.json()) as { results?: Array<{ slug: string; found: boolean; email?: string | null; name?: string | null }> };
+        const map: Record<string, { email?: string | null; name?: string | null }> = {};
+        (data.results || []).forEach((r) => {
+          map[r.slug] = { email: r.email, name: r.name ?? null };
+        });
+        if (alive) setBulkDetails(map);
+      } catch {
+        // ignore
+      }
+    })();
+    return () => {
+      alive = false;
+    };
+  }, [showBulkConfirm, bulkSlugs]);
 
   const fetchPosts = async () => {
     setLoadingPosts(true);
@@ -315,6 +353,215 @@ export default function AdminDashboard() {
           </div>
         </form>
       </section>
+
+      <section className="mb-16 border rounded p-4 bg-red-50">
+        <h2 className="text-xl font-semibold mb-2 text-red-700">Danger Zone</h2>
+        <p className="text-sm text-red-800 mb-4">
+          Cascade delete a candidate or an election. This permanently removes related links and content blocks.
+        </p>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="border rounded p-3 bg-white/60">
+            <h3 className="font-medium mb-2">Delete Candidate by Slug</h3>
+            <label className="block text-sm mb-1">Candidate Slug</label>
+            <input
+              value={delCandidateSlug}
+              onChange={(e) => setDelCandidateSlug(e.target.value)}
+              placeholder="e.g. existing-candidate-slug"
+              className="w-full rounded border px-3 py-2 text-sm"
+            />
+            <button
+              type="button"
+              disabled={!delCandidateSlug.trim() || deleting}
+              onClick={async () => {
+                setDeleting(true);
+                setDeleteResult("");
+                try {
+                  const res = await fetch("/api/admin/cascade-delete", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ candidateSlug: delCandidateSlug.trim() }),
+                  });
+                  const data = await res.json();
+                  setDeleteResult(JSON.stringify(data, null, 2));
+                } catch (err) {
+                  setDeleteResult(`Error: ${String(err)}`);
+                } finally {
+                  setDeleting(false);
+                }
+              }}
+              className="mt-3 px-3 py-2 bg-red-600 text-white rounded disabled:opacity-50"
+            >
+              {deleting ? "Deleting…" : "Delete Candidate"}
+            </button>
+
+            <div className="mt-5 border-t pt-3">
+              <h4 className="font-medium mb-2">Or upload .txt of slugs (one per line)</h4>
+              <input
+                type="file"
+                accept=".txt,text/plain"
+                className="block w-full text-sm"
+                onChange={async (e) => {
+                  setBulkError("");
+                  setBulkSlugs([]);
+                  const f = e.target.files?.[0];
+                  if (!f) return;
+                  try {
+                    const text = await f.text();
+                    const slugs = text
+                      .split(/\r?\n/)
+                      .map((s) => s.trim())
+                      .filter(Boolean);
+                    const unique = Array.from(new Set(slugs));
+                    setBulkSlugs(unique);
+                  } catch {
+                    setBulkError("Failed to read file");
+                  }
+                }}
+              />
+              {bulkError && (
+                <p className="text-xs text-red-700 mt-1">{bulkError}</p>
+              )}
+              {bulkSlugs.length > 0 && (
+                <p className="text-xs text-gray-700 mt-1">
+                  Loaded {bulkSlugs.length} slug{bulkSlugs.length === 1 ? "" : "s"}
+                </p>
+              )}
+              <button
+                type="button"
+                disabled={bulkSlugs.length === 0 || bulkDeleting}
+                onClick={() => setShowBulkConfirm(true)}
+                className="mt-3 px-3 py-2 bg-red-600 text-white rounded disabled:opacity-50"
+              >
+                {bulkDeleting
+                  ? "Deleting…"
+                  : bulkSlugs.length > 0
+                  ? `Delete ${bulkSlugs.length} Candidate${bulkSlugs.length === 1 ? "" : "s"}`
+                  : "Delete from file"}
+              </button>
+            </div>
+          </div>
+
+          <div className="border rounded p-3 bg-white/60">
+            <h3 className="font-medium mb-2">Delete Election by ID</h3>
+            <label className="block text-sm mb-1">Election ID</label>
+            <input
+              value={delElectionId}
+              onChange={(e) => setDelElectionId(e.target.value)}
+              placeholder="e.g. 123"
+              className="w-full rounded border px-3 py-2 text-sm"
+              inputMode="numeric"
+            />
+            <button
+              type="button"
+              disabled={!delElectionId.trim() || deleting}
+              onClick={async () => {
+                setDeleting(true);
+                setDeleteResult("");
+                try {
+                  const id = Number(delElectionId);
+                  if (!Number.isFinite(id)) throw new Error("Invalid election ID");
+                  const res = await fetch("/api/admin/cascade-delete", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ electionId: id }),
+                  });
+                  const data = await res.json();
+                  setDeleteResult(JSON.stringify(data, null, 2));
+                } catch (err) {
+                  setDeleteResult(`Error: ${String(err)}`);
+                } finally {
+                  setDeleting(false);
+                }
+              }}
+              className="mt-3 px-3 py-2 bg-red-600 text-white rounded disabled:opacity-50"
+            >
+              {deleting ? "Deleting…" : "Delete Election"}
+            </button>
+          </div>
+        </div>
+        {deleteResult && (
+          <div className="mt-4">
+            <label className="text-sm font-medium mb-1 inline-block">Result</label>
+            <textarea
+              readOnly
+              className="w-full h-48 rounded border px-3 py-2 font-mono text-xs"
+              value={deleteResult}
+            />
+          </div>
+        )}
+      </section>
+      {showBulkConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4">
+          <div className="bg-white rounded border shadow max-w-2xl w-full p-4">
+            <h3 className="text-sm font-semibold mb-2">Confirm Bulk Delete</h3>
+            <p className="text-sm text-gray-800 mb-3">
+              You are about to delete {bulkSlugs.length} candidate(s). Review the profiles below and confirm.
+            </p>
+            <div className="border rounded max-h-64 overflow-auto p-2 bg-white/60">
+              <ul className="list-disc pl-5 text-sm">
+                {bulkSlugs.map((slug) => (
+                  <li key={slug} className="mb-1 break-all">
+                    <a
+                      href={`https://www.elevracommunity.com/candidate/${encodeURIComponent(slug)}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-purple-700 hover:underline"
+                    >
+                      https://www.elevracommunity.com/candidate/{slug}
+                    </a>
+                    <span className="text-gray-700"> — {bulkDetails[slug]?.email || "email unknown"}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+            <div className="flex justify-end gap-2 mt-4">
+              <button
+                type="button"
+                className="px-3 py-1 border rounded"
+                onClick={() => setShowBulkConfirm(false)}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                className="px-3 py-1 bg-red-600 text-white rounded disabled:opacity-50"
+                disabled={bulkDeleting}
+                onClick={async () => {
+                  setShowBulkConfirm(false);
+                  setBulkDeleting(true);
+                  const results: Array<{ slug: string; ok: boolean; status: number }> = [];
+                  try {
+                    for (const slug of bulkSlugs) {
+                      try {
+                        const res = await fetch("/api/admin/cascade-delete", {
+                          method: "POST",
+                          headers: { "Content-Type": "application/json" },
+                          body: JSON.stringify({ candidateSlug: slug }),
+                        });
+                        results.push({ slug, ok: res.ok, status: res.status });
+                      } catch {
+                        results.push({ slug, ok: false, status: 0 });
+                      }
+                    }
+                  } finally {
+                    setBulkDeleting(false);
+                    const summary = {
+                      attempted: bulkSlugs.length,
+                      success: results.filter((r) => r.ok).length,
+                      failures: results.filter((r) => !r.ok).map((r) => r.slug),
+                    };
+                    setDeleteResult(
+                      JSON.stringify({ mode: "bulk", summary, results }, null, 2)
+                    );
+                  }
+                }}
+              >
+                Confirm Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <section>
         <h2 className="text-xl font-semibold mb-4">Posts</h2>
