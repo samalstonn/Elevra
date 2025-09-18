@@ -24,6 +24,12 @@ export async function GET(request: Request) {
       const allElections = await prisma.election.findMany({
         where: {
           hidden: false,
+          // must have at least one verified, non-hidden candidate linked
+          candidates: {
+            some: {
+              candidate: { verified: true, hidden: false },
+            },
+          },
           NOT: {
             OR: [{ city: { equals: "" } }, { state: { equals: "" } }],
           },
