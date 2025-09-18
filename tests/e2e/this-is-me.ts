@@ -47,7 +47,7 @@ test.beforeAll(async ({ request }) => {
     },
     data: {
       structured: JSON.stringify(payload),
-      hidden: false,
+      hidden: true,
     },
   });
   if (!res.ok()) {
