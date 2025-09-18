@@ -35,7 +35,7 @@ interface SearchBarProps {
   shadow: boolean;
 }
 
-export default function SearchBar({
+export default function SearcxhBar({
   placeholder = "Search...", // Keep defaults here for now, diff didn't explicitly remove them
   apiEndpoint = "/api/candidates", // Keep defaults here
   onResultSelect,

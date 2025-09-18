@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo, useRef } from "react";
+import { useRouter } from "next/navigation";
 import { Input } from "./ui/input";
 import { getLocationSuggestions, normalizeLocation } from "@/lib/geocoding";
 import { debounce } from "@/lib/debounce";
@@ -13,6 +14,7 @@ interface SearchBarProps {
 }
 
 export default function SearchBar({ onSearch }: SearchBarProps) {
+  const router = useRouter();
   const [searchTerm, setSearchTerm] = useState("");
   const [placeholderBase, _] = useState("Enter your ");
   const [placeholderPhrase, setPlaceholderPhrase] = useState("");
@@ -98,10 +100,11 @@ export default function SearchBar({ onSearch }: SearchBarProps) {
     }
 
     try {
-      const results = await getLocationSuggestions(input);
+      // 1) Location suggestions (existing behavior)
+      const locResults = await getLocationSuggestions(input);
       // One-off suggestion for Cornell Business Review
       if (input.toLowerCase().includes("corn")) {
-        results.unshift({
+        locResults.unshift({
           id: "cornell-business-review",
           text: "Cornell Business Review",
           placeName: "Cornell Business Review",
@@ -109,7 +112,7 @@ export default function SearchBar({ onSearch }: SearchBarProps) {
           state: "NY",
           stateName: "NY",
         });
-        results.unshift({
+        locResults.unshift({
           id: "cornell-student-assembly",
           text: "Cornell Student Assembly",
           placeName: "Cornell Student Assembly",
@@ -118,7 +121,59 @@ export default function SearchBar({ onSearch }: SearchBarProps) {
           stateName: "New York",
         });
       }
-      setSuggestions(results);
+
+      // 2) Election suggestions: reuse dashboard search API
+      let electionSuggestions: AutocompleteSuggestion[] = [];
+      try {
+        const res = await fetch(`/api/elections/search?search=${encodeURIComponent(input)}`);
+        if (res.ok) {
+          const elections: Array<{ id: number; position: string; city: string; state: string; date?: string }>
+            = await res.json();
+          electionSuggestions = (elections || []).slice(0, 10).map((e) => ({
+            id: `election-${e.id}`,
+            text: e.position,
+            placeName: `${e.city}, ${e.state}`,
+            city: e.city,
+            state: e.state,
+            stateName: e.state, // best-effort; full name not required for navigation
+            electionId: e.id,
+          }));
+        }
+      } catch {
+        // ignore election fetch errors; keep location suggestions
+      }
+
+      // 3) Merge and sort by relevance (type-agnostic)
+      const merged = [...locResults, ...electionSuggestions];
+      const q = input.toLowerCase().trim();
+      const tokens = q.split(/\s+/).filter(Boolean);
+      const score = (s: AutocompleteSuggestion): number => {
+        const pos = (s.text || "").toLowerCase(); // for elections: position; for locations: main label
+        const city = (s.city || "").toLowerCase();
+        const state = (s.state || "").toLowerCase();
+        const place = (s.placeName || "").toLowerCase();
+        let sc = 0;
+        for (const t of tokens) {
+          // Position/name relevance (boost if it's an election suggestion)
+          if (pos.startsWith(t)) sc += s.electionId ? 5 : 3;
+          else if (pos.includes(t)) sc += s.electionId ? 3 : 2;
+
+          // Location relevance
+          if (city.startsWith(t)) sc += 3;
+          else if (city.includes(t)) sc += 1;
+
+          if (state.startsWith(t)) sc += 2;
+          else if (state.includes(t)) sc += 1;
+
+          if (place.includes(t)) sc += 1;
+        }
+        return sc;
+      };
+      const sorted = merged
+        .map((s) => ({ s, sc: score(s) }))
+        .sort((a, b) => b.sc - a.sc)
+        .map(({ s }) => s);
+      setSuggestions(sorted);
     } catch (error) {
       console.error("Error fetching suggestions:", error);
     } finally {
@@ -145,6 +200,18 @@ export default function SearchBar({ onSearch }: SearchBarProps) {
 
   // Handle suggestion selection
   const handleSelectSuggestion = (suggestion: AutocompleteSuggestion) => {
+    // If this is an election suggestion, navigate directly with electionID
+    if (suggestion.electionId && suggestion.city && suggestion.state) {
+      setShowSuggestions(false);
+      router.push(
+        `/results?city=${encodeURIComponent(suggestion.city)}&state=${encodeURIComponent(
+          suggestion.state
+        )}&electionID=${suggestion.electionId}`
+      );
+      return;
+    }
+
+    // Otherwise treat as a location suggestion
     if (suggestion.city && suggestion.state && suggestion.stateName) {
       setSearchTerm(suggestion.placeName);
       setShowSuggestions(false);
