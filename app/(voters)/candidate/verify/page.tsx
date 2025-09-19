@@ -5,6 +5,7 @@ import { davidWeinsteinTemplate } from "@/app/(templates)/basicwebpage";
 import { SubmissionStatus } from "@prisma/client";
 import { sendWithResend } from "@/lib/email/resend";
 import { renderAdminNotification } from "@/lib/email/templates/adminNotification";
+import { renderCandidateVerificationEmail } from "@/lib/email/templates/candidateVerified";
 import { redirect } from "next/navigation";
 import CandidateVerificationForm from "./CandidateVerificationForm";
 import { Suspense } from "react";
@@ -126,24 +127,18 @@ export default async function VerifyPage({
     // Fire-and-forget user confirmation email
     try {
       const dashboardUrl = `${process.env.NEXT_PUBLIC_APP_URL}/candidates/candidate-dashboard?verified=1&slug=${candidateRec.slug}`;
+      const profileUrl = `${process.env.NEXT_PUBLIC_APP_URL}/candidate/${candidateRec.slug}`;
+      const firstName = candidateRec.name?.trim().split(/\s+/)[0];
+      const { subject, html } = renderCandidateVerificationEmail({
+        firstName,
+        dashboardUrl,
+        profileUrl,
+      });
       void sendWithResend({
         from: process.env.RESEND_FROM,
         to: candidateRec.email || process.env.ADMIN_EMAIL!, // fallback to admin in rare cases
-        subject: "You're Verified on Elevra!",
-        html: renderAdminNotification({
-          title: "You're Verified on Elevra!",
-          intro:
-            "Your candidate profile has been approved. Visit your dashboard to customize your page and manage content.",
-          rows: [
-            { label: "Candidate", value: candidateRec.name },
-            {
-              label: "Profile",
-              value: `${process.env.NEXT_PUBLIC_APP_URL}/candidate/${candidateRec.slug}`,
-            },
-          ],
-          ctaLabel: "Open Candidate Dashboard",
-          ctaUrl: dashboardUrl,
-        }),
+        subject,
+        html,
       });
     } catch (e) {
       console.warn("User email failed (non-blocking)", e);

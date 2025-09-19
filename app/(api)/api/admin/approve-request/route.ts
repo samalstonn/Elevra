@@ -3,6 +3,7 @@ import { SubmissionStatus } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { sendWithResend } from "@/lib/email/resend";
 import { renderAdminNotification } from "@/lib/email/templates/adminNotification";
+import { renderCandidateVerificationEmail } from "@/lib/email/templates/candidateVerified";
 import { clerkClient } from "@clerk/nextjs/server";
 import { davidWeinsteinTemplate } from "@/app/(templates)/basicwebpage";
 
@@ -105,24 +106,18 @@ export async function POST(req: Request) {
       }
       if (userEmail) {
         const dashboardUrl = `${process.env.NEXT_PUBLIC_APP_URL}/candidates/candidate-dashboard?verified=1&slug=${candidate.slug}`;
+        const profileUrl = `${process.env.NEXT_PUBLIC_APP_URL}/candidate/${candidate.slug}`;
+        const firstName = candidate.name?.trim().split(/\s+/)[0];
+        const { subject, html } = renderCandidateVerificationEmail({
+          firstName,
+          dashboardUrl,
+          profileUrl,
+        });
         await sendWithResend({
           from: process.env.RESEND_FROM,
           to: userEmail,
-          subject: "You're Verified on Elevra!",
-          html: renderAdminNotification({
-            title: "You're Verified on Elevra!",
-            intro:
-              "Your candidate profile has been approved. Visit your dashboard to customize your page and manage content.",
-            rows: [
-              { label: "Candidate", value: candidate.name },
-              {
-                label: "Profile",
-                value: `${process.env.NEXT_PUBLIC_APP_URL}/candidate/${candidate.slug}`,
-              },
-            ],
-            ctaLabel: "Open Candidate Dashboard",
-            ctaUrl: dashboardUrl,
-          }),
+          subject,
+          html,
         });
       }
     } catch (e) {
