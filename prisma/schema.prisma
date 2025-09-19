@@ -225,7 +225,7 @@ model BlogPost {
   id          Int        @id @default(autoincrement())
   title       String
   slug        String     @unique
-  authorName  String?
+  authorName  String
   excerpt     String?
   coverImage  String?
   contentMd   String
@@ -281,6 +281,7 @@ enum ElectionType {
   STATE
   NATIONAL
   UNIVERSITY
+  TEST
 }
 
 enum VendorTier {
@@ -326,4 +327,5 @@ enum TextColor {
   BLACK
   GRAY
   PURPLE
+  WHITE
 }
