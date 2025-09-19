@@ -26,32 +26,32 @@ model Election {
 
 model Candidate {
   name          String
+  website       String?
   createdAt     DateTime               @default(now())
   updatedAt     DateTime               @updatedAt
-  website       String?
   linkedin      String?
-  currentRole   String?
-  currentState  String?
-  bio           String?                @default("")
-  currentCity   String?
-  photoUrl      String?
   photo         String?
+  bio           String?                @default("")
   clerkUserId   String?                @unique
   history       String[]
   id            Int                    @id @default(autoincrement())
   status        SubmissionStatus       @default(PENDING)
   verified      Boolean                @default(false)
+  photoUrl      String?
   hidden        Boolean                @default(false)
   slug          String                 @unique
   donationCount Int                    @default(0)
   email         String?
   phone         String?
+  currentRole   String?
+  currentState  String?
+  currentCity   String?
   profileViews  CandidateProfileView[]
   donations     Donation[]
+  elections     ElectionLink[]
   endorsements  Endorsement[]
   Testimonial   Testimonial[]
   Vendors       Vendor[]               @relation("CandidateToVendor")
-  elections     ElectionLink[]
 }
 
 model Donation {
@@ -217,8 +217,63 @@ model Photo {
   id         Int      @id @default(autoincrement())
   key        String   @unique
   url        String
-  uploadedBy String // will store clerkUserId
+  uploadedBy String
   createdAt  DateTime @default(now())
+}
+
+model BlogPost {
+  id          Int        @id @default(autoincrement())
+  title       String
+  slug        String     @unique
+  authorName  String?
+  excerpt     String?
+  coverImage  String?
+  contentMd   String
+  tags        String[]   @default([])
+  status      BlogStatus @default(DRAFT)
+  publishedAt DateTime?
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+}
+
+model ElectionLink {
+  candidateId     Int
+  electionId      Int
+  joinedAt        DateTime       @default(now())
+  additionalNotes String?
+  party           String
+  photoUrl        String?
+  policies        String[]       @default([])
+  sources         String[]       @default([])
+  votinglink      String?
+  ContentBlock    ContentBlock[]
+  candidate       Candidate      @relation(fields: [candidateId], references: [id])
+  election        Election       @relation(fields: [electionId], references: [id])
+
+  @@id([candidateId, electionId])
+}
+
+model ContentBlock {
+  id           Int          @id @default(autoincrement())
+  candidateId  Int
+  electionId   Int
+  order        Int
+  type         BlockType
+  color        TextColor?
+  level        Int?
+  text         String?
+  body         String?
+  listStyle    ListStyle?
+  items        String[]
+  imageUrl     String?
+  caption      String?
+  videoUrl     String?
+  thumbnailUrl String?
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+  electionLink ElectionLink @relation(fields: [candidateId, electionId], references: [candidateId, electionId], onDelete: Cascade)
+
+  @@unique([candidateId, electionId, order])
 }
 
 enum ElectionType {
@@ -253,52 +308,13 @@ enum BlogStatus {
   PUBLISHED
 }
 
-model BlogPost {
-  id          Int        @id @default(autoincrement())
-  title       String
-  slug        String     @unique
-  authorName  String?
-  excerpt     String?
-  coverImage  String?
-  contentMd   String
-  tags        String[]   @default([])
-  status      BlogStatus @default(DRAFT)
-  publishedAt DateTime?
-  createdAt   DateTime   @default(now())
-  updatedAt   DateTime   @updatedAt
-}
-
-model ElectionLink {
-  candidate   Candidate @relation(fields: [candidateId], references: [id])
-  candidateId Int
-
-  election   Election @relation(fields: [electionId], references: [id])
-  electionId Int
-
-  joinedAt DateTime @default(now())
-
-  party           String
-  policies        String[]       @default([])
-  sources         String[]       @default([])
-  additionalNotes String?
-  votinglink      String?
-  photoUrl        String?
-  ContentBlock    ContentBlock[]
-
-  @@id([candidateId, electionId])
-}
-
-/// ---------------------------------------------------------------------------
-/// Content‑block system for dynamic ElectionTab pages
-/// ---------------------------------------------------------------------------
-
 enum BlockType {
-  HEADING // Heading 1 or Heading 2
-  TEXT // Rich‑text paragraph
-  LIST // Bulleted or numbered list
-  DIVIDER // Horizontal rule
-  IMAGE // Image with optional caption
-  VIDEO // Video with optional caption
+  HEADING
+  TEXT
+  LIST
+  DIVIDER
+  IMAGE
+  VIDEO
 }
 
 enum ListStyle {
@@ -310,43 +326,4 @@ enum TextColor {
   BLACK
   GRAY
   PURPLE
-}
-
-model ContentBlock {
-  id Int @id @default(autoincrement())
-
-  // composite FK to the election link this block belongs to
-  candidateId  Int
-  electionId   Int
-  electionLink ElectionLink @relation(fields: [candidateId, electionId], references: [candidateId, electionId], onDelete: Cascade)
-
-  order Int // display order (0‑based)
-
-  // common to every block
-  type  BlockType
-  color TextColor? // not used by DIVIDER
-
-  // HEADING
-  level Int? // 1 or 2
-  text  String? // HEADING text
-
-  // TEXT
-  body String? // markdown / plain text
-
-  // LIST
-  listStyle ListStyle?
-  items     String[] // array of list items
-
-  // IMAGE
-  imageUrl String?
-  caption  String? // also used by VIDEO
-
-  // VIDEO
-  videoUrl     String?
-  thumbnailUrl String?
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@unique([candidateId, electionId, order])
 }
