@@ -327,5 +327,4 @@ enum TextColor {
   BLACK
   GRAY
   PURPLE
-  WHITE
 }
