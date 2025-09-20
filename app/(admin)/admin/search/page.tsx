@@ -240,12 +240,9 @@ export default function AdminSearchPage() {
     message: string;
   } | null>(null);
   const detailCache = useRef<Map<string, DetailResponse>>(new Map());
-  const adminUser = user as AdminUserResource | null;
-  const metadata = adminUser?.privateMetadata ?? adminUser?.unsafeMetadata;
-  const hasAccess = metadata?.isAdmin || metadata?.isSubAdmin;
 
   useEffect(() => {
-    if (!isLoaded || !hasAccess) return;
+    if (!isLoaded) return;
 
     const controller = new AbortController();
     let active = true;
@@ -304,10 +301,10 @@ export default function AdminSearchPage() {
       controller.abort();
       window.clearTimeout(handle);
     };
-  }, [query, filter, isLoaded, hasAccess]);
+  }, [query, filter, isLoaded]);
 
   useEffect(() => {
-    if (!selected || !hasAccess) {
+    if (!selected) {
       setDetail(null);
       setDetailError(null);
       setDetailLoading(false);
@@ -357,7 +354,7 @@ export default function AdminSearchPage() {
       active = false;
       controller.abort();
     };
-  }, [selected, hasAccess]);
+  }, [selected]);
 
   useEffect(() => {
     setActionError(null);
@@ -561,17 +558,6 @@ export default function AdminSearchPage() {
           <Skeleton className="h-[520px] w-full" />
           <Skeleton className="h-[520px] w-full" />
         </div>
-      </div>
-    );
-  }
-
-  if (!hasAccess) {
-    return (
-      <div className="mx-auto max-w-2xl pt-10">
-        <EmptyState
-          primary="Admin access required to view this page."
-          secondary="Please sign in with an admin or sub-admin account."
-        />
       </div>
     );
   }
