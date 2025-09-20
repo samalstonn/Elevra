@@ -4,7 +4,7 @@ import { ChangeEvent, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useUser } from "@clerk/nextjs";
 import type { UserResource } from "@clerk/types";
-import { Search, Filter, ExternalLink } from "lucide-react";
+import { Search, Filter, ExternalLink, Loader2 } from "lucide-react";
 
 import { usePageTitle } from "@/lib/usePageTitle";
 import { cn } from "@/lib/utils";
@@ -234,6 +234,10 @@ export default function AdminSearchPage() {
   const [detail, setDetail] = useState<DetailResponse | null>(null);
   const [detailError, setDetailError] = useState<string | null>(null);
   const [detailLoading, setDetailLoading] = useState(false);
+  const [actionPendingKey, setActionPendingKey] = useState<string | null>(null);
+  const [actionError, setActionError] = useState<{ key: string; message: string } | null>(
+    null
+  );
   const detailCache = useRef<Map<string, DetailResponse>>(new Map());
   const adminUser = user as AdminUserResource | null;
   const metadata = adminUser?.privateMetadata ?? adminUser?.unsafeMetadata;
@@ -353,6 +357,127 @@ export default function AdminSearchPage() {
       controller.abort();
     };
   }, [selected, hasAccess]);
+
+  useEffect(() => {
+    setActionError(null);
+    setActionPendingKey(null);
+  }, [selected]);
+
+  const handleVisibilityToggle = async (
+    entityType: "candidate" | "election",
+    entityId: number,
+    nextHidden: boolean
+  ) => {
+    const cacheKey = `${entityType}:${entityId}`;
+    setActionError(null);
+    setActionPendingKey(cacheKey);
+
+    try {
+      const response = await fetch(`/api/admin/search/${entityType}/${entityId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ hidden: nextHidden }),
+      });
+
+      const payload = (await response.json()) as unknown;
+      if (!response.ok) {
+        const message =
+          (payload as { error?: string })?.error ||
+          `Failed to update ${entityType}`;
+        throw new Error(message);
+      }
+
+      const data = payload as DetailResponse;
+      detailCache.current.clear();
+      detailCache.current.set(cacheKey, data);
+      setDetail(data);
+
+      setResults((previous) => {
+        if (!previous) return previous;
+
+        if (entityType === "candidate" && data.type === "candidate") {
+          const hiddenValue = data.candidate.hidden;
+          let candidatesChanged = false;
+          const updatedCandidates = previous.candidates.map((candidate) => {
+            if (candidate.id !== data.candidate.id) return candidate;
+            if (candidate.hidden === hiddenValue) return candidate;
+            candidatesChanged = true;
+            return { ...candidate, hidden: hiddenValue };
+          });
+
+          let electionsChanged = false;
+          const updatedElections = previous.elections.map((election) => {
+            let samplesChanged = false;
+            const updatedSamples = election.sampleCandidates.map((sample) => {
+              if (sample.id !== data.candidate.id) return sample;
+              if (sample.hidden === hiddenValue) return sample;
+              samplesChanged = true;
+              return { ...sample, hidden: hiddenValue };
+            });
+            if (!samplesChanged) return election;
+            electionsChanged = true;
+            return { ...election, sampleCandidates: updatedSamples };
+          });
+
+          if (!candidatesChanged && !electionsChanged) {
+            return previous;
+          }
+
+          return {
+            candidates: candidatesChanged ? updatedCandidates : previous.candidates,
+            elections: electionsChanged ? updatedElections : previous.elections,
+          };
+        }
+
+        if (entityType === "election" && data.type === "election") {
+          const hiddenValue = data.election.hidden;
+          let electionsChanged = false;
+          const updatedElections = previous.elections.map((election) => {
+            if (election.id !== data.election.id) return election;
+            if (election.hidden === hiddenValue) return election;
+            electionsChanged = true;
+            return { ...election, hidden: hiddenValue };
+          });
+
+          let candidatesChanged = false;
+          const updatedCandidates = previous.candidates.map((candidate) => {
+            let linksChanged = false;
+            const updatedLinks = candidate.elections.map((link) => {
+              if (link.id !== data.election.id) return link;
+              if (link.hidden === hiddenValue) return link;
+              linksChanged = true;
+              return { ...link, hidden: hiddenValue };
+            });
+            if (!linksChanged) return candidate;
+            candidatesChanged = true;
+            return { ...candidate, elections: updatedLinks };
+          });
+
+          if (!candidatesChanged && !electionsChanged) {
+            return previous;
+          }
+
+          return {
+            candidates: candidatesChanged ? updatedCandidates : previous.candidates,
+            elections: electionsChanged ? updatedElections : previous.elections,
+          };
+        }
+
+        return previous;
+      });
+
+      setActionError(null);
+    } catch (err) {
+      console.error(`Failed to toggle ${entityType} visibility`, err);
+      const message =
+        err instanceof Error && err.message
+          ? err.message
+          : `Failed to update ${entityType}`;
+      setActionError({ key: cacheKey, message });
+    } finally {
+      setActionPendingKey(null);
+    }
+  };
 
   const clearQuery = () => {
     setQuery("");
@@ -583,9 +708,35 @@ export default function AdminSearchPage() {
                 secondary="Summary, linked content, and relationships will appear here."
               />
             ) : detail.type === "candidate" ? (
-              <CandidateDetailPanel candidate={detail.candidate} />
+              <CandidateDetailPanel
+                candidate={detail.candidate}
+                onToggleHidden={(nextHidden) =>
+                  handleVisibilityToggle("candidate", detail.candidate.id, nextHidden)
+                }
+                isToggling={
+                  actionPendingKey === `candidate:${detail.candidate.id}`
+                }
+                actionError={
+                  actionError?.key === `candidate:${detail.candidate.id}`
+                    ? actionError.message
+                    : null
+                }
+              />
             ) : (
-              <ElectionDetailPanel election={detail.election} />
+              <ElectionDetailPanel
+                election={detail.election}
+                onToggleHidden={(nextHidden) =>
+                  handleVisibilityToggle("election", detail.election.id, nextHidden)
+                }
+                isToggling={
+                  actionPendingKey === `election:${detail.election.id}`
+                }
+                actionError={
+                  actionError?.key === `election:${detail.election.id}`
+                    ? actionError.message
+                    : null
+                }
+              />
             )}
           </CardContent>
         </Card>
@@ -659,7 +810,19 @@ function ResultItem({
   );
 }
 
-function CandidateDetailPanel({ candidate }: { candidate: CandidateDetail }) {
+type CandidateDetailPanelProps = {
+  candidate: CandidateDetail;
+  onToggleHidden: (nextHidden: boolean) => void;
+  isToggling: boolean;
+  actionError: string | null;
+};
+
+function CandidateDetailPanel({
+  candidate,
+  onToggleHidden,
+  isToggling,
+  actionError,
+}: CandidateDetailPanelProps) {
   const createdLabel = `Created ${formatDateTime(candidate.createdAt)}`;
   const updatedLabel = `Updated ${formatDateTime(candidate.updatedAt)}`;
 
@@ -669,7 +832,16 @@ function CandidateDetailPanel({ candidate }: { candidate: CandidateDetail }) {
         <div className="flex flex-wrap items-center gap-2">
           <h2 className="text-xl font-semibold">{candidate.name}</h2>
           {candidate.verified && <Badge variant="secondary">Verified</Badge>}
-          {candidate.hidden && <Badge variant="destructive">Hidden</Badge>}
+          <Button
+            type="button"
+            size="sm"
+            variant={candidate.hidden ? "destructive" : "green"}
+            onClick={() => onToggleHidden(!candidate.hidden)}
+            disabled={isToggling}
+          >
+            {isToggling && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
+            {candidate.hidden ? "Hidden" : "Public"}
+          </Button>
           <Badge
             variant="outline"
             className="uppercase text-[11px] tracking-wide"
@@ -677,6 +849,9 @@ function CandidateDetailPanel({ candidate }: { candidate: CandidateDetail }) {
             {formatEnum(candidate.status)}
           </Badge>
         </div>
+        {actionError && (
+          <p className="text-xs text-destructive">{actionError}</p>
+        )}
         <p className="text-xs text-muted-foreground">Slug • {candidate.slug}</p>
         <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
           <span>{createdLabel}</span>
@@ -900,7 +1075,19 @@ function CandidateDetailPanel({ candidate }: { candidate: CandidateDetail }) {
   );
 }
 
-function ElectionDetailPanel({ election }: { election: ElectionDetail }) {
+type ElectionDetailPanelProps = {
+  election: ElectionDetail;
+  onToggleHidden: (nextHidden: boolean) => void;
+  isToggling: boolean;
+  actionError: string | null;
+};
+
+function ElectionDetailPanel({
+  election,
+  onToggleHidden,
+  isToggling,
+  actionError,
+}: ElectionDetailPanelProps) {
   return (
     <div className="space-y-6">
       <div className="space-y-2">
@@ -912,13 +1099,25 @@ function ElectionDetailPanel({ election }: { election: ElectionDetail }) {
           >
             {formatEnum(election.type)}
           </Badge>
-          {election.hidden && <Badge variant="destructive">Hidden</Badge>}
+          <Button
+            type="button"
+            size="sm"
+            variant={election.hidden ? "destructive" : "green"}
+            onClick={() => onToggleHidden(!election.hidden)}
+            disabled={isToggling}
+          >
+            {isToggling && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
+            {election.hidden ? "Hidden" : "Public"}
+          </Button>
           {election.active ? (
             <Badge variant="secondary">Active</Badge>
           ) : (
             <Badge variant="outline">Inactive</Badge>
           )}
         </div>
+        {actionError && (
+          <p className="text-xs text-destructive">{actionError}</p>
+        )}
         <p className="text-xs text-muted-foreground">
           {buildLocation(election.city, election.state)} •{" "}
           {formatDate(election.date)}
