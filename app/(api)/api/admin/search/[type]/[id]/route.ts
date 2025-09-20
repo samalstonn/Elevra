@@ -218,6 +218,80 @@ async function handleCandidateDetail(id: number) {
   }
 }
 
+export async function PATCH(
+  request: Request,
+  { params }: { params: Promise<{ type: string; id: string }> }
+) {
+  const { userId } = await auth();
+  if (!userId) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const flags = await requireAdminOrSubAdmin(userId);
+  if (!flags) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+
+  let body: unknown;
+  try {
+    body = await request.json();
+  } catch (error) {
+    console.warn("Failed to parse PATCH body", error);
+    return NextResponse.json({ error: "Invalid JSON payload" }, { status: 400 });
+  }
+
+  const hidden = (body as { hidden?: unknown })?.hidden;
+  if (typeof hidden !== "boolean") {
+    return NextResponse.json(
+      { error: "Missing or invalid 'hidden' boolean" },
+      { status: 400 }
+    );
+  }
+
+  const resolvedParams = await params;
+  const entityType = (resolvedParams.type || "").toLowerCase();
+  const numericId = Number.parseInt(resolvedParams.id, 10);
+
+  if (!Number.isFinite(numericId)) {
+    return NextResponse.json({ error: "Invalid identifier" }, { status: 400 });
+  }
+
+  try {
+    if (entityType === "candidate") {
+      await prisma.candidate.update({
+        where: { id: numericId },
+        data: { hidden },
+      });
+      return handleCandidateDetail(numericId);
+    }
+
+    if (entityType === "election") {
+      await prisma.election.update({
+        where: { id: numericId },
+        data: { hidden },
+      });
+      return handleElectionDetail(numericId);
+    }
+  } catch (error) {
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2025") {
+      return NextResponse.json({ error: "Record not found" }, { status: 404 });
+    }
+
+    console.error("Failed to toggle hidden status", {
+      entityType,
+      numericId,
+      hidden,
+      error,
+    });
+    return NextResponse.json(
+      { error: "Failed to update hidden status" },
+      { status: 500 }
+    );
+  }
+
+  return NextResponse.json({ error: "Unknown entity type" }, { status: 400 });
+}
+
 async function handleElectionDetail(id: number) {
   try {
     const election = await prisma.election.findUnique({
