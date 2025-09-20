@@ -21,10 +21,13 @@ function readTemplateFile(key: TemplateKey): string {
 }
 
 function interpolate(html: string, vars: Record<string, string>): string {
-  return html.replace(/\{\{\s*([a-zA-Z0-9_]+)\s*\}\}/g, (_: string, k: string) => {
-    const v = vars[k];
-    return v != null ? String(v) : "";
-  });
+  return html.replace(
+    /\{\{\s*([a-zA-Z0-9_]+)\s*\}\}/g,
+    (_: string, k: string) => {
+      const v = vars[k];
+      return v != null ? String(v) : "";
+    }
+  );
 }
 
 export type RenderInput = {
@@ -42,7 +45,7 @@ export function renderEmailTemplate(
   opts?: { baseForFollowup?: TemplateKey }
 ): { subject: string; html: string } {
   const greetingName = (data.candidateFirstName || "").trim() || "there";
-  const locationFragment = data.state ? `in ${data.state}` : "";
+  const locationFragment = data.state ? `in ${data.state}` : "in New Jersey";
 
   if (key === "followup") {
     const base = opts?.baseForFollowup || "initial";
@@ -77,12 +80,15 @@ export function renderEmailTemplate(
     return { subject: SUBJECTS.verifiedUpdate, html };
   }
 
-  // initial
-  const src = readTemplateFile("initial");
-  const html = interpolate(src, {
-    greetingName,
-    claimUrl: data.claimUrl || "",
-    locationFragment,
-  });
-  return { subject: SUBJECTS.initial, html };
+  if (key === "initial") {
+    const src = readTemplateFile("initial");
+    const html = interpolate(src, {
+      greetingName,
+      claimUrl: data.claimUrl || "",
+      locationFragment,
+    });
+    return { subject: SUBJECTS.initial, html };
+  }
+
+  throw new Error(`Unknown template key: ${key}`);
 }
