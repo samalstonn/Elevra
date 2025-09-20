@@ -3,7 +3,6 @@
 import { ChangeEvent, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useUser } from "@clerk/nextjs";
-import type { UserResource } from "@clerk/types";
 import { Search, Filter, ExternalLink, Loader2 } from "lucide-react";
 
 import { usePageTitle } from "@/lib/usePageTitle";
@@ -140,16 +139,6 @@ type CandidateDetail = {
   }>;
 };
 
-type AdminMetadata = {
-  isAdmin?: boolean;
-  isSubAdmin?: boolean;
-};
-
-type AdminUserResource = UserResource & {
-  privateMetadata?: AdminMetadata;
-  unsafeMetadata?: AdminMetadata;
-};
-
 type ElectionDetail = {
   id: number;
   position: string;
@@ -216,7 +205,7 @@ const dateTimeFormatter = new Intl.DateTimeFormat(undefined, {
 
 export default function AdminSearchPage() {
   usePageTitle("Admin – Search");
-  const { user, isLoaded } = useUser();
+  const { isLoaded } = useUser();
 
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState<SearchFilter>("all");
