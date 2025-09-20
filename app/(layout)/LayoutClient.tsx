@@ -79,17 +79,19 @@ export default function LayoutClient({
 
   return (
     <ClerkProvider publishableKey={clerkKey || ""}>
-      <html lang="en">
-        <body className={`${inter.className} overflow-x-hidden`}>
+      <html lang="en" className="h-full">
+        <body
+          className={`${inter.className} min-h-screen bg-background text-foreground antialiased overflow-x-hidden`}
+        >
           {/* Prevent global horizontal scroll */}
-          <div className="flex flex-col min-h-screen">
+          <div className="flex min-h-screen flex-col overflow-x-hidden">
             {/* Header Section (wrapped in Suspense to support useSearchParams) */}
             <Suspense fallback={null}>
               <HeaderNav />
             </Suspense>
 
             {/* Main Content - Conditional styling for results page */}
-            <main className={`flex-grow w-full items-start justify-start min-h-[75vh] overflow-x-hidden`}>
+            <main className="flex-1 w-full overflow-x-hidden">
               {children}
               <Analytics />
               <SpeedInsights />
