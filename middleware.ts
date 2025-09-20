@@ -35,6 +35,7 @@ export default clerkMiddleware(async (auth, req) => {
     const pathname = req.nextUrl.pathname;
     if (pathname.startsWith("/admin")) {
       const subAdminAllowed = [
+        "/admin/sub-admin",
         "/admin/upload-spreadsheet",
         "/admin/candidate-outreach",
         "/admin/search",
