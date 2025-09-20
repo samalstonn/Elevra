@@ -27,6 +27,7 @@ import {
 import { FaCheckCircle } from "react-icons/fa";
 import TourModal from "@/components/tour/TourModal";
 import { usePageTitle } from "@/lib/usePageTitle";
+import { buildEditorPath } from "./my-elections/utils";
 // import ResultsSearchBar from "@/components/ResultsSearchBar";
 
 export type CandidateWithDonations = Candidate & { donations: Donation[] };
@@ -288,7 +289,11 @@ export default function OverviewPage() {
                 on the left hand side to update your election details, and
                 explore different templates on your{" "}
                 <Link
-                  href="/candidates/candidate-dashboard/my-page"
+                  href={
+                    candidate
+                      ? buildEditorPath(candidate.slug, electionLinks[0].electionId)
+                      : "/candidates/candidate-dashboard/my-elections"
+                  }
                   className="text-purple-600 underline"
                 >
                   Public Campaign Page

@@ -19,7 +19,7 @@ export function TabButton({
       className={`${className} border-b-2 transition-colors ${
         active
           ? "border-purple-900 text-purple-900"
-          : "border-transparent text-gray-500 hover:text-gray-800 hover:border-gray-300"
+          : "text-gray-500 border-gray-300 hover:text-purple-900 hover:border-purple-900"
       }`}
     >
       {children}

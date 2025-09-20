@@ -12,7 +12,6 @@ import {
   Award, // Endorsements (Premium)
   Users, // Vendor Marketplace
   Menu,
-  StickyNote,
 } from "lucide-react";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
@@ -33,16 +32,16 @@ const navItems = [
   },
   {
     href: "/candidates/candidate-dashboard/my-elections",
-    label: "Campaigns",
+    label: "Election",
     icon: Users,
     premium: false,
   },
-  {
-    href: "/candidates/candidate-dashboard/my-page",
-    label: "Public Campaign Page",
-    icon: StickyNote,
-    premium: false,
-  },
+  // {
+  //   href: "/candidates/candidate-dashboard/my-elections/[linkKey]",
+  //   label: "Election Webpage",
+  //   icon: StickyNote,
+  //   premium: false,
+  // },
   {
     href: "/candidates/candidate-dashboard/endorsements",
     label: "Endorsements",
