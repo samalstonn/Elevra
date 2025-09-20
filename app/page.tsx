@@ -31,7 +31,7 @@ function HomePageContent() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col items-center w-full overflow-x-hidden mx-auto">
+    <div className="flex flex-col items-center w-full mx-auto">
       {/* Hero Section */}
       <motion.main
         initial="hidden"
