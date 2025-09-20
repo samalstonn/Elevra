@@ -218,6 +218,144 @@ async function handleCandidateDetail(id: number) {
   }
 }
 
+export async function PATCH(
+  request: Request,
+  { params }: { params: Promise<{ type: string; id: string }> }
+) {
+  const { userId } = await auth();
+  if (!userId) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const flags = await requireAdminOrSubAdmin(userId);
+  if (!flags) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+
+  let body: unknown;
+  try {
+    body = await request.json();
+  } catch (error) {
+    console.warn("Failed to parse PATCH body", error);
+    return NextResponse.json({ error: "Invalid JSON payload" }, { status: 400 });
+  }
+
+  const { hidden, revealCandidates, hideCandidates } = (body ?? {}) as {
+    hidden?: unknown;
+    revealCandidates?: unknown;
+    hideCandidates?: unknown;
+  };
+
+  const hiddenProvided = typeof hidden === "boolean";
+  const revealLinkedCandidates = Boolean(revealCandidates);
+  const hideLinkedCandidates = Boolean(hideCandidates);
+
+  if (revealLinkedCandidates && hideLinkedCandidates) {
+    return NextResponse.json(
+      { error: "Cannot reveal and hide candidates in the same request." },
+      { status: 400 }
+    );
+  }
+
+  if (!hiddenProvided && !revealLinkedCandidates && !hideLinkedCandidates) {
+    return NextResponse.json(
+      {
+        error:
+          "Payload must include a boolean 'hidden' value or set 'revealCandidates'/'hideCandidates' to true.",
+      },
+      { status: 400 }
+    );
+  }
+
+  const resolvedParams = await params;
+  const entityType = (resolvedParams.type || "").toLowerCase();
+  const numericId = Number.parseInt(resolvedParams.id, 10);
+
+  if (!Number.isFinite(numericId)) {
+    return NextResponse.json({ error: "Invalid identifier" }, { status: 400 });
+  }
+
+  try {
+    if (entityType === "candidate") {
+      if (!hiddenProvided) {
+        return NextResponse.json(
+          { error: "Missing 'hidden' value for candidate update" },
+          { status: 400 }
+        );
+      }
+
+      await prisma.candidate.update({
+        where: { id: numericId },
+        data: { hidden: hidden as boolean },
+      });
+      return handleCandidateDetail(numericId);
+    }
+
+    if (entityType === "election") {
+      if (hiddenProvided) {
+        await prisma.election.update({
+          where: { id: numericId },
+          data: { hidden: hidden as boolean },
+        });
+      } else {
+        const electionExists = await prisma.election.findUnique({
+          where: { id: numericId },
+          select: { id: true },
+        });
+
+        if (!electionExists) {
+          return NextResponse.json({ error: "Record not found" }, { status: 404 });
+        }
+      }
+
+      if (revealLinkedCandidates) {
+        await prisma.candidate.updateMany({
+          where: {
+            elections: {
+              some: {
+                electionId: numericId,
+              },
+            },
+          },
+          data: { hidden: false },
+        });
+      } else if (hideLinkedCandidates) {
+        await prisma.candidate.updateMany({
+          where: {
+            elections: {
+              some: {
+                electionId: numericId,
+              },
+            },
+          },
+          data: { hidden: true },
+        });
+      }
+
+      return handleElectionDetail(numericId);
+    }
+  } catch (error) {
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2025") {
+      return NextResponse.json({ error: "Record not found" }, { status: 404 });
+    }
+
+    console.error("Failed to toggle hidden status", {
+      entityType,
+      numericId,
+      hidden,
+      revealLinkedCandidates,
+      hideLinkedCandidates,
+      error,
+    });
+    return NextResponse.json(
+      { error: "Failed to update hidden status" },
+      { status: 500 }
+    );
+  }
+
+  return NextResponse.json({ error: "Unknown entity type" }, { status: 400 });
+}
+
 async function handleElectionDetail(id: number) {
   try {
     const election = await prisma.election.findUnique({
