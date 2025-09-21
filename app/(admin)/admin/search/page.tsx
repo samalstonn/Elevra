@@ -42,6 +42,7 @@ type CandidateSummary = {
   status: string;
   verified: boolean;
   hidden: boolean;
+  uploadedBy: string;
   updatedAt: string;
   createdAt: string;
   elections: Array<{
@@ -64,6 +65,7 @@ type ElectionSummary = {
   date: string;
   electionType: string;
   hidden: boolean;
+  uploadedBy: string;
   candidateCount: number;
   sampleCandidates: Array<{
     id: number;
@@ -209,12 +211,17 @@ export default function AdminSearchPage() {
 
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState<SearchFilter>("all");
+  const [visibilityFilter, setVisibilityFilter] = useState<
+    "all" | "visible" | "hidden"
+  >("all");
+  const [uploadedByFilter, setUploadedByFilter] = useState<string>("all");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [results, setResults] = useState<{
     candidates: CandidateSummary[];
     elections: ElectionSummary[];
   }>({ candidates: [], elections: [] });
+  const [uploaders, setUploaders] = useState<string[]>([]);
   const [selected, setSelected] = useState<{
     type: "candidate" | "election";
     id: number;
@@ -243,6 +250,10 @@ export default function AdminSearchPage() {
         const params = new URLSearchParams();
         if (query.trim()) params.set("query", query.trim());
         if (filter !== "all") params.set("type", filter);
+        if (visibilityFilter !== "all")
+          params.set("visibility", visibilityFilter);
+        if (uploadedByFilter !== "all")
+          params.set("uploadedBy", uploadedByFilter);
         const res = await fetch(`/api/admin/search?${params.toString()}`, {
           signal: controller.signal,
         });
@@ -252,6 +263,7 @@ export default function AdminSearchPage() {
         const data = (await res.json()) as {
           candidates: CandidateSummary[];
           elections: ElectionSummary[];
+          uploaders?: string[];
         };
 
         if (!active) return;
@@ -259,6 +271,7 @@ export default function AdminSearchPage() {
           candidates: data.candidates ?? [],
           elections: data.elections ?? [],
         });
+        setUploaders(data.uploaders ?? []);
         setSelected((prev) => {
           if (prev) {
             const stillExists =
@@ -290,7 +303,7 @@ export default function AdminSearchPage() {
       controller.abort();
       window.clearTimeout(handle);
     };
-  }, [query, filter, isLoaded]);
+  }, [query, filter, visibilityFilter, uploadedByFilter, isLoaded]);
 
   useEffect(() => {
     if (!selected) {
@@ -349,6 +362,16 @@ export default function AdminSearchPage() {
     setActionError(null);
     setActionPendingKey(null);
   }, [selected]);
+
+  const uploaderOptions = useMemo(() => {
+    const unique = new Set(uploaders.filter(Boolean));
+    if (uploadedByFilter !== "all" && uploadedByFilter) {
+      unique.add(uploadedByFilter);
+    }
+    return Array.from(unique).sort((a, b) =>
+      a.localeCompare(b, undefined, { sensitivity: "base" })
+    );
+  }, [uploaders, uploadedByFilter]);
 
   const handleVisibilityToggle = async (
     entityType: "candidate" | "election",
@@ -534,8 +557,11 @@ export default function AdminSearchPage() {
     });
   };
 
-  const clearQuery = () => {
+  const resetFilters = () => {
     setQuery("");
+    setFilter("all");
+    setVisibilityFilter("all");
+    setUploadedByFilter("all");
   };
 
   if (!isLoaded) {
@@ -583,7 +609,7 @@ export default function AdminSearchPage() {
               className="pl-9 w-full"
             />
           </div>
-          <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center">
+          <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:flex-wrap sm:items-center">
             <Select
               value={filter}
               onValueChange={(value: SearchFilter) => setFilter(value)}
@@ -602,10 +628,41 @@ export default function AdminSearchPage() {
                 <SelectItem value="election">Elections</SelectItem>
               </SelectContent>
             </Select>
+            <Select
+              value={visibilityFilter}
+              onValueChange={(value) =>
+                setVisibilityFilter(value as "all" | "visible" | "hidden")
+              }
+            >
+              <SelectTrigger className="sm:w-[160px]">
+                <SelectValue placeholder="All visibility" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All visibility</SelectItem>
+                <SelectItem value="visible">Visible</SelectItem>
+                <SelectItem value="hidden">Hidden</SelectItem>
+              </SelectContent>
+            </Select>
+            <Select
+              value={uploadedByFilter}
+              onValueChange={(value) => setUploadedByFilter(value)}
+            >
+              <SelectTrigger className="sm:w-[220px]">
+                <SelectValue placeholder="All uploaders" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All uploaders</SelectItem>
+                {uploaderOptions.map((uploader) => (
+                  <SelectItem key={uploader} value={uploader}>
+                    {uploader}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
             <Button
               type="button"
               variant="outline"
-              onClick={clearQuery}
+              onClick={resetFilters}
               className="sm:w-auto"
             >
               Clear
@@ -615,7 +672,7 @@ export default function AdminSearchPage() {
       </Card>
 
       <div className="grid gap-6 lg:grid-cols-[minmax(0,360px)_minmax(0,1fr)]">
-        <Card className="h-[560px]">
+        <Card className="h-full">
           <CardHeader className="pb-2">
             <CardTitle className="text-base">Search Results</CardTitle>
             <CardDescription>
@@ -648,11 +705,11 @@ export default function AdminSearchPage() {
                 />
               </div>
             ) : (
-              <ScrollArea className="h-[500px]">
+              <ScrollArea className="h-[1750px]">
                 <div className="divide-y">
                   {results.candidates.length > 0 && (
                     <section className="p-4">
-                      <h3 className="text-xs font-semibold uppercase text-muted-foreground">
+                      <h3 className="text-xs font-bold uppercase text-purple-800">
                         Candidates ({results.candidates.length})
                       </h3>
                       <div className="mt-3 space-y-2">
@@ -688,7 +745,7 @@ export default function AdminSearchPage() {
 
                   {results.elections.length > 0 && (
                     <section className="p-4">
-                      <h3 className="text-xs font-semibold uppercase text-muted-foreground">
+                      <h3 className="text-xs font-bold uppercase text-purple-800">
                         Elections ({results.elections.length})
                       </h3>
                       <div className="mt-3 space-y-2">

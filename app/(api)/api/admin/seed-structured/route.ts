@@ -68,9 +68,12 @@ function coerceType(
 export async function POST(req: NextRequest) {
   try {
     // Authorization: allow E2E header secret or fallback to admin check
-    const headerSecret = req.headers.get("x-e2e-seed-secret") || req.headers.get("x-seed-secret");
+    const headerSecret =
+      req.headers.get("x-e2e-seed-secret") || req.headers.get("x-seed-secret");
     const envSecret = process.env.E2E_SEED_SECRET || "";
-    const bypassAuth = Boolean(headerSecret && envSecret && headerSecret === envSecret);
+    const bypassAuth = Boolean(
+      headerSecret && envSecret && headerSecret === envSecret
+    );
 
     const { userId } = await auth();
     async function isAdmin(u: string | null): Promise<boolean> {
@@ -97,6 +100,7 @@ export async function POST(req: NextRequest) {
       data?: any;
       hidden?: boolean;
       forceHidden?: boolean;
+      uploadedBy: string;
     };
     const payload = body?.data ?? body?.structured;
     let input: any;
@@ -114,6 +118,7 @@ export async function POST(req: NextRequest) {
     const hiddenInProd = process.env.NODE_ENV === "production";
     const forceHidden = Boolean(body?.hidden ?? body?.forceHidden);
     const hiddenFlag = forceHidden || hiddenInProd;
+    const uploadedBy = String(body?.uploadedBy || "<unknown>");
 
     const results: Array<{
       electionId: number;
@@ -150,6 +155,7 @@ export async function POST(req: NextRequest) {
           state: e.state,
           type,
           hidden: hiddenFlag,
+          uploadedBy: uploadedBy,
         },
       });
 
@@ -171,6 +177,7 @@ export async function POST(req: NextRequest) {
             verified: false,
             email: cleanOptional(c.email ?? null),
             hidden: hiddenFlag,
+            uploadedBy: uploadedBy,
           },
           create: {
             name,
@@ -185,6 +192,7 @@ export async function POST(req: NextRequest) {
             verified: false,
             email: cleanOptional(c.email ?? null),
             hidden: hiddenFlag,
+            uploadedBy: uploadedBy,
           },
         });
 
@@ -225,8 +233,9 @@ export async function POST(req: NextRequest) {
       success: true,
       results,
       message: hiddenFlag
-        ? "Election(s) and candidates created as hidden."
-        : "Election(s) created (visible).",
+        ? "Election(s) and candidates created as hidden. Uploaded by: " +
+          uploadedBy
+        : "Election(s) created (visible). Uploaded by: " + uploadedBy,
     });
   } catch (err: any) {
     console.error("/api/admin/seed-structured error", err);

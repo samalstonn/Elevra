@@ -8,6 +8,7 @@ import {
   buildAndDownloadResultSheet,
 } from "@/election-source/build-spreadsheet";
 import { normalizeHeader, validateEmails } from "@/election-source/helpers";
+import { useUser } from "@clerk/nextjs";
 
 const REQUIRED_HEADERS = [
   "municipality",
@@ -98,9 +99,16 @@ export default function UploadSpreadsheetPage() {
     setConfirmPrompt({ visible: false, message: "" });
   }
 
+  const { isSignedIn, isLoaded, user } = useUser();
+  const userEmail = user?.primaryEmailAddress?.emailAddress ?? "";
+
   async function goLive() {
     if (!parsedRows.length) {
       setError("Please upload a spreadsheet first.");
+      return;
+    }
+    if (!userEmail) {
+      setError("Unable to determine uploader email. Please check your account profile.");
       return;
     }
     const groups = groupRowsByMunicipality(parsedRows);
@@ -231,6 +239,7 @@ export default function UploadSpreadsheetPage() {
           body: JSON.stringify({
             structured: JSON.stringify(structuredForGroup),
             hidden: forceHidden,
+            uploadedBy: userEmail,
           }),
         });
         const insertText = await insertRes.text();
@@ -525,6 +534,24 @@ export default function UploadSpreadsheetPage() {
     () => groupRowsByMunicipality(parsedRows),
     [parsedRows, groupRowsByMunicipality]
   );
+
+  if (!isLoaded) {
+    return (
+      <main className="max-w-3xl mx-auto mt-10 p-4">
+        <p className="text-sm text-gray-600">Loading your account…</p>
+      </main>
+    );
+  }
+
+  if (!isSignedIn || !userEmail) {
+    return (
+      <main className="max-w-3xl mx-auto mt-10 p-4">
+        <p className="text-sm text-red-700">
+          You must be signed in with a valid email to upload spreadsheets.
+        </p>
+      </main>
+    );
+  }
 
   return (
     <main className="max-w-3xl mx-auto mt-10 p-4">

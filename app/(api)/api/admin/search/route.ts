@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
+import type { Prisma } from "@prisma/client";
 import prisma from "@/prisma/prisma";
 import { requireAdminOrSubAdmin } from "@/lib/admin-auth";
 
@@ -25,6 +26,14 @@ export async function GET(request: Request) {
   const type: SearchType = ["candidate", "election", "all"].includes(rawType)
     ? rawType
     : "all";
+  const rawVisibility = (searchParams.get("visibility")?.toLowerCase() ?? "all").trim();
+  const visibility: "all" | "visible" | "hidden" = ["all", "visible", "hidden"].includes(rawVisibility)
+    ? (rawVisibility as "all" | "visible" | "hidden")
+    : "all";
+  const hiddenFilter =
+    visibility === "hidden" ? true : visibility === "visible" ? false : null;
+  const uploadedByParam = searchParams.get("uploadedBy")?.trim();
+  const uploadedBy = uploadedByParam && uploadedByParam !== "all" ? uploadedByParam : null;
   const limitParam = Number.parseInt(searchParams.get("limit") ?? "20", 10);
   const limit = Number.isFinite(limitParam)
     ? Math.min(Math.max(limitParam, 1), MAX_LIMIT)
@@ -34,7 +43,7 @@ export async function GET(request: Request) {
     type === "candidate" || type === "all"
       ? prisma.candidate
           .findMany({
-            where: buildCandidateWhere(query),
+            where: buildCandidateWhere(query, hiddenFilter, uploadedBy),
             include: {
               elections: {
                 take: 5,
@@ -62,7 +71,7 @@ export async function GET(request: Request) {
     type === "election" || type === "all"
       ? prisma.election
           .findMany({
-            where: buildElectionWhere(query),
+            where: buildElectionWhere(query, hiddenFilter, uploadedBy),
             include: {
               _count: {
                 select: {
@@ -89,13 +98,37 @@ export async function GET(request: Request) {
           })
       : Promise.resolve([]);
 
-  const [candidates, elections] = await Promise.all([candidatePromise, electionPromise]);
+  const uploaderPromise = prisma.$transaction([
+    prisma.candidate.findMany({
+      distinct: ["uploadedBy"],
+      select: { uploadedBy: true },
+    }),
+    prisma.election.findMany({
+      distinct: ["uploadedBy"],
+      select: { uploadedBy: true },
+    }),
+  ]);
+
+  const [candidates, elections, [candidateUploaders, electionUploaders]] =
+    await Promise.all([candidatePromise, electionPromise, uploaderPromise]);
+  const uploaderSet = new Set<string>();
+  candidateUploaders.forEach((entry) => {
+    if (entry.uploadedBy) uploaderSet.add(entry.uploadedBy);
+  });
+  electionUploaders.forEach((entry) => {
+    if (entry.uploadedBy) uploaderSet.add(entry.uploadedBy);
+  });
+  const uploaders = Array.from(uploaderSet).sort((a, b) =>
+    a.localeCompare(b, undefined, { sensitivity: "base" })
+  );
 
   return NextResponse.json({
     query,
     type,
     isAdmin: flags.isAdmin,
     isSubAdmin: flags.isSubAdmin,
+    visibility,
+    uploadedBy: uploadedBy ?? "all",
     candidates: candidates.map((candidate) => ({
       type: "candidate" as const,
       id: candidate.id,
@@ -108,6 +141,7 @@ export async function GET(request: Request) {
       status: candidate.status,
       verified: candidate.verified,
       hidden: candidate.hidden,
+      uploadedBy: candidate.uploadedBy,
       updatedAt: candidate.updatedAt.toISOString(),
       createdAt: candidate.createdAt.toISOString(),
       elections: candidate.elections.map((link) => ({
@@ -129,6 +163,7 @@ export async function GET(request: Request) {
       date: election.date.toISOString(),
       electionType: election.type,
       hidden: election.hidden,
+      uploadedBy: election.uploadedBy,
       candidateCount: election._count.candidates,
       sampleCandidates: election.candidates.map((link) => ({
         id: link.candidate.id,
@@ -138,72 +173,117 @@ export async function GET(request: Request) {
         hidden: link.candidate.hidden,
       })),
     })),
+    uploaders,
   });
 }
 
-function buildCandidateWhere(query: string) {
-  if (!query) {
-    return {};
-  }
+function buildCandidateWhere(
+  query: string,
+  hiddenFilter: boolean | null,
+  uploadedBy: string | null
+) {
+  const andConditions: Prisma.CandidateWhereInput[] = [];
 
-  const insensitive = {
-    contains: query,
-    mode: "insensitive" as const,
-  };
+  if (query) {
+    const insensitive = {
+      contains: query,
+      mode: "insensitive" as const,
+    };
 
-  return {
-    OR: [
-      { name: insensitive },
-      { slug: insensitive },
-      { email: insensitive },
-      { currentRole: insensitive },
-      { currentCity: insensitive },
-      { currentState: insensitive },
-      {
-        elections: {
-          some: {
-            election: {
-              OR: [
-                { position: insensitive },
-                { city: insensitive },
-                { state: insensitive },
-              ],
+    andConditions.push({
+      OR: [
+        { name: insensitive },
+        { slug: insensitive },
+        { email: insensitive },
+        { currentRole: insensitive },
+        { currentCity: insensitive },
+        { currentState: insensitive },
+        {
+          elections: {
+            some: {
+              election: {
+                OR: [
+                  { position: insensitive },
+                  { city: insensitive },
+                  { state: insensitive },
+                ],
+              },
             },
           },
         },
-      },
-    ],
-  };
+      ],
+    });
+  }
+
+  if (hiddenFilter !== null) {
+    andConditions.push({ hidden: hiddenFilter });
+  }
+
+  if (uploadedBy) {
+    andConditions.push({ uploadedBy });
+  }
+
+  if (andConditions.length === 0) {
+    return {};
+  }
+
+  if (andConditions.length === 1) {
+    return andConditions[0];
+  }
+
+  return { AND: andConditions };
 }
 
-function buildElectionWhere(query: string) {
-  if (!query) {
-    return {};
-  }
+function buildElectionWhere(
+  query: string,
+  hiddenFilter: boolean | null,
+  uploadedBy: string | null
+) {
+  const andConditions: Prisma.ElectionWhereInput[] = [];
 
-  const insensitive = {
-    contains: query,
-    mode: "insensitive" as const,
-  };
+  if (query) {
+    const insensitive = {
+      contains: query,
+      mode: "insensitive" as const,
+    };
 
-  return {
-    OR: [
-      { position: insensitive },
-      { city: insensitive },
-      { state: insensitive },
-      {
-        candidates: {
-          some: {
-            candidate: {
-              OR: [
-                { name: insensitive },
-                { slug: insensitive },
-                { email: insensitive },
-              ],
+    andConditions.push({
+      OR: [
+        { position: insensitive },
+        { city: insensitive },
+        { state: insensitive },
+        {
+          candidates: {
+            some: {
+              candidate: {
+                OR: [
+                  { name: insensitive },
+                  { slug: insensitive },
+                  { email: insensitive },
+                ],
+              },
             },
           },
         },
-      },
-    ],
-  };
+      ],
+    });
+  }
+
+  if (hiddenFilter !== null) {
+    andConditions.push({ hidden: hiddenFilter });
+  }
+
+  if (uploadedBy) {
+    andConditions.push({ uploadedBy });
+  }
+
+  if (andConditions.length === 0) {
+    return {};
+  }
+
+  if (andConditions.length === 1) {
+    return andConditions[0];
+  }
+
+  return { AND: andConditions };
 }
