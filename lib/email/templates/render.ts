@@ -44,6 +44,8 @@ export type RenderInput = {
   templatesUrl?: string;
   profileUrl?: string;
   ctaLabel?: string;
+  municipality?: string;
+  position?: string;
 };
 
 export function renderEmailTemplate(
@@ -52,7 +54,20 @@ export function renderEmailTemplate(
   opts?: { baseForFollowup?: TemplateKey }
 ): { subject: string; html: string } {
   const greetingName = (data.candidateFirstName || "").trim() || "there";
-  const locationFragment = data.state ? `in ${data.state}` : "in New Jersey";
+  const stateName = (data.state || "").trim();
+  const municipalityName = (data.municipality || "").trim();
+  const positionName = (data.position || "").trim();
+
+  const locationDetail = municipalityName && stateName
+    ? `${municipalityName}, ${stateName}`
+    : municipalityName
+    ? municipalityName
+    : stateName;
+
+  const locationFragment = locationDetail ? `in ${locationDetail}` : "near you";
+  const locationSummary = locationDetail ? ` in ${locationDetail}` : "";
+  const positionDescriptor = positionName ? `${positionName}` : "";
+  const electionLabel = positionName ? `Your ${positionName}` : "Your election";
 
   if (key === "followup") {
     const base = opts?.baseForFollowup || "initial";
@@ -62,12 +77,19 @@ export function renderEmailTemplate(
       claimUrl: data.claimUrl,
       templatesUrl: data.templatesUrl,
       profileUrl: data.profileUrl,
+      municipality: data.municipality,
+      position: data.position,
     }).html;
     const src = readTemplateFile("followup");
     const html = interpolate(src, {
       greetingName,
       claimUrl: data.claimUrl || "",
       locationFragment,
+      locationSummary,
+      locationDetail: locationDetail || "",
+      positionDescriptor,
+      positionName,
+      electionLabel,
       originalHtml: original,
     });
     return { subject: SUBJECTS.followup, html };
@@ -81,12 +103,19 @@ export function renderEmailTemplate(
       claimUrl: data.claimUrl,
       templatesUrl: data.templatesUrl,
       profileUrl: data.profileUrl,
+      municipality: data.municipality,
+      position: data.position,
     }).html;
     const src = readTemplateFile("followup2");
     const html = interpolate(src, {
       greetingName,
       claimUrl: data.claimUrl || "",
       locationFragment,
+      locationSummary,
+      locationDetail: locationDetail || "",
+      positionDescriptor,
+      positionName,
+      electionLabel,
       originalHtml: original,
     });
     return { subject: SUBJECTS.followup2, html };
@@ -102,6 +131,12 @@ export function renderEmailTemplate(
       templatesUrl: data.templatesUrl || data.claimUrl || "",
       profileLink,
       ctaLabel: data.ctaLabel || "Create My Webpage",
+      locationFragment,
+      locationSummary,
+      locationDetail: locationDetail || "",
+      positionDescriptor,
+      positionName,
+      electionLabel,
     });
     return { subject: SUBJECTS.verifiedUpdate, html };
   }
@@ -112,6 +147,11 @@ export function renderEmailTemplate(
       greetingName,
       claimUrl: data.claimUrl || "",
       locationFragment,
+      locationSummary,
+      locationDetail: locationDetail || "",
+      positionDescriptor,
+      positionName,
+      electionLabel,
     });
     return { subject: SUBJECTS.initial, html };
   }

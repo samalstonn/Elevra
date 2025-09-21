@@ -74,6 +74,9 @@ export async function POST(req: NextRequest) {
         profileUrl:
           typeof data.profileUrl === "string" ? data.profileUrl : undefined,
         ctaLabel: typeof data.ctaLabel === "string" ? data.ctaLabel : undefined,
+        municipality:
+          typeof data.municipality === "string" ? data.municipality : undefined,
+        position: typeof data.position === "string" ? data.position : undefined,
       },
       { baseForFollowup }
     );

@@ -9,6 +9,8 @@ type OutreachRow = {
   lastName?: string;
   email: string;
   candidateLink: string;
+  municipality?: string;
+  position?: string;
 };
 
 type OutreachPayload = {
@@ -89,6 +91,8 @@ export async function POST(req: NextRequest) {
       lastName: (r.lastName || "").trim(),
       email,
       candidateLink,
+      municipality: (r.municipality || "").trim(),
+      position: (r.position || "").trim(),
     });
   }
 
@@ -137,6 +141,8 @@ export async function POST(req: NextRequest) {
             claimUrl: r.candidateLink,
             templatesUrl: r.candidateLink,
             profileUrl: r.candidateLink,
+            municipality: r.municipality || undefined,
+            position: r.position || undefined,
           },
           { baseForFollowup: body.baseTemplate || "initial" }
         );

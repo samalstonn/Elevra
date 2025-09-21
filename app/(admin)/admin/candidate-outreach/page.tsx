@@ -11,6 +11,8 @@ type OutreachRow = {
   lastName: string;
   email: string;
   candidateLink: string;
+  municipality?: string;
+  position?: string;
 };
 
 type ScheduleState = { date: string; time: string };
@@ -123,8 +125,17 @@ export default function CandidateOutreachPage() {
     const firstName = get(["FirstName", "first", "fname"]); // lenient
     const lastName = get(["LastName", "last", "lname"]);
     const email = get(["Email"]);
-    const candidateLink = get(["CandidateLink", "link", "url", "profile"]);
-    const row = { firstName, lastName, email, candidateLink };
+    const candidateLink = get(["CandidateLink"]);
+    const municipality = get(["Municipality"]);
+    const position = get(["Position"]);
+    const row = {
+      firstName,
+      lastName,
+      email,
+      candidateLink,
+      municipality,
+      position,
+    };
     // Filter out completely empty rows
     if (Object.values(row).every((v) => !String(v || "").trim())) return null;
     return row;
@@ -209,6 +220,8 @@ export default function CandidateOutreachPage() {
               claimUrl: r.candidateLink,
               templatesUrl: r.candidateLink,
               profileUrl: r.candidateLink,
+              municipality: r.municipality?.trim() || undefined,
+              position: r.position?.trim() || undefined,
             },
           }),
         });
@@ -350,6 +363,8 @@ export default function CandidateOutreachPage() {
                     <th className="p-2">Last Name</th>
                     <th className="p-2">Email</th>
                     <th className="p-2">Candidate Link</th>
+                    <th className="p-2">Municipality</th>
+                    <th className="p-2">Position</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -368,6 +383,8 @@ export default function CandidateOutreachPage() {
                           {r.candidateLink}
                         </a>
                       </td>
+                      <td className="p-2">{r.municipality}</td>
+                      <td className="p-2">{r.position}</td>
                     </tr>
                   ))}
                 </tbody>
