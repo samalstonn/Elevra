@@ -1,5 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import { sendWithResend, isEmailDryRun } from "@/lib/email/resend";
+import {
+  sendBatchWithResend,
+  SendEmailParams,
+  isEmailDryRun,
+} from "@/lib/email/resend";
 import { renderEmailTemplate, TemplateKey } from "@/lib/email/templates/render";
 
 export const runtime = "nodejs";
@@ -129,50 +133,60 @@ export async function POST(req: NextRequest) {
     ? [{ template: "followup" as const, offsetDays: 0 }]
     : [{ template: selectedType, offsetDays: 0 }];
 
-  for (let i = 0; i < recipients.length; i++) {
-    const r = recipients[i];
-    for (const step of steps) {
-      try {
-        const { subject, html } = renderEmailTemplate(
-          step.template,
-          {
-            candidateFirstName: r.firstName || undefined,
-            state: r.state || undefined,
-            claimUrl: r.candidateLink,
-            templatesUrl: r.candidateLink,
-            profileUrl: r.candidateLink,
-            municipality: r.municipality || undefined,
-            position: r.position || undefined,
-          },
-          { baseForFollowup: body.baseTemplate || "initial" }
-        );
-        const subjectToUse = (body.subject || subject || defaultInitialSubject).trim();
+  for (const step of steps) {
+    const batchInputs: SendEmailParams[] = [];
 
-        // Compute scheduledAt per step (offset from base scheduledAtIso or now)
-        let stepScheduledAt = scheduledAt;
-        if (step.offsetDays && (scheduledAt || true)) {
-          const base = scheduledAt ? scheduledAt : new Date();
-          const offsetMs = Math.max(0, Math.floor(step.offsetDays * 24 * 60 * 60 * 1000));
-          const offset = new Date(base.getTime() + offsetMs);
-          if (offset.getTime() >= Date.now() + 60_000) {
-            stepScheduledAt = offset;
-          } else if (!scheduledAt) {
-            stepScheduledAt = undefined;
-          }
+    for (let i = 0; i < recipients.length; i++) {
+      const r = recipients[i];
+      const { subject, html } = renderEmailTemplate(
+        step.template,
+        {
+          candidateFirstName: r.firstName || undefined,
+          state: r.state || undefined,
+          claimUrl: r.candidateLink,
+          templatesUrl: r.candidateLink,
+          profileUrl: r.candidateLink,
+          municipality: r.municipality || undefined,
+          position: r.position || undefined,
+        },
+        { baseForFollowup: body.baseTemplate || "initial" }
+      );
+      const subjectToUse = (body.subject || subject || defaultInitialSubject).trim();
+
+      // Compute scheduledAt per step (offset from base scheduledAtIso or now)
+      let stepScheduledAt = scheduledAt;
+      if (step.offsetDays && (scheduledAt || true)) {
+        const base = scheduledAt ? scheduledAt : new Date();
+        const offsetMs = Math.max(0, Math.floor(step.offsetDays * 24 * 60 * 60 * 1000));
+        const offset = new Date(base.getTime() + offsetMs);
+        if (offset.getTime() >= Date.now() + 60_000) {
+          stepScheduledAt = offset;
+        } else if (!scheduledAt) {
+          stepScheduledAt = undefined;
         }
-
-        const result = await sendWithResend({
-          to: r.email,
-          subject: subjectToUse,
-          html,
-          from: body.from,
-          scheduledAt: stepScheduledAt,
-        });
-        sent.push({ index: i, email: r.email, id: result?.id || null });
-      } catch (err: unknown) {
-        const msg = err instanceof Error ? err.message : String(err);
-        failures.push({ index: i, email: r.email, error: msg });
       }
+
+      batchInputs.push({
+        to: r.email,
+        subject: subjectToUse,
+        html,
+        from: body.from,
+        scheduledAt: stepScheduledAt,
+      });
+    }
+
+    const batchResult = await sendBatchWithResend(batchInputs, {
+      stopOnError: false,
+    });
+
+    for (const s of batchResult.successes) {
+      const recipient = recipients[s.index];
+      sent.push({ index: s.index, email: recipient.email, id: s.id });
+    }
+
+    for (const f of batchResult.failures) {
+      const recipient = recipients[f.index];
+      failures.push({ index: f.index, email: recipient.email, error: f.error });
     }
   }
 

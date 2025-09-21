@@ -255,25 +255,6 @@ export default function CandidateOutreachPage() {
       </p>
 
       <div className="space-y-3 bg-white/70 p-4 rounded border">
-        {(templateType === "followup" || templateType === "followup2") && (
-          <div>
-            <label className="block text-sm font-medium mb-1">
-              Base for Follow-up
-            </label>
-            <select
-              value={baseForFollowup}
-              onChange={(e) =>
-                setBaseForFollowup(e.target.value as "initial" | "verifiedUpdate")
-              }
-              className="w-full rounded border px-3 py-2"
-            >
-              <option value="initial">Initial Outreach</option>
-              <option value="verifiedUpdate">
-                Verified: Templates Update
-              </option>
-            </select>
-          </div>
-        )}
         <input
           type="file"
           accept=".csv,text/csv"
@@ -346,17 +327,17 @@ export default function CandidateOutreachPage() {
             </div>
             <div className="overflow-x-auto border rounded">
               <table className="min-w-full text-sm">
-              <thead className="bg-gray-50 text-left">
-                <tr>
-                  <th className="p-2">First Name</th>
-                  <th className="p-2">Last Name</th>
-                  <th className="p-2">Email</th>
-                  <th className="p-2">Candidate Link</th>
-                  <th className="p-2">State</th>
-                  <th className="p-2">Municipality</th>
-                  <th className="p-2">Position</th>
-                </tr>
-              </thead>
+                <thead className="bg-gray-50 text-left">
+                  <tr>
+                    <th className="p-2">First Name</th>
+                    <th className="p-2">Last Name</th>
+                    <th className="p-2">Email</th>
+                    <th className="p-2">Candidate Link</th>
+                    <th className="p-2">State</th>
+                    <th className="p-2">Municipality</th>
+                    <th className="p-2">Position</th>
+                  </tr>
+                </thead>
                 <tbody>
                   {previewRows.map((r, i) => (
                     <tr key={i} className="border-t">
@@ -398,6 +379,25 @@ export default function CandidateOutreachPage() {
             <option value="verifiedUpdate">Verified: Templates Update</option>
           </select>
         </div>
+        {(templateType === "followup" || templateType === "followup2") && (
+          <div>
+            <label className="block text-sm font-medium mb-1">
+              Base for Follow-up
+            </label>
+            <select
+              value={baseForFollowup}
+              onChange={(e) =>
+                setBaseForFollowup(
+                  e.target.value as "initial" | "verifiedUpdate"
+                )
+              }
+              className="w-full rounded border px-3 py-2"
+            >
+              <option value="initial">Initial Outreach</option>
+              <option value="verifiedUpdate">Verified: Templates Update</option>
+            </select>
+          </div>
+        )}
 
         {(previewHtml || previewSubject) && (
           <div className="mt-4">
