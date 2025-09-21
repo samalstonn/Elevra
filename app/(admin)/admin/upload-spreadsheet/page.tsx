@@ -30,7 +30,7 @@ export default function UploadSpreadsheetPage() {
   }>({ ok: true, errors: [] });
   const [geminiOutput, setGeminiOutput] = useState<string>("");
   const [structuredOutput, setStructuredOutput] = useState<string>("");
-  const [forceHidden, setForceHidden] = useState<boolean>(false);
+  const [forceHidden, setForceHidden] = useState<boolean>(true);
   // Badge state sourced from server status so only one env is needed
   const [mockMode, setMockMode] = useState(false);
   const [modelName, setModelName] = useState<string>("");
