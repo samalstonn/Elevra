@@ -13,6 +13,7 @@ type OutreachRow = {
   candidateLink: string;
   municipality?: string;
   position?: string;
+  state?: string;
 };
 
 type ScheduleState = { date: string; time: string };
@@ -28,7 +29,6 @@ export default function CandidateOutreachPage() {
   usePageTitle("Admin – Candidate Outreach");
 
   const [rows, setRows] = useState<OutreachRow[]>([]);
-  const [stateInput, setStateInput] = useState<string>("");
   const [status, setStatus] = useState<string>("");
   const [error, setError] = useState<string>("");
   const [sending, setSending] = useState(false);
@@ -128,6 +128,7 @@ export default function CandidateOutreachPage() {
     const candidateLink = get(["CandidateLink"]);
     const municipality = get(["Municipality"]);
     const position = get(["Position"]);
+    const state = get(["State"]);
     const row = {
       firstName,
       lastName,
@@ -135,6 +136,7 @@ export default function CandidateOutreachPage() {
       candidateLink,
       municipality,
       position,
+      state,
     };
     // Filter out completely empty rows
     if (Object.values(row).every((v) => !String(v || "").trim())) return null;
@@ -168,7 +170,6 @@ export default function CandidateOutreachPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           __proxyPath: "/api/admin/candidate-outreach",
-          state: stateInput.trim() || undefined,
           rows,
           templateType,
           baseTemplate:
@@ -216,7 +217,7 @@ export default function CandidateOutreachPage() {
             baseForFollowup: baseForFollowup,
             data: {
               candidateFirstName,
-              state: stateInput.trim() || undefined,
+              state: r.state?.trim() || undefined,
               claimUrl: r.candidateLink,
               templatesUrl: r.candidateLink,
               profileUrl: r.candidateLink,
@@ -241,50 +242,38 @@ export default function CandidateOutreachPage() {
       }
     })();
     return () => controller.abort();
-  }, [rows, stateInput, templateType, baseForFollowup]);
+  }, [rows, templateType, baseForFollowup]);
 
   return (
     <main className="max-w-3xl mx-auto mt-10 p-4">
       <h1 className="text-2xl font-bold mb-2">Candidate Outreach</h1>
       <p className="text-sm text-gray-600 mb-6">
-        Upload a CSV with columns: FirstName, LastName, Email, CandidateLink.
-        Preview the first 5 rows, set State, optionally schedule a send
-        date/time, and send via Resend.
+        Upload a CSV with columns: FirstName, LastName, Email, CandidateLink,
+        State (optional), Municipality (optional), Position (optional). Preview
+        the first 5 rows, optionally schedule a send date/time, and send via
+        Resend.
       </p>
 
       <div className="space-y-3 bg-white/70 p-4 rounded border">
-        <div className="grid grid-cols-1 sm:grid-cols-4 gap-3 items-end">
-          <div className="sm:col-span-2">
-            <label className="block text-sm font-medium mb-1">Location</label>
-            <input
-              value={stateInput}
-              onChange={(e) => setStateInput(e.target.value)}
-              placeholder="New Jersey (default if none inputted)"
+        {(templateType === "followup" || templateType === "followup2") && (
+          <div>
+            <label className="block text-sm font-medium mb-1">
+              Base for Follow-up
+            </label>
+            <select
+              value={baseForFollowup}
+              onChange={(e) =>
+                setBaseForFollowup(e.target.value as "initial" | "verifiedUpdate")
+              }
               className="w-full rounded border px-3 py-2"
-            />
+            >
+              <option value="initial">Initial Outreach</option>
+              <option value="verifiedUpdate">
+                Verified: Templates Update
+              </option>
+            </select>
           </div>
-          {(templateType === "followup" || templateType === "followup2") && (
-            <div>
-              <label className="block text-sm font-medium mb-1">
-                Base for Follow-up
-              </label>
-              <select
-                value={baseForFollowup}
-                onChange={(e) =>
-                  setBaseForFollowup(
-                    e.target.value as "initial" | "verifiedUpdate"
-                  )
-                }
-                className="w-full rounded border px-3 py-2"
-              >
-                <option value="initial">Initial Outreach</option>
-                <option value="verifiedUpdate">
-                  Verified: Templates Update
-                </option>
-              </select>
-            </div>
-          )}
-        </div>
+        )}
         <input
           type="file"
           accept=".csv,text/csv"
@@ -357,16 +346,17 @@ export default function CandidateOutreachPage() {
             </div>
             <div className="overflow-x-auto border rounded">
               <table className="min-w-full text-sm">
-                <thead className="bg-gray-50 text-left">
-                  <tr>
-                    <th className="p-2">First Name</th>
-                    <th className="p-2">Last Name</th>
-                    <th className="p-2">Email</th>
-                    <th className="p-2">Candidate Link</th>
-                    <th className="p-2">Municipality</th>
-                    <th className="p-2">Position</th>
-                  </tr>
-                </thead>
+              <thead className="bg-gray-50 text-left">
+                <tr>
+                  <th className="p-2">First Name</th>
+                  <th className="p-2">Last Name</th>
+                  <th className="p-2">Email</th>
+                  <th className="p-2">Candidate Link</th>
+                  <th className="p-2">State</th>
+                  <th className="p-2">Municipality</th>
+                  <th className="p-2">Position</th>
+                </tr>
+              </thead>
                 <tbody>
                   {previewRows.map((r, i) => (
                     <tr key={i} className="border-t">
@@ -383,6 +373,7 @@ export default function CandidateOutreachPage() {
                           {r.candidateLink}
                         </a>
                       </td>
+                      <td className="p-2">{r.state}</td>
                       <td className="p-2">{r.municipality}</td>
                       <td className="p-2">{r.position}</td>
                     </tr>

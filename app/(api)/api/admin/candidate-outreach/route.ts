@@ -11,10 +11,10 @@ type OutreachRow = {
   candidateLink: string;
   municipality?: string;
   position?: string;
+  state?: string;
 };
 
 type OutreachPayload = {
-  state?: string;
   subject?: string;
   from?: string;
   rows: OutreachRow[];
@@ -93,6 +93,7 @@ export async function POST(req: NextRequest) {
       candidateLink,
       municipality: (r.municipality || "").trim(),
       position: (r.position || "").trim(),
+      state: (r.state || "").trim(),
     });
   }
 
@@ -103,7 +104,6 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const state = (body.state || "").trim() || undefined;
   const defaultInitialSubject = `Your Candidate Profile is Live on Elevra`;
   // Parse schedule time if provided
   let scheduledAt: Date | undefined = undefined;
@@ -137,7 +137,7 @@ export async function POST(req: NextRequest) {
           step.template,
           {
             candidateFirstName: r.firstName || undefined,
-            state,
+            state: r.state || undefined,
             claimUrl: r.candidateLink,
             templatesUrl: r.candidateLink,
             profileUrl: r.candidateLink,

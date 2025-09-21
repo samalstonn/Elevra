@@ -58,14 +58,17 @@ export function renderEmailTemplate(
   const municipalityName = (data.municipality || "").trim();
   const positionName = (data.position || "").trim();
 
-  const locationDetail = municipalityName && stateName
-    ? `${municipalityName}, ${stateName}`
-    : municipalityName
-    ? municipalityName
-    : stateName;
+  const locationDetail =
+    municipalityName && stateName
+      ? `${municipalityName}, ${stateName}`
+      : municipalityName
+      ? municipalityName
+      : stateName;
 
-  const locationFragment = locationDetail ? `in ${locationDetail}` : "near you";
-  const locationSummary = locationDetail ? ` in ${locationDetail}` : "";
+  const locationFragment = municipalityName
+    ? `in ${municipalityName}`
+    : "near you";
+  const locationSummary = stateName ? ` in ${stateName}` : "";
   const positionDescriptor = positionName ? `${positionName}` : "";
   const electionLabel = positionName ? `Your ${positionName}` : "Your election";
 
