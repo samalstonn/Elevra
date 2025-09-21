@@ -8,7 +8,12 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 }
 
 function isTemplateKey(value: unknown): value is TemplateKey {
-  return value === "initial" || value === "followup" || value === "verifiedUpdate";
+  return (
+    value === "initial" ||
+    value === "followup" ||
+    value === "followup2" ||
+    value === "verifiedUpdate"
+  );
 }
 
 export async function POST(req: NextRequest) {

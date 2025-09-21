@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { usePageTitle } from "@/lib/usePageTitle";
 import { buildScheduledIso, buildScheduleDisplay } from "./helpers";
 import { normalizeHeader, validateEmails } from "@/election-source/helpers";
+import { TemplateKey } from "@/lib/email/templates/render";
 
 type OutreachRow = {
   firstName: string;
@@ -31,9 +32,7 @@ export default function CandidateOutreachPage() {
   const [sending, setSending] = useState(false);
   const [showAll, setShowAll] = useState(false);
   const [result, setResult] = useState<string>("");
-  const [templateType, setTemplateType] = useState<
-    "initial" | "followup" | "verifiedUpdate"
-  >("initial");
+  const [templateType, setTemplateType] = useState<TemplateKey>("initial");
   const [baseForFollowup, setBaseForFollowup] = useState<
     "initial" | "verifiedUpdate"
   >("initial");
@@ -156,15 +155,17 @@ export default function CandidateOutreachPage() {
       const res = await fetch("/api/admin/email-proxy", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            __proxyPath: "/api/admin/candidate-outreach",
-            state: stateInput.trim() || undefined,
-            rows,
-            templateType,
-            baseTemplate:
-              templateType === "followup" ? baseForFollowup : undefined,
+        body: JSON.stringify({
+          __proxyPath: "/api/admin/candidate-outreach",
+          state: stateInput.trim() || undefined,
+          rows,
+          templateType,
+          baseTemplate:
+            templateType === "followup" || templateType === "followup2"
+              ? baseForFollowup
+              : undefined,
           scheduledAtIso,
-          }),
+        }),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -249,7 +250,7 @@ export default function CandidateOutreachPage() {
               className="w-full rounded border px-3 py-2"
             />
           </div>
-          {templateType === "followup" && (
+          {(templateType === "followup" || templateType === "followup2") && (
             <div>
               <label className="block text-sm font-medium mb-1">
                 Base for Follow-up
@@ -380,15 +381,12 @@ export default function CandidateOutreachPage() {
           </label>
           <select
             value={templateType}
-            onChange={(e) =>
-              setTemplateType(
-                e.target.value as "initial" | "followup" | "verifiedUpdate"
-              )
-            }
+            onChange={(e) => setTemplateType(e.target.value as TemplateKey)}
             className="w-full rounded border px-3 py-2"
           >
             <option value="initial">Initial Outreach</option>
             <option value="followup">Follow-up</option>
+            <option value="followup2">Follow-up 2</option>
             <option value="verifiedUpdate">Verified: Templates Update</option>
           </select>
         </div>

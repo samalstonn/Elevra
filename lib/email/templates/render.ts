@@ -1,11 +1,16 @@
 import fs from "node:fs";
 import path from "node:path";
 
-export type TemplateKey = "initial" | "followup" | "verifiedUpdate";
+export type TemplateKey =
+  | "initial"
+  | "followup"
+  | "verifiedUpdate"
+  | "followup2";
 
 const SUBJECTS: Record<TemplateKey, string> = {
   initial: "Your Candidate Profile is Live on Elevra",
   followup: "RE: Claim your Elevra profile",
+  followup2: "RE: Don't miss out on Elevra",
   verifiedUpdate: "Update: Templates are back — create your candidate webpage",
 };
 
@@ -15,6 +20,8 @@ function readTemplateFile(key: TemplateKey): string {
       ? "initial.html"
       : key === "followup"
       ? "followup.html"
+      : key === "followup2"
+      ? "followup2.html"
       : "verified-update.html";
   const filePath = path.join(process.cwd(), "lib/email/templates/html", file);
   return fs.readFileSync(filePath, "utf8");
@@ -64,6 +71,25 @@ export function renderEmailTemplate(
       originalHtml: original,
     });
     return { subject: SUBJECTS.followup, html };
+  }
+
+  if (key === "followup2") {
+    const base = opts?.baseForFollowup || "initial";
+    const original = renderEmailTemplate(base, {
+      candidateFirstName: data.candidateFirstName,
+      state: data.state,
+      claimUrl: data.claimUrl,
+      templatesUrl: data.templatesUrl,
+      profileUrl: data.profileUrl,
+    }).html;
+    const src = readTemplateFile("followup2");
+    const html = interpolate(src, {
+      greetingName,
+      claimUrl: data.claimUrl || "",
+      locationFragment,
+      originalHtml: original,
+    });
+    return { subject: SUBJECTS.followup2, html };
   }
 
   if (key === "verifiedUpdate") {
