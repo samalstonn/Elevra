@@ -111,7 +111,7 @@ export default function UploadSpreadsheetPage() {
       setError("Unable to determine uploader email. Please check your account profile.");
       return;
     }
-    const groups = groupRowsByMunicipality(parsedRows);
+    const groups = groupRowsByMunicipalityAndPosition(parsedRows);
     if (!groups.length) {
       setError("No valid municipality groups found.");
       return;
@@ -135,9 +135,10 @@ export default function UploadSpreadsheetPage() {
 
       for (let i = 0; i < groups.length; i++) {
         const g = groups[i];
+        const positionLabel = g.position ? ` – ${g.position}` : "";
         const label = `${g.municipality || "(unknown)"}${
           g.state ? ", " + g.state : ""
-        } (${g.rows.length} rows) [${i + 1}/${groups.length}]`;
+        }${positionLabel} (${g.rows.length} rows) [${i + 1}/${groups.length}]`;
         updateStep("process", "in_progress", `Current: ${label}`);
         logProgress(`Analyze → Structure → Insert: ${label}`);
 
@@ -393,10 +394,14 @@ export default function UploadSpreadsheetPage() {
   }
 
   // --- Grouping utilities ---
-  const normalizeMunicipalityKey = useCallback((r: Row): string => {
+  const normalizeGroupKey = useCallback((r: Row): string => {
     const city = (r.municipality || "").trim().toLowerCase();
     const state = (r.state || "").trim().toLowerCase();
-    return `${city}|${state}`;
+    const position = String(r.position ?? "")
+      .replace(/\s+/g, " ")
+      .trim()
+      .toLowerCase();
+    return `${city}|${state}|${position || "unknown-position"}`;
   }, []);
 
   // --- Helpers for parsing structured JSON safely ---
@@ -418,26 +423,34 @@ export default function UploadSpreadsheetPage() {
     }
   }
 
-  const groupRowsByMunicipality = useCallback(
+  const groupRowsByMunicipalityAndPosition = useCallback(
     (
       rows: Row[]
     ): Array<{
       key: string;
       municipality: string;
       state: string;
+      position: string;
       rows: Row[];
     }> => {
       const map = new Map<
         string,
-        { key: string; municipality: string; state: string; rows: Row[] }
+        {
+          key: string;
+          municipality: string;
+          state: string;
+          position: string;
+          rows: Row[];
+        }
       >();
       for (const r of rows) {
-        const key = normalizeMunicipalityKey(r);
+        const key = normalizeGroupKey(r);
         if (!map.has(key)) {
           map.set(key, {
             key,
             municipality: (r.municipality || "").trim(),
             state: (r.state || "").trim(),
+            position: String(r.position ?? "").trim(),
             rows: [],
           });
         }
@@ -446,10 +459,12 @@ export default function UploadSpreadsheetPage() {
       return Array.from(map.values()).sort((a, b) => {
         const s = (a.state || "").localeCompare(b.state || "");
         if (s !== 0) return s;
-        return (a.municipality || "").localeCompare(b.municipality || "");
+        const m = (a.municipality || "").localeCompare(b.municipality || "");
+        if (m !== 0) return m;
+        return (a.position || "").localeCompare(b.position || "");
       });
     },
-    [normalizeMunicipalityKey]
+    [normalizeGroupKey]
   );
 
   async function handleFile(file: File) {
@@ -531,8 +546,8 @@ export default function UploadSpreadsheetPage() {
 
   // Derived groups preview based on current parsed rows
   const rowGroups = useMemo(
-    () => groupRowsByMunicipality(parsedRows),
-    [parsedRows, groupRowsByMunicipality]
+    () => groupRowsByMunicipalityAndPosition(parsedRows),
+    [parsedRows, groupRowsByMunicipalityAndPosition]
   );
 
   if (!isLoaded) {
@@ -640,8 +655,8 @@ export default function UploadSpreadsheetPage() {
               {rowGroups.map((g) => (
                 <li key={g.key}>
                   {(g.municipality || "(unknown)") +
-                    (g.state ? ", " + g.state : "")}{" "}
-                  — {g.rows.length} rows
+                    (g.state ? ", " + g.state : "")}
+                  {g.position ? ` – ${g.position}` : ""} — {g.rows.length} rows
                 </li>
               ))}
             </ul>
