@@ -1,6 +1,6 @@
 "use client";
 
-import { ChangeEvent, useEffect, useMemo, useRef, useState } from "react";
+import { ChangeEvent, MouseEvent, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useUser } from "@clerk/nextjs";
 import { Search, Filter, ExternalLink, Loader2 } from "lucide-react";
@@ -27,6 +27,16 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 type SearchFilter = "all" | "candidate" | "election";
 
@@ -236,6 +246,17 @@ export default function AdminSearchPage() {
     message: string;
   } | null>(null);
   const detailCache = useRef<Map<string, DetailResponse>>(new Map());
+  const [deleteTarget, setDeleteTarget] = useState<
+    | {
+        id: number;
+        position: string;
+        location: string;
+        candidateCount: number;
+      }
+    | null
+  >(null);
+  const [deletePending, setDeletePending] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!isLoaded) return;
@@ -537,6 +558,106 @@ export default function AdminSearchPage() {
     } finally {
       setActionPendingKey(null);
     }
+  };
+
+  const handleRequestElectionDelete = (election: ElectionDetail) => {
+    if (deletePending) return;
+    setDeleteError(null);
+    setDeleteTarget({
+      id: election.id,
+      position: election.position,
+      location:
+        buildLocation(election.city, election.state) || "(location unknown)",
+      candidateCount: election.candidates.length,
+    });
+  };
+
+  const handleConfirmElectionDelete = async (
+    event?: MouseEvent<HTMLButtonElement>
+  ) => {
+    event?.preventDefault();
+    if (!deleteTarget || deletePending) return;
+
+    setDeletePending(true);
+    setDeleteError(null);
+
+    try {
+      const response = await fetch("/api/admin/cascade-delete", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ electionId: deleteTarget.id }),
+      });
+      const payload = (await response.json()) as {
+        success?: boolean;
+        error?: string;
+        result?: {
+          deletedElectionId?: number;
+          deletedCandidateIds?: number[];
+        };
+      };
+
+      if (!response.ok || !payload?.success) {
+        const message = payload?.error || "Failed to delete election";
+        throw new Error(message);
+      }
+
+      const deletedElectionId =
+        payload.result?.deletedElectionId ?? deleteTarget.id;
+      const deletedCandidateIds = payload.result?.deletedCandidateIds ?? [];
+
+      detailCache.current.clear();
+      setDetail(null);
+      setDetailError(null);
+      setDetailLoading(false);
+
+      setResults((previous) => {
+        const nextCandidates = previous.candidates.filter(
+          (candidate) => !deletedCandidateIds.includes(candidate.id)
+        );
+        const nextElections = previous.elections.filter(
+          (election) => election.id !== deletedElectionId
+        );
+
+        setSelected((prevSelected) => {
+          const candidateRemoved =
+            prevSelected?.type === "candidate" &&
+            deletedCandidateIds.includes(prevSelected.id);
+          const electionRemoved =
+            prevSelected?.type === "election" &&
+            prevSelected.id === deletedElectionId;
+
+          if (!candidateRemoved && !electionRemoved) {
+            return prevSelected;
+          }
+
+          if (nextCandidates.length > 0) {
+            return { type: "candidate", id: nextCandidates[0].id };
+          }
+          if (nextElections.length > 0) {
+            return { type: "election", id: nextElections[0].id };
+          }
+          return null;
+        });
+
+        return {
+          candidates: nextCandidates,
+          elections: nextElections,
+        };
+      });
+
+      setDeleteTarget(null);
+    } catch (err) {
+      console.error(err);
+      setDeleteError((err as Error).message || "Failed to delete election");
+    } finally {
+      setDeletePending(false);
+    }
+  };
+
+  const handleDeleteDialogChange = (nextOpen: boolean) => {
+    if (nextOpen || deletePending) return;
+    setDeleteTarget(null);
+    setDeleteError(null);
   };
 
   const handleRevealLinkedCandidates = async (
@@ -849,8 +970,14 @@ export default function AdminSearchPage() {
                     detail.election.hidden
                   )
                 }
+                onRequestDelete={() =>
+                  handleRequestElectionDelete(detail.election)
+                }
                 isToggling={
                   actionPendingKey === `election:${detail.election.id}`
+                }
+                isDeleting={
+                  deletePending && deleteTarget?.id === detail.election.id
                 }
                 actionError={
                   actionError?.key === `election:${detail.election.id}`
@@ -862,6 +989,43 @@ export default function AdminSearchPage() {
           </CardContent>
         </Card>
       </div>
+
+      <AlertDialog
+        open={Boolean(deleteTarget)}
+        onOpenChange={handleDeleteDialogChange}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Election?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action will permanently remove{" "}
+              {deleteTarget?.position ?? "this election"}
+              {deleteTarget?.location ? ` (${deleteTarget.location})` : ""}
+              {" "}and all linked candidate records. {deleteTarget?.candidateCount ?? 0}{" "}
+              candidate{deleteTarget?.candidateCount === 1 ? "" : "s"} will be
+              deleted along with their related data. This cannot be undone.
+            </AlertDialogDescription>
+            {deleteError && (
+              <p className="text-sm text-destructive">{deleteError}</p>
+            )}
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deletePending}>
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleConfirmElectionDelete}
+              disabled={deletePending}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {deletePending && (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              )}
+              Delete Election
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
@@ -1201,7 +1365,9 @@ type ElectionDetailPanelProps = {
   onToggleHidden: (nextHidden: boolean) => void;
   onRevealCandidates: () => void;
   onHideCandidates: () => void;
+  onRequestDelete: () => void;
   isToggling: boolean;
+  isDeleting: boolean;
   actionError: string | null;
 };
 
@@ -1210,7 +1376,9 @@ function ElectionDetailPanel({
   onToggleHidden,
   onRevealCandidates,
   onHideCandidates,
+  onRequestDelete,
   isToggling,
+  isDeleting,
   actionError,
 }: ElectionDetailPanelProps) {
   const hasHiddenCandidates = election.candidates.some(
@@ -1272,6 +1440,16 @@ function ElectionDetailPanel({
             </Button>
           )
         )}
+        <Button
+          type="button"
+          size="sm"
+          variant="destructive"
+          onClick={onRequestDelete}
+          disabled={isDeleting}
+        >
+          {isDeleting && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
+          Delete Election
+        </Button>
         {actionError && (
           <p className="text-xs text-destructive">{actionError}</p>
         )}
