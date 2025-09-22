@@ -20,6 +20,11 @@ const REQUIRED_HEADERS = [
   "email",
 ] as const;
 
+// Hard cap rows per Gemini request to avoid timeouts on huge slates.
+const MAX_ROWS_PER_CHUNK = process.env.GEMINI_MAX_ROWS_PER_CHUNK
+  ? Number(process.env.GEMINI_MAX_ROWS_PER_CHUNK)
+  : 5;
+
 export default function UploadSpreadsheetPage() {
   usePageTitle("Admin – Upload Spreadsheet");
   const [status, setStatus] = useState<string>("");
@@ -108,7 +113,9 @@ export default function UploadSpreadsheetPage() {
       return;
     }
     if (!userEmail) {
-      setError("Unable to determine uploader email. Please check your account profile.");
+      setError(
+        "Unable to determine uploader email. Please check your account profile."
+      );
       return;
     }
     const groups = groupRowsByMunicipalityAndPosition(parsedRows);
@@ -136,9 +143,15 @@ export default function UploadSpreadsheetPage() {
       for (let i = 0; i < groups.length; i++) {
         const g = groups[i];
         const positionLabel = g.position ? ` – ${g.position}` : "";
+        const chunkLabel =
+          g.chunkTotal && g.chunkTotal > 1
+            ? ` (chunk ${g.chunkIndex}/${g.chunkTotal})`
+            : "";
         const label = `${g.municipality || "(unknown)"}${
           g.state ? ", " + g.state : ""
-        }${positionLabel} (${g.rows.length} rows) [${i + 1}/${groups.length}]`;
+        }${positionLabel}${chunkLabel} (${g.rows.length} rows) [${i + 1}/${
+          groups.length
+        }]`;
         updateStep("process", "in_progress", `Current: ${label}`);
         logProgress(`Analyze → Structure → Insert: ${label}`);
 
@@ -432,6 +445,8 @@ export default function UploadSpreadsheetPage() {
       state: string;
       position: string;
       rows: Row[];
+      chunkIndex?: number;
+      chunkTotal?: number;
     }> => {
       const map = new Map<
         string,
@@ -456,13 +471,45 @@ export default function UploadSpreadsheetPage() {
         }
         map.get(key)!.rows.push(r);
       }
-      return Array.from(map.values()).sort((a, b) => {
+      const sorted = Array.from(map.values()).sort((a, b) => {
         const s = (a.state || "").localeCompare(b.state || "");
         if (s !== 0) return s;
         const m = (a.municipality || "").localeCompare(b.municipality || "");
         if (m !== 0) return m;
         return (a.position || "").localeCompare(b.position || "");
       });
+
+      const expanded: Array<{
+        key: string;
+        municipality: string;
+        state: string;
+        position: string;
+        rows: Row[];
+        chunkIndex?: number;
+        chunkTotal?: number;
+      }> = [];
+
+      for (const group of sorted) {
+        if (group.rows.length <= MAX_ROWS_PER_CHUNK) {
+          expanded.push(group);
+          continue;
+        }
+
+        const totalChunks = Math.ceil(group.rows.length / MAX_ROWS_PER_CHUNK);
+        for (let idx = 0; idx < totalChunks; idx++) {
+          const start = idx * MAX_ROWS_PER_CHUNK;
+          const chunkRows = group.rows.slice(start, start + MAX_ROWS_PER_CHUNK);
+          expanded.push({
+            ...group,
+            key: `${group.key}#${idx + 1}`,
+            rows: chunkRows,
+            chunkIndex: idx + 1,
+            chunkTotal: totalChunks,
+          });
+        }
+      }
+
+      return expanded;
     },
     [normalizeGroupKey]
   );
@@ -656,7 +703,11 @@ export default function UploadSpreadsheetPage() {
                 <li key={g.key}>
                   {(g.municipality || "(unknown)") +
                     (g.state ? ", " + g.state : "")}
-                  {g.position ? ` – ${g.position}` : ""} — {g.rows.length} rows
+                  {g.position ? ` – ${g.position}` : ""}
+                  {g.chunkTotal && g.chunkTotal > 1
+                    ? ` (chunk ${g.chunkIndex}/${g.chunkTotal})`
+                    : ""}{" "}
+                  — {g.rows.length} rows
                 </li>
               ))}
             </ul>
