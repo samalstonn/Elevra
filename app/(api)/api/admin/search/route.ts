@@ -22,18 +22,26 @@ export async function GET(request: Request) {
 
   const { searchParams } = new URL(request.url);
   const query = searchParams.get("query")?.trim() ?? "";
-  const rawType = (searchParams.get("type")?.toLowerCase() ?? "all") as SearchType;
+  const rawType = (searchParams.get("type")?.toLowerCase() ??
+    "all") as SearchType;
   const type: SearchType = ["candidate", "election", "all"].includes(rawType)
     ? rawType
     : "all";
-  const rawVisibility = (searchParams.get("visibility")?.toLowerCase() ?? "all").trim();
-  const visibility: "all" | "visible" | "hidden" = ["all", "visible", "hidden"].includes(rawVisibility)
+  const rawVisibility = (
+    searchParams.get("visibility")?.toLowerCase() ?? "all"
+  ).trim();
+  const visibility: "all" | "visible" | "hidden" = [
+    "all",
+    "visible",
+    "hidden",
+  ].includes(rawVisibility)
     ? (rawVisibility as "all" | "visible" | "hidden")
     : "all";
   const hiddenFilter =
     visibility === "hidden" ? true : visibility === "visible" ? false : null;
   const uploadedByParam = searchParams.get("uploadedBy")?.trim();
-  const uploadedBy = uploadedByParam && uploadedByParam !== "all" ? uploadedByParam : null;
+  const uploadedBy =
+    uploadedByParam && uploadedByParam !== "all" ? uploadedByParam : null;
   const limitParam = Number.parseInt(searchParams.get("limit") ?? "20", 10);
   const limit = Number.isFinite(limitParam)
     ? Math.min(Math.max(limitParam, 1), MAX_LIMIT)
@@ -41,61 +49,58 @@ export async function GET(request: Request) {
 
   const candidatePromise =
     type === "candidate" || type === "all"
-      ? prisma.candidate
-          .findMany({
-            where: buildCandidateWhere(query, hiddenFilter, uploadedBy),
-            include: {
-              elections: {
-                take: 5,
-                include: {
-                  election: {
-                    select: {
-                      id: true,
-                      position: true,
-                      city: true,
-                      state: true,
-                      date: true,
-                      type: true,
-                      hidden: true,
-                    },
+      ? prisma.candidate.findMany({
+          where: buildCandidateWhere(query, hiddenFilter, uploadedBy),
+          include: {
+            elections: {
+              take: 10,
+              include: {
+                election: {
+                  select: {
+                    id: true,
+                    position: true,
+                    city: true,
+                    state: true,
+                    date: true,
+                    type: true,
+                    hidden: true,
                   },
                 },
               },
             },
-            orderBy: [{ verified: "desc" }, { updatedAt: "desc" }],
-            take: limit,
-          })
+          },
+          orderBy: [{ verified: "desc" }, { updatedAt: "desc" }],
+          take: limit,
+        })
       : Promise.resolve([]);
 
   const electionPromise =
     type === "election" || type === "all"
-      ? prisma.election
-          .findMany({
-            where: buildElectionWhere(query, hiddenFilter, uploadedBy),
-            include: {
-              _count: {
-                select: {
-                  candidates: true,
-                },
-              },
-              candidates: {
-                take: 5,
-                include: {
-                  candidate: {
-                    select: {
-                      id: true,
-                      name: true,
-                      slug: true,
-                      verified: true,
-                      hidden: true,
-                    },
+      ? prisma.election.findMany({
+          where: buildElectionWhere(query, hiddenFilter, uploadedBy),
+          include: {
+            candidates: {
+              include: {
+                candidate: {
+                  select: {
+                    id: true,
+                    name: true,
+                    slug: true,
+                    verified: true,
+                    hidden: true,
                   },
                 },
               },
+              orderBy: {
+                candidate: {
+                  name: "asc",
+                },
+              },
             },
-            orderBy: { date: "desc" },
-            take: limit,
-          })
+          },
+          orderBy: { date: "desc" },
+          take: limit,
+        })
       : Promise.resolve([]);
 
   const uploaderPromise = prisma.$transaction([
@@ -154,25 +159,35 @@ export async function GET(request: Request) {
         hidden: link.election.hidden,
       })),
     })),
-    elections: elections.map((election) => ({
-      type: "election" as const,
-      id: election.id,
-      position: election.position,
-      city: election.city,
-      state: election.state,
-      date: election.date.toISOString(),
-      electionType: election.type,
-      hidden: election.hidden,
-      uploadedBy: election.uploadedBy,
-      candidateCount: election._count.candidates,
-      sampleCandidates: election.candidates.map((link) => ({
-        id: link.candidate.id,
-        name: link.candidate.name,
-        slug: link.candidate.slug,
-        verified: link.candidate.verified,
-        hidden: link.candidate.hidden,
-      })),
-    })),
+    elections: elections.map((election) => {
+      const hiddenCandidateCount = election.candidates.reduce(
+        (total, link) => total + (link.candidate.hidden ? 1 : 0),
+        0
+      );
+      const hasHiddenCandidates = hiddenCandidateCount > 0;
+
+      return {
+        type: "election" as const,
+        id: election.id,
+        position: election.position,
+        city: election.city,
+        state: election.state,
+        date: election.date.toISOString(),
+        electionType: election.type,
+        hidden: election.hidden,
+        uploadedBy: election.uploadedBy,
+        candidateCount: election.candidates.length,
+        hiddenCandidateCount,
+        hasHiddenCandidates,
+        sampleCandidates: election.candidates.slice(0, 5).map((link) => ({
+          id: link.candidate.id,
+          name: link.candidate.name,
+          slug: link.candidate.slug,
+          verified: link.candidate.verified,
+          hidden: link.candidate.hidden,
+        })),
+      };
+    }),
     uploaders,
   });
 }

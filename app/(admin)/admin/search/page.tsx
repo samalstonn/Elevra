@@ -77,6 +77,8 @@ type ElectionSummary = {
   hidden: boolean;
   uploadedBy: string;
   candidateCount: number;
+  hiddenCandidateCount: number;
+  hasHiddenCandidates: boolean;
   sampleCandidates: Array<{
     id: number;
     name: string;
@@ -401,8 +403,14 @@ export default function AdminSearchPage() {
     options?: { revealCandidates?: boolean; hideCandidates?: boolean }
   ) => {
     const cacheKey = `${entityType}:${entityId}`;
+    const actionType = options?.revealCandidates
+      ? "reveal"
+      : options?.hideCandidates
+        ? "hide"
+        : "toggle";
+    const pendingKey = `${cacheKey}:${actionType}`;
     setActionError(null);
-    setActionPendingKey(cacheKey);
+    setActionPendingKey(pendingKey);
 
     try {
       const response = await fetch(
@@ -436,6 +444,19 @@ export default function AdminSearchPage() {
 
         if (entityType === "candidate" && data.type === "candidate") {
           const hiddenValue = data.candidate.hidden;
+          const linkedElectionIds = new Set(
+            data.candidate.elections.map((link) => link.election.id)
+          );
+          const previousCandidateRecord = previous.candidates.find(
+            (candidate) => candidate.id === data.candidate.id
+          );
+          const previousHiddenValue = previousCandidateRecord?.hidden ?? false;
+          const hiddenDelta =
+            hiddenValue === previousHiddenValue
+              ? 0
+              : hiddenValue
+                ? 1
+                : -1;
           let candidatesChanged = false;
           const updatedCandidates = previous.candidates.map((candidate) => {
             if (candidate.id !== data.candidate.id) return candidate;
@@ -446,6 +467,8 @@ export default function AdminSearchPage() {
 
           let electionsChanged = false;
           const updatedElections = previous.elections.map((election) => {
+            if (!linkedElectionIds.has(election.id)) return election;
+
             let samplesChanged = false;
             const updatedSamples = election.sampleCandidates.map((sample) => {
               if (sample.id !== data.candidate.id) return sample;
@@ -453,9 +476,33 @@ export default function AdminSearchPage() {
               samplesChanged = true;
               return { ...sample, hidden: hiddenValue };
             });
-            if (!samplesChanged) return election;
+
+            const adjustedHiddenCount = Math.min(
+              Math.max(election.hiddenCandidateCount + hiddenDelta, 0),
+              election.candidateCount
+            );
+            const nextHiddenCandidateCount = adjustedHiddenCount;
+            let nextHasHiddenCandidates = election.hasHiddenCandidates;
+            let electionChanged = samplesChanged;
+
+            if (hiddenDelta !== 0) {
+              if (nextHiddenCandidateCount !== election.hiddenCandidateCount) {
+                electionChanged = true;
+              }
+              nextHasHiddenCandidates = nextHiddenCandidateCount > 0;
+            }
+
+            if (!electionChanged) return election;
+
             electionsChanged = true;
-            return { ...election, sampleCandidates: updatedSamples };
+            return {
+              ...election,
+              sampleCandidates: samplesChanged
+                ? updatedSamples
+                : election.sampleCandidates,
+              hiddenCandidateCount: nextHiddenCandidateCount,
+              hasHiddenCandidates: nextHasHiddenCandidates,
+            };
           });
 
           if (!candidatesChanged && !electionsChanged) {
@@ -477,6 +524,10 @@ export default function AdminSearchPage() {
           data.election.candidates.forEach((link) => {
             candidateHiddenMap.set(link.candidate.id, link.candidate.hidden);
           });
+          const nextHiddenCandidateCount = Array.from(
+            candidateHiddenMap.values()
+          ).reduce((total, value) => total + (value ? 1 : 0), 0);
+          const nextHasHiddenCandidates = nextHiddenCandidateCount > 0;
 
           let electionsChanged = false;
           const updatedElections = previous.elections.map((election) => {
@@ -494,6 +545,9 @@ export default function AdminSearchPage() {
             if (election.hidden !== hiddenValue) {
               electionChanged = true;
             }
+            if (election.hiddenCandidateCount !== nextHiddenCandidateCount) {
+              electionChanged = true;
+            }
 
             if (!electionChanged) {
               return election;
@@ -505,6 +559,8 @@ export default function AdminSearchPage() {
               ...election,
               hidden: hiddenValue,
               sampleCandidates: updatedSamples,
+              hiddenCandidateCount: nextHiddenCandidateCount,
+              hasHiddenCandidates: nextHasHiddenCandidates,
             };
           });
 
@@ -554,7 +610,7 @@ export default function AdminSearchPage() {
         err instanceof Error && err.message
           ? err.message
           : `Failed to update ${entityType}`;
-      setActionError({ key: cacheKey, message });
+      setActionError({ key: pendingKey, message });
     } finally {
       setActionPendingKey(null);
     }
@@ -940,10 +996,11 @@ export default function AdminSearchPage() {
                   )
                 }
                 isToggling={
-                  actionPendingKey === `candidate:${detail.candidate.id}`
+                  actionPendingKey === `candidate:${detail.candidate.id}:toggle`
                 }
                 actionError={
-                  actionError?.key === `candidate:${detail.candidate.id}`
+                  actionError?.key ===
+                  `candidate:${detail.candidate.id}:toggle`
                     ? actionError.message
                     : null
                 }
@@ -973,14 +1030,22 @@ export default function AdminSearchPage() {
                 onRequestDelete={() =>
                   handleRequestElectionDelete(detail.election)
                 }
-                isToggling={
-                  actionPendingKey === `election:${detail.election.id}`
+                isTogglingHidden={
+                  actionPendingKey === `election:${detail.election.id}:toggle`
+                }
+                isRevealingCandidates={
+                  actionPendingKey === `election:${detail.election.id}:reveal`
+                }
+                isHidingCandidates={
+                  actionPendingKey === `election:${detail.election.id}:hide`
                 }
                 isDeleting={
                   deletePending && deleteTarget?.id === detail.election.id
                 }
                 actionError={
-                  actionError?.key === `election:${detail.election.id}`
+                  actionError?.key?.startsWith(
+                    `election:${detail.election.id}:`
+                  )
                     ? actionError.message
                     : null
                 }
@@ -1366,7 +1431,9 @@ type ElectionDetailPanelProps = {
   onRevealCandidates: () => void;
   onHideCandidates: () => void;
   onRequestDelete: () => void;
-  isToggling: boolean;
+  isTogglingHidden: boolean;
+  isRevealingCandidates: boolean;
+  isHidingCandidates: boolean;
   isDeleting: boolean;
   actionError: string | null;
 };
@@ -1377,7 +1444,9 @@ function ElectionDetailPanel({
   onRevealCandidates,
   onHideCandidates,
   onRequestDelete,
-  isToggling,
+  isTogglingHidden,
+  isRevealingCandidates,
+  isHidingCandidates,
   isDeleting,
   actionError,
 }: ElectionDetailPanelProps) {
@@ -1387,7 +1456,6 @@ function ElectionDetailPanel({
   const allCandidatesPublic =
     election.candidates.length > 0 &&
     election.candidates.every((link) => !link.candidate.hidden);
-
   return (
     <div className="space-y-6">
       <div className="space-y-2">
@@ -1404,9 +1472,11 @@ function ElectionDetailPanel({
             size="sm"
             variant={election.hidden ? "destructive" : "green"}
             onClick={() => onToggleHidden(!election.hidden)}
-            disabled={isToggling}
+            disabled={isTogglingHidden}
           >
-            {isToggling && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
+            {isTogglingHidden && (
+              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+            )}
             {election.hidden ? "Hidden" : "Public"}
           </Button>
           {election.active ? (
@@ -1421,9 +1491,11 @@ function ElectionDetailPanel({
             size="sm"
             variant="green"
             onClick={onRevealCandidates}
-            disabled={isToggling}
+            disabled={isRevealingCandidates}
           >
-            {isToggling && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
+            {isRevealingCandidates && (
+              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+            )}
             Make Candidates Public
           </Button>
         ) : (
@@ -1433,9 +1505,11 @@ function ElectionDetailPanel({
               size="sm"
               variant="destructive"
               onClick={onHideCandidates}
-              disabled={isToggling}
+              disabled={isHidingCandidates}
             >
-              {isToggling && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
+              {isHidingCandidates && (
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              )}
               Make Candidates Hidden
             </Button>
           )
@@ -1681,6 +1755,8 @@ function buildElectionBadges(election: ElectionSummary) {
   }> = [];
   badges.push({ label: formatEnum(election.electionType), variant: "outline" });
   if (election.hidden) badges.push({ label: "Hidden", variant: "destructive" });
+  if (election.hasHiddenCandidates)
+    badges.push({ label: "Candidates hidden", variant: "destructive" });
   election.sampleCandidates.slice(0, 2).forEach((candidate) => {
     badges.push({
       label: candidate.name,
