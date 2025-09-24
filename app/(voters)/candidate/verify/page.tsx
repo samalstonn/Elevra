@@ -115,6 +115,7 @@ export default async function VerifyPage({
           rows: [
             { label: "Name", value: candidateRec.name },
             { label: "Slug", value: candidateRec.slug },
+            { label: "Uploaded By", value: candidateRec.uploadedBy || "N/A" },
           ],
           ctaLabel: "View Profile",
           ctaUrl: `${process.env.NEXT_PUBLIC_APP_URL}/candidate/${candidateRec.slug}`,
