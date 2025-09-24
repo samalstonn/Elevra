@@ -26,8 +26,8 @@ export default function TermsPage() {
       <h2 className="text-2xl font-semibold mt-6 mb-2">Contact Us</h2>
       <p>
         If you have any questions about these Terms, please contact us at{" "}
-        <a href="mailto:elevracommunity@gmail.com" className="text-blue-500">
-          elevracommunity@gmail.com
+        <a href="mailto:team@elevracommunity.com" className="text-blue-500">
+          team@elevracommunity.com
         </a>
         .
       </p>

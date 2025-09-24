@@ -33,7 +33,7 @@ export default function VerifySuccessClient() {
 
           <p>
             You’re ready to engage with voters on Elevra! Please let us know at
-            elevracommunity@gmail.com what features are important to you.
+            team@elevracommunity.com what features are important to you.
           </p>
 
           <p>

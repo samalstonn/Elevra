@@ -14,7 +14,7 @@ export function renderCandidateVerificationEmail({
   firstName,
   dashboardUrl,
   profileUrl,
-  supportEmail = "elevracommunity@gmail.com",
+  supportEmail = "team@elevracommunity.com",
 }: CandidateVerificationEmailParams): { subject: string; html: string } {
   const greetingName = (firstName || "").trim() || "there";
   const sections = [
