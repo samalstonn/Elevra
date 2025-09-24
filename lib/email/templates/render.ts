@@ -70,7 +70,6 @@ export function renderEmailTemplate(
     : "near you";
   const locationSummary = stateName ? ` in ${stateName}` : "";
   const positionDescriptor = positionName ? `${positionName}` : "";
-  const electionLabel = positionName ? `Your ${positionName}` : "Your election";
 
   if (key === "followup") {
     const base = opts?.baseForFollowup || "initial";
@@ -92,7 +91,6 @@ export function renderEmailTemplate(
       locationDetail: locationDetail || "",
       positionDescriptor,
       positionName,
-      electionLabel,
       originalHtml: original,
     });
     return { subject: SUBJECTS.followup, html };
@@ -118,7 +116,6 @@ export function renderEmailTemplate(
       locationDetail: locationDetail || "",
       positionDescriptor,
       positionName,
-      electionLabel,
       originalHtml: original,
     });
     return { subject: SUBJECTS.followup2, html };
@@ -139,7 +136,6 @@ export function renderEmailTemplate(
       locationDetail: locationDetail || "",
       positionDescriptor,
       positionName,
-      electionLabel,
     });
     return { subject: SUBJECTS.verifiedUpdate, html };
   }
@@ -154,7 +150,6 @@ export function renderEmailTemplate(
       locationDetail: locationDetail || "",
       positionDescriptor,
       positionName,
-      electionLabel,
     });
     return { subject: SUBJECTS.initial, html };
   }
