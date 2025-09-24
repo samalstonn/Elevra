@@ -2,6 +2,7 @@
 import React, { useState } from "react";
 import { DashboardNav } from "../../../../components/DashboardNav";
 import { useUser } from "@clerk/nextjs";
+import { BrandLogo } from "@/components/BrandLogo";
 import {
   LayoutDashboard, // Overview
   User, // Profile Settings
@@ -107,9 +108,7 @@ export default function CandidateDashboardLayout({
           <div className="flex flex-col h-full">
             <div className="px-4 py-6 border-b">
               <div className="flex items-center justify-between">
-                <h2 className="text-xl font-semibold text-purple-700">
-                  Elevra
-                </h2>
+                <BrandLogo size="md" />
               </div>
               <div className="mt-4">
                 <p className="text-sm font-medium">

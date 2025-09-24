@@ -17,6 +17,7 @@ import SearchBar from "../../components/ResultsSearchBar";
 import { Toaster } from "@/components/ui/toaster";
 import Footer from "../(footer-pages)/Footer";
 import HeaderButtons from "./HeaderButtons";
+import { BrandLogo } from "@/components/BrandLogo";
 
 const inter = Inter({ subsets: ["latin"] });
 const clerkKey = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
@@ -35,12 +36,13 @@ function HeaderNav() {
   })();
 
   return (
-    <header className="w-full flex items-center justify-between gap-4 px-6 py-6">
+    <header className="w-full flex items-center justify-between gap-4 px-2 pr-4 py-4">
       <Link
         href="/"
-        className="text-xl sm:text-3xl font-bold text-purple-800 shrink-0"
+        className="shrink-0 flex items-center"
+        aria-label="Elevra home"
       >
-        Elevra
+        <BrandLogo priority />
       </Link>
       {(pathname.startsWith("/results") ||
         pathname.startsWith("/candidate/")) && (
