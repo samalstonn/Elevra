@@ -2,13 +2,11 @@
 
 import { motion } from "framer-motion";
 import { Suspense } from "react";
-import { useRouter } from "next/navigation";
-import SearchBar from "../components/SearchBar";
+import ResultsSearchBar from "@/components/ResultsSearchBar";
 import Showcase from "../components/Showcase";
 import FeatureCards from "../components/FeatureCards";
 import AboutUs from "@/components/AboutUs";
 import { Button } from "@/components/ui/button";
-import { NormalizedLocation } from "@/types/geocoding";
 import LiveElectionBanner from "@/components/LiveElectionBanner";
 
 export default function HomePage() {
@@ -20,16 +18,6 @@ export default function HomePage() {
 }
 
 function HomePageContent() {
-  const router = useRouter();
-
-  const handleSearch = (location: NormalizedLocation) => {
-    router.push(
-      `/results?city=${encodeURIComponent(
-        location.city
-      )}&state=${encodeURIComponent(location.stateName)}`
-    );
-  };
-
   return (
     <div className="flex flex-col items-center w-full mx-auto">
       {/* Hero Section */}
@@ -93,8 +81,9 @@ function HomePageContent() {
           }}
           className="w-full max-w-lg sm:max-w-xl md:max-w-2xl lg:max-w-3xl mb-12"
         >
-          <SearchBar
-            onSearch={(location: NormalizedLocation) => handleSearch(location)}
+          <ResultsSearchBar
+            shadow
+            placeholder="Search elections, candidates, or results"
           />
           {/* <Button variant="purple" className="mt-4 mx-auto" asChild>
             <a href="/live-elections">Check Out What&apos;s Live</a>

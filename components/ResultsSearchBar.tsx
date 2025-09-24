@@ -4,6 +4,8 @@ import React, { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
 import { Search } from "lucide-react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { CandidateImage } from "@/components/CandidateImage";
 
 // 2) Add this just after your imports:
 const CHIP_CLASS =
@@ -13,6 +15,9 @@ export type SearchResult = {
   id: string;
   slug: string;
   name?: string;
+  photo?: string | null;
+  photoUrl?: string | null;
+  clerkUserId?: string | null;
   electionId?: string;
   position?: string; // for elections
   city?: string; // for elections
@@ -36,17 +41,19 @@ interface SearchBarProps {
 }
 
 export default function SearcxhBar({
-  placeholder = "Search...", // Keep defaults here for now, diff didn't explicitly remove them
+  placeholder = "Search elections or candidates", // Keep defaults here for now, diff didn't explicitly remove them
   apiEndpoint = "/api/candidates", // Keep defaults here
   onResultSelect,
   shadow,
   multi, // Add multi here
 }: SearchBarProps) {
+  const router = useRouter();
   // 3) Track current selection
   const [selectedItems, setSelectedItems] = useState<SearchResult[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [results, setResults] = useState<SearchResult[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [isRouting, setIsRouting] = useState(false);
   // Create a ref for the container to detect clicks outside
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -135,30 +142,26 @@ export default function SearcxhBar({
     // For candidates (identified by having a slug and name)
     if (item.name && item.slug) {
       return (
-        <ul className="py-1" role="listbox" style={{ textAlign: "left" }}>
-          <li
-            key={item.id}
-            role="option"
-            aria-selected={selectedItems.some((s) => s.id === item.id)}
-            className={`px-4 py-2 text-sm cursor-pointer flex flex-col hover:bg-purple-50 transition-colors `}
-            style={{ textAlign: "left" }}
-          >
+        <div className="flex items-center gap-3 py-1">
+          <CandidateImage
+            clerkUserId={item.clerkUserId ?? null}
+            publicPhoto={item.photo ?? item.photoUrl ?? null}
+            name={item.name}
+            width={32}
+            height={32}
+          />
+          <div className="flex flex-col">
             <span className="font-medium" style={{ textAlign: "left" }}>
               {item.name}
             </span>
-            <span
-              className="text-gray-500 text-xs"
-              style={{ textAlign: "left" }}
-            >
-              {item.currentRole} •{" "}
+            <span className="text-gray-500 text-xs" style={{ textAlign: "left" }}>
+              {item.currentRole}
               {item.currentCity && item.currentState ? (
-                <span className="text-purple-500">
-                  {item.currentCity}, {item.currentState}
-                </span>
+                <span className="text-purple-500"> {" • "}{item.currentCity}, {item.currentState}</span>
               ) : null}
             </span>
-          </li>
-        </ul>
+          </div>
+        </div>
       );
     }
     // For elections
@@ -227,6 +230,35 @@ export default function SearcxhBar({
           placeholder={placeholder}
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
+          onKeyDown={async (event) => {
+            if (event.key !== "Enter") return;
+            event.preventDefault();
+            const query = searchTerm.trim();
+            if (!query) return;
+            try {
+              setIsRouting(true);
+              setResults([]);
+              const response = await fetch("/api/semantic-route", {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                },
+                body: JSON.stringify({ query }),
+              });
+              if (!response.ok) {
+                throw new Error(`semantic routing failed: ${response.status}`);
+              }
+              const data = (await response.json()) as { url?: string };
+              const target =
+                data.url || `/search?query=${encodeURIComponent(query)}`;
+              router.push(target);
+            } catch (error) {
+              console.error("Error resolving semantic route", error);
+              router.push(`/search?query=${encodeURIComponent(query)}`);
+            } finally {
+              setIsRouting(false);
+            }
+          }}
         />
       </motion.div>
       {results.length > 0 && (
@@ -267,6 +299,11 @@ export default function SearcxhBar({
       {isLoading && (
         <div className="absolute right-2 top-2 text-gray-500 text-xs">
           Loading...
+        </div>
+      )}
+      {isRouting && !isLoading && (
+        <div className="absolute right-2 top-2 text-purple-600 text-xs">
+          Routing...
         </div>
       )}
     </div>
