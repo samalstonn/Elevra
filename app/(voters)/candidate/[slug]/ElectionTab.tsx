@@ -10,10 +10,10 @@ import { MdHowToVote } from "react-icons/md";
 import { marked } from "marked";
 import DOMPurify from "isomorphic-dompurify";
 import Image from "next/image";
-import { davidWeinsteinTemplate } from "@/app/(templates)/basicwebpage";
+import { elevraStarterTemplate } from "@/app/(templates)/basicwebpage";
 import { EmptyState } from "@/components/ui/empty-state";
 
-type TemplateBlock = (typeof davidWeinsteinTemplate)[number];
+type TemplateBlock = (typeof elevraStarterTemplate)[number];
 
 export type ElectionProfileTabProps = {
   link: ElectionLink & { ContentBlock: ContentBlock[] };
@@ -64,7 +64,7 @@ export function ElectionProfileTab({ link }: ElectionProfileTabProps) {
   });
 
   const sortedBlocks = [...link.ContentBlock].sort((a, b) => a.order - b.order);
-  const templateNormalized = davidWeinsteinTemplate.map(normalizeTemplate);
+  const templateNormalized = elevraStarterTemplate.map(normalizeTemplate);
   const templateMap = new Map(templateNormalized.map((t) => [t.order, t]));
 
   const unchanged = (b: ContentBlock) => {

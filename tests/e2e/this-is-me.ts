@@ -1,7 +1,7 @@
 import { test, expect } from "@playwright/test";
 import { clerk } from "@clerk/testing/playwright";
 import { PrismaClient, SubmissionStatus } from "@prisma/client";
-import { davidWeinsteinTemplate } from "@/app/(templates)/basicwebpage";
+import { elevraStarterTemplate } from "@/app/(templates)/basicwebpage";
 import { promises as fs } from "node:fs";
 import path from "node:path";
 
@@ -140,7 +140,7 @@ test("Correct Email - Already Signed In: Successful Verification and Sent to Das
   ).toBeVisible();
   // Expect user email sent for auto-approve flow
   await expectEmailLogged("You're Verified on Elevra!");
-  await expectHasWeinsteinTemplateBlocks();
+  await expectHasElevraStarterTemplateBlocks();
 });
 
 test("Manual Verification via UI: non-matching user submits form and sees success", async ({
@@ -429,7 +429,7 @@ test("Manual Verification: create request then admin approves -> verified + temp
   expect(candidate?.status).toBe("APPROVED");
   expect(candidate?.clerkUserId).toBe(dummyClerkId);
 
-  await expectHasWeinsteinTemplateBlocks();
+  await expectHasElevraStarterTemplateBlocks();
 
   // 5) Optional UI confirmation: dashboard shows verified popup
   await page.goto(
@@ -485,7 +485,7 @@ test("Correct Email - Not Signed In: Successful Verification and Sent to Dashboa
   ).toBeVisible();
   // Expect user email sent for auto-approve flow
   await expectEmailLogged("You're Verified on Elevra!");
-  await expectHasWeinsteinTemplateBlocks();
+  await expectHasElevraStarterTemplateBlocks();
 });
 
 // Reset candidate verification state after tests
@@ -534,15 +534,15 @@ async function resetCandidateVerification(slug: string) {
   }
 }
 
-// Helper: assert seeded link contains davidWeinstein template blocks
-async function expectHasWeinsteinTemplateBlocks() {
+// Helper: assert seeded link contains elevraStarterTemplate blocks
+async function expectHasElevraStarterTemplateBlocks() {
   expect(seededCandidateId).toBeTruthy();
   expect(seededElectionId).toBeTruthy();
 
   // Wait up to 1s for blocks to exist, then fail
   const deadline = Date.now() + 1000;
   let lastCount = 0;
-  const expected = davidWeinsteinTemplate.length;
+  const expected = elevraStarterTemplate.length;
   while (Date.now() < deadline) {
     lastCount = await prisma.contentBlock.count({
       where: { candidateId: seededCandidateId!, electionId: seededElectionId! },
@@ -560,8 +560,8 @@ async function expectHasWeinsteinTemplateBlocks() {
       order: 0,
     },
   });
-  expect(first?.type).toBe(davidWeinsteinTemplate[0].type);
-  const tmpl0 = davidWeinsteinTemplate[0] as { text?: string };
+  expect(first?.type).toBe(elevraStarterTemplate[0].type);
+  const tmpl0 = elevraStarterTemplate[0] as { text?: string };
   if (tmpl0.text) {
     expect(first?.text?.trim()).toBe(tmpl0.text);
   }

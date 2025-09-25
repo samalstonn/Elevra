@@ -1,6 +1,6 @@
 import type { ContentBlock } from "@prisma/client";
 
-const SNIPPET_LIMIT = 4 ;
+const SNIPPET_LIMIT = 2 ;
 
 export type BlockSnippet = { label: string; text: string };
 

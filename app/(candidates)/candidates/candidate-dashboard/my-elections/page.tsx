@@ -24,7 +24,7 @@ import TourModal from "@/components/tour/TourModal";
 import { usePageTitle } from "@/lib/usePageTitle";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
-import { davidWeinsteinTemplate } from "@/app/(templates)/basicwebpage";
+import { elevraStarterTemplate } from "@/app/(templates)/basicwebpage";
 import type { ContentBlock } from "@prisma/client";
 
 export default function ProfileSettingsPage() {
@@ -40,8 +40,9 @@ export default function ProfileSettingsPage() {
 
   const [showAddElectionModal, setShowAddElectionModal] = useState(false);
   const [showTemplateModal, setShowTemplateModal] = useState(false);
+  type TemplateChoiceNullable = TemplateChoice | null;
   const [templateSelection, setTemplateSelection] =
-    useState<TemplateChoice>("weinstein");
+    useState<TemplateChoiceNullable>(null);
   const [activeTemplateLink, setActiveTemplateLink] =
     useState<ElectionLinkWithElection | null>(null);
   const [isApplyingTemplate, setIsApplyingTemplate] = useState(false);
@@ -94,42 +95,49 @@ export default function ProfileSettingsPage() {
     router.push("/candidates/candidate-dashboard/my-profile?tour=1");
   };
 
-  const handleElectionSelect = async (
+  // UPDATE: do not POST here; just remember the id and open the template modal.
+  const handleElectionSelect = (
     items: { id: string | number } | Array<{ id: string | number }>
   ) => {
-    if (!candidateData) return;
-    const parsed = (Array.isArray(items) ? items : [items]) as Array<{
-      id: string | number;
-    }>;
-    for (const item of parsed) {
-      const electionId = Number(item.id);
-      if (!electionLinks.find((l) => l.electionId === electionId)) {
-        const res = await fetch("/api/electionlinks", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            candidateId: candidateData.id,
-            electionId,
-          }),
-        });
-        if (res.ok) {
-          setShowAddElectionModal(false);
-          setPendingTemplateElectionId(electionId);
-          refresh();
-        }
-      }
-    }
+    const first = (Array.isArray(items) ? items[0] : items) as { id: string | number };
+    const electionId = Number(first.id);
+
+    // Stash pending election and close the search dialog
+    setPendingTemplateElectionId(electionId);
+    setShowAddElectionModal(false);
+
+    openTemplateModalWithElectionId(electionId);
   };
 
   const openTemplateModal = (link: ElectionLinkWithElection) => {
-    const hasCustomBlocks = Boolean(
-      link.ContentBlock &&
-        link.ContentBlock.length > 0 &&
-        !isWeinsteinTemplateUnmodified(link.ContentBlock)
-    );
-    setTemplateSelection(hasCustomBlocks ? "current" : "weinstein");
+    // const hasCustomBlocks = Boolean(
+    //   link.ContentBlock &&
+    //     link.ContentBlock.length > 0 &&
+    //     !isElevraStarterTemplateUnmodified(link.ContentBlock)
+    // );
+    // setTemplateSelection(hasCustomBlocks ? "current" : "elevraStarterTemplate");
+    setTemplateSelection(null);
     setActiveTemplateLink(link);
     setShowTemplateModal(true);
+  };
+
+  const goToEditor = (link: ElectionLinkWithElection) => {
+    if (!candidateData?.slug) return;
+  
+    const editPath = buildEditorPath(candidateData.slug, link.electionId);
+    router.push(editPath);
+  };
+
+  const openTemplateModalWithElectionId = (
+    electionId: number
+  ) => {
+    // Pass a "virtual" link with no ContentBlock so hasCustomBlocks === false
+    const virtualLink = {
+      electionId,
+      ContentBlock: [], // <- important so isElevraStarterTemplateUnmodified(...) works
+    } as unknown as ElectionLinkWithElection;
+  
+    openTemplateModal(virtualLink);
   };
 
   const handleTemplateDialogChange = (open: boolean) => {
@@ -137,13 +145,29 @@ export default function ProfileSettingsPage() {
     setShowTemplateModal(open);
     if (!open) {
       setActiveTemplateLink(null);
-      setTemplateSelection("weinstein");
       setPendingTemplateElectionId(null);
     }
   };
 
+  // UPDATE: handleCustomizeTemplate ensures the election link exists (creating it if needed)
+  // and then applies the template and routes to the editor.
   const handleCustomizeTemplate = async () => {
-    if (!candidateData || !activeTemplateLink) return;
+    if (!candidateData) return;
+
+    // Use the electionId from the active link if present, otherwise fall back to pending.
+    const electionId =
+      activeTemplateLink?.electionId ??
+      (pendingTemplateElectionId != null ? Number(pendingTemplateElectionId) : null);
+
+    if (!electionId) {
+      toast({
+        variant: "destructive",
+        title: "No election selected",
+        description: "Please pick an election before customizing a page.",
+      });
+      return;
+    }
+
     if (!candidateData.slug) {
       toast({
         variant: "destructive",
@@ -153,12 +177,44 @@ export default function ProfileSettingsPage() {
       return;
     }
 
-    const editPath = buildEditorPath(
-      candidateData.slug,
-      activeTemplateLink.electionId
-    );
+    // Ensure an election link exists (create it only now, when the user commits by clicking Customize)
+    const hasLinkAlready = !!electionLinks.find((l) => l.electionId === electionId);
+    if (!hasLinkAlready) {
+      try {
+        const res = await fetch("/api/electionlinks", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            candidateId: candidateData.id,
+            electionId,
+          }),
+        });
 
-    if (templateSelection === "weinstein") {
+        if (!res.ok) {
+          const data = await res.json().catch(() => ({}));
+          throw new Error(data.error || "Failed to create election link");
+        }
+
+        // Refresh local state to reflect the new link
+        refresh();
+      } catch (error) {
+        console.error("Error creating election link", error);
+        toast({
+          variant: "destructive",
+          title: "Could not link election",
+          description:
+            error instanceof Error
+              ? error.message
+              : "Please try again in a moment.",
+        });
+        return;
+      }
+    }
+
+    const editPath = buildEditorPath(candidateData.slug, electionId);
+
+    // Apply template if the starter template is selected
+    if (templateSelection === "elevraStarterTemplate") {
       setIsApplyingTemplate(true);
       try {
         const response = await fetch("/api/v1/contentblocks/apply-template", {
@@ -166,8 +222,8 @@ export default function ProfileSettingsPage() {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             candidateId: candidateData.id,
-            electionId: activeTemplateLink.electionId,
-            templateKey: "WEINSTEIN",
+            electionId,
+            templateKey: "ELEVRA_STARTER_TEMPLATE",
           }),
         });
 
@@ -193,9 +249,11 @@ export default function ProfileSettingsPage() {
       setIsApplyingTemplate(false);
     }
 
+    // Close template modal, clear selection state, navigate to editor
     setShowTemplateModal(false);
     setActiveTemplateLink(null);
-    setTemplateSelection("weinstein");
+    setTemplateSelection(null);
+    setPendingTemplateElectionId(null);
     router.push(editPath);
   };
 
@@ -248,9 +306,9 @@ export default function ProfileSettingsPage() {
     );
   }
   const activeBlocks = activeTemplateLink?.ContentBlock;
-  const activeIsWeinsteinOnly = isWeinsteinTemplateUnmodified(activeBlocks);
+  const activeIsElevraStarterTemplateOnly = isElevraStarterTemplateUnmodified(activeBlocks);
   const activeHasCustomBlocks = Boolean(
-    activeBlocks && activeBlocks.length > 0 && !activeIsWeinsteinOnly
+    activeBlocks && activeBlocks.length > 0 && !activeIsElevraStarterTemplateOnly
   );
 
   const currentTemplateSnippets =
@@ -261,23 +319,23 @@ export default function ProfileSettingsPage() {
   const templateCards: TemplateCardDefinition[] = [];
 
   if (activeTemplateLink) {
-    if (activeHasCustomBlocks) {
-      templateCards.push({
-        key: "current",
-        title: "My Current Layout",
-        description: "Keep editing the content you’ve already customized.",
-        snippets:
-          currentTemplateSnippets.length > 0
-            ? currentTemplateSnippets
-            : CURRENT_TEMPLATE_FALLBACK,
-      });
-    }
+    // if (activeHasCustomBlocks) {
+    //   templateCards.push({
+    //     key: "current",
+    //     title: "My Current Layout",
+    //     description: "Keep editing the content you’ve already customized.",
+    //     snippets:
+    //       currentTemplateSnippets.length > 0
+    //         ? currentTemplateSnippets
+    //         : CURRENT_TEMPLATE_FALLBACK,
+    //   });
+    // }
     templateCards.push({
-      key: "weinstein",
-      title: "Weinstein Template",
+      key: "elevraStarterTemplate",
+      title: "Elevra Starter Template",
       description:
-        "Reset to the storytelling layout featuring sections for your biography, platform, and visuals.",
-      snippets: WEINSTEIN_PREVIEW,
+        "Introduce voters to your campaign",
+      snippets: ELEVRA_STARTER_TEMPLATE_PREVIEW,
     });
   }
 
@@ -319,10 +377,10 @@ export default function ProfileSettingsPage() {
                     <div className="space-y-4">
                       <div>
                         <h2 className="text-xl font-semibold text-gray-700">
-                          Add Your First Election
+                          Add Your First Campaign
                         </h2>
                         <p className="text-sm text-gray-500">
-                          Join an election to unlock your personalized campaign
+                          Create your campaign and unlock your personalized campaign
                           page.
                         </p>
                       </div>
@@ -335,10 +393,6 @@ export default function ProfileSettingsPage() {
                         <Skeleton className="h-4 w-full" />
                         <Skeleton className="h-4 w-2/3" />
                         <div className="h-8" />
-                        <Skeleton className="h-4 w-3/4" />
-                        <Skeleton className="h-4 w-full" />
-                        <Skeleton className="h-4 w-2/3" />
-                        <div className="h-8" />
                       </div>
                     </div>
                     <Button
@@ -346,7 +400,7 @@ export default function ProfileSettingsPage() {
                       size="sm"
                       onClick={() => setShowAddElectionModal(true)}
                     >
-                      Add election
+                      Find Election
                     </Button>
                   </article>
                 );
@@ -402,20 +456,15 @@ export default function ProfileSettingsPage() {
                       <Button
                         variant="purple"
                         size="sm"
-                        onClick={() => openTemplateModal(link)}
+                        onClick={() => goToEditor(link)}
                       >
-                        Edit Page
+                        Edit Campaign Page
                       </Button>
                     ) : (
                       <Button variant="outline" size="sm" disabled>
                         Missing slug
                       </Button>
                     )}
-                    {resultsHref ? (
-                      <Button asChild variant="secondary" size="sm">
-                        <Link href={resultsHref}>View Election</Link>
-                      </Button>
-                    ) : null}
                     <Button
                       variant="destructive"
                       size="sm"
@@ -430,8 +479,13 @@ export default function ProfileSettingsPage() {
                         refresh();
                       }}
                     >
-                      Delete
+                      Delete Campaign
                     </Button>
+                    {resultsHref ? (
+                      <Button asChild variant="secondary" size="sm">
+                        <Link href={resultsHref}>View Election</Link>
+                      </Button>
+                    ) : null}
                   </div>
                 </article>
               );
@@ -440,7 +494,7 @@ export default function ProfileSettingsPage() {
               <div className="space-y-4">
                 <div>
                   <h2 className="text-xl font-semibold text-purple-700">
-                    Past Elections
+                    Past Campaigns
                   </h2>
                   <p className="text-sm text-purple-500">
                     Completed campaigns will appear here automatically.
@@ -453,7 +507,7 @@ export default function ProfileSettingsPage() {
                 </div>
               </div>
               <p className="mt-6 text-xs text-purple-400">
-                Once an election ends, it moves into your political archive!
+                Once an election ends, your campaign moves into your political archive!
               </p>
             </article>
           </div>
@@ -468,16 +522,16 @@ export default function ProfileSettingsPage() {
             <DialogTitle>Choose a Template</DialogTitle>
             <DialogDescription>
               {activeTemplateLink?.election?.position
-                ? `Pick the layout for your ${activeTemplateLink.election.position} page.`
-                : "Pick the layout for this election page."}
+                ? `Pick the template for your ${activeTemplateLink.election.position} page.`
+                : "Pick the template for this election page."}
             </DialogDescription>
           </DialogHeader>
-          {!activeHasCustomBlocks ? (
+          {/* {!activeHasCustomBlocks ? (
             <p className="rounded-md border border-dashed border-purple-200 bg-purple-50 px-4 py-3 text-xs text-purple-700">
-              You haven’t customized this election yet. We’ll start you with the
-              Weinstein template so you can personalize it in the editor.
+              You haven’t customized this campaign yet. We’ll start you with the
+              Elevra Starter Template so you can personalize it in the editor.
             </p>
-          ) : null}
+          ) : null} */}
           <div
             className={cn(
               "mt-4 grid gap-4",
@@ -542,9 +596,9 @@ export default function ProfileSettingsPage() {
             <Button
               variant="purple"
               onClick={handleCustomizeTemplate}
-              disabled={isApplyingTemplate || templateCards.length === 0}
+              disabled={isApplyingTemplate || templateCards.length === 0 || !templateSelection}
             >
-              {isApplyingTemplate ? "Applying..." : "Customize Page"}
+              {isApplyingTemplate ? "Applying..." : "Create and Customize Campaign Page"}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -573,7 +627,7 @@ export default function ProfileSettingsPage() {
   );
 }
 
-type TemplateChoice = "current" | "weinstein";
+type TemplateChoice = "current" | "elevraStarterTemplate";
 
 type TemplateCardDefinition = {
   key: TemplateChoice;
@@ -582,17 +636,33 @@ type TemplateCardDefinition = {
   snippets: BlockSnippet[];
 };
 
-const WEINSTEIN_PREVIEW: BlockSnippet[] = [
+const ELEVRA_STARTER_TEMPLATE_PREVIEW: BlockSnippet[] = [
   {
     label: "Heading",
-    text: "Lead with a bold introduction that highlights your race and story.",
+    text: "Lead with a bold introduction that highlights your campaign and story.",
   },
   {
-    label: "List",
-    text: "Spotlight your priorities with ready-made talking points.",
+    label: "Description",
+    text: "Describe yourself and your campaign.",
   },
   {
-    label: "Image",
+    label: "Candidate Image",
+    text: "Share a picture of yourself to give voters a face to associate with your campaign.",
+  },
+  {
+    label: "What I Bring",
+    text: "Detail what you would bring to the table if elected.",
+  },
+  {
+    label: "What I Believe",
+    text: "Express your core believes related to the position you are running for.",
+  },
+  {
+    label: "Why I'm Running",
+    text: "Spotlight your motivation and priorities for campaigning.",
+  },
+  {
+    label: "Campaign Image",
     text: "Feature visuals for your campaign signs, portrait, or videos.",
   },
 ];
@@ -604,13 +674,13 @@ const CURRENT_TEMPLATE_FALLBACK: BlockSnippet[] = [
   },
 ];
 
-function isWeinsteinTemplateUnmodified(blocks?: ContentBlock[] | null) {
-  if (!blocks || blocks.length !== davidWeinsteinTemplate.length) {
+function isElevraStarterTemplateUnmodified(blocks?: ContentBlock[] | null) {
+  if (!blocks || blocks.length !== elevraStarterTemplate.length) {
     return false;
   }
 
   const templateByOrder = new Map(
-    davidWeinsteinTemplate.map((block) => [block.order, block])
+    elevraStarterTemplate.map((block) => [block.order, block])
   );
 
   for (const block of blocks) {
@@ -641,7 +711,7 @@ function isWeinsteinTemplateUnmodified(blocks?: ContentBlock[] | null) {
 
 function areBlocksEquivalent(
   block: ContentBlock,
-  templateBlock: (typeof davidWeinsteinTemplate)[number]
+  templateBlock: (typeof elevraStarterTemplate)[number]
 ) {
   if (block.type !== templateBlock.type) return false;
   if ((block.color ?? null) !== (templateBlock.color ?? null)) return false;

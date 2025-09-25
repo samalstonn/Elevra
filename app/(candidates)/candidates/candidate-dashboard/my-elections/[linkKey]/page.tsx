@@ -225,11 +225,11 @@ export default function MyPageEditor({ params }: EditorPageProps) {
 
           <div className="space-y-2 text-sm text-gray-700">
             <p>
-              We’ve loaded a premade template to help you build your public
-              candidate page quickly.
+              We’ve loaded an editable premade template with example text to help you build your public
+              campaign page quickly.
             </p>
             <ul className="list-disc list-inside space-y-1">
-              <li>Click any text to edit it directly.</li>
+              <li>Click on any text to edit it directly.</li>
               <li>Click on images to replace them or add short videos.</li>
               <li>
                 Make sure to <strong>save</strong> your changes before leaving

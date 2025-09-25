@@ -2,7 +2,7 @@
 import { NextResponse } from "next/server";
 import { PrismaClient, TextColor, BlockType, ListStyle } from "@prisma/client";
 import { pick } from "lodash";
-import { davidWeinsteinTemplate } from "@/app/(templates)/basicwebpage";
+import { elevraStarterTemplate } from "@/app/(templates)/basicwebpage";
 
 const prisma = new PrismaClient();
 
@@ -62,7 +62,7 @@ export async function POST(request: Request) {
       // 1 ▸ Create the election link
       const link = await tx.electionLink.create({ data: linkData });
 
-      const dataToCreate = davidWeinsteinTemplate.map((block, _) => ({
+      const dataToCreate = elevraStarterTemplate.map((block, _) => ({
         ...block,
         candidateId,
         electionId,

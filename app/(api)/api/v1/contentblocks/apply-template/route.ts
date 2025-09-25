@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import prisma from "@/prisma/prisma";
-import { davidWeinsteinTemplate } from "@/app/(templates)/basicwebpage";
+import { elevraStarterTemplate } from "@/app/(templates)/basicwebpage";
 
 export async function POST(request: Request) {
   try {
@@ -38,8 +38,8 @@ export async function POST(request: Request) {
     let blocks = null;
 
     switch (templateKey.toUpperCase()) {
-      case "WEINSTEIN":
-        blocks = davidWeinsteinTemplate;
+      case "ELEVRA_STARTER_TEMPLATE":
+        blocks = elevraStarterTemplate;
         break;
       default:
         return NextResponse.json(

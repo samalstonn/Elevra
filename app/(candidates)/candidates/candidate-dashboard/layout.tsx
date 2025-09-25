@@ -32,7 +32,7 @@ const navItems = [
   },
   {
     href: "/candidates/candidate-dashboard/my-elections",
-    label: "Election",
+    label: "Campaign",
     icon: Users,
     premium: false,
   },

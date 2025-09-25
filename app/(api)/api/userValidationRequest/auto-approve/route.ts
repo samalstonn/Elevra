@@ -4,7 +4,7 @@ import { SubmissionStatus } from "@prisma/client";
 import { sendWithResend } from "@/lib/email/resend";
 import { renderAdminNotification } from "@/lib/email/templates/adminNotification";
 import { renderCandidateVerificationEmail } from "@/lib/email/templates/candidateVerified";
-import { davidWeinsteinTemplate } from "@/app/(templates)/basicwebpage";
+import { elevraStarterTemplate } from "@/app/(templates)/basicwebpage";
 
 // Using Resend helper; no transporter needed
 
@@ -50,7 +50,7 @@ export async function POST(req: Request) {
       });
       if (count === 0) {
         await prisma.contentBlock.createMany({
-          data: davidWeinsteinTemplate.map((block) => ({
+          data: elevraStarterTemplate.map((block) => ({
             ...block,
             candidateId: candidate.id,
             electionId: link.electionId,
