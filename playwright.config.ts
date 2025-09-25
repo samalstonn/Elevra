@@ -74,5 +74,17 @@ export default defineConfig({
       },
       dependencies: ["global setup"],
     },
+    {
+      name: "Create Campaign",
+      testMatch: "create-campaign-page.spec.ts",
+      use: { ...devices["Desktop Chrome"] },
+      dependencies: ["global setup"],
+    },
+    {
+      name: "Edit Campaign",
+      testMatch: "edit-campaign-page.spec.ts",
+      use: { ...devices["Desktop Chrome"] },
+      dependencies: ["global setup"],
+    }
   ],
 });
