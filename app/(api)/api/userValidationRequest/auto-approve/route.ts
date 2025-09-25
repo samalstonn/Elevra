@@ -69,6 +69,7 @@ export async function POST(req: Request) {
         rows: [
           { label: "Name", value: candidate.name },
           { label: "Slug", value: candidate.slug },
+          { label: "Uploaded By", value: candidate.uploadedBy || "N/A" },
         ],
         ctaLabel: "View Profile",
         ctaUrl: `${process.env.NEXT_PUBLIC_APP_URL}/candidate/${candidate.slug}`,

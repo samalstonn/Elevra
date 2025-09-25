@@ -4,13 +4,19 @@ import { useEffect, useState } from "react";
 import { usePageTitle } from "@/lib/usePageTitle";
 import { buildScheduledIso, buildScheduleDisplay } from "./helpers";
 import { normalizeHeader, validateEmails } from "@/election-source/helpers";
+import { TemplateKey } from "@/lib/email/templates/render";
 
 type OutreachRow = {
   firstName: string;
   lastName: string;
   email: string;
   candidateLink: string;
+  municipality?: string;
+  position?: string;
+  state?: string;
 };
+
+type ScheduleState = { date: string; time: string };
 
 const REQUIRED_HEADERS = [
   "firstname",
@@ -23,15 +29,12 @@ export default function CandidateOutreachPage() {
   usePageTitle("Admin – Candidate Outreach");
 
   const [rows, setRows] = useState<OutreachRow[]>([]);
-  const [stateInput, setStateInput] = useState<string>("");
   const [status, setStatus] = useState<string>("");
   const [error, setError] = useState<string>("");
   const [sending, setSending] = useState(false);
   const [showAll, setShowAll] = useState(false);
   const [result, setResult] = useState<string>("");
-  const [templateType, setTemplateType] = useState<
-    "initial" | "followup" | "verifiedUpdate"
-  >("initial");
+  const [templateType, setTemplateType] = useState<TemplateKey>("initial");
   const [baseForFollowup, setBaseForFollowup] = useState<
     "initial" | "verifiedUpdate"
   >("initial");
@@ -39,11 +42,16 @@ export default function CandidateOutreachPage() {
     ok: boolean;
     errors: string[];
   }>({ ok: true, errors: [] });
-  const [scheduleDate, setScheduleDate] = useState<string>(""); // yyyy-mm-dd
-  const [scheduleTime, setScheduleTime] = useState<string>(""); // HH:mm
+  const scheduleState = useState<ScheduleState>(() => ({
+    date: "",
+    time: "",
+  }));
+  const schedule = scheduleState[0];
   const [confirmVisible, setConfirmVisible] = useState(false);
   const [confirmMessage, setConfirmMessage] = useState("");
-  const [pendingScheduledIso, setPendingScheduledIso] = useState<string | undefined>(undefined);
+  const [pendingScheduledIso, setPendingScheduledIso] = useState<
+    string | undefined
+  >(undefined);
   const [previewHtml, setPreviewHtml] = useState<string>("");
   const [previewSubject, setPreviewSubject] = useState<string>("");
 
@@ -117,22 +125,32 @@ export default function CandidateOutreachPage() {
     const firstName = get(["FirstName", "first", "fname"]); // lenient
     const lastName = get(["LastName", "last", "lname"]);
     const email = get(["Email"]);
-    const candidateLink = get(["CandidateLink", "link", "url", "profile"]);
-    const row = { firstName, lastName, email, candidateLink };
+    const candidateLink = get(["CandidateLink"]);
+    const municipality = get(["Municipality"]);
+    const position = get(["Position"]);
+    const state = get(["State"]);
+    const row = {
+      firstName,
+      lastName,
+      email,
+      candidateLink,
+      municipality,
+      position,
+      state,
+    };
     // Filter out completely empty rows
     if (Object.values(row).every((v) => !String(v || "").trim())) return null;
     return row;
   }
-
 
   function onClickSend() {
     if (!rows.length) {
       setError("Please upload a CSV first.");
       return;
     }
-    const iso = buildScheduledIso(scheduleDate, scheduleTime);
+    const iso = buildScheduledIso(schedule.date, schedule.time);
     setPendingScheduledIso(iso);
-    const display = buildScheduleDisplay(scheduleDate, scheduleTime);
+    const display = buildScheduleDisplay(schedule.date, schedule.time);
     setConfirmMessage(`Schedule ${rows.length} email(s) for ${display}?`);
     setConfirmVisible(true);
   }
@@ -152,10 +170,12 @@ export default function CandidateOutreachPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           __proxyPath: "/api/admin/candidate-outreach",
-          state: stateInput.trim() || undefined,
           rows,
           templateType,
-          baseTemplate: templateType === "followup" ? baseForFollowup : undefined,
+          baseTemplate:
+            templateType === "followup" || templateType === "followup2"
+              ? baseForFollowup
+              : undefined,
           scheduledAtIso,
         }),
       });
@@ -197,10 +217,12 @@ export default function CandidateOutreachPage() {
             baseForFollowup: baseForFollowup,
             data: {
               candidateFirstName,
-              state: stateInput.trim() || undefined,
+              state: r.state?.trim() || undefined,
               claimUrl: r.candidateLink,
               templatesUrl: r.candidateLink,
               profileUrl: r.candidateLink,
+              municipality: r.municipality?.trim() || undefined,
+              position: r.position?.trim() || undefined,
             },
           }),
         });
@@ -220,15 +242,16 @@ export default function CandidateOutreachPage() {
       }
     })();
     return () => controller.abort();
-  }, [rows, stateInput, templateType, baseForFollowup]);
+  }, [rows, templateType, baseForFollowup]);
 
   return (
     <main className="max-w-3xl mx-auto mt-10 p-4">
       <h1 className="text-2xl font-bold mb-2">Candidate Outreach</h1>
       <p className="text-sm text-gray-600 mb-6">
-        Upload a CSV with columns: FirstName, LastName, Email, CandidateLink.
-        Preview the first 5 rows, set State, optionally schedule a send date/time,
-        and send via Resend.
+        Upload a CSV with columns: FirstName, LastName, Email, CandidateLink,
+        State (optional), Municipality (optional), Position (optional). Preview
+        the first 5 rows, optionally schedule a send date/time, and send via
+        Resend.
       </p>
 
       <div className="space-y-3 bg-white/70 p-4 rounded border">
@@ -242,84 +265,43 @@ export default function CandidateOutreachPage() {
           className="block w-full text-sm"
         />
 
-        <div className="grid grid-cols-1 sm:grid-cols-4 gap-3 items-end">
-          <div className="sm:col-span-2">
-            <label className="block text-sm font-medium mb-1">State</label>
-            <input
-              value={stateInput}
-              onChange={(e) => setStateInput(e.target.value)}
-              placeholder="NJ (default if none inputted)"
-              className="w-full rounded border px-3 py-2"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium mb-1">Email Template</label>
-            <select
-              value={templateType}
-              onChange={(e) =>
-                setTemplateType(
-                  (e.target.value as "initial" | "followup" | "verifiedUpdate")
-                )
-              }
-              className="w-full rounded border px-3 py-2"
-            >
-              <option value="initial">Initial Outreach</option>
-              <option value="followup">Follow-up</option>
-              <option value="verifiedUpdate">Verified: Templates Update</option>
-            </select>
-          </div>
-          {templateType === "followup" && (
-            <div>
-              <label className="block text-sm font-medium mb-1">Base for Follow-up</label>
-              <select
-                value={baseForFollowup}
-                onChange={(e) =>
-                  setBaseForFollowup(
-                    (e.target.value as "initial" | "verifiedUpdate")
-                  )
-                }
-                className="w-full rounded border px-3 py-2"
-              >
-                <option value="initial">Initial Outreach</option>
-                <option value="verifiedUpdate">Verified: Templates Update</option>
-              </select>
-            </div>
-          )}
-          <button
-            type="button"
-            onClick={onClickSend}
-            disabled={!rows.length || sending || !emailValidation.ok}
-            className="px-4 py-2 bg-purple-600 text-white rounded hover:bg-purple-700 disabled:opacity-50"
-          >
-            {sending ? "Sending…" : "Send Emails"}
-          </button>
-        </div>
-
         {rows.length > 0 && (
-          <div className="text-xs text-gray-500">Preview updates automatically using the first CSV row.</div>
+          <div className="text-xs text-gray-500">
+            Preview updates automatically using the first CSV row.
+          </div>
         )}
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        {/* <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div>
-            <label className="block text-sm font-medium mb-1">Send Date (optional)</label>
+            <label className="block text-sm font-medium mb-1">
+              Send Date (optional)
+            </label>
             <input
               type="date"
-              value={scheduleDate}
-              onChange={(e) => setScheduleDate(e.target.value)}
+              value={schedule.date}
+              onChange={(e) =>
+                scheduleState[1]((prev) => ({ ...prev, date: e.target.value }))
+              }
               className="w-full rounded border px-3 py-2"
             />
           </div>
           <div>
-            <label className="block text-sm font-medium mb-1">Send Time (optional)</label>
+            <label className="block text-sm font-medium mb-1">
+              Send Time (optional)
+            </label>
             <input
               type="time"
-              value={scheduleTime}
-              onChange={(e) => setScheduleTime(e.target.value)}
+              value={schedule.time}
+              onChange={(e) =>
+                scheduleState[1]((prev) => ({ ...prev, time: e.target.value }))
+              }
               className="w-full rounded border px-3 py-2"
             />
-            <p className="text-xs text-gray-500 mt-1">Uses your local timezone; emails send at exactly this local time.</p>
+            <p className="text-xs text-gray-500 mt-1">
+              Uses your local timezone; emails send at exactly this local time.
+            </p>
           </div>
-        </div>
+        </div> */}
 
         {status && <p className="text-green-700 text-sm">{status}</p>}
         {error && <p className="text-red-700 text-sm">{error}</p>}
@@ -351,6 +333,9 @@ export default function CandidateOutreachPage() {
                     <th className="p-2">Last Name</th>
                     <th className="p-2">Email</th>
                     <th className="p-2">Candidate Link</th>
+                    <th className="p-2">State</th>
+                    <th className="p-2">Municipality</th>
+                    <th className="p-2">Position</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -369,6 +354,9 @@ export default function CandidateOutreachPage() {
                           {r.candidateLink}
                         </a>
                       </td>
+                      <td className="p-2">{r.state}</td>
+                      <td className="p-2">{r.municipality}</td>
+                      <td className="p-2">{r.position}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -376,17 +364,38 @@ export default function CandidateOutreachPage() {
             </div>
           </div>
         )}
-
-        {result && (
-          <div className="mt-4">
-            <label className="text-sm font-medium mb-1 inline-block">
-              Result
+        <div>
+          <label className="block text-sm font-medium mb-1">
+            Select Email Template
+          </label>
+          <select
+            value={templateType}
+            onChange={(e) => setTemplateType(e.target.value as TemplateKey)}
+            className="w-full rounded border px-3 py-2"
+          >
+            <option value="initial">Initial Outreach</option>
+            <option value="followup">Follow-up</option>
+            <option value="followup2">Follow-up 2</option>
+            <option value="verifiedUpdate">Verified: Templates Update</option>
+          </select>
+        </div>
+        {(templateType === "followup" || templateType === "followup2") && (
+          <div>
+            <label className="block text-sm font-medium mb-1">
+              Base for Follow-up
             </label>
-            <textarea
-              readOnly
-              className="w-full h-64 rounded border px-3 py-2 font-mono text-xs"
-              value={result}
-            />
+            <select
+              value={baseForFollowup}
+              onChange={(e) =>
+                setBaseForFollowup(
+                  e.target.value as "initial" | "verifiedUpdate"
+                )
+              }
+              className="w-full rounded border px-3 py-2"
+            >
+              <option value="initial">Initial Outreach</option>
+              <option value="verifiedUpdate">Verified: Templates Update</option>
+            </select>
           </div>
         )}
 
@@ -406,6 +415,26 @@ export default function CandidateOutreachPage() {
                 dangerouslySetInnerHTML={{ __html: previewHtml }}
               />
             </div>
+          </div>
+        )}
+        <button
+          type="button"
+          onClick={onClickSend}
+          disabled={!rows.length || sending || !emailValidation.ok}
+          className="px-4 py-2 bg-purple-600 text-white rounded hover:bg-purple-700 disabled:opacity-50"
+        >
+          {sending ? "Sending…" : "Send Emails"}
+        </button>
+        {result && (
+          <div className="mt-4">
+            <label className="text-sm font-medium mb-1 inline-block">
+              Result
+            </label>
+            <textarea
+              readOnly
+              className="w-full h-64 rounded border px-3 py-2 font-mono text-xs"
+              value={result}
+            />
           </div>
         )}
       </div>

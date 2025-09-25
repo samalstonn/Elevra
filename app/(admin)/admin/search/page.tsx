@@ -1,10 +1,9 @@
 "use client";
 
-import { ChangeEvent, useEffect, useMemo, useRef, useState } from "react";
+import { ChangeEvent, MouseEvent, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useUser } from "@clerk/nextjs";
-import type { UserResource } from "@clerk/types";
-import { Search, Filter, ExternalLink } from "lucide-react";
+import { Search, Filter, ExternalLink, Loader2 } from "lucide-react";
 
 import { usePageTitle } from "@/lib/usePageTitle";
 import { cn } from "@/lib/utils";
@@ -28,6 +27,16 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 type SearchFilter = "all" | "candidate" | "election";
 
@@ -43,6 +52,7 @@ type CandidateSummary = {
   status: string;
   verified: boolean;
   hidden: boolean;
+  uploadedBy: string;
   updatedAt: string;
   createdAt: string;
   elections: Array<{
@@ -65,7 +75,10 @@ type ElectionSummary = {
   date: string;
   electionType: string;
   hidden: boolean;
+  uploadedBy: string;
   candidateCount: number;
+  hiddenCandidateCount: number;
+  hasHiddenCandidates: boolean;
   sampleCandidates: Array<{
     id: number;
     name: string;
@@ -140,16 +153,6 @@ type CandidateDetail = {
   }>;
 };
 
-type AdminMetadata = {
-  isAdmin?: boolean;
-  isSubAdmin?: boolean;
-};
-
-type AdminUserResource = UserResource & {
-  privateMetadata?: AdminMetadata;
-  unsafeMetadata?: AdminMetadata;
-};
-
 type ElectionDetail = {
   id: number;
   position: string;
@@ -216,16 +219,21 @@ const dateTimeFormatter = new Intl.DateTimeFormat(undefined, {
 
 export default function AdminSearchPage() {
   usePageTitle("Admin – Search");
-  const { user, isLoaded } = useUser();
+  const { isLoaded } = useUser();
 
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState<SearchFilter>("all");
+  const [visibilityFilter, setVisibilityFilter] = useState<
+    "all" | "visible" | "hidden"
+  >("all");
+  const [uploadedByFilter, setUploadedByFilter] = useState<string>("all");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [results, setResults] = useState<{
     candidates: CandidateSummary[];
     elections: ElectionSummary[];
   }>({ candidates: [], elections: [] });
+  const [uploaders, setUploaders] = useState<string[]>([]);
   const [selected, setSelected] = useState<{
     type: "candidate" | "election";
     id: number;
@@ -234,13 +242,26 @@ export default function AdminSearchPage() {
   const [detail, setDetail] = useState<DetailResponse | null>(null);
   const [detailError, setDetailError] = useState<string | null>(null);
   const [detailLoading, setDetailLoading] = useState(false);
+  const [actionPendingKey, setActionPendingKey] = useState<string | null>(null);
+  const [actionError, setActionError] = useState<{
+    key: string;
+    message: string;
+  } | null>(null);
   const detailCache = useRef<Map<string, DetailResponse>>(new Map());
-  const adminUser = user as AdminUserResource | null;
-  const metadata = adminUser?.privateMetadata ?? adminUser?.unsafeMetadata;
-  const hasAccess = metadata?.isAdmin || metadata?.isSubAdmin;
+  const [deleteTarget, setDeleteTarget] = useState<
+    | {
+        id: number;
+        position: string;
+        location: string;
+        candidateCount: number;
+      }
+    | null
+  >(null);
+  const [deletePending, setDeletePending] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!isLoaded || !hasAccess) return;
+    if (!isLoaded) return;
 
     const controller = new AbortController();
     let active = true;
@@ -252,6 +273,10 @@ export default function AdminSearchPage() {
         const params = new URLSearchParams();
         if (query.trim()) params.set("query", query.trim());
         if (filter !== "all") params.set("type", filter);
+        if (visibilityFilter !== "all")
+          params.set("visibility", visibilityFilter);
+        if (uploadedByFilter !== "all")
+          params.set("uploadedBy", uploadedByFilter);
         const res = await fetch(`/api/admin/search?${params.toString()}`, {
           signal: controller.signal,
         });
@@ -261,6 +286,7 @@ export default function AdminSearchPage() {
         const data = (await res.json()) as {
           candidates: CandidateSummary[];
           elections: ElectionSummary[];
+          uploaders?: string[];
         };
 
         if (!active) return;
@@ -268,6 +294,7 @@ export default function AdminSearchPage() {
           candidates: data.candidates ?? [],
           elections: data.elections ?? [],
         });
+        setUploaders(data.uploaders ?? []);
         setSelected((prev) => {
           if (prev) {
             const stillExists =
@@ -299,10 +326,10 @@ export default function AdminSearchPage() {
       controller.abort();
       window.clearTimeout(handle);
     };
-  }, [query, filter, isLoaded, hasAccess]);
+  }, [query, filter, visibilityFilter, uploadedByFilter, isLoaded]);
 
   useEffect(() => {
-    if (!selected || !hasAccess) {
+    if (!selected) {
       setDetail(null);
       setDetailError(null);
       setDetailLoading(false);
@@ -352,10 +379,366 @@ export default function AdminSearchPage() {
       active = false;
       controller.abort();
     };
-  }, [selected, hasAccess]);
+  }, [selected]);
 
-  const clearQuery = () => {
+  useEffect(() => {
+    setActionError(null);
+    setActionPendingKey(null);
+  }, [selected]);
+
+  const uploaderOptions = useMemo(() => {
+    const unique = new Set(uploaders.filter(Boolean));
+    if (uploadedByFilter !== "all" && uploadedByFilter) {
+      unique.add(uploadedByFilter);
+    }
+    return Array.from(unique).sort((a, b) =>
+      a.localeCompare(b, undefined, { sensitivity: "base" })
+    );
+  }, [uploaders, uploadedByFilter]);
+
+  const handleVisibilityToggle = async (
+    entityType: "candidate" | "election",
+    entityId: number,
+    nextHidden: boolean,
+    options?: { revealCandidates?: boolean; hideCandidates?: boolean }
+  ) => {
+    const cacheKey = `${entityType}:${entityId}`;
+    const actionType = options?.revealCandidates
+      ? "reveal"
+      : options?.hideCandidates
+        ? "hide"
+        : "toggle";
+    const pendingKey = `${cacheKey}:${actionType}`;
+    setActionError(null);
+    setActionPendingKey(pendingKey);
+
+    try {
+      const response = await fetch(
+        `/api/admin/search/${entityType}/${entityId}`,
+        {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            hidden: nextHidden,
+            revealCandidates: Boolean(options?.revealCandidates),
+            hideCandidates: Boolean(options?.hideCandidates),
+          }),
+        }
+      );
+
+      const payload = (await response.json()) as unknown;
+      if (!response.ok) {
+        const message =
+          (payload as { error?: string })?.error ||
+          `Failed to update ${entityType}`;
+        throw new Error(message);
+      }
+
+      const data = payload as DetailResponse;
+      detailCache.current.clear();
+      detailCache.current.set(cacheKey, data);
+      setDetail(data);
+
+      setResults((previous) => {
+        if (!previous) return previous;
+
+        if (entityType === "candidate" && data.type === "candidate") {
+          const hiddenValue = data.candidate.hidden;
+          const linkedElectionIds = new Set(
+            data.candidate.elections.map((link) => link.election.id)
+          );
+          const previousCandidateRecord = previous.candidates.find(
+            (candidate) => candidate.id === data.candidate.id
+          );
+          const previousHiddenValue = previousCandidateRecord?.hidden ?? false;
+          const hiddenDelta =
+            hiddenValue === previousHiddenValue
+              ? 0
+              : hiddenValue
+                ? 1
+                : -1;
+          let candidatesChanged = false;
+          const updatedCandidates = previous.candidates.map((candidate) => {
+            if (candidate.id !== data.candidate.id) return candidate;
+            if (candidate.hidden === hiddenValue) return candidate;
+            candidatesChanged = true;
+            return { ...candidate, hidden: hiddenValue };
+          });
+
+          let electionsChanged = false;
+          const updatedElections = previous.elections.map((election) => {
+            if (!linkedElectionIds.has(election.id)) return election;
+
+            let samplesChanged = false;
+            const updatedSamples = election.sampleCandidates.map((sample) => {
+              if (sample.id !== data.candidate.id) return sample;
+              if (sample.hidden === hiddenValue) return sample;
+              samplesChanged = true;
+              return { ...sample, hidden: hiddenValue };
+            });
+
+            const adjustedHiddenCount = Math.min(
+              Math.max(election.hiddenCandidateCount + hiddenDelta, 0),
+              election.candidateCount
+            );
+            const nextHiddenCandidateCount = adjustedHiddenCount;
+            let nextHasHiddenCandidates = election.hasHiddenCandidates;
+            let electionChanged = samplesChanged;
+
+            if (hiddenDelta !== 0) {
+              if (nextHiddenCandidateCount !== election.hiddenCandidateCount) {
+                electionChanged = true;
+              }
+              nextHasHiddenCandidates = nextHiddenCandidateCount > 0;
+            }
+
+            if (!electionChanged) return election;
+
+            electionsChanged = true;
+            return {
+              ...election,
+              sampleCandidates: samplesChanged
+                ? updatedSamples
+                : election.sampleCandidates,
+              hiddenCandidateCount: nextHiddenCandidateCount,
+              hasHiddenCandidates: nextHasHiddenCandidates,
+            };
+          });
+
+          if (!candidatesChanged && !electionsChanged) {
+            return previous;
+          }
+
+          return {
+            candidates: candidatesChanged
+              ? updatedCandidates
+              : previous.candidates,
+            elections: electionsChanged ? updatedElections : previous.elections,
+          };
+        }
+
+        if (entityType === "election" && data.type === "election") {
+          const hiddenValue = data.election.hidden;
+
+          const candidateHiddenMap = new Map<number, boolean>();
+          data.election.candidates.forEach((link) => {
+            candidateHiddenMap.set(link.candidate.id, link.candidate.hidden);
+          });
+          const nextHiddenCandidateCount = Array.from(
+            candidateHiddenMap.values()
+          ).reduce((total, value) => total + (value ? 1 : 0), 0);
+          const nextHasHiddenCandidates = nextHiddenCandidateCount > 0;
+
+          let electionsChanged = false;
+          const updatedElections = previous.elections.map((election) => {
+            if (election.id !== data.election.id) return election;
+            let electionChanged = false;
+            const updatedSamples = election.sampleCandidates.map((sample) => {
+              const override = candidateHiddenMap.get(sample.id);
+              if (override == null || sample.hidden === override) {
+                return sample;
+              }
+              electionChanged = true;
+              return { ...sample, hidden: override };
+            });
+
+            if (election.hidden !== hiddenValue) {
+              electionChanged = true;
+            }
+            if (election.hiddenCandidateCount !== nextHiddenCandidateCount) {
+              electionChanged = true;
+            }
+
+            if (!electionChanged) {
+              return election;
+            }
+
+            electionsChanged = true;
+
+            return {
+              ...election,
+              hidden: hiddenValue,
+              sampleCandidates: updatedSamples,
+              hiddenCandidateCount: nextHiddenCandidateCount,
+              hasHiddenCandidates: nextHasHiddenCandidates,
+            };
+          });
+
+          let candidatesChanged = false;
+          const updatedCandidates = previous.candidates.map((candidate) => {
+            let linksChanged = false;
+            const updatedLinks = candidate.elections.map((link) => {
+              if (link.id !== data.election.id) return link;
+              if (link.hidden === hiddenValue) return link;
+              linksChanged = true;
+              return { ...link, hidden: hiddenValue };
+            });
+            if (!linksChanged) return candidate;
+            candidatesChanged = true;
+            return { ...candidate, elections: updatedLinks };
+          });
+
+          const syncedCandidates = updatedCandidates.map((candidate) => {
+            const override = candidateHiddenMap.get(candidate.id);
+            if (override == null || candidate.hidden === override) {
+              return candidate;
+            }
+
+            candidatesChanged = true;
+            return { ...candidate, hidden: override };
+          });
+
+          if (!candidatesChanged && !electionsChanged) {
+            return previous;
+          }
+
+          return {
+            candidates: candidatesChanged
+              ? syncedCandidates
+              : previous.candidates,
+            elections: electionsChanged ? updatedElections : previous.elections,
+          };
+        }
+
+        return previous;
+      });
+
+      setActionError(null);
+    } catch (err) {
+      console.error(`Failed to toggle ${entityType} visibility`, err);
+      const message =
+        err instanceof Error && err.message
+          ? err.message
+          : `Failed to update ${entityType}`;
+      setActionError({ key: pendingKey, message });
+    } finally {
+      setActionPendingKey(null);
+    }
+  };
+
+  const handleRequestElectionDelete = (election: ElectionDetail) => {
+    if (deletePending) return;
+    setDeleteError(null);
+    setDeleteTarget({
+      id: election.id,
+      position: election.position,
+      location:
+        buildLocation(election.city, election.state) || "(location unknown)",
+      candidateCount: election.candidates.length,
+    });
+  };
+
+  const handleConfirmElectionDelete = async (
+    event?: MouseEvent<HTMLButtonElement>
+  ) => {
+    event?.preventDefault();
+    if (!deleteTarget || deletePending) return;
+
+    setDeletePending(true);
+    setDeleteError(null);
+
+    try {
+      const response = await fetch("/api/admin/cascade-delete", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ electionId: deleteTarget.id }),
+      });
+      const payload = (await response.json()) as {
+        success?: boolean;
+        error?: string;
+        result?: {
+          deletedElectionId?: number;
+          deletedCandidateIds?: number[];
+        };
+      };
+
+      if (!response.ok || !payload?.success) {
+        const message = payload?.error || "Failed to delete election";
+        throw new Error(message);
+      }
+
+      const deletedElectionId =
+        payload.result?.deletedElectionId ?? deleteTarget.id;
+      const deletedCandidateIds = payload.result?.deletedCandidateIds ?? [];
+
+      detailCache.current.clear();
+      setDetail(null);
+      setDetailError(null);
+      setDetailLoading(false);
+
+      setResults((previous) => {
+        const nextCandidates = previous.candidates.filter(
+          (candidate) => !deletedCandidateIds.includes(candidate.id)
+        );
+        const nextElections = previous.elections.filter(
+          (election) => election.id !== deletedElectionId
+        );
+
+        setSelected((prevSelected) => {
+          const candidateRemoved =
+            prevSelected?.type === "candidate" &&
+            deletedCandidateIds.includes(prevSelected.id);
+          const electionRemoved =
+            prevSelected?.type === "election" &&
+            prevSelected.id === deletedElectionId;
+
+          if (!candidateRemoved && !electionRemoved) {
+            return prevSelected;
+          }
+
+          if (nextCandidates.length > 0) {
+            return { type: "candidate", id: nextCandidates[0].id };
+          }
+          if (nextElections.length > 0) {
+            return { type: "election", id: nextElections[0].id };
+          }
+          return null;
+        });
+
+        return {
+          candidates: nextCandidates,
+          elections: nextElections,
+        };
+      });
+
+      setDeleteTarget(null);
+    } catch (err) {
+      console.error(err);
+      setDeleteError((err as Error).message || "Failed to delete election");
+    } finally {
+      setDeletePending(false);
+    }
+  };
+
+  const handleDeleteDialogChange = (nextOpen: boolean) => {
+    if (nextOpen || deletePending) return;
+    setDeleteTarget(null);
+    setDeleteError(null);
+  };
+
+  const handleRevealLinkedCandidates = async (
+    electionId: number,
+    currentHidden: boolean
+  ) => {
+    await handleVisibilityToggle("election", electionId, currentHidden, {
+      revealCandidates: true,
+    });
+  };
+
+  const handleHideLinkedCandidates = async (
+    electionId: number,
+    currentHidden: boolean
+  ) => {
+    await handleVisibilityToggle("election", electionId, currentHidden, {
+      hideCandidates: true,
+    });
+  };
+
+  const resetFilters = () => {
     setQuery("");
+    setFilter("all");
+    setVisibilityFilter("all");
+    setUploadedByFilter("all");
   };
 
   if (!isLoaded) {
@@ -367,17 +750,6 @@ export default function AdminSearchPage() {
           <Skeleton className="h-[520px] w-full" />
           <Skeleton className="h-[520px] w-full" />
         </div>
-      </div>
-    );
-  }
-
-  if (!hasAccess) {
-    return (
-      <div className="mx-auto max-w-2xl pt-10">
-        <EmptyState
-          primary="Admin access required to view this page."
-          secondary="Please sign in with an admin or sub-admin account."
-        />
       </div>
     );
   }
@@ -414,7 +786,7 @@ export default function AdminSearchPage() {
               className="pl-9 w-full"
             />
           </div>
-          <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center">
+          <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:flex-wrap sm:items-center">
             <Select
               value={filter}
               onValueChange={(value: SearchFilter) => setFilter(value)}
@@ -433,10 +805,41 @@ export default function AdminSearchPage() {
                 <SelectItem value="election">Elections</SelectItem>
               </SelectContent>
             </Select>
+            <Select
+              value={visibilityFilter}
+              onValueChange={(value) =>
+                setVisibilityFilter(value as "all" | "visible" | "hidden")
+              }
+            >
+              <SelectTrigger className="sm:w-[160px]">
+                <SelectValue placeholder="All visibility" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All visibility</SelectItem>
+                <SelectItem value="visible">Visible</SelectItem>
+                <SelectItem value="hidden">Hidden</SelectItem>
+              </SelectContent>
+            </Select>
+            <Select
+              value={uploadedByFilter}
+              onValueChange={(value) => setUploadedByFilter(value)}
+            >
+              <SelectTrigger className="sm:w-[220px]">
+                <SelectValue placeholder="All uploaders" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All uploaders</SelectItem>
+                {uploaderOptions.map((uploader) => (
+                  <SelectItem key={uploader} value={uploader}>
+                    {uploader}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
             <Button
               type="button"
               variant="outline"
-              onClick={clearQuery}
+              onClick={resetFilters}
               className="sm:w-auto"
             >
               Clear
@@ -446,7 +849,7 @@ export default function AdminSearchPage() {
       </Card>
 
       <div className="grid gap-6 lg:grid-cols-[minmax(0,360px)_minmax(0,1fr)]">
-        <Card className="h-[560px]">
+        <Card className="h-full">
           <CardHeader className="pb-2">
             <CardTitle className="text-base">Search Results</CardTitle>
             <CardDescription>
@@ -479,11 +882,11 @@ export default function AdminSearchPage() {
                 />
               </div>
             ) : (
-              <ScrollArea className="h-[500px]">
+              <ScrollArea className="h-[1750px]">
                 <div className="divide-y">
                   {results.candidates.length > 0 && (
                     <section className="p-4">
-                      <h3 className="text-xs font-semibold uppercase text-muted-foreground">
+                      <h3 className="text-xs font-bold uppercase text-purple-800">
                         Candidates ({results.candidates.length})
                       </h3>
                       <div className="mt-3 space-y-2">
@@ -519,7 +922,7 @@ export default function AdminSearchPage() {
 
                   {results.elections.length > 0 && (
                     <section className="p-4">
-                      <h3 className="text-xs font-semibold uppercase text-muted-foreground">
+                      <h3 className="text-xs font-bold uppercase text-purple-800">
                         Elections ({results.elections.length})
                       </h3>
                       <div className="mt-3 space-y-2">
@@ -583,13 +986,111 @@ export default function AdminSearchPage() {
                 secondary="Summary, linked content, and relationships will appear here."
               />
             ) : detail.type === "candidate" ? (
-              <CandidateDetailPanel candidate={detail.candidate} />
+              <CandidateDetailPanel
+                candidate={detail.candidate}
+                onToggleHidden={(nextHidden) =>
+                  handleVisibilityToggle(
+                    "candidate",
+                    detail.candidate.id,
+                    nextHidden
+                  )
+                }
+                isToggling={
+                  actionPendingKey === `candidate:${detail.candidate.id}:toggle`
+                }
+                actionError={
+                  actionError?.key ===
+                  `candidate:${detail.candidate.id}:toggle`
+                    ? actionError.message
+                    : null
+                }
+              />
             ) : (
-              <ElectionDetailPanel election={detail.election} />
+              <ElectionDetailPanel
+                election={detail.election}
+                onToggleHidden={(nextHidden) =>
+                  handleVisibilityToggle(
+                    "election",
+                    detail.election.id,
+                    nextHidden
+                  )
+                }
+                onRevealCandidates={() =>
+                  handleRevealLinkedCandidates(
+                    detail.election.id,
+                    detail.election.hidden
+                  )
+                }
+                onHideCandidates={() =>
+                  handleHideLinkedCandidates(
+                    detail.election.id,
+                    detail.election.hidden
+                  )
+                }
+                onRequestDelete={() =>
+                  handleRequestElectionDelete(detail.election)
+                }
+                isTogglingHidden={
+                  actionPendingKey === `election:${detail.election.id}:toggle`
+                }
+                isRevealingCandidates={
+                  actionPendingKey === `election:${detail.election.id}:reveal`
+                }
+                isHidingCandidates={
+                  actionPendingKey === `election:${detail.election.id}:hide`
+                }
+                isDeleting={
+                  deletePending && deleteTarget?.id === detail.election.id
+                }
+                actionError={
+                  actionError?.key?.startsWith(
+                    `election:${detail.election.id}:`
+                  )
+                    ? actionError.message
+                    : null
+                }
+              />
             )}
           </CardContent>
         </Card>
       </div>
+
+      <AlertDialog
+        open={Boolean(deleteTarget)}
+        onOpenChange={handleDeleteDialogChange}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Election?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action will permanently remove{" "}
+              {deleteTarget?.position ?? "this election"}
+              {deleteTarget?.location ? ` (${deleteTarget.location})` : ""}
+              {" "}and all linked candidate records. {deleteTarget?.candidateCount ?? 0}{" "}
+              candidate{deleteTarget?.candidateCount === 1 ? "" : "s"} will be
+              deleted along with their related data. This cannot be undone.
+            </AlertDialogDescription>
+            {deleteError && (
+              <p className="text-sm text-destructive">{deleteError}</p>
+            )}
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deletePending}>
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleConfirmElectionDelete}
+              disabled={deletePending}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {deletePending && (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              )}
+              Delete Election
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
@@ -659,7 +1160,19 @@ function ResultItem({
   );
 }
 
-function CandidateDetailPanel({ candidate }: { candidate: CandidateDetail }) {
+type CandidateDetailPanelProps = {
+  candidate: CandidateDetail;
+  onToggleHidden: (nextHidden: boolean) => void;
+  isToggling: boolean;
+  actionError: string | null;
+};
+
+function CandidateDetailPanel({
+  candidate,
+  onToggleHidden,
+  isToggling,
+  actionError,
+}: CandidateDetailPanelProps) {
   const createdLabel = `Created ${formatDateTime(candidate.createdAt)}`;
   const updatedLabel = `Updated ${formatDateTime(candidate.updatedAt)}`;
 
@@ -669,7 +1182,16 @@ function CandidateDetailPanel({ candidate }: { candidate: CandidateDetail }) {
         <div className="flex flex-wrap items-center gap-2">
           <h2 className="text-xl font-semibold">{candidate.name}</h2>
           {candidate.verified && <Badge variant="secondary">Verified</Badge>}
-          {candidate.hidden && <Badge variant="destructive">Hidden</Badge>}
+          <Button
+            type="button"
+            size="sm"
+            variant={candidate.hidden ? "destructive" : "green"}
+            onClick={() => onToggleHidden(!candidate.hidden)}
+            disabled={isToggling}
+          >
+            {isToggling && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
+            {candidate.hidden ? "Hidden" : "Public"}
+          </Button>
           <Badge
             variant="outline"
             className="uppercase text-[11px] tracking-wide"
@@ -677,6 +1199,9 @@ function CandidateDetailPanel({ candidate }: { candidate: CandidateDetail }) {
             {formatEnum(candidate.status)}
           </Badge>
         </div>
+        {actionError && (
+          <p className="text-xs text-destructive">{actionError}</p>
+        )}
         <p className="text-xs text-muted-foreground">Slug • {candidate.slug}</p>
         <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
           <span>{createdLabel}</span>
@@ -900,7 +1425,37 @@ function CandidateDetailPanel({ candidate }: { candidate: CandidateDetail }) {
   );
 }
 
-function ElectionDetailPanel({ election }: { election: ElectionDetail }) {
+type ElectionDetailPanelProps = {
+  election: ElectionDetail;
+  onToggleHidden: (nextHidden: boolean) => void;
+  onRevealCandidates: () => void;
+  onHideCandidates: () => void;
+  onRequestDelete: () => void;
+  isTogglingHidden: boolean;
+  isRevealingCandidates: boolean;
+  isHidingCandidates: boolean;
+  isDeleting: boolean;
+  actionError: string | null;
+};
+
+function ElectionDetailPanel({
+  election,
+  onToggleHidden,
+  onRevealCandidates,
+  onHideCandidates,
+  onRequestDelete,
+  isTogglingHidden,
+  isRevealingCandidates,
+  isHidingCandidates,
+  isDeleting,
+  actionError,
+}: ElectionDetailPanelProps) {
+  const hasHiddenCandidates = election.candidates.some(
+    (link) => link.candidate.hidden
+  );
+  const allCandidatesPublic =
+    election.candidates.length > 0 &&
+    election.candidates.every((link) => !link.candidate.hidden);
   return (
     <div className="space-y-6">
       <div className="space-y-2">
@@ -912,13 +1467,66 @@ function ElectionDetailPanel({ election }: { election: ElectionDetail }) {
           >
             {formatEnum(election.type)}
           </Badge>
-          {election.hidden && <Badge variant="destructive">Hidden</Badge>}
+          <Button
+            type="button"
+            size="sm"
+            variant={election.hidden ? "destructive" : "green"}
+            onClick={() => onToggleHidden(!election.hidden)}
+            disabled={isTogglingHidden}
+          >
+            {isTogglingHidden && (
+              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+            )}
+            {election.hidden ? "Hidden" : "Public"}
+          </Button>
           {election.active ? (
             <Badge variant="secondary">Active</Badge>
           ) : (
             <Badge variant="outline">Inactive</Badge>
           )}
         </div>
+        {hasHiddenCandidates ? (
+          <Button
+            type="button"
+            size="sm"
+            variant="green"
+            onClick={onRevealCandidates}
+            disabled={isRevealingCandidates}
+          >
+            {isRevealingCandidates && (
+              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+            )}
+            Make Candidates Public
+          </Button>
+        ) : (
+          allCandidatesPublic && (
+            <Button
+              type="button"
+              size="sm"
+              variant="destructive"
+              onClick={onHideCandidates}
+              disabled={isHidingCandidates}
+            >
+              {isHidingCandidates && (
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              )}
+              Make Candidates Hidden
+            </Button>
+          )
+        )}
+        <Button
+          type="button"
+          size="sm"
+          variant="destructive"
+          onClick={onRequestDelete}
+          disabled={isDeleting}
+        >
+          {isDeleting && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
+          Delete Election
+        </Button>
+        {actionError && (
+          <p className="text-xs text-destructive">{actionError}</p>
+        )}
         <p className="text-xs text-muted-foreground">
           {buildLocation(election.city, election.state)} •{" "}
           {formatDate(election.date)}
@@ -931,6 +1539,23 @@ function ElectionDetailPanel({ election }: { election: ElectionDetail }) {
         <div className="flex flex-wrap gap-3 text-xs text-muted-foreground">
           <span>Created {formatDateTime(election.createdAt)}</span>
           <span>Updated {formatDateTime(election.updatedAt)}</span>
+        </div>
+        <div className="flex flex-wrap gap-2 pt-2">
+          <Button variant="outline" size="sm" asChild>
+            <Link
+              href={`${
+                process.env.NEXT_PUBLIC_APP_URL
+              }/results?city=${encodeURIComponent(
+                election.city
+              )}&state=${encodeURIComponent(election.state)}&electionID=${
+                election.id
+              }`}
+              target="_blank"
+              rel="noreferrer"
+            >
+              View Election
+            </Link>
+          </Button>
         </div>
       </div>
 
@@ -953,8 +1578,16 @@ function ElectionDetailPanel({ election }: { election: ElectionDetail }) {
                       {link.candidate.name}
                     </p>
                     <p className="text-xs text-muted-foreground">
-                      {link.candidate.slug} •{" "}
-                      {link.candidate.verified ? "Verified" : "Unverified"}
+                      <a
+                        href={`${process.env.NEXT_PUBLIC_APP_URL}/candidate/${link.candidate.slug}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-primary underline"
+                      >
+                        {process.env.NEXT_PUBLIC_APP_URL}/candidate/
+                        {link.candidate.slug}
+                      </a>{" "}
+                      • {link.candidate.verified ? "Verified" : "Unverified"}
                     </p>
                   </div>
                   <div className="flex flex-wrap gap-2">
@@ -1122,6 +1755,8 @@ function buildElectionBadges(election: ElectionSummary) {
   }> = [];
   badges.push({ label: formatEnum(election.electionType), variant: "outline" });
   if (election.hidden) badges.push({ label: "Hidden", variant: "destructive" });
+  if (election.hasHiddenCandidates)
+    badges.push({ label: "Candidates hidden", variant: "destructive" });
   election.sampleCandidates.slice(0, 2).forEach((candidate) => {
     badges.push({
       label: candidate.name,

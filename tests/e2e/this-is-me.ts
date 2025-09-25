@@ -29,11 +29,13 @@ test.beforeAll(async ({ request }) => {
           state: "ZZ",
           number_of_seats: "1",
           description: "E2E seeded election for automated tests.",
+          uploadedBy: "test@example.com",
         },
         candidates: [
           {
             name: "Existing Candidate Slug",
             email: process.env.E2E_CLERK_USER_USERNAME || "",
+            uploadedBy: "test@example.com",
           },
         ],
       },

@@ -72,15 +72,65 @@ export async function POST(req: NextRequest) {
 
     // Election cascade delete
     if (body.electionId) {
-      const election = await prisma.election.findUnique({ where: { id: body.electionId } });
+      const election = await prisma.election.findUnique({
+        where: { id: body.electionId },
+        include: {
+          candidates: {
+            select: {
+              candidateId: true,
+            },
+          },
+        },
+      });
       if (!election) return new Response("Election not found", { status: 404 });
 
       const result = await prisma.$transaction(async (tx) => {
-        // Delete links for this election (ContentBlocks cascade via FK)
-        const el = await tx.electionLink.deleteMany({ where: { electionId: election.id } });
-        // Delete election itself
-        const e = await tx.election.delete({ where: { id: election.id } });
-        return { deletedElectionLinks: el.count, deletedElectionId: e.id };
+        const candidateIds = Array.from(
+          new Set(election.candidates.map((link) => link.candidateId))
+        );
+
+        const candidateSummaries = candidateIds.length
+          ? await tx.candidate.findMany({
+              where: { id: { in: candidateIds } },
+              select: { id: true, slug: true, name: true },
+            })
+          : [];
+
+        const deletedValidationRequests = candidateIds.length
+          ? await tx.userValidationRequest.deleteMany({
+              where: { candidateId: { in: candidateIds } },
+            })
+          : { count: 0 };
+
+        const deletedElectionLinks = await tx.electionLink.deleteMany({
+          where: candidateIds.length
+            ? {
+                OR: [
+                  { electionId: election.id },
+                  { candidateId: { in: candidateIds } },
+                ],
+              }
+            : { electionId: election.id },
+        });
+
+        const deletedCandidates = candidateIds.length
+          ? await tx.candidate.deleteMany({
+              where: { id: { in: candidateIds } },
+            })
+          : { count: 0 };
+
+        const deletedElection = await tx.election.delete({
+          where: { id: election.id },
+        });
+
+        return {
+          deletedElectionId: deletedElection.id,
+          deletedElectionLinks: deletedElectionLinks.count,
+          deletedCandidateCount: deletedCandidates.count,
+          deletedCandidateIds: candidateSummaries.map((candidate) => candidate.id),
+          deletedCandidates: candidateSummaries,
+          deletedValidationRequests: deletedValidationRequests.count,
+        };
       });
 
       return Response.json({ success: true, type: "election", result });

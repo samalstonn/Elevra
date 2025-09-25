@@ -42,7 +42,8 @@ function HeaderNav() {
       >
         Elevra
       </Link>
-      {(pathname.startsWith("/results") || pathname.startsWith("/candidate/")) && (
+      {(pathname.startsWith("/results") ||
+        pathname.startsWith("/candidate/")) && (
         <div className="flex-grow flex items-center justify-center gap-4 mx-auto">
           <div className="max-w-4xl w-full hidden md:block">
             <SearchBar shadow={true} placeholder="Search candidates..." />
@@ -79,26 +80,25 @@ export default function LayoutClient({
 
   return (
     <ClerkProvider publishableKey={clerkKey || ""}>
-      <html lang="en">
-        <body className={`${inter.className} overflow-x-hidden`}>
-          {/* Prevent global horizontal scroll */}
-          <div className="flex flex-col min-h-screen">
-            {/* Header Section (wrapped in Suspense to support useSearchParams) */}
-            <Suspense fallback={null}>
-              <HeaderNav />
-            </Suspense>
+      <html lang="en" className="overflow-x-hidden">
+        <body
+          className={`${inter.className} flex min-h-full flex-col bg-background text-foreground antialiased overflow-x-hidden overflow-y-auto`}
+        >
+          {/* Header Section (wrapped in Suspense to support useSearchParams) */}
+          <Suspense fallback={null}>
+            <HeaderNav />
+          </Suspense>
 
-            {/* Main Content - Conditional styling for results page */}
-            <main className={`flex-grow w-full items-start justify-start min-h-[75vh] overflow-x-hidden`}>
-              {children}
-              <Analytics />
-              <SpeedInsights />
-              <Toaster />
-            </main>
+          {/* Main Content - Conditional styling for results page */}
+          <main className="flex-1 w-full">{children}</main>
 
-            {/* Footer Section */}
-            <Footer />
-          </div>
+          {/* Footer Section */}
+          <Footer />
+
+          {/* Global analytics + toasts */}
+          <Analytics />
+          <SpeedInsights />
+          <Toaster />
         </body>
       </html>
     </ClerkProvider>

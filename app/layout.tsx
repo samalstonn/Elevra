@@ -5,7 +5,7 @@ export const metadata = {
     default: "Elevra",
     template: "%s | Elevra",
   },
-  description: "Your platform for connecting with top talent",
+  description: "Local Elections, Simplified.",
   icons: {
     icon: "/favicon.ico",
   },

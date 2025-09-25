@@ -6,7 +6,7 @@ import { promises as fs } from "node:fs";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs"; // ensure Node runtime (Edge has very short timeouts)
-export const maxDuration = 60; // bump Vercel function timeout (requires plan support)
+export const maxDuration = 800; // bump Vercel function timeout (requires plan support)
 
 export async function POST(req: NextRequest) {
   try {
@@ -45,14 +45,19 @@ export async function POST(req: NextRequest) {
     const maxRows = Number(
       process.env.GEMINI_MAX_ROWS ?? (isProd ? "30" : "100")
     );
-    const limitedRows = rows.slice(0, isNaN(maxRows) ? (isProd ? 30 : 100) : maxRows);
+    const limitedRows = rows.slice(
+      0,
+      isNaN(maxRows) ? (isProd ? 30 : 100) : maxRows
+    );
 
     if (!geminiEnabled) {
       // Return a deterministic mock based on input rows for local/dev usage
       const city = (limitedRows[0] as any)?.municipality || "Sample City";
       const state = (limitedRows[0] as any)?.state || "Sample State";
       const year = (limitedRows[0] as any)?.year || "2025";
-      const candidateName = `${(limitedRows[0] as any)?.firstName || "Jane"} ${(limitedRows[0] as any)?.lastName || "Doe"}`.trim();
+      const candidateName = `${(limitedRows[0] as any)?.firstName || "Jane"} ${
+        (limitedRows[0] as any)?.lastName || "Doe"
+      }`.trim();
       const mock = [
         {
           election: {
@@ -94,11 +99,12 @@ export async function POST(req: NextRequest) {
     }
 
     const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
-    const fallbackModel =
-      process.env.GEMINI_MODEL_FALLBACK || "gemini-1.5-pro";
-    const useThinking = (process.env.GEMINI_THINKING || "").toLowerCase() === "true";
+    const fallbackModel = process.env.GEMINI_MODEL_FALLBACK || "gemini-1.5-pro";
+    const useThinking =
+      (process.env.GEMINI_THINKING || "").toLowerCase() === "true";
     const thinkingBudget = Number(process.env.GEMINI_THINKING_BUDGET ?? "0");
-    const useSearch = (process.env.GEMINI_TOOLS_GOOGLE_SEARCH || "").toLowerCase() === "true";
+    const useSearch =
+      (process.env.GEMINI_TOOLS_GOOGLE_SEARCH || "").toLowerCase() === "true";
 
     // Note: Do NOT set responseMimeType when tools are enabled; Gemini rejects
     // tool use combined with responseMimeType. We keep analyze as free‑form text
@@ -107,7 +113,10 @@ export async function POST(req: NextRequest) {
       temperature: 0,
       maxOutputTokens: isNaN(maxOutputTokens) ? 4096 : maxOutputTokens,
     };
-    if (useThinking) baseConfig.thinkingConfig = { thinkingBudget: isNaN(thinkingBudget) ? 0 : thinkingBudget };
+    if (useThinking)
+      baseConfig.thinkingConfig = {
+        thinkingBudget: isNaN(thinkingBudget) ? 0 : thinkingBudget,
+      };
     if (useSearch) baseConfig.tools = [{ googleSearch: {} }];
 
     const inputBlock = `\n\nElection details input (JSON rows):\n${JSON.stringify(
@@ -167,7 +176,10 @@ export async function POST(req: NextRequest) {
             },
           });
         } catch (err3: any) {
-          console.error("Gemini non-stream fallback failed", err3?.message || err3);
+          console.error(
+            "Gemini non-stream fallback failed",
+            err3?.message || err3
+          );
           throw err3;
         }
       }

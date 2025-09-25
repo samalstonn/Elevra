@@ -6,7 +6,7 @@ import { promises as fs } from "node:fs";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs"; // ensure Node runtime (Edge has short limits)
-export const maxDuration = 60; // extend serverless timeout (plan-dependent)
+export const maxDuration = 800; // extend serverless timeout (plan-dependent)
 
 export async function POST(req: NextRequest) {
   try {
@@ -99,7 +99,9 @@ export async function POST(req: NextRequest) {
       let state = "Sample State";
       try {
         const parsed = JSON.parse(previousOutput);
-        const first = Array.isArray(parsed) ? parsed[0] : parsed?.elections?.[0];
+        const first = Array.isArray(parsed)
+          ? parsed[0]
+          : parsed?.elections?.[0];
         if (first) {
           city = first?.election?.city || first?.city || city;
           state = first?.election?.state || first?.state || state;
@@ -149,7 +151,8 @@ export async function POST(req: NextRequest) {
 
     const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 
-    const useThinking = (process.env.GEMINI_THINKING || "").toLowerCase() === "true";
+    const useThinking =
+      (process.env.GEMINI_THINKING || "").toLowerCase() === "true";
     const thinkingBudget = Number(process.env.GEMINI_THINKING_BUDGET ?? "0");
     const baseConfig: any = {
       temperature: 0,
@@ -157,7 +160,10 @@ export async function POST(req: NextRequest) {
       responseSchema,
       maxOutputTokens: isNaN(maxOutputTokens) ? 4096 : maxOutputTokens,
     };
-    if (useThinking) baseConfig.thinkingConfig = { thinkingBudget: isNaN(thinkingBudget) ? 0 : thinkingBudget };
+    if (useThinking)
+      baseConfig.thinkingConfig = {
+        thinkingBudget: isNaN(thinkingBudget) ? 0 : thinkingBudget,
+      };
 
     const contents = [
       {
@@ -225,7 +231,10 @@ export async function POST(req: NextRequest) {
             },
           });
         } catch (e2: any) {
-          console.error("Gemini structured non-stream fallback failed:", e2?.message || e2);
+          console.error(
+            "Gemini structured non-stream fallback failed:",
+            e2?.message || e2
+          );
           throw e;
         }
       }

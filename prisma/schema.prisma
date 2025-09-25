@@ -22,6 +22,7 @@ model Election {
   type        ElectionType
   hidden      Boolean        @default(false)
   candidates  ElectionLink[]
+  uploadedBy  String         @default("team@elevracommunity.com") // email of user who uploaded
 }
 
 model Candidate {
@@ -52,6 +53,7 @@ model Candidate {
   endorsements  Endorsement[]
   Testimonial   Testimonial[]
   Vendors       Vendor[]               @relation("CandidateToVendor")
+  uploadedBy    String                 @default("team@elevracommunity.com") // email of user who uploaded
 }
 
 model Donation {
