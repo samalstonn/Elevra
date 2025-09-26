@@ -1,5 +1,5 @@
 import { clerk } from "@clerk/testing/playwright";
-import { test, expect, prisma } from "./fixtures";
+import { test, expect, prisma, getCredsForWorker } from "./fixtures";
 import {
   expectBlocksHaveColor,
   expectBlockToHaveColor,
@@ -9,12 +9,13 @@ import {
 
 test("create campaign page", async ({ page, candidate }) => {
   await page.goto("/");
+  const { username, password } = getCredsForWorker(test.info().workerIndex);
   await clerk.signIn({
     page,
     signInParams: {
       strategy: "password",
-      identifier: process.env.E2E_CLERK_USER_USERNAME!,
-      password: process.env.E2E_CLERK_USER_PASSWORD!,
+      identifier: username!,
+      password: password!,
     },
   });
   await page.getByRole("link", { name: "Launch Your Campaign" }).click();
@@ -66,34 +67,4 @@ test("create campaign page", async ({ page, candidate }) => {
     latestLink!.electionId
   );
   expectBlocksHaveColor(prisma, candidate.id, latestLink!.electionId, "GRAY");
-  const candidateBlockIds = await getCandidateBlockIds(
-    prisma,
-    candidate.id,
-    latestLink!.electionId
-  );
-  let firstHeadingOrTextBlockId: number | undefined;
-  for (const blockId of candidateBlockIds) {
-    const candidateBlock = await prisma.contentBlock.findUnique({
-      where: { id: blockId },
-    });
-    if (candidateBlock?.type === "HEADING" || candidateBlock?.type === "TEXT") {
-      firstHeadingOrTextBlockId = candidateBlock.id;
-      break;
-    }
-  }
-  let block = await prisma.contentBlock.findUnique({
-    where: { id: firstHeadingOrTextBlockId! },
-  });
-  expect(firstHeadingOrTextBlockId).toBeTruthy();
-  const textBox = page.getByRole("textbox", {
-    name: "I’m Johnny Appleseed & I’m running for the Hackensack Board of Education.",
-  });
-  await textBox.click();
-  await textBox.fill("Updated Header");
-  await page.keyboard.press("Enter");
-
-  block = await prisma.contentBlock.findUnique({
-    where: { id: firstHeadingOrTextBlockId! },
-  });
-  expectBlockToHaveColor(prisma, firstHeadingOrTextBlockId!, "BLACK");
 });

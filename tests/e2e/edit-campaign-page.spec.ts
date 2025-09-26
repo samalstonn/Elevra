@@ -1,14 +1,15 @@
 import { clerk } from "@clerk/testing/playwright";
-import { test, expect } from "./fixtures";
+import { test, expect, getCredsForWorker } from "./fixtures";
 
 test("edit campaign page", async ({ page, candidate: _candidate }) => {
   await page.goto('/');
+  const { username, password } = getCredsForWorker(test.info().workerIndex);
   await clerk.signIn({
     page,
     signInParams: {
       strategy: "password",
-      identifier: process.env.E2E_CLERK_USER_USERNAME!,
-      password: process.env.E2E_CLERK_USER_PASSWORD!,
+      identifier: username!,
+      password: password!,
     },
   });
   await page.getByRole('link', { name: 'Launch Your Campaign' }).click();

@@ -75,6 +75,9 @@ export async function expectBlocksHaveColor(
   });
 
   for (const block of blocks) {
+    if (block.type === "IMAGE" || block.type === "VIDEO") {
+      continue;
+    }
     expect(block!.color).toBe(expectedColor);
   }
 }

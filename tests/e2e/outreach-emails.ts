@@ -1,5 +1,6 @@
 import { test, expect } from "@playwright/test";
 import { clerk } from "@clerk/testing/playwright";
+import { getCredsForWorker } from "./fixtures";
 import path from "path";
 
 test("admin user can upload csv and send email (dry run)", async ({ page }) => {
@@ -7,12 +8,13 @@ test("admin user can upload csv and send email (dry run)", async ({ page }) => {
   await page.goto("/admin/candidate-outreach");
 
   // Sign in using Clerk test credentials
+  const { username, password } = getCredsForWorker(test.info().workerIndex);
   await clerk.signIn({
     page,
     signInParams: {
       strategy: "password",
-      identifier: process.env.E2E_CLERK_USER_USERNAME!,
-      password: process.env.E2E_CLERK_USER_PASSWORD!,
+      identifier: username!,
+      password: password!,
     },
   });
 

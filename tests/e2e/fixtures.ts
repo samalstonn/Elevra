@@ -25,10 +25,15 @@ type Fixtures = {
 
 export const test = base.extend<Fixtures, WorkerFixtures>({
   seededCandidate: [
-    async ({}, use) => {
+    async ({}, use, workerInfo) => {
       const baseUrl =
         process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
-      const slug = TEST_SLUG;
+      // Generate a per-worker unique slug to avoid collisions across workers
+      const uniqueSuffix = `w${workerInfo.workerIndex}-${Math.random()
+        .toString(36)
+        .slice(2, 8)}`;
+      const slug = `${TEST_SLUG}-${uniqueSuffix}`;
+      const creds = getCredsForWorker(workerInfo.workerIndex);
       const payload = {
         elections: [
           {
@@ -46,11 +51,12 @@ export const test = base.extend<Fixtures, WorkerFixtures>({
             candidates: [
               {
                 name: "Existing Candidate Slug",
-                email: process.env.E2E_CLERK_USER_USERNAME || "",
+                email: creds.username || "",
                 uploadedBy: "test@example.com",
                 hidden: false,
                 slug,
-                clerkUserId: process.env.E2E_CLERK_USER_ID || null,
+                // Bind to this worker's Clerk user if provided
+                clerkUserId: creds.userId || null,
               },
             ],
           },
@@ -124,6 +130,16 @@ export const test = base.extend<Fixtures, WorkerFixtures>({
                 await tx.userValidationRequest.deleteMany({
                   where: { candidateId: cleanupCandidateId },
                 });
+                await tx.donation.deleteMany({
+                  where: { candidateId: cleanupCandidateId },
+                });
+                await tx.endorsement.deleteMany({
+                  where: { candidateId: cleanupCandidateId },
+                });
+                // Finally remove the candidate for this worker
+                await tx.candidate.deleteMany({
+                  where: { id: cleanupCandidateId },
+                });
               });
               break;
             } catch (error) {
@@ -161,3 +177,70 @@ export const test = base.extend<Fixtures, WorkerFixtures>({
 export { prisma };
 export { expect };
 export type CandidateFixture = Fixtures;
+
+function parseListEnv(raw?: string | null): string[] {
+  if (!raw) return [];
+  try {
+    const parsed = JSON.parse(raw);
+    if (Array.isArray(parsed)) return parsed.map((v) => String(v));
+  } catch {}
+  return raw
+    .split(/[,\n\r\t ]+/)
+    .map((s) => s.trim())
+    .filter(Boolean);
+}
+
+function firstNonEmptyList(...envKeys: string[]): string[] {
+  for (const key of envKeys) {
+    const vals = parseListEnv(process.env[key]);
+    if (vals.length > 0) return vals;
+  }
+  return [];
+}
+
+const USERNAMES = firstNonEmptyList(
+  "E2E_CLERK_USER_USERNAME_LIST",
+  "E2E_CLERK_USER_USERNAMES",
+  "E2E_CLERK_USER_USERNAME"
+);
+const PASSWORDS = firstNonEmptyList(
+  "E2E_CLERK_USER_PASSWORD_LIST",
+  "E2E_CLERK_USER_PASSWORDS",
+  "E2E_CLERK_USER_PASSWORD"
+);
+const USER_IDS = firstNonEmptyList(
+  "E2E_CLERK_USER_ID_LIST",
+  "E2E_CLERK_USER_IDS",
+  "E2E_CLERK_USER_ID"
+);
+
+export function getCredsForWorker(workerIndex: number) {
+  // Highest priority: E2E_CLERK_USERS as a JSON array of objects
+  // Example:
+  // E2E_CLERK_USERS='[{"username":"u","password":"p","userId":"id"}, ...]'
+  const rawUsers = process.env.E2E_CLERK_USERS;
+  if (rawUsers) {
+    try {
+      const arr = JSON.parse(rawUsers);
+      if (Array.isArray(arr) && arr.length > 0) {
+        const i = workerIndex % arr.length;
+        const item = arr[i] || {};
+        return {
+          username: String(item.username || ""),
+          password: String(item.password || ""),
+          userId: String(item.userId || ""),
+        };
+      }
+    } catch {
+      // fall through
+    }
+  }
+
+  // Fallback to list envs or single values if aggregate var is not provided
+  const uCount = Math.max(1, USERNAMES.length || 0);
+  const i = workerIndex % uCount;
+  const username = USERNAMES[i] || process.env.E2E_CLERK_USER_USERNAME || "";
+  const password = PASSWORDS[i] || process.env.E2E_CLERK_USER_PASSWORD || "";
+  const userId = USER_IDS[i] || process.env.E2E_CLERK_USER_ID || "";
+  return { username, password, userId };
+}
