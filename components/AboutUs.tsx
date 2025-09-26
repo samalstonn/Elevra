@@ -55,8 +55,8 @@ const AboutUs = () => {
           <div className="flex">
             <span className="w-6 flex-shrink-0 text-center">1.</span>
             <p className="ml-2">
-              Any voter can enter a ZIP code and instantly see who’s running for
-              what in their community.
+              Any voter can instantly see who’s running for what in their
+              community.
             </p>
           </div>
           <div className="flex">

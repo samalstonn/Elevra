@@ -54,11 +54,23 @@ const Showcase: React.FC<ShowcaseProps> = ({}) => {
         whileInView={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.8, ease: "easeInOut" }}
         viewport={{ once: true }}
-        className="max-w-5xl mx-auto text-center mb-16 mt-16"
+        className="max-w-5xl mx-auto text-center mb-8 mt-8"
       >
-        <h2 className="text-2xl sm:text-3xl font-extrabold text-gray-900">
+        <h2 className="text-2xl sm:text-3xl font-extrabold text-gray-900 mb-8">
           How Elevra Works
         </h2>
+        {activeContent === "voters" && (
+          <p>
+            For Voters, Elevra makes candidates discoverable and accessible for
+            anyone.
+          </p>
+        )}
+        {activeContent === "campaigns" && (
+          <p>
+            For Candidates, Elevra provides powerful tools to sharpen your
+            campaign from start to finish.
+          </p>
+        )}
       </motion.div>
       <div className="container mx-auto px-4">
         <motion.div
@@ -137,7 +149,7 @@ const Showcase: React.FC<ShowcaseProps> = ({}) => {
               onClick={() => setActiveContent("campaigns")}
             >
               <UserRound size={20} />
-              <span>For Campaigns</span>
+              <span>For Candidates</span>
             </Button>
 
             {/* <Button
