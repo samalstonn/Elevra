@@ -3,6 +3,7 @@ import {
   request as playwrightRequest,
   expect,
 } from "@playwright/test";
+import { Prisma } from "@prisma/client";
 import { prisma } from "../prisma-client";
 
 export const TEST_SLUG =
@@ -27,6 +28,7 @@ export const test = base.extend<Fixtures, WorkerFixtures>({
     async ({}, use) => {
       const baseUrl =
         process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+      const slug = TEST_SLUG;
       const payload = {
         elections: [
           {
@@ -47,7 +49,7 @@ export const test = base.extend<Fixtures, WorkerFixtures>({
                 email: process.env.E2E_CLERK_USER_USERNAME || "",
                 uploadedBy: "test@example.com",
                 hidden: false,
-                slug: TEST_SLUG,
+                slug,
                 clerkUserId: process.env.E2E_CLERK_USER_ID || null,
               },
             ],
@@ -86,7 +88,7 @@ export const test = base.extend<Fixtures, WorkerFixtures>({
         electionId = first.electionId as number;
 
         const candidate = await prisma.candidate.findUnique({
-          where: { slug: TEST_SLUG },
+          where: { slug },
         });
         if (!candidate) {
           throw new Error("Seeded candidate not found by slug");
@@ -94,40 +96,51 @@ export const test = base.extend<Fixtures, WorkerFixtures>({
 
         candidateId = candidate.id;
 
-        await use({ id: candidateId, electionId, slug: TEST_SLUG });
+        await use({ id: candidateId, electionId, slug });
       } finally {
         await api.dispose();
 
         if (candidateId != null) {
           const links = await prisma.electionLink.findMany({
             where: { candidateId },
+            select: { electionId: true },
           });
+          const electionIds = Array.from(
+            new Set(links.map((link) => link.electionId))
+          );
 
-          for (const link of links) {
-            await prisma.contentBlock.deleteMany({
-              where: {
-                candidateId: link.candidateId,
-                electionId: link.electionId,
-              },
-            });
-            await prisma.electionLink.delete({
-              where: {
-                candidateId_electionId: {
-                  candidateId: link.candidateId,
-                  electionId: link.electionId,
-                },
-              },
-            });
+          const maxAttempts = 5;
+          for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
             try {
-              await prisma.election.delete({ where: { id: link.electionId } });
-            } catch {}
+              await prisma.$transaction(async (tx) => {
+                await tx.contentBlock.deleteMany({ where: { candidateId } });
+                await tx.electionLink.deleteMany({ where: { candidateId } });
+                await tx.userValidationRequest.deleteMany({
+                  where: { candidateId },
+                });
+                await tx.candidate.deleteMany({ where: { id: candidateId } });
+              });
+              break;
+            } catch (error) {
+              if (
+                error instanceof Prisma.PrismaClientKnownRequestError &&
+                error.code === "P2003" &&
+                attempt < maxAttempts - 1
+              ) {
+                await new Promise((resolve) =>
+                  setTimeout(resolve, 100 * (attempt + 1))
+                );
+                continue;
+              }
+              throw error;
+            }
           }
 
-          await prisma.userValidationRequest.deleteMany({
-            where: { candidateId },
-          });
-
-          await prisma.candidate.delete({ where: { id: candidateId } });
+          for (const electionIdToDelete of electionIds) {
+            try {
+              await prisma.election.delete({ where: { id: electionIdToDelete } });
+            } catch {}
+          }
         }
       }
     },

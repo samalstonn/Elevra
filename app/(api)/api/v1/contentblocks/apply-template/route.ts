@@ -35,6 +35,23 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
+    await prisma.electionLink.upsert({
+      where: {
+        candidateId_electionId: {
+          candidateId,
+          electionId,
+        },
+      },
+      update: {},
+      create: {
+        candidateId,
+        electionId,
+        party: "",
+        sources: [],
+        policies: [],
+      },
+    });
+
     let blocks = null;
 
     switch (templateKey.toUpperCase()) {

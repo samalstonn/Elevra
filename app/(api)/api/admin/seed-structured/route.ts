@@ -6,6 +6,7 @@ import { generateUniqueSlug, isElectionActive } from "@/lib/functions";
 
 type StructuredCandidate = {
   clerkUserId?: string | null;
+  slug?: string | null;
   name: string;
   currentRole?: string | null;
   party?: string | null;
@@ -164,7 +165,10 @@ export async function POST(req: NextRequest) {
       const candidateEmails: (string | null)[] = [];
       for (const c of item.candidates || []) {
         const name = c.name?.trim?.() || "Unnamed";
-        const slug = await generateUniqueSlug(name, undefined, "candidate");
+        const requestedSlug = c.slug?.trim?.();
+        const slug = requestedSlug?.length
+          ? requestedSlug
+          : await generateUniqueSlug(name, undefined, "candidate");
         const candidate = await prisma.candidate.upsert({
           where: { slug },
           update: {
@@ -195,6 +199,7 @@ export async function POST(req: NextRequest) {
             email: cleanOptional(c.email ?? null),
             hidden: hiddenFlag,
             uploadedBy: uploadedBy,
+            clerkUserId: c.clerkUserId || null,
           },
         });
 

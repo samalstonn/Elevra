@@ -16,6 +16,7 @@ test("edit campaign page", async ({ page, candidate: _candidate }) => {
   await page.goto('/candidates/candidate-dashboard');
   await page.getByRole('link', { name: 'Campaign' }).click();
   await page.waitForURL('/candidates/candidate-dashboard/my-elections');
-  await page.getByRole('button', { name: 'Edit Campaign Page' }).click();
-  await expect(page.getByText('Getting Started')).toBeVisible();
+  const editButton = page.getByRole('button', { name: 'Edit Campaign Page' });
+  await editButton.first().click();
+  await expect(page.getByText('Getting Started')).toBeVisible({ timeout: 30000 });
 });

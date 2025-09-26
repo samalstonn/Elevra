@@ -357,6 +357,17 @@ export default function ProfileSettingsPage() {
           ready-made template.
         </p>
       </TourModal>
+      <div className="flex justify-end">
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          onClick={() => setShowAddElectionModal(true)}
+          className="sm:w-auto"
+        >
+          Find Election
+        </Button>
+      </div>
       <div className="mb-6">
         <div className="w-full">
           <div className="grid gap-6 sm:grid-cols-2 xl:grid-cols-3">
