@@ -13,7 +13,7 @@
 */
 
 import { PrismaClient } from "@prisma/client";
-import { davidWeinsteinTemplate } from "../app/(templates)/basicwebpage";
+import { elevraStarterTemplate } from "../app/(templates)/basicwebpage";
 
 type Args = {
   slug?: string;
@@ -125,7 +125,7 @@ async function main() {
 
   if (dryRun) {
     console.log(
-      `[Dry Run] Would seed ${davidWeinsteinTemplate.length} blocks for candidate '${slug}' (id=${candidate.id}) on electionId=${electionId}.`
+      `[Dry Run] Would seed ${elevraStarterTemplate.length} blocks for candidate '${slug}' (id=${candidate.id}) on electionId=${electionId}.`
     );
     process.exit(0);
   }
@@ -141,7 +141,7 @@ async function main() {
     }
 
     await tx.contentBlock.createMany({
-      data: davidWeinsteinTemplate.map((block) => ({
+      data: elevraStarterTemplate.map((block) => ({
         ...block,
         candidateId: candidate.id,
         electionId: electionId!,
@@ -150,7 +150,7 @@ async function main() {
   });
 
   console.log(
-    `Seeded ${davidWeinsteinTemplate.length} ContentBlock(s) for '${slug}' (candidateId=${candidate.id}) on electionId=${electionId}.`
+    `Seeded ${elevraStarterTemplate.length} ContentBlock(s) for '${slug}' (candidateId=${candidate.id}) on electionId=${electionId}.`
   );
 }
 

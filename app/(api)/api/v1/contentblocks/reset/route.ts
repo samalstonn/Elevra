@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { auth, clerkClient } from "@clerk/nextjs/server";
 import prisma from "@/prisma/prisma";
-import { davidWeinsteinTemplate } from "@/app/(templates)/basicwebpage";
+import { elevraStarterTemplate } from "@/app/(templates)/basicwebpage";
 
 export async function POST(request: Request) {
   try {
@@ -64,7 +64,7 @@ export async function POST(request: Request) {
 
     // Prepare new blocks for each election link
     const allBlocksData = links.flatMap((link) =>
-      davidWeinsteinTemplate.map((block, idx) => ({
+      elevraStarterTemplate.map((block, idx) => ({
         ...block,
         candidateId,
         electionId: link.electionId,

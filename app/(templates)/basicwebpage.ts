@@ -1,13 +1,13 @@
 import { BlockType, ListStyle, TextColor, Prisma } from "@prisma/client";
 
-export const davidWeinsteinTemplate = [
+export const elevraStarterTemplate = [
   /* ───────────────────  MAIN HEADLINE  ────────────── */
   {
     order: 0,
     type: BlockType.HEADING,
     level: 1,
     text: "I’m Johnny Appleseed & I’m running for the Hackensack Board of Education.",
-    color: TextColor.BLACK,
+    color: TextColor.GRAY,
   },
 
   /* ───────────────  INTRO PARAGRAPHS  ─────────────── */
@@ -35,7 +35,7 @@ That’s why I’m running for the Board of Education on **November 4th 2025**`,
     type: BlockType.HEADING,
     level: 2,
     text: "What I Bring",
-    color: TextColor.BLACK,
+    color: TextColor.GRAY,
   },
   {
     order: 4,
@@ -48,7 +48,7 @@ That’s why I’m running for the Board of Education on **November 4th 2025**`,
       "I bring proven leadership. In my career, I’ve led teams through tight deadlines, complex projects, and tough decisions. I know how to listen, prioritize, and collaborate to reach goals that serve the greater good.",
       "I bring perspective. I see our schools through two lenses - my own years as a student here and my experiences as a parent today. That dual view helps me appreciate our progress while keeping my eyes on what still needs to be done.",
     ],
-    color: TextColor.BLACK,
+    color: TextColor.GRAY,
   },
 
   /* ────────────────  WHAT I BELIEVE  ──────────────── */
@@ -57,7 +57,7 @@ That’s why I’m running for the Board of Education on **November 4th 2025**`,
     type: BlockType.HEADING,
     level: 2,
     text: "What I Believe",
-    color: TextColor.BLACK,
+    color: TextColor.GRAY,
   },
   {
     order: 6,
@@ -70,7 +70,7 @@ That’s why I’m running for the Board of Education on **November 4th 2025**`,
       "I believe in facing tough questions head-on and making decisions with clarity and integrity - being transparent about trade-offs and grounded in shared values.",
       "I believe public education is one of our greatest investments - not only for today’s students but for the future health, prosperity, and unity of our community.",
     ],
-    color: TextColor.BLACK,
+    color: TextColor.GRAY,
   },
 
   /* ────────────────  WHY I’M RUNNING  ─────────────── */
@@ -79,7 +79,7 @@ That’s why I’m running for the Board of Education on **November 4th 2025**`,
     type: BlockType.HEADING,
     level: 2,
     text: "Why I’m Running",
-    color: TextColor.BLACK,
+    color: TextColor.GRAY,
   },
   {
     order: 8,
@@ -87,7 +87,7 @@ That’s why I’m running for the Board of Education on **November 4th 2025**`,
     body: `The heart of Hackensack has always been its people. My connection to this city didn’t begin with this campaign - it began as a kid walking the halls of our public schools, learning from the dedicated teachers who helped shape who I am.
 
 I’m committed to strengthening that connection and doing everything I can to support our students, families, and schools. I’m ready to work collaboratively with fellow board members and our administration to make Hackensack’s schools - and our community - the very best they can be.`,
-    color: TextColor.BLACK,
+    color: TextColor.GRAY,
   },
   /* ────────────────  Picture/video  ─────────────── */
   {

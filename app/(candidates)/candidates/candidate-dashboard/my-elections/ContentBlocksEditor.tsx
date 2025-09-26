@@ -15,7 +15,7 @@ import { Trash2, Eye } from "lucide-react";
 
 const colorClass = {
   BLACK: "text-black",
-  GRAY: "text-gray-700",
+  GRAY: "text-gray-500",
   PURPLE: "text-purple-700",
 } as const;
 
@@ -293,34 +293,49 @@ function SortableBlock({
   const imageInputRef = useRef<HTMLInputElement | null>(null);
   const videoInputRef = useRef<HTMLInputElement | null>(null);
 
+  const [hasEditedHeading, setHasEditedHeading] = useState(false);
+  const [hasEditedText, setHasEditedText] = useState(false);
+  const [editedItems, setEditedItems] = useState<boolean[]>(
+    new Array(block.items?.length ?? 0).fill(false)
+  );
+
   /* ----- Render each block type inline-editable ----- */
   let inner: React.ReactNode;
   switch (block.type) {
     case "HEADING":
       const headingClass =
         block.level === 1
-          ? `text-4xl font-bold ${color} px-2 py-1`
-          : `text-2xl font-semibold ${color} px-2 py-1`;
-      inner = (
-        <h2
-          className={headingClass}
-          contentEditable
-          suppressContentEditableWarning
-          onBlur={(e) => onChange({ text: e.currentTarget.textContent ?? "" })}
-          onFocus={() => setSelectedOrder(block.order)}
-        >
-          {block.text ?? ""}
-        </h2>
-      );
+          ? `text-4xl font-bold ${hasEditedHeading ? "text-black" : color} px-2 py-1`
+          : `text-2xl font-semibold ${hasEditedHeading ? "text-black" : color} px-2 py-1`;
+
+        inner = (
+          <h2
+            className={headingClass}
+            contentEditable
+            suppressContentEditableWarning
+            onInput={() => {
+              if (!hasEditedHeading) setHasEditedHeading(true);
+              onChange({ text: block.text ?? "" });
+            }}
+            onFocus={() => setSelectedOrder(block.order)}
+          >
+            {block.text ?? ""}
+          </h2>
+        );
       break;
 
     case "TEXT":
       inner = (
         <div
-          className={`text-sm whitespace-pre-wrap ${color} px-2 py-1`}
+          className={`text-sm whitespace-pre-wrap ${
+            hasEditedText ? "text-black" : color
+          } px-2 py-1`}
           contentEditable
           suppressContentEditableWarning
-          onBlur={(e) => onChange({ body: e.currentTarget.innerText })}
+          onInput={() => {
+            if (!hasEditedText) setHasEditedText(true);
+            onChange({ body: block.body });
+          }}
           onFocus={() => setSelectedOrder(block.order)}
         >
           {block.body ?? ""}
@@ -334,7 +349,7 @@ function SortableBlock({
         block.listStyle === ListStyle.NUMBER
           ? `list-decimal text-sm ml-6 ${color}`
           : `list-disc text-sm ml-6 ${color}`;
-
+    
       inner = (
         <>
           <ListTag className={listClass + " space-y-1"}>
@@ -343,10 +358,18 @@ function SortableBlock({
                 <span
                   contentEditable
                   suppressContentEditableWarning
-                  className="min-w-[4ch] pr-4 outline-none align-top" // removed inline-block so list marker aligns to first line, added align-top
-                  onBlur={(e) => {
+                  className={`min-w-[4ch] pr-4 outline-none align-top ${
+                    editedItems[idx] ? "text-black" : color
+                  }`}
+                  onInput={() => {
+                    if (!editedItems[idx]) {
+                      const updated = [...editedItems];
+                      updated[idx] = true;
+                      setEditedItems(updated);
+                    }
+    
                     const newItems = [...(block.items ?? [])];
-                    newItems[idx] = e.currentTarget.textContent ?? "";
+                    newItems[idx] = block.items[idx] ?? "";
                     onChange({ items: newItems });
                   }}
                   onFocus={() => setSelectedOrder(block.order)}
@@ -358,10 +381,12 @@ function SortableBlock({
                   aria-label="Delete list item"
                   className="absolute -right-5 top-1.5 text-red-500 hover:text-red-600 opacity-100 transition"
                   onClick={() => {
-                    const newItems = (block.items ?? []).filter(
-                      (_, i) => i !== idx
-                    );
+                    const newItems = (block.items ?? []).filter((_, i) => i !== idx);
                     onChange({ items: newItems });
+    
+                    const updated = [...editedItems];
+                    updated.splice(idx, 1);
+                    setEditedItems(updated);
                   }}
                 >
                   <Trash2 className="w-3 h-3" />
@@ -370,7 +395,10 @@ function SortableBlock({
             ))}
           </ListTag>
           <button
-            onClick={() => onChange({ items: [...(block.items ?? []), ""] })}
+            onClick={() => {
+              onChange({ items: [...(block.items ?? []), ""] });
+              setEditedItems([...editedItems, false]);
+            }}
             className="text-sm text-purple-600 hover:underline ml-6 mt-1"
             type="button"
           >

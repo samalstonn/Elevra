@@ -38,7 +38,7 @@ fetch('/api/admin/backfill-contentblocks', {
 import { NextRequest } from "next/server";
 import { auth, clerkClient } from "@clerk/nextjs/server";
 import prisma from "@/prisma/prisma";
-import { davidWeinsteinTemplate } from "@/app/(templates)/basicwebpage";
+import { elevraStarterTemplate } from "@/app/(templates)/basicwebpage";
 
 type BackfillBody = {
   dryRun?: boolean;
@@ -169,7 +169,7 @@ export async function POST(req: NextRequest) {
         continue;
       }
       if (!dryRun) {
-        const data = davidWeinsteinTemplate.map((block) => ({
+        const data = elevraStarterTemplate.map((block) => ({
           ...block,
           candidateId: link.candidateId,
           electionId: link.electionId,
@@ -185,7 +185,7 @@ export async function POST(req: NextRequest) {
         candidateVerified: cVerified,
         electionId: link.electionId,
         election: eInfo,
-        count: davidWeinsteinTemplate.length,
+        count: elevraStarterTemplate.length,
       });
     }
 
