@@ -16,6 +16,7 @@ const baseURL = process.env.NEXT_PUBLIC_APP_URL || `http://localhost:${PORT}`;
 export default defineConfig({
   // Look for tests in the "e2e" directory
   testDir: "./tests/e2e",
+  globalTeardown: "./tests/e2e/global.teardown.ts",
   // Set the number of retries for each, in case of failure
   retries: 1,
   // Run your local dev server before starting the tests.
@@ -77,7 +78,9 @@ export default defineConfig({
     {
       name: "Create Campaign",
       testMatch: "create-campaign-page.spec.ts",
-      use: { ...devices["Desktop Chrome"] },
+      use: {
+        ...devices["Desktop Chrome"],
+      },
       dependencies: ["global setup"],
     },
     {
@@ -85,6 +88,6 @@ export default defineConfig({
       testMatch: "edit-campaign-page.spec.ts",
       use: { ...devices["Desktop Chrome"] },
       dependencies: ["global setup"],
-    }
+    },
   ],
 });

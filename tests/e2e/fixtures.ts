@@ -101,8 +101,10 @@ export const test = base.extend<Fixtures, WorkerFixtures>({
         await api.dispose();
 
         if (candidateId != null) {
+          const cleanupCandidateId = candidateId;
+
           const links = await prisma.electionLink.findMany({
-            where: { candidateId },
+            where: { candidateId: cleanupCandidateId },
             select: { electionId: true },
           });
           const electionIds = Array.from(
@@ -113,12 +115,15 @@ export const test = base.extend<Fixtures, WorkerFixtures>({
           for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
             try {
               await prisma.$transaction(async (tx) => {
-                await tx.contentBlock.deleteMany({ where: { candidateId } });
-                await tx.electionLink.deleteMany({ where: { candidateId } });
-                await tx.userValidationRequest.deleteMany({
-                  where: { candidateId },
+                await tx.contentBlock.deleteMany({
+                  where: { candidateId: cleanupCandidateId },
                 });
-                await tx.candidate.deleteMany({ where: { id: candidateId } });
+                await tx.electionLink.deleteMany({
+                  where: { candidateId: cleanupCandidateId },
+                });
+                await tx.userValidationRequest.deleteMany({
+                  where: { candidateId: cleanupCandidateId },
+                });
               });
               break;
             } catch (error) {

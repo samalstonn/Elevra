@@ -35,22 +35,26 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
-    await prisma.electionLink.upsert({
+    const existingLink = await prisma.electionLink.findUnique({
       where: {
         candidateId_electionId: {
           candidateId,
           electionId,
         },
       },
-      update: {},
-      create: {
-        candidateId,
-        electionId,
-        party: "",
-        sources: [],
-        policies: [],
-      },
     });
+
+    if (!existingLink) {
+      await prisma.electionLink.create({
+        data: {
+          candidateId,
+          electionId,
+          party: "",
+          sources: [],
+          policies: [],
+        },
+      });
+    }
 
     let blocks = null;
 

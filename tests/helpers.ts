@@ -3,6 +3,7 @@ import { promises as fs } from "node:fs";
 import { expect } from "@playwright/test";
 import { PrismaClient } from "@prisma/client";
 import path from "node:path";
+import { colorClass } from "@/lib/constants";
 
 const EMAIL_LOG = path.join(process.cwd(), "lib/email/logs/.test-emails.log");
 
@@ -41,6 +42,58 @@ export async function expectHasElevraStarterTemplateBlocks(
   if (tmpl0.text) {
     expect(first?.text?.trim()).toBe(tmpl0.text);
   }
+}
+
+// Helper: assert all blocks for a candidate and election have the expected color
+export async function expectBlockToHaveColor(
+  prisma: PrismaClient,
+  blockId: number,
+  expectedColor: string
+) {
+  const block = await prisma.contentBlock.findUnique({
+    where: { id: blockId },
+  });
+
+  expect(block).toBeTruthy();
+
+  if (block!.type !== "IMAGE") {
+    expect(block!.color).toBe(expectedColor);
+  }
+}
+
+export async function expectBlocksHaveColor(
+  prisma: PrismaClient,
+  seededCandidateId: number | null,
+  seededElectionId: number | null,
+  expectedColor: string
+) {
+  expect(seededCandidateId).toBeTruthy();
+  expect(seededElectionId).toBeTruthy();
+
+  const blocks = await prisma.contentBlock.findMany({
+    where: { candidateId: seededCandidateId!, electionId: seededElectionId! },
+  });
+
+  for (const block of blocks) {
+    expect(block!.color).toBe(expectedColor);
+  }
+}
+
+// Helper: get all content block IDs for a candidate and election
+export async function getCandidateBlockIds(
+  prisma: PrismaClient,
+  seededCandidateId: number | null,
+  seededElectionId: number | null
+): Promise<number[]> {
+  expect(seededCandidateId).toBeTruthy();
+  expect(seededElectionId).toBeTruthy();
+
+  const blocks = await prisma.contentBlock.findMany({
+    where: { candidateId: seededCandidateId!, electionId: seededElectionId! },
+    select: { id: true },
+  });
+
+  return blocks.map((block) => block.id);
 }
 
 // Helper: assert no template content blocks are present yet

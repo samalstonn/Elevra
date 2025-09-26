@@ -10,7 +10,9 @@ async function isAdminUser(userId: string | null): Promise<boolean> {
   try {
     const client = await clerkClient();
     const user = await client.users.getUser(userId);
-    return Boolean(user.privateMetadata?.isAdmin || user.privateMetadata?.isSubAdmin);
+    return Boolean(
+      user.privateMetadata?.isAdmin || user.privateMetadata?.isSubAdmin
+    );
   } catch {
     return false;
   }
@@ -18,9 +20,12 @@ async function isAdminUser(userId: string | null): Promise<boolean> {
 
 export async function POST(req: NextRequest) {
   try {
-    const headerSecret = req.headers.get("x-e2e-seed-secret") || req.headers.get("x-seed-secret");
+    const headerSecret =
+      req.headers.get("x-e2e-seed-secret") || req.headers.get("x-seed-secret");
     const envSecret = process.env.E2E_SEED_SECRET || "";
-    const bypassAuth = Boolean(headerSecret && envSecret && headerSecret === envSecret);
+    const bypassAuth = Boolean(
+      headerSecret && envSecret && headerSecret === envSecret
+    );
 
     const { userId } = await auth();
     if (!bypassAuth && !(await isAdminUser(userId))) {
@@ -38,8 +43,10 @@ export async function POST(req: NextRequest) {
     // Candidate cascade delete
     if (body.candidateSlug || body.candidateId) {
       const or: Array<{ id?: number; slug?: string }> = [];
-      if (typeof body.candidateId === "number") or.push({ id: body.candidateId });
-      if (typeof body.candidateSlug === "string" && body.candidateSlug) or.push({ slug: body.candidateSlug });
+      if (typeof body.candidateId === "number")
+        or.push({ id: body.candidateId });
+      if (typeof body.candidateSlug === "string" && body.candidateSlug)
+        or.push({ slug: body.candidateSlug });
 
       const candidate = await prisma.candidate.findFirst({
         where: {
@@ -64,7 +71,11 @@ export async function POST(req: NextRequest) {
         // Finally delete the candidate (other related rows have onDelete: Cascade)
         const c = await tx.candidate.delete({ where: { id: candidate.id } });
 
-        return { deletedValidationRequests: vr.count, deletedElectionLinks: el.count, deletedCandidateId: c.id };
+        return {
+          deletedValidationRequests: vr.count,
+          deletedElectionLinks: el.count,
+          deletedCandidateId: c.id,
+        };
       });
 
       return Response.json({ success: true, type: "candidate", result });
@@ -127,7 +138,9 @@ export async function POST(req: NextRequest) {
           deletedElectionId: deletedElection.id,
           deletedElectionLinks: deletedElectionLinks.count,
           deletedCandidateCount: deletedCandidates.count,
-          deletedCandidateIds: candidateSummaries.map((candidate) => candidate.id),
+          deletedCandidateIds: candidateSummaries.map(
+            (candidate) => candidate.id
+          ),
           deletedCandidates: candidateSummaries,
           deletedValidationRequests: deletedValidationRequests.count,
         };
@@ -136,7 +149,9 @@ export async function POST(req: NextRequest) {
       return Response.json({ success: true, type: "election", result });
     }
 
-    return new Response("Missing candidateSlug/candidateId or electionId", { status: 400 });
+    return new Response("Missing candidateSlug/candidateId or electionId", {
+      status: 400,
+    });
   } catch (err) {
     console.error("/api/admin/cascade-delete error", err);
     return new Response("Internal Server Error", { status: 500 });
@@ -145,9 +160,12 @@ export async function POST(req: NextRequest) {
 
 export async function GET(req: NextRequest) {
   try {
-    const headerSecret = req.headers.get("x-e2e-seed-secret") || req.headers.get("x-seed-secret");
+    const headerSecret =
+      req.headers.get("x-e2e-seed-secret") || req.headers.get("x-seed-secret");
     const envSecret = process.env.E2E_SEED_SECRET || "";
-    const bypassAuth = Boolean(headerSecret && envSecret && headerSecret === envSecret);
+    const bypassAuth = Boolean(
+      headerSecret && envSecret && headerSecret === envSecret
+    );
 
     const { userId } = await auth();
     if (!bypassAuth && !(await isAdminUser(userId))) {
