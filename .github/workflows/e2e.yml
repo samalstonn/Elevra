@@ -43,16 +43,37 @@ jobs:
       - name: Vercel env pull (preview)
         run: vercel pull --yes --environment=preview --token "$VERCEL_TOKEN"
 
-      - name: Load preview env into job (DATABASE_URL)
+      - name: Load preview env into job (DB & Clerk)
+        shell: bash
         run: |
           set -a
           [ -f .vercel/.env.preview.local ] && source .vercel/.env.preview.local
           set +a
-          if [ -z "${DATABASE_URL}" ]; then
-            echo "DATABASE_URL was not found in .vercel/.env.preview.local" >&2
+
+          # Fallback: map NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY -> CLERK_PUBLISHABLE_KEY if needed
+          if [ -z "${CLERK_PUBLISHABLE_KEY}" ] && [ -n "${NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY}" ]; then
+            export CLERK_PUBLISHABLE_KEY="${NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY}"
+          fi
+
+          missing=0
+          for v in DATABASE_URL CLERK_PUBLISHABLE_KEY CLERK_SECRET_KEY; do
+            if [ -z "${!v}" ]; then
+              echo "Missing required env var: $v" >&2
+              missing=1
+            fi
+          done
+          if [ "$missing" -ne 0 ]; then
+            echo "One or more required env vars are missing from Vercel Preview envs." >&2
             exit 1
           fi
-          echo "DATABASE_URL=$DATABASE_URL" >> $GITHUB_ENV
+
+          # Export to job environment for subsequent steps (values are masked in logs)
+          {
+            echo "DATABASE_URL=${DATABASE_URL}"
+            echo "CLERK_PUBLISHABLE_KEY=${CLERK_PUBLISHABLE_KEY}"
+            echo "CLERK_SECRET_KEY=${CLERK_SECRET_KEY}"
+            echo "NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=${NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY}"
+          } >> "$GITHUB_ENV"
 
       # Deploy and capture the preview URL
       - name: Vercel deploy (preview)
@@ -77,6 +98,8 @@ jobs:
         env:
           NEXT_PUBLIC_APP_URL: ${{ env.NEXT_PUBLIC_APP_URL }}
           DATABASE_URL: ${{ env.DATABASE_URL }}
+          CLERK_PUBLISHABLE_KEY: ${{ env.CLERK_PUBLISHABLE_KEY }}
+          CLERK_SECRET_KEY: ${{ env.CLERK_SECRET_KEY }}
 
       # Always upload the HTML report & traces for debugging
       - name: Upload Playwright report
