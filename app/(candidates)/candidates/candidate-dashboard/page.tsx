@@ -15,7 +15,6 @@ import { FaShare } from "react-icons/fa"; // Importing FaShare
 import { Candidate, Donation } from "@prisma/client";
 import { useCandidate } from "@/lib/useCandidate";
 import AnalyticsChart from "@/components/AnalyticsChart";
-import ViewsHeatmap from "@/components/ViewsHeatmap";
 import { useSearchParams, useRouter } from "next/navigation";
 import { useUser } from "@clerk/nextjs";
 import {
@@ -430,21 +429,7 @@ export default function OverviewPage() {
           )}
         </CardContent>
       </Card>
-      <Card>
-        <CardHeader>
-          <CardTitle>Time-of-Day Activity</CardTitle>
-          <CardDescription>
-            When people view your profile (local time).
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          {candidate ? (
-            <ViewsHeatmap candidateId={candidate.id} days={30} />
-          ) : (
-            <div className="text-xs text-gray-500">Loading heatmap...</div>
-          )}
-        </CardContent>
-      </Card>
+      {/* Moved Time-of-Day Activity heatmap to Analytics tab */}
       {/* Analytics Card */}
       {/* <Card className="col-span-4">
         <CardHeader>

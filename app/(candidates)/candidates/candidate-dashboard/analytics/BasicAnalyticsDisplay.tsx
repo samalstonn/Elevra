@@ -6,6 +6,8 @@ import { EngagementChart } from "./EngagementChart";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Eye, Users, Mail, LucideProps } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useCandidate } from "@/lib/useCandidate";
+import ViewsHeatmap from "@/components/ViewsHeatmap";
 
 // Placeholder data for basic analytics
 const basicStats = [
@@ -43,6 +45,7 @@ export function BasicAnalyticsDisplay() {
   const [stats, setStats] = useState<AnalyticsStat[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const { data: candidate } = useCandidate();
 
   useEffect(() => {
     const fetchAnalytics = async () => {
@@ -114,6 +117,22 @@ export function BasicAnalyticsDisplay() {
             </p>
           ) : (
             <EngagementChart />
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Time-of-Day Activity Heatmap */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Time-of-Day Activity</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {candidate ? (
+            <ViewsHeatmap candidateId={candidate.id} days={30} />
+          ) : loading ? (
+            <div className="text-xs text-gray-500">Loading candidate...</div>
+          ) : (
+            <div className="text-xs text-gray-500">No candidate found</div>
           )}
         </CardContent>
       </Card>
