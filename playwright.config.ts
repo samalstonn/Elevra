@@ -20,19 +20,22 @@ export default defineConfig({
   // Set the number of retries for each, in case of failure
   retries: 1,
   // Run your local dev server before starting the tests.
-  webServer: {
-    command: "npm run dev",
-    // Base URL to use in actions like `await page.goto('/')`
-    url: baseURL,
-    // Set the timeout for the server to start
-    timeout: 120 * 1000,
-    // Reuse the server between tests
-    reuseExistingServer: !process.env.CI,
-    // Ensure emails are not actually sent during tests
-    env: {
-      EMAIL_DRY_RUN: "1",
-    },
-  },
+  // If we have a deployed URL, DO NOT start a server.
+  webServer: !baseURL.includes("localhost")
+    ? undefined
+    : {
+        command: "npm run dev",
+        // Base URL to use in actions like `await page.goto('/')`
+        url: baseURL,
+        // Set the timeout for the server to start
+        timeout: 120 * 1000,
+        // Reuse the server between tests
+        reuseExistingServer: !process.env.CI,
+        // Ensure emails are not actually sent during tests
+        env: {
+          EMAIL_DRY_RUN: "1",
+        },
+      },
   use: {
     // Base URL to use in actions like `await page.goto('/')`.
     baseURL,
