@@ -655,7 +655,7 @@ const ELEVRA_STARTER_TEMPLATE_PREVIEW: BlockSnippet[] = [
   },
   {
     label: "What I Believe",
-    text: "Express your core believes related to the position you are running for.",
+   text: "Express your core beliefs related to the position you are running for.",
   },
   {
     label: "Why I'm Running",
