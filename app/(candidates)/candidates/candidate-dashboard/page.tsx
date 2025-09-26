@@ -227,7 +227,7 @@ export default function OverviewPage() {
       <TourModal
         open={showStep1}
         onOpenChange={setShowStep1}
-        title="Overview (Step 1 of 5)"
+        title="Overview (Step 1 of 4)"
         backLabel="Back"
         onBack={backToWelcome}
         primaryLabel="Next: Profile"
@@ -284,10 +284,10 @@ export default function OverviewPage() {
                   href="/candidates/candidate-dashboard/my-elections"
                   className="text-purple-600 underline"
                 >
-                  Campaigns Tab
+                  Campaign tab
                 </Link>{" "}
-                on the left hand side to update your election details, and
-                explore different templates on your{" "}
+                on the left to update your election details and customize your
+                public page. Prefer to jump straight into editing? Open the{" "}
                 <Link
                   href={
                     candidate
@@ -296,7 +296,7 @@ export default function OverviewPage() {
                   }
                   className="text-purple-600 underline"
                 >
-                  Public Campaign Page
+                  campaign editor
                 </Link>
                 .
               </p>

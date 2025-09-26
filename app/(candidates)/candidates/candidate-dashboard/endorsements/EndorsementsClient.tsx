@@ -5,8 +5,6 @@ import { StatsCard } from "@/components/StatsCard";
 import { UserCircle2 } from "lucide-react";
 import TourModal from "@/components/tour/TourModal";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useCandidate } from "@/lib/useCandidate";
-import { buildEditorPath } from "../my-elections/utils";
 
 export type Endorsement = {
   id: number;
@@ -32,21 +30,19 @@ type Props = {
 export default function CandidateEndorsementsClient({ user, data }: Props) {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { data: candidateData, electionLinks = [] } = useCandidate();
   const [endorsements, setEndorsements] = useState<Endorsement[]>(
     data.endorsements
   );
-  console.log(data.totalEndorsements);
   const [total, setTotal] = useState<number>(data.totalEndorsements);
-  // Tour state (Step 5)
-  const [showStep5, setShowStep5] = useState(false);
+  // Tour state (Step 4)
+  const [showStep4, setShowStep4] = useState(false);
   useEffect(() => {
     try {
       const optOut = localStorage.getItem("elevra_tour_opt_out");
       if (optOut === "1") return;
       const step = localStorage.getItem("elevra_tour_step");
       const forceTour = searchParams.get("tour") === "1";
-      if (step === "5" || forceTour) setShowStep5(true);
+      if (step === "4" || forceTour) setShowStep4(true);
     } catch {}
   }, [searchParams]);
 
@@ -55,31 +51,22 @@ export default function CandidateEndorsementsClient({ user, data }: Props) {
       localStorage.setItem("elevra_tour_opt_out", "1");
       localStorage.removeItem("elevra_tour_step");
     } catch {}
-    setShowStep5(false);
+    setShowStep4(false);
     router.push("/candidates/candidate-dashboard");
-  };
-  const getEditorDestination = (query?: string) => {
-    if (candidateData && electionLinks.length > 0) {
-      return `${buildEditorPath(
-        candidateData.slug,
-        electionLinks[0].electionId
-      )}${query ?? ""}`;
-    }
-    return "/candidates/candidate-dashboard/my-elections";
   };
   const finishTour = () => {
     try {
       localStorage.removeItem("elevra_tour_step");
     } catch {}
-    setShowStep5(false);
-    router.push(getEditorDestination("?tour_finish=1"));
+    setShowStep4(false);
+    router.push("/candidates/candidate-dashboard/my-elections");
   };
-  const backToPublicPage = () => {
+  const backToCampaign = () => {
     try {
-      localStorage.setItem("elevra_tour_step", "4");
+      localStorage.setItem("elevra_tour_step", "3");
     } catch {}
-    setShowStep5(false);
-    router.push(getEditorDestination("?tour=1"));
+    setShowStep4(false);
+    router.push("/candidates/candidate-dashboard/my-elections?tour=1");
   };
 
   const handleDelete = async (endorsementId: number) => {
@@ -109,13 +96,13 @@ export default function CandidateEndorsementsClient({ user, data }: Props) {
 
   return (
     <div className="min-h-screen p-6 space-y-12">
-      {/* Tour: Step 5 (Endorsements) */}
+      {/* Tour: Step 4 (Endorsements) */}
       <TourModal
-        open={showStep5}
-        onOpenChange={setShowStep5}
-        title="Endorsements (Step 5 of 5)"
+        open={showStep4}
+        onOpenChange={setShowStep4}
+        title="Endorsements (Step 4 of 4)"
         backLabel="Back"
-        onBack={backToPublicPage}
+        onBack={backToCampaign}
         primaryLabel="Finish Tour"
         onPrimary={finishTour}
         secondaryLabel="Skip tour"

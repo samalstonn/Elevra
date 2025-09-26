@@ -106,6 +106,7 @@ type CandidateDetail = {
   hidden: boolean;
   donationCount: number;
   history: string[];
+  uploadedBy: string | null;
   createdAt: string;
   updatedAt: string;
   elections: Array<{
@@ -163,6 +164,7 @@ type ElectionDetail = {
   type: string;
   hidden: boolean;
   active: boolean;
+  uploadedBy: string | null;
   createdAt: string;
   updatedAt: string;
   candidates: Array<{
@@ -1207,6 +1209,9 @@ function CandidateDetailPanel({
           <span>{createdLabel}</span>
           <span>{updatedLabel}</span>
           <span>Donations recorded • {candidate.donationCount}</span>
+          <span>
+            Uploaded by • {candidate.uploadedBy ? candidate.uploadedBy : "Unknown"}
+          </span>
         </div>
         <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">
           {candidate.currentRole && (
@@ -1539,6 +1544,9 @@ function ElectionDetailPanel({
         <div className="flex flex-wrap gap-3 text-xs text-muted-foreground">
           <span>Created {formatDateTime(election.createdAt)}</span>
           <span>Updated {formatDateTime(election.updatedAt)}</span>
+          <span>
+            Uploaded by • {election.uploadedBy ? election.uploadedBy : "Unknown"}
+          </span>
         </div>
         <div className="flex flex-wrap gap-2 pt-2">
           <Button variant="outline" size="sm" asChild>

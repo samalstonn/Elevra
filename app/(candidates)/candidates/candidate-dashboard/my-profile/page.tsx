@@ -55,7 +55,7 @@ export default function BioSettingsPage() {
     router.push("/candidates/candidate-dashboard");
   };
 
-  const nextToCampaigns = () => {
+  const nextToCampaign = () => {
     try {
       localStorage.setItem("elevra_tour_step", "3");
     } catch {}
@@ -118,11 +118,11 @@ export default function BioSettingsPage() {
       <TourModal
         open={showStep2}
         onOpenChange={setShowStep2}
-        title="Profile (Step 2 of 5)"
+        title="Profile (Step 2 of 4)"
         backLabel="Back"
         onBack={backToOverview}
-        primaryLabel="Next: Campaigns"
-        onPrimary={nextToCampaigns}
+        primaryLabel="Next: Campaign"
+        onPrimary={nextToCampaign}
         secondaryLabel="Skip tour"
         onSecondary={skipTour}
       >

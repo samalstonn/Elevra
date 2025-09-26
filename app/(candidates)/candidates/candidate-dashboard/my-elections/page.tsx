@@ -28,7 +28,7 @@ import { cn } from "@/lib/utils";
 // import type { ContentBlock } from "@prisma/client";
 
 export default function ProfileSettingsPage() {
-  usePageTitle("Candidate Dashboard – Campaigns");
+  usePageTitle("Candidate Dashboard – Campaign");
   const { toast } = useToast();
   const {
     data: candidateData,
@@ -72,20 +72,12 @@ export default function ProfileSettingsPage() {
     router.push("/candidates/candidate-dashboard");
   };
 
-  const nextToPublicPage = () => {
+  const nextToEndorsements = () => {
     try {
       localStorage.setItem("elevra_tour_step", "4");
     } catch {}
     setShowStep3(false);
-    if (candidateData && electionLinks.length > 0) {
-      const href = `${buildEditorPath(
-        candidateData.slug,
-        electionLinks[0].electionId
-      )}?tour=1`;
-      router.push(href);
-    } else {
-      router.push("/candidates/candidate-dashboard/my-elections");
-    }
+    router.push("/candidates/candidate-dashboard/endorsements?tour=1");
   };
   const backToProfile = () => {
     try {
@@ -99,7 +91,9 @@ export default function ProfileSettingsPage() {
   const handleElectionSelect = (
     items: { id: string | number } | Array<{ id: string | number }>
   ) => {
-    const first = (Array.isArray(items) ? items[0] : items) as { id: string | number };
+    const first = (Array.isArray(items) ? items[0] : items) as {
+      id: string | number;
+    };
     const electionId = Number(first.id);
 
     // Stash pending election and close the search dialog
@@ -123,20 +117,18 @@ export default function ProfileSettingsPage() {
 
   const goToEditor = (link: ElectionLinkWithElection) => {
     if (!candidateData?.slug) return;
-  
+
     const editPath = buildEditorPath(candidateData.slug, link.electionId);
     router.push(editPath);
   };
 
-  const openTemplateModalWithElectionId = (
-    electionId: number
-  ) => {
+  const openTemplateModalWithElectionId = (electionId: number) => {
     // Pass a "virtual" link with no ContentBlock so hasCustomBlocks === false
     const virtualLink = {
       electionId,
       ContentBlock: [], // <- important so isElevraStarterTemplateUnmodified(...) works
     } as unknown as ElectionLinkWithElection;
-  
+
     openTemplateModal(virtualLink);
   };
 
@@ -157,7 +149,9 @@ export default function ProfileSettingsPage() {
     // Use the electionId from the active link if present, otherwise fall back to pending.
     const electionId =
       activeTemplateLink?.electionId ??
-      (pendingTemplateElectionId != null ? Number(pendingTemplateElectionId) : null);
+      (pendingTemplateElectionId != null
+        ? Number(pendingTemplateElectionId)
+        : null);
 
     if (!electionId) {
       toast({
@@ -178,7 +172,9 @@ export default function ProfileSettingsPage() {
     }
 
     // Ensure an election link exists (create it only now, when the user commits by clicking Customize)
-    const hasLinkAlready = !!electionLinks.find((l) => l.electionId === electionId);
+    const hasLinkAlready = !!electionLinks.find(
+      (l) => l.electionId === electionId
+    );
     if (!hasLinkAlready) {
       try {
         const res = await fetch("/api/electionlinks", {
@@ -333,35 +329,33 @@ export default function ProfileSettingsPage() {
     templateCards.push({
       key: "elevraStarterTemplate",
       title: "Elevra Starter Template",
-      description:
-        "Introduce voters to your campaign",
+      description: "Introduce voters to your campaign",
       snippets: ELEVRA_STARTER_TEMPLATE_PREVIEW,
     });
   }
 
   return (
     <div className="space-y-6">
-      {/* Tour: Step 3 (Campaigns) */}
+      {/* Tour: Step 3 (Campaign) */}
       <TourModal
         open={showStep3}
         onOpenChange={setShowStep3}
-        title="Campaigns (Step 3 of 5)"
+        title="Campaign (Step 3 of 4)"
         backLabel="Back"
         onBack={backToProfile}
-        primaryLabel="Next: Public Campaign Page"
-        onPrimary={nextToPublicPage}
+        primaryLabel="Next: Endorsements"
+        onPrimary={nextToEndorsements}
         secondaryLabel="Skip tour"
         onSecondary={skipTour}
       >
-        <p>Use the search bar to find the election you&apos;re running in.</p>
         <p>
-          <strong>Once added,</strong> you can customize your{" "}
-          <strong>Election Webpage</strong> for each election and get voters
-          excited about your run.
+          Use the actions here to manage how voters see the most important part
+          of the public part of Elevra, <strong>your campaign</strong>.
         </p>
         <p>
-          Tip: No need to worry about starting from scratch! We have templates
-          to help you get started.
+          Tip: No need to start from scratch! Click{" "}
+          <strong>Edit Campaign Page</strong> on the campaign card to launch our
+          ready-made template.
         </p>
       </TourModal>
       <div className="mb-6">
@@ -380,8 +374,8 @@ export default function ProfileSettingsPage() {
                           Add Your First Campaign
                         </h2>
                         <p className="text-sm text-gray-500">
-                          Create your campaign and unlock your personalized campaign
-                          page.
+                          Create your campaign and unlock your personalized
+                          campaign page.
                         </p>
                       </div>
                       <div className="space-y-3">
@@ -507,7 +501,8 @@ export default function ProfileSettingsPage() {
                 </div>
               </div>
               <p className="mt-6 text-xs text-purple-400">
-                Once an election ends, your campaign moves into your political archive!
+                Once an election ends, your campaign moves into your political
+                archive!
               </p>
             </article>
           </div>
@@ -596,9 +591,15 @@ export default function ProfileSettingsPage() {
             <Button
               variant="purple"
               onClick={handleCustomizeTemplate}
-              disabled={isApplyingTemplate || templateCards.length === 0 || !templateSelection}
+              disabled={
+                isApplyingTemplate ||
+                templateCards.length === 0 ||
+                !templateSelection
+              }
             >
-              {isApplyingTemplate ? "Applying..." : "Create and Customize Campaign Page"}
+              {isApplyingTemplate
+                ? "Applying..."
+                : "Create and Customize Campaign Page"}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -655,7 +656,7 @@ const ELEVRA_STARTER_TEMPLATE_PREVIEW: BlockSnippet[] = [
   },
   {
     label: "What I Believe",
-   text: "Express your core beliefs related to the position you are running for.",
+    text: "Express your core beliefs related to the position you are running for.",
   },
   {
     label: "Why I'm Running",

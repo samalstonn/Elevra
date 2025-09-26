@@ -147,6 +147,7 @@ async function handleCandidateDetail(id: number) {
         hidden: candidateWithRelations.hidden,
         donationCount: candidateWithRelations.donationCount,
         history: candidateWithRelations.history,
+        uploadedBy: candidateWithRelations.uploadedBy,
         createdAt: candidateWithRelations.createdAt.toISOString(),
         updatedAt: candidateWithRelations.updatedAt.toISOString(),
         elections: candidateWithRelations.elections.map((link) => ({
@@ -384,6 +385,7 @@ async function handleElectionDetail(id: number) {
         type: electionWithRelations.type,
         hidden: electionWithRelations.hidden,
         active: electionWithRelations.active,
+        uploadedBy: electionWithRelations.uploadedBy,
         createdAt: electionWithRelations.createdAt.toISOString(),
         updatedAt: electionWithRelations.updatedAt.toISOString(),
         candidates: electionWithRelations.candidates.map((link) => ({
