@@ -215,8 +215,6 @@ export default function ContentBlocksEditor({
   //   });
   // };
 
-  const [isTyping, setIsTyping] = useState(false);
-
   /* ----------------- Render ----------------- */
   return (
     <div className="w-full space-y-4">
@@ -295,12 +293,16 @@ function SortableBlock({
   const imageInputRef = useRef<HTMLInputElement | null>(null);
   const videoInputRef = useRef<HTMLInputElement | null>(null);
 
+  const [hasEditedHeading, setHasEditedHeading] = useState(false);
+  const [hasEditedText, setHasEditedText] = useState(false);
+  const [editedItems, setEditedItems] = useState<boolean[]>(
+    new Array(block.items?.length ?? 0).fill(false)
+  );
+
   /* ----- Render each block type inline-editable ----- */
   let inner: React.ReactNode;
   switch (block.type) {
     case "HEADING":
-      const [hasEditedHeading, setHasEditedHeading] = useState(false);
-
       const headingClass =
         block.level === 1
           ? `text-4xl font-bold ${hasEditedHeading ? "text-black" : color} px-2 py-1`
@@ -311,7 +313,7 @@ function SortableBlock({
             className={headingClass}
             contentEditable
             suppressContentEditableWarning
-            onInput={(e) => {
+            onInput={() => {
               if (!hasEditedHeading) setHasEditedHeading(true);
               onChange({ text: block.text ?? "" });
             }}
@@ -323,8 +325,6 @@ function SortableBlock({
       break;
 
     case "TEXT":
-      const [hasEditedText, setHasEditedText] = useState(false);
-    
       inner = (
         <div
           className={`text-sm whitespace-pre-wrap ${
@@ -332,7 +332,7 @@ function SortableBlock({
           } px-2 py-1`}
           contentEditable
           suppressContentEditableWarning
-          onInput={(e) => {
+          onInput={() => {
             if (!hasEditedText) setHasEditedText(true);
             onChange({ body: block.body });
           }}
@@ -344,10 +344,6 @@ function SortableBlock({
       break;
 
     case "LIST": {
-      const [editedItems, setEditedItems] = useState<boolean[]>(
-        new Array(block.items?.length ?? 0).fill(false)
-      );
-    
       const ListTag = block.listStyle === ListStyle.NUMBER ? "ol" : "ul";
       const listClass =
         block.listStyle === ListStyle.NUMBER
@@ -365,7 +361,7 @@ function SortableBlock({
                   className={`min-w-[4ch] pr-4 outline-none align-top ${
                     editedItems[idx] ? "text-black" : color
                   }`}
-                  onInput={(e) => {
+                  onInput={() => {
                     if (!editedItems[idx]) {
                       const updated = [...editedItems];
                       updated[idx] = true;

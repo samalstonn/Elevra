@@ -24,8 +24,8 @@ import TourModal from "@/components/tour/TourModal";
 import { usePageTitle } from "@/lib/usePageTitle";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
-import { elevraStarterTemplate } from "@/app/(templates)/basicwebpage";
-import type { ContentBlock } from "@prisma/client";
+// import { elevraStarterTemplate } from "@/app/(templates)/basicwebpage";
+// import type { ContentBlock } from "@prisma/client";
 
 export default function ProfileSettingsPage() {
   usePageTitle("Candidate Dashboard – Campaigns");
@@ -305,16 +305,16 @@ export default function ProfileSettingsPage() {
       </Alert>
     );
   }
-  const activeBlocks = activeTemplateLink?.ContentBlock;
-  const activeIsElevraStarterTemplateOnly = isElevraStarterTemplateUnmodified(activeBlocks);
-  const activeHasCustomBlocks = Boolean(
-    activeBlocks && activeBlocks.length > 0 && !activeIsElevraStarterTemplateOnly
-  );
+  // const activeBlocks = activeTemplateLink?.ContentBlock;
+  // const activeIsElevraStarterTemplateOnly = isElevraStarterTemplateUnmodified(activeBlocks);
+  // const activeHasCustomBlocks = Boolean(
+  //   activeBlocks && activeBlocks.length > 0 && !activeIsElevraStarterTemplateOnly
+  // );
 
-  const currentTemplateSnippets =
-    activeHasCustomBlocks && activeTemplateLink
-      ? summarizeBlocks(activeTemplateLink.ContentBlock)
-      : [];
+  // const currentTemplateSnippets =
+  //   activeHasCustomBlocks && activeTemplateLink
+  //     ? summarizeBlocks(activeTemplateLink.ContentBlock)
+  //     : [];
 
   const templateCards: TemplateCardDefinition[] = [];
 
@@ -667,94 +667,94 @@ const ELEVRA_STARTER_TEMPLATE_PREVIEW: BlockSnippet[] = [
   },
 ];
 
-const CURRENT_TEMPLATE_FALLBACK: BlockSnippet[] = [
-  {
-    label: "Layout",
-    text: "Continue editing your saved sections and content blocks.",
-  },
-];
+// const CURRENT_TEMPLATE_FALLBACK: BlockSnippet[] = [
+//   {
+//     label: "Layout",
+//     text: "Continue editing your saved sections and content blocks.",
+//   },
+// ];
 
-function isElevraStarterTemplateUnmodified(blocks?: ContentBlock[] | null) {
-  if (!blocks || blocks.length !== elevraStarterTemplate.length) {
-    return false;
-  }
+// function isElevraStarterTemplateUnmodified(blocks?: ContentBlock[] | null) {
+//   if (!blocks || blocks.length !== elevraStarterTemplate.length) {
+//     return false;
+//   }
 
-  const templateByOrder = new Map(
-    elevraStarterTemplate.map((block) => [block.order, block])
-  );
+//   const templateByOrder = new Map(
+//     elevraStarterTemplate.map((block) => [block.order, block])
+//   );
 
-  for (const block of blocks) {
-    const templateBlock = templateByOrder.get(block.order);
-    if (!templateBlock) {
-      return false;
-    }
+//   for (const block of blocks) {
+//     const templateBlock = templateByOrder.get(block.order);
+//     if (!templateBlock) {
+//       return false;
+//     }
 
-    const createdAt = new Date(block.createdAt);
-    const updatedAt = new Date(block.updatedAt);
-    if (
-      Number.isNaN(createdAt.getTime()) ||
-      Number.isNaN(updatedAt.getTime())
-    ) {
-      return false;
-    }
-    if (createdAt.getTime() !== updatedAt.getTime()) {
-      return false;
-    }
+//     const createdAt = new Date(block.createdAt);
+//     const updatedAt = new Date(block.updatedAt);
+//     if (
+//       Number.isNaN(createdAt.getTime()) ||
+//       Number.isNaN(updatedAt.getTime())
+//     ) {
+//       return false;
+//     }
+//     if (createdAt.getTime() !== updatedAt.getTime()) {
+//       return false;
+//     }
 
-    if (!areBlocksEquivalent(block, templateBlock)) {
-      return false;
-    }
-  }
+//     if (!areBlocksEquivalent(block, templateBlock)) {
+//       return false;
+//     }
+//   }
 
-  return true;
-}
+//   return true;
+// }
 
-function areBlocksEquivalent(
-  block: ContentBlock,
-  templateBlock: (typeof elevraStarterTemplate)[number]
-) {
-  if (block.type !== templateBlock.type) return false;
-  if ((block.color ?? null) !== (templateBlock.color ?? null)) return false;
-  if ((block.level ?? null) !== (templateBlock.level ?? null)) return false;
-  if ((block.text ?? null) !== (templateBlock.text ?? null)) return false;
-  if ((block.body ?? null) !== (templateBlock.body ?? null)) return false;
-  if ((block.listStyle ?? null) !== (templateBlock.listStyle ?? null)) {
-    return false;
-  }
-  if (!areStringArraysEqual(block.items, templateBlock.items)) return false;
-  if ((block.imageUrl ?? null) !== (templateBlock.imageUrl ?? null)) {
-    return false;
-  }
-  if ((block.videoUrl ?? null) !== (templateBlock.videoUrl ?? null)) {
-    return false;
-  }
-  if ((block.thumbnailUrl ?? null) !== (templateBlock.thumbnailUrl ?? null)) {
-    return false;
-  }
-  if ((block.caption ?? null) !== (templateBlock.caption ?? null)) {
-    return false;
-  }
+// function areBlocksEquivalent(
+//   block: ContentBlock,
+//   templateBlock: (typeof elevraStarterTemplate)[number]
+// ) {
+//   if (block.type !== templateBlock.type) return false;
+//   if ((block.color ?? null) !== (templateBlock.color ?? null)) return false;
+//   if ((block.level ?? null) !== (templateBlock.level ?? null)) return false;
+//   if ((block.text ?? null) !== (templateBlock.text ?? null)) return false;
+//   if ((block.body ?? null) !== (templateBlock.body ?? null)) return false;
+//   if ((block.listStyle ?? null) !== (templateBlock.listStyle ?? null)) {
+//     return false;
+//   }
+//   if (!areStringArraysEqual(block.items, templateBlock.items)) return false;
+//   if ((block.imageUrl ?? null) !== (templateBlock.imageUrl ?? null)) {
+//     return false;
+//   }
+//   if ((block.videoUrl ?? null) !== (templateBlock.videoUrl ?? null)) {
+//     return false;
+//   }
+//   if ((block.thumbnailUrl ?? null) !== (templateBlock.thumbnailUrl ?? null)) {
+//     return false;
+//   }
+//   if ((block.caption ?? null) !== (templateBlock.caption ?? null)) {
+//     return false;
+//   }
 
-  return true;
-}
+//   return true;
+// }
 
-function areStringArraysEqual(
-  a: string[] | null | undefined,
-  b: string[] | null | undefined
-) {
-  const normalizedA = Array.isArray(a) ? a : null;
-  const normalizedB = Array.isArray(b) ? b : null;
+// function areStringArraysEqual(
+//   a: string[] | null | undefined,
+//   b: string[] | null | undefined
+// ) {
+//   const normalizedA = Array.isArray(a) ? a : null;
+//   const normalizedB = Array.isArray(b) ? b : null;
 
-  if (!normalizedA && !normalizedB) return true;
-  if (!normalizedA || !normalizedB) return false;
-  if (normalizedA.length !== normalizedB.length) return false;
+//   if (!normalizedA && !normalizedB) return true;
+//   if (!normalizedA || !normalizedB) return false;
+//   if (normalizedA.length !== normalizedB.length) return false;
 
-  for (let i = 0; i < normalizedA.length; i += 1) {
-    if (normalizedA[i] !== normalizedB[i]) return false;
-  }
+//   for (let i = 0; i < normalizedA.length; i += 1) {
+//     if (normalizedA[i] !== normalizedB[i]) return false;
+//   }
 
-  return true;
-}
+//   return true;
+// }
 
 function buildResultsHref(link: ElectionLinkWithElection) {
   const { election, electionId } = link;
