@@ -234,10 +234,7 @@ export default function OverviewPage() {
         secondaryLabel="Skip tour"
         onSecondary={skipTour}
       >
-        <p>
-          See profile views, time‑of‑day activity, and quick actions to manage
-          your campaign.
-        </p>
+        <p>See profile views and quick actions to manage your campaign.</p>
         <p>
           Tip: Feel free to drag and drop this window anywhere on the screen!
           Scroll the background to explore your dashboard while keeping this
@@ -290,7 +287,10 @@ export default function OverviewPage() {
                 <Link
                   href={
                     candidate
-                      ? buildEditorPath(candidate.slug, electionLinks[0].electionId)
+                      ? buildEditorPath(
+                          candidate.slug,
+                          electionLinks[0].electionId
+                        )
                       : "/candidates/candidate-dashboard/my-elections"
                   }
                   className="text-purple-600 underline"

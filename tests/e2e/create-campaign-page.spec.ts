@@ -5,6 +5,7 @@ import {
   expectBlockToHaveColor,
   expectHasElevraStarterTemplateBlocks,
   getCandidateBlockIds,
+  removeAllElectionsFromCandidate,
 } from "../helpers";
 
 test("create campaign page", async ({ page, candidate }) => {
@@ -18,6 +19,7 @@ test("create campaign page", async ({ page, candidate }) => {
       password: password!,
     },
   });
+  await removeAllElectionsFromCandidate(prisma, candidate.id);
   await page.getByRole("link", { name: "Launch Your Campaign" }).click();
   await page.getByRole("button", { name: "Candidate Login" }).click();
   await page.goto("/candidates/candidate-dashboard");

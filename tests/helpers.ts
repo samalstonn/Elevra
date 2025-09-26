@@ -136,3 +136,15 @@ export async function expectEmailLogged(subjectSnippet: string) {
     `Email log did not contain expected snippet within timeout: "${subjectSnippet}"`
   );
 }
+
+// Helper: remove all elections from a candidate
+export async function removeAllElectionsFromCandidate(
+  prisma: PrismaClient,
+  candidateId: number
+): Promise<void> {
+  expect(candidateId).toBeTruthy();
+
+  await prisma.electionLink.deleteMany({
+    where: { candidateId },
+  });
+}
