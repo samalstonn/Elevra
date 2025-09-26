@@ -6,9 +6,6 @@ import {
   LayoutDashboard, // Overview
   User, // Profile Settings
   BarChart3, // Analytics
-  Mail, // Mailing Lists
-  HandCoins, // Donations (Premium)
-  Video, // Videos (Premium)
   Award, // Endorsements (Premium)
   Users, // Vendor Marketplace
   Menu,
