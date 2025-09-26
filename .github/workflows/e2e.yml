@@ -2,9 +2,9 @@ name: e2e
 
 on:
   push:
-    branches: [ dev ]
+    branches: [dev]
   pull_request:
-    branches: [ dev, main ]
+    branches: [dev, main]
   workflow_dispatch:
 
 concurrency:
@@ -43,6 +43,14 @@ jobs:
       # Pull preview env vars into .vercel/. (no prompts)
       - name: Vercel env pull (preview)
         run: vercel pull --yes --environment=preview --token "$VERCEL_TOKEN"
+
+      - name: Check Vercel bypass token
+        run: |
+          if [ -z "$VERCEL_BYPASS_TOKEN" ]; then
+            echo "VERCEL_BYPASS_TOKEN is not set. Failing early to avoid 401s later." >&2
+            exit 1
+          fi
+          echo "Bypass token detected (length ${#VERCEL_BYPASS_TOKEN})."
 
       - name: Load preview env into job (DB & Clerk)
         shell: bash
