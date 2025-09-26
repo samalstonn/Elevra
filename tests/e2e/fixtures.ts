@@ -68,7 +68,16 @@ export const test = base.extend<Fixtures, WorkerFixtures>({
       let electionId: number | null = null;
 
       try {
-        const res = await api.post(`${baseUrl}/api/admin/seed-structured`, {
+        // Build seed URL and append Vercel protection bypass params if provided
+        const seedUrl = new URL(`${baseUrl}/api/admin/seed-structured`);
+        const bypassToken = process.env.VERCEL_BYPASS_TOKEN || "";
+        if (bypassToken) {
+          // Instruct Vercel to set the bypass cookie and accept the automation token
+          seedUrl.searchParams.append("x-vercel-set-bypass-cookie", "true");
+          seedUrl.searchParams.append("x-vercel-protection-bypass", bypassToken);
+        }
+
+        const res = await api.post(seedUrl.toString(), {
           headers: {
             "content-type": "application/json",
             "x-e2e-seed-secret": process.env.E2E_SEED_SECRET || "",
