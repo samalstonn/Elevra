@@ -117,7 +117,7 @@ export function ElectionProfileTab({ link }: ElectionProfileTabProps) {
                 key={block.id}
                 className={`text-sm ${color}`}
                 dangerouslySetInnerHTML={{
-                  __html: mdToHtml(block.body ?? ""),
+                  __html: mdToHtml((block.body ?? "").replace(/\u00A0/g, " ")),
                 }}
               />
             );
@@ -131,7 +131,7 @@ export function ElectionProfileTab({ link }: ElectionProfileTabProps) {
             return (
               <ListTag key={block.id} className={listClass}>
                 {block.items.map((item, idx) => (
-                  <li key={idx}>{item}</li>
+                  <li key={idx}>{item.replace(/\u00A0/g, " ")}</li>
                 ))}
               </ListTag>
             );
