@@ -1,0 +1,86 @@
+name: e2e
+
+on:
+  pull_request:
+    branches: [ dev, main ]
+  workflow_dispatch:
+
+concurrency:
+  group: e2e-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  e2e:
+    runs-on: ubuntu-latest
+
+    env:
+      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+      VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+      VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install deps
+        run: npm ci
+
+      # (Optional) Build once so we can use --prebuilt for faster deploys
+      - name: Build
+        run: npm run build
+
+      - name: Install Vercel CLI
+        run: npm i -g vercel
+
+      # Pull preview env vars into .vercel/. (no prompts)
+      - name: Vercel env pull (preview)
+        run: vercel pull --yes --environment=preview --token "$VERCEL_TOKEN"
+
+      # Deploy and capture the preview URL
+      - name: Vercel deploy (preview)
+        id: deploy
+        run: |
+          url=$(vercel deploy --prebuilt --token "$VERCEL_TOKEN" --yes)
+          echo "NEXT_PUBLIC_APP_URL=$url" >> $GITHUB_ENV
+          echo "url=$url" >> $GITHUB_OUTPUT
+
+      # Cache Playwright browsers to speed up future runs
+      - name: Cache Playwright
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('**/package-lock.json') }}
+
+      - name: Install Playwright browsers + OS deps
+        run: npx playwright install --with-deps
+
+      - name: Run Playwright tests against the deployed preview
+        run: npx playwright test
+        env:
+          NEXT_PUBLIC_APP_URL: ${{ env.NEXT_PUBLIC_APP_URL }}
+
+      # Always upload the HTML report & traces for debugging
+      - name: Upload Playwright report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: playwright-report
+          if-no-files-found: ignore
+
+      - name: Upload test-results (traces/screenshots)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: test-results
+          if-no-files-found: ignore
