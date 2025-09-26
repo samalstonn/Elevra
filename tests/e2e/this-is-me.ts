@@ -1,117 +1,23 @@
-import { test, expect } from "@playwright/test";
 import { clerk } from "@clerk/testing/playwright";
-import { PrismaClient, SubmissionStatus } from "@prisma/client";
-import { elevraStarterTemplate } from "@/app/(templates)/basicwebpage";
-import { promises as fs } from "node:fs";
-import path from "node:path";
+import { SubmissionStatus } from "@prisma/client";
+import {
+  expectHasElevraStarterTemplateBlocks,
+  expectNoTemplateBlocks,
+  expectEmailLogged,
+} from "../helpers";
+import { test, expect, prisma, CandidateFixture } from "./fixtures";
 
-// Reuse a single Prisma client across tests
-const prisma = new PrismaClient({
-  datasources: { db: { url: process.env.DATABASE_URL } },
-});
-
-const TEST_SLUG = "existing-candidate-slug";
-let seededCandidateId: number | null = null;
-let seededElectionId: number | null = null;
-const EMAIL_LOG = path.join(process.cwd(), "lib/email/logs/.test-emails.log");
-
-test.beforeAll(async ({ request }) => {
-  // Seed via header-secret to mimic admin workflow without signing in
-  const base = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
-  const payload = {
-    elections: [
-      {
-        election: {
-          title: "E2E Basic Election",
-          type: "LOCAL",
-          date: "11/04/2025",
-          city: "E2E Test City ZZ",
-          state: "ZZ",
-          number_of_seats: "1",
-          description: "E2E seeded election for automated tests.",
-          uploadedBy: "test@example.com",
-        },
-        candidates: [
-          {
-            name: "Existing Candidate Slug",
-            email: process.env.E2E_CLERK_USER_USERNAME || "",
-            uploadedBy: "test@example.com",
-          },
-        ],
-      },
-    ],
-  };
-
-  const res = await request.post(`${base}/api/admin/seed-structured`, {
-    headers: {
-      "content-type": "application/json",
-      "x-e2e-seed-secret": process.env.E2E_SEED_SECRET || "",
-    },
-    data: {
-      structured: JSON.stringify(payload),
-      hidden: true,
-    },
-  });
-  if (!res.ok()) {
-    throw new Error(
-      `Failed to seed structured data: ${res.status()} ${await res.text()}`
-    );
-  }
-  const body = await res.json();
-  const first = body?.results?.[0];
-  if (!first) throw new Error("Seed endpoint returned no results");
-  seededElectionId = first.electionId as number;
-
-  // Resolve candidateId by slug
-  const c = await prisma.candidate.findUnique({ where: { slug: TEST_SLUG } });
-  if (!c) throw new Error("Seeded candidate not found by slug");
-  seededCandidateId = c.id;
-});
-
-test.afterEach(async () => {
-  const slug = process.env.E2E_CANDIDATE_SLUG || TEST_SLUG;
-  await resetCandidateVerification(slug);
-});
-
-test.afterAll(async () => {
-  // Delete seeded data for a clean next run
-  if (!seededCandidateId) return;
-  try {
-    const links = await prisma.electionLink.findMany({
-      where: { candidateId: seededCandidateId },
-    });
-    for (const link of links) {
-      await prisma.contentBlock.deleteMany({
-        where: { candidateId: link.candidateId, electionId: link.electionId },
-      });
-      await prisma.electionLink.delete({
-        where: {
-          candidateId_electionId: {
-            candidateId: link.candidateId,
-            electionId: link.electionId,
-          },
-        },
-      });
-      // Also remove the election we created (best-effort)
-      try {
-        await prisma.election.delete({ where: { id: link.electionId } });
-      } catch {}
-    }
-    await prisma.userValidationRequest.deleteMany({
-      where: { candidateId: seededCandidateId },
-    });
-    await prisma.candidate.delete({ where: { id: seededCandidateId } });
-  } finally {
-    await prisma.$disconnect();
-  }
+test.afterEach(async ({ candidate }) => {
+  await resetCandidateVerification(candidate);
 });
 
 test("Correct Email - Already Signed In: Successful Verification and Sent to Dashboard with Popup", async ({
   page,
+  candidate,
 }) => {
-  await page.goto("/candidate/existing-candidate-slug");
+  await page.goto(`/candidate/${candidate.slug}`);
   // Before verification, there should be no content blocks
-  await expectNoTemplateBlocks();
+  await expectNoTemplateBlocks(candidate.id, candidate.electionId, prisma);
   await clerk.signIn({
     page,
     signInParams: {
@@ -125,7 +31,7 @@ test("Correct Email - Already Signed In: Successful Verification and Sent to Das
       `^${(process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000").replace(
         /[-/\\^$*+?.()|[\]{}]/g,
         "\\$&"
-      )}/candidate/existing-candidate-slug$`
+      )}/candidate/${candidate.slug}$`
     )
   );
   await page.getByRole("button", { name: "This is me" }).click();
@@ -134,7 +40,7 @@ test("Correct Email - Already Signed In: Successful Verification and Sent to Das
       `^${(process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000").replace(
         /[-/\\^$*+?.()|[\]{}]/g,
         "\\$&"
-      )}/candidates/candidate-dashboard\\?verified=1&slug=existing-candidate-slug$`
+      )}/candidates/candidate-dashboard\\?verified=1&slug=${candidate.slug}$`
     )
   );
   await expect(
@@ -142,11 +48,16 @@ test("Correct Email - Already Signed In: Successful Verification and Sent to Das
   ).toBeVisible();
   // Expect user email sent for auto-approve flow
   await expectEmailLogged("You're Verified on Elevra!");
-  await expectHasElevraStarterTemplateBlocks();
+  await expectHasElevraStarterTemplateBlocks(
+    prisma,
+    candidate.id,
+    candidate.electionId
+  );
 });
 
 test("Manual Verification via UI: non-matching user submits form and sees success", async ({
   page,
+  candidate,
 }) => {
   // Skip if alternate test user credentials are not configured
   test.skip(
@@ -155,7 +66,7 @@ test("Manual Verification via UI: non-matching user submits form and sees succes
   );
 
   // Sign in as non-matching user and navigate to verify page
-  await page.goto(`/candidate/${TEST_SLUG}`);
+  await page.goto(`/candidate/${candidate.slug}`);
   await clerk.signIn({
     page,
     signInParams: {
@@ -170,7 +81,7 @@ test("Manual Verification via UI: non-matching user submits form and sees succes
       `^${(process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000").replace(
         /[-/\\^$*+?.()|[\]{}]/g,
         "\\$&"
-      )}/candidate/verify\\?candidate=${TEST_SLUG}&candidateID=${seededCandidateId}$`
+      )}/candidate/verify\\?candidate=${candidate.slug}&candidateID=${candidate.id}$`
     )
   );
 
@@ -246,6 +157,7 @@ test("Manual Verification via UI: non-matching user submits form and sees succes
 
 test("Incorrect Email - Already Signed In: Redirected to Candidate Verification Request", async ({
   page,
+  candidate,
 }) => {
   // Skip if alternate test user credentials are not configured
   test.skip(
@@ -253,7 +165,7 @@ test("Incorrect Email - Already Signed In: Redirected to Candidate Verification 
     "Missing E2E_NONMATCH_* environment variables"
   );
 
-  await page.goto("/candidate/existing-candidate-slug");
+  await page.goto(`/candidate/${candidate.slug}`);
   await clerk.signIn({
     page,
     signInParams: {
@@ -267,7 +179,7 @@ test("Incorrect Email - Already Signed In: Redirected to Candidate Verification 
       `^${(process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000").replace(
         /[-/\\^$*+?.()|[\]{}]/g,
         "\\$&"
-      )}/candidate/existing-candidate-slug$`
+      )}/candidate/${candidate.slug}$`
     )
   );
 
@@ -279,7 +191,7 @@ test("Incorrect Email - Already Signed In: Redirected to Candidate Verification 
       `^${(process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000").replace(
         /[-/\\^$*+?.()|[\]{}]/g,
         "\\$&"
-      )}/candidate/verify\\?candidate=${TEST_SLUG}&candidateID=${seededCandidateId}$`
+      )}/candidate/verify\\?candidate=${candidate.slug}&candidateID=${candidate.id}$`
     )
   );
 
@@ -291,6 +203,7 @@ test("Incorrect Email - Already Signed In: Redirected to Candidate Verification 
 
 test("Incorrect Email - Not Signed In: Redirected to Candidate Verification Request", async ({
   page,
+  candidate,
 }) => {
   // Skip if alternate test user credentials are not configured
   test.skip(
@@ -299,7 +212,7 @@ test("Incorrect Email - Not Signed In: Redirected to Candidate Verification Requ
   );
 
   // Start signed out, go to candidate profile
-  await page.goto("/candidate/existing-candidate-slug");
+  await page.goto(`/candidate/${candidate.slug}`);
 
   // Click "This is me" while not authenticated
   await page.getByRole("button", { name: "This is me" }).click();
@@ -308,8 +221,8 @@ test("Incorrect Email - Not Signed In: Redirected to Candidate Verification Requ
     `${
       process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"
     }/sign-in?redirect_url=%2Fcandidate%2Fverify%3Fcandidate%3D${encodeURIComponent(
-      TEST_SLUG
-    )}%26candidateID%3D${seededCandidateId}`
+      candidate.slug
+    )}%26candidateID%3D${candidate.id}`
   );
 
   // Programmatically sign in as the non-matching user
@@ -323,14 +236,14 @@ test("Incorrect Email - Not Signed In: Redirected to Candidate Verification Requ
   });
 
   await page.goto(
-    `/candidate/verify?candidate=${TEST_SLUG}&candidateID=${seededCandidateId}`
+    `/candidate/verify?candidate=${candidate.slug}&candidateID=${candidate.id}`
   );
 
   // Expect redirect to candidate verification request page
   await expect(page).toHaveURL(
     `${
       process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"
-    }/candidate/verify?candidate=${TEST_SLUG}&candidateID=${seededCandidateId}`
+    }/candidate/verify?candidate=${candidate.slug}&candidateID=${candidate.id}`
   );
 
   // Expect the verification request heading to be visible
@@ -342,6 +255,7 @@ test("Incorrect Email - Not Signed In: Redirected to Candidate Verification Requ
 test("Manual Verification: create request then admin approves -> verified + template blocks", async ({
   page,
   request,
+  candidate,
 }) => {
   // Skip if alternate test user credentials are not configured
   test.skip(
@@ -350,7 +264,7 @@ test("Manual Verification: create request then admin approves -> verified + temp
   );
 
   // 1) Sign in as the non-matching user and navigate to verify flow
-  await page.goto(`/candidate/${TEST_SLUG}`);
+  await page.goto(`/candidate/${candidate.slug}`);
   await clerk.signIn({
     page,
     signInParams: {
@@ -365,7 +279,7 @@ test("Manual Verification: create request then admin approves -> verified + temp
       `^${(process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000").replace(
         /[-/\\^$*+?.()|[\]{}]/g,
         "\\$&"
-      )}/candidate/verify\\?candidate=${TEST_SLUG}&candidateID=${seededCandidateId}$`
+      )}/candidate/verify\\?candidate=${candidate.slug}&candidateID=${candidate.id}$`
     )
   );
 
@@ -381,7 +295,7 @@ test("Manual Verification: create request then admin approves -> verified + temp
     additionalInfo: "Manual verification E2E test",
     city: "Testville",
     state: "TS",
-    candidateId: seededCandidateId,
+    candidateId: candidate.id,
     clerkUserId: dummyClerkId,
   };
   const createRes = await request.post(
@@ -403,7 +317,7 @@ test("Manual Verification: create request then admin approves -> verified + temp
 
   // 3) Admin approves the request
   // Before approval, there should still be no content blocks
-  await expectNoTemplateBlocks();
+  await expectNoTemplateBlocks(candidate.id, candidate.electionId, prisma);
   const approveRes = await request.post(
     `${
       process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"
@@ -424,18 +338,22 @@ test("Manual Verification: create request then admin approves -> verified + temp
   await expectEmailLogged("You're Verified on Elevra!");
 
   // 4) Verify candidate is now verified in DB and template blocks exist
-  const candidate = await prisma.candidate.findUnique({
-    where: { slug: TEST_SLUG },
+  const candidateRecord = await prisma.candidate.findUnique({
+    where: { slug: candidate.slug },
   });
-  expect(candidate?.verified).toBe(true);
-  expect(candidate?.status).toBe("APPROVED");
-  expect(candidate?.clerkUserId).toBe(dummyClerkId);
+  expect(candidateRecord?.verified).toBe(true);
+  expect(candidateRecord?.status).toBe("APPROVED");
+  expect(candidateRecord?.clerkUserId).toBe(dummyClerkId);
 
-  await expectHasElevraStarterTemplateBlocks();
+  await expectHasElevraStarterTemplateBlocks(
+    prisma,
+    candidate.id,
+    candidate.electionId
+  );
 
   // 5) Optional UI confirmation: dashboard shows verified popup
   await page.goto(
-    `/candidates/candidate-dashboard?verified=1&slug=${TEST_SLUG}`
+    `/candidates/candidate-dashboard?verified=1&slug=${candidate.slug}`
   );
   await expect(
     page.getByRole("dialog", { name: "You’re Verified on Elevra!" })
@@ -444,9 +362,10 @@ test("Manual Verification: create request then admin approves -> verified + temp
 
 test("Correct Email - Not Signed In: Successful Verification and Sent to Dashboard with Popup", async ({
   page,
+  candidate,
 }) => {
   // Start signed out, go to candidate profile
-  await page.goto("/candidate/existing-candidate-slug");
+  await page.goto(`/candidate/${candidate.slug}`);
 
   // Click "This is me" while not authenticated
   await page.getByRole("button", { name: "This is me" }).click();
@@ -455,8 +374,8 @@ test("Correct Email - Not Signed In: Successful Verification and Sent to Dashboa
     `${
       process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"
     }/sign-in?redirect_url=%2Fcandidate%2Fverify%3Fcandidate%3D${encodeURIComponent(
-      TEST_SLUG
-    )}%26candidateID%3D${seededCandidateId}`
+      candidate.slug
+    )}%26candidateID%3D${candidate.id}`
   );
 
   // Programmatically sign in as the matching user
@@ -470,7 +389,7 @@ test("Correct Email - Not Signed In: Successful Verification and Sent to Dashboa
   });
 
   await page.goto(
-    `/candidate/verify?candidate=${TEST_SLUG}&candidateID=${seededCandidateId}`
+    `/candidate/verify?candidate=${candidate.slug}&candidateID=${candidate.id}`
   );
 
   // Expect redirect to dashboard with verified=1 and popup visible
@@ -479,7 +398,7 @@ test("Correct Email - Not Signed In: Successful Verification and Sent to Dashboa
       `^${(process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000").replace(
         /[-/\\^$*+?.()|[\]{}]/g,
         "\\$&"
-      )}/candidates/candidate-dashboard\\?verified=1&slug=${TEST_SLUG}$`
+      )}/candidates/candidate-dashboard\\?verified=1&slug=${candidate.slug}$`
     )
   );
   await expect(
@@ -487,11 +406,18 @@ test("Correct Email - Not Signed In: Successful Verification and Sent to Dashboa
   ).toBeVisible();
   // Expect user email sent for auto-approve flow
   await expectEmailLogged("You're Verified on Elevra!");
-  await expectHasElevraStarterTemplateBlocks();
+  await expectHasElevraStarterTemplateBlocks(
+    prisma,
+    candidate.id,
+    candidate.electionId
+  );
 });
 
 // Reset candidate verification state after tests
-async function resetCandidateVerification(slug: string) {
+type CandidateInfo = CandidateFixture["candidate"];
+
+async function resetCandidateVerification(candidate: CandidateInfo) {
+  const { id, slug } = candidate;
   try {
     await prisma.candidate.update({
       where: { slug },
@@ -508,97 +434,11 @@ async function resetCandidateVerification(slug: string) {
   }
   // Remove any template/content blocks created by previous tests
   try {
-    if (seededCandidateId && seededElectionId) {
-      await prisma.contentBlock.deleteMany({
-        where: { candidateId: seededCandidateId, electionId: seededElectionId },
-      });
-    } else {
-      const c = await prisma.candidate.findUnique({ where: { slug } });
-      if (c) {
-        const links = await prisma.electionLink.findMany({
-          where: { candidateId: c.id },
-        });
-        for (const link of links) {
-          await prisma.contentBlock.deleteMany({
-            where: {
-              candidateId: link.candidateId,
-              electionId: link.electionId,
-            },
-          });
-        }
-      }
-    }
+    await prisma.contentBlock.deleteMany({ where: { candidateId: id } });
   } catch (err) {
     console.warn(
       "resetCandidateVerification contentBlock cleanup failed:",
       err
     );
   }
-}
-
-// Helper: assert seeded link contains elevraStarterTemplate blocks
-async function expectHasElevraStarterTemplateBlocks() {
-  expect(seededCandidateId).toBeTruthy();
-  expect(seededElectionId).toBeTruthy();
-
-  // Wait up to 1s for blocks to exist, then fail
-  const deadline = Date.now() + 1000;
-  let lastCount = 0;
-  const expected = elevraStarterTemplate.length;
-  while (Date.now() < deadline) {
-    lastCount = await prisma.contentBlock.count({
-      where: { candidateId: seededCandidateId!, electionId: seededElectionId! },
-    });
-    if (lastCount === expected) break;
-    await new Promise((r) => setTimeout(r, 100));
-  }
-  expect(lastCount).toBe(expected);
-
-  // Spot-check first block
-  const first = await prisma.contentBlock.findFirst({
-    where: {
-      candidateId: seededCandidateId!,
-      electionId: seededElectionId!,
-      order: 0,
-    },
-  });
-  expect(first?.type).toBe(elevraStarterTemplate[0].type);
-  const tmpl0 = elevraStarterTemplate[0] as { text?: string };
-  if (tmpl0.text) {
-    expect(first?.text?.trim()).toBe(tmpl0.text);
-  }
-}
-
-// Helper: assert no template content blocks are present yet
-async function expectNoTemplateBlocks() {
-  expect(seededCandidateId).toBeTruthy();
-  expect(seededElectionId).toBeTruthy();
-  const count = await prisma.contentBlock.count({
-    where: { candidateId: seededCandidateId!, electionId: seededElectionId! },
-  });
-  expect(count).toBe(0);
-}
-
-async function readEmailLog(): Promise<string> {
-  try {
-    return await fs.readFile(EMAIL_LOG, "utf8");
-  } catch {
-    return "";
-  }
-}
-
-async function expectEmailLogged(subjectSnippet: string) {
-  const deadline = Date.now() + 1500;
-  let text = "";
-  while (Date.now() < deadline) {
-    text = await readEmailLog();
-    if (text.includes(subjectSnippet)) {
-      expect(text).toContain(subjectSnippet);
-      return;
-    }
-    await new Promise((r) => setTimeout(r, 100));
-  }
-  throw new Error(
-    `Email log did not contain expected snippet within timeout: "${subjectSnippet}"`
-  );
 }

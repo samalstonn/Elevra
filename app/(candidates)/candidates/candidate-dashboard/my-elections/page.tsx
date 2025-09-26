@@ -161,7 +161,6 @@ export default function ProfileSettingsPage() {
       });
       return;
     }
-
     if (!candidateData.slug) {
       toast({
         variant: "destructive",

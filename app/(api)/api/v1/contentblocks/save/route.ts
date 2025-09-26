@@ -68,34 +68,45 @@ export async function POST(request: Request) {
       }
     }
 
-    // Transaction: clear old blocks, insert new ones
-    await prisma.$transaction([
-      prisma.contentBlock.deleteMany({
-        where: { candidateId, electionId },
-      }),
-      prisma.contentBlock.createMany({
-        data: blocks.map((b: ContentBlock) => ({
-          candidateId,
-          electionId,
-          order: b.order,
-          type: b.type,
-          color: b.color,
-          // heading
-          level: b.level,
-          text: b.text,
-          // text
-          body: b.body,
-          // list
-          listStyle: b.listStyle,
-          items: b.items,
-          // media
-          imageUrl: b.imageUrl,
-          videoUrl: b.videoUrl,
-          thumbnailUrl: b.thumbnailUrl,
-          caption: b.caption,
-        })),
-      }),
-    ]);
+    // Upsert all blocks (only new ones are passed into the payload)
+    await prisma.$transaction(
+      blocks.map((b: ContentBlock) =>
+        prisma.contentBlock.upsert({
+          where: {
+            id: b.id || -1, // Match by ID if provided, otherwise use -1 which won't match any existing record
+          },
+          update: {
+            type: b.type,
+            color: b.color,
+            level: b.level,
+            text: b.text,
+            body: b.body,
+            listStyle: b.listStyle,
+            items: b.items,
+            imageUrl: b.imageUrl,
+            videoUrl: b.videoUrl,
+            thumbnailUrl: b.thumbnailUrl,
+            caption: b.caption,
+          },
+          create: {
+            candidateId,
+            electionId,
+            order: b.order,
+            type: b.type,
+            color: b.color,
+            level: b.level,
+            text: b.text,
+            body: b.body,
+            listStyle: b.listStyle,
+            items: b.items,
+            imageUrl: b.imageUrl,
+            videoUrl: b.videoUrl,
+            thumbnailUrl: b.thumbnailUrl,
+            caption: b.caption,
+          },
+        })
+      )
+    );
 
     return NextResponse.json({ success: true });
   } catch (error) {

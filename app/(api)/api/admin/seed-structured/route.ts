@@ -5,6 +5,7 @@ import prisma from "@/prisma/prisma";
 import { generateUniqueSlug, isElectionActive } from "@/lib/functions";
 
 type StructuredCandidate = {
+  clerkUserId?: string | null;
   name: string;
   currentRole?: string | null;
   party?: string | null;
@@ -178,6 +179,7 @@ export async function POST(req: NextRequest) {
             email: cleanOptional(c.email ?? null),
             hidden: hiddenFlag,
             uploadedBy: uploadedBy,
+            clerkUserId: c.clerkUserId || null,
           },
           create: {
             name,

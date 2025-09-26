@@ -10,20 +10,26 @@ import { MdHowToVote } from "react-icons/md";
 import { marked } from "marked";
 import DOMPurify from "isomorphic-dompurify";
 import Image from "next/image";
-import { elevraStarterTemplate } from "@/app/(templates)/basicwebpage";
 import { EmptyState } from "@/components/ui/empty-state";
+import { unchanged } from "@/lib/content-blocks";
+import { colorClass } from "@/lib/constants";
 
-type TemplateBlock = (typeof elevraStarterTemplate)[number];
+function resolveColorClass(block: ContentBlock) {
+  if (block.color === "PURPLE") {
+    return colorClass.PURPLE;
+  }
+  if (block.color === "BLACK") {
+    return colorClass.BLACK;
+  }
+  if (block.color === "GRAY") {
+    return colorClass.BLACK;
+  }
+  return colorClass.BLACK;
+}
 
 export type ElectionProfileTabProps = {
   link: ElectionLink & { ContentBlock: ContentBlock[] };
 };
-
-const colorClass = {
-  BLACK: "text-black",
-  GRAY: "text-gray-700",
-  PURPLE: "text-purple-700",
-} as const;
 
 function mdToHtml(markdown: string): string {
   marked.setOptions({ async: false });
@@ -32,59 +38,7 @@ function mdToHtml(markdown: string): string {
 }
 
 export function ElectionProfileTab({ link }: ElectionProfileTabProps) {
-  // Normalize blocks for comparison against template
-  const normalize = (b: ContentBlock) => ({
-    order: b.order,
-    type: b.type,
-    level: b.level ?? null,
-    text: (b.text ?? "").trim(),
-    body: (b.body ?? "").trim(),
-    listStyle: b.listStyle ?? null,
-    items: b.items ?? [],
-    imageUrl: b.imageUrl ?? null,
-    videoUrl: b.videoUrl ?? null,
-    caption: (b.caption ?? "").trim() || null,
-    color: b.color ?? null,
-  });
-  const normalizeTemplate = (t: TemplateBlock) => ({
-    order: t.order,
-    type: t.type,
-    level: (t as { level?: number }).level ?? null,
-    text: (t as { text?: string }).text?.trim() ?? "",
-    body: (t as { body?: string }).body?.trim() ?? "",
-    listStyle: (t as { listStyle?: ListStyle }).listStyle ?? null,
-    items: (t as { items?: string[] }).items ?? [],
-    imageUrl: (t as { imageUrl?: string }).imageUrl ?? null,
-    videoUrl: (t as { videoUrl?: string }).videoUrl ?? null,
-    caption:
-      ((t as { caption?: string }).caption?.trim() ?? "") === ""
-        ? null
-        : (t as { caption?: string }).caption!.trim(),
-    color: (t as { color?: keyof typeof colorClass }).color ?? null,
-  });
-
   const sortedBlocks = [...link.ContentBlock].sort((a, b) => a.order - b.order);
-  const templateNormalized = elevraStarterTemplate.map(normalizeTemplate);
-  const templateMap = new Map(templateNormalized.map((t) => [t.order, t]));
-
-  const unchanged = (b: ContentBlock) => {
-    const bn = normalize(b);
-    const t = templateMap.get(bn.order);
-    if (!t) return false; // no template counterpart → treat as custom, show
-    return (
-      bn.type === t.type &&
-      bn.level === t.level &&
-      bn.text === t.text &&
-      bn.body === t.body &&
-      bn.listStyle === t.listStyle &&
-      bn.color === t.color &&
-      bn.imageUrl === t.imageUrl &&
-      bn.videoUrl === t.videoUrl &&
-      bn.caption === t.caption &&
-      bn.items.length === t.items.length &&
-      bn.items.every((it, i2) => it === t.items[i2])
-    );
-  };
 
   const blocksToRender = sortedBlocks.filter((b) => !unchanged(b));
 
@@ -97,7 +51,7 @@ export function ElectionProfileTab({ link }: ElectionProfileTabProps) {
         />
       )}
       {blocksToRender.map((block) => {
-        const color = block.color ? colorClass[block.color] : "";
+        const color = resolveColorClass(block);
 
         switch (block.type) {
           case BlockType.HEADING:
@@ -130,7 +84,7 @@ export function ElectionProfileTab({ link }: ElectionProfileTabProps) {
                 : `list-disc text-sm ml-6 ${color}`;
             return (
               <ListTag key={block.id} className={listClass}>
-                {block.items.map((item, idx) => (
+                {(block.items ?? []).map((item, idx) => (
                   <li key={idx}>{item}</li>
                 ))}
               </ListTag>

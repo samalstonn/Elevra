@@ -1,7 +1,7 @@
-import { test, expect } from '@playwright/test';
-import { clerk } from '@clerk/testing/playwright';
+import { clerk } from "@clerk/testing/playwright";
+import { test, expect } from "./fixtures";
 
-test('edit campaign page', async ({ page }) => {
+test("edit campaign page", async ({ page, candidate: _candidate }) => {
   await page.goto('/');
   await clerk.signIn({
     page,

@@ -172,7 +172,9 @@ export default function MyPageEditor({ params }: EditorPageProps) {
           <ContentBlocksEditor
             candidateSlug={candidateData.slug}
             initialBlocks={activeLink.ContentBlock ?? []}
-            onSave={async (blocks) => {
+            onSave={async (blocks, staticIds) => {
+              // Only send blocks that were actually updated
+              blocks = blocks.filter((b) => !staticIds.has(b.id));
               try {
                 const res = await fetch("/api/v1/contentblocks/save", {
                   method: "POST",
@@ -194,7 +196,7 @@ export default function MyPageEditor({ params }: EditorPageProps) {
                   return;
                 }
                 toast({
-                  title: "Blocks saved",
+                  title: "Content saved",
                   description:
                     "Your election profile been updated successfully.",
                 });
@@ -225,8 +227,8 @@ export default function MyPageEditor({ params }: EditorPageProps) {
 
           <div className="space-y-2 text-sm text-gray-700">
             <p>
-              We’ve loaded an editable premade template with example text to help you build your public
-              campaign page quickly.
+              We’ve loaded an editable premade template with example text to
+              help you build your public campaign page quickly.
             </p>
             <ul className="list-disc list-inside space-y-1">
               <li>Click on any text to edit it directly.</li>

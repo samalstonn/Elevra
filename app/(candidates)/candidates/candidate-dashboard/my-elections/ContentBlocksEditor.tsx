@@ -1,7 +1,7 @@
 "use client";
 
 import { ContentBlock, ListStyle, TextColor } from "@prisma/client";
-import { useState, useRef } from "react";
+import { useState, useRef, useMemo, useEffect } from "react";
 import {
   SortableContext,
   verticalListSortingStrategy,
@@ -12,12 +12,19 @@ import { Button } from "@/components/ui/button";
 import Image from "next/image";
 import Link from "next/link";
 import { Trash2, Eye } from "lucide-react";
+import { unchanged as isServerBlockUnchanged } from "@/lib/content-blocks";
+import { colorClass } from "@/lib/constants";
 
-const colorClass = {
-  BLACK: "text-black",
-  GRAY: "text-gray-500",
-  PURPLE: "text-purple-700",
-} as const;
+const blockKey = (id: number | null | undefined, order: number) =>
+  typeof id === "number" ? id : `order-${order}`;
+
+function buildServerUnchangedMap(blocks: ContentBlock[]) {
+  const map = new Map<number | string, boolean>();
+  blocks.forEach((block) => {
+    map.set(blockKey(block.id, block.order), isServerBlockUnchanged(block));
+  });
+  return map;
+}
 
 function uploadMedia(
   file: File,
@@ -50,15 +57,10 @@ function uploadMedia(
   });
 }
 
-export type ContentBlockInput = Omit<
-  ContentBlock,
-  "id" | "candidateId" | "electionId" | "createdAt" | "updatedAt"
->;
-
 type Props = {
   candidateSlug: string;
   initialBlocks: ContentBlock[];
-  onSave: (blocks: ContentBlockInput[]) => Promise<void>;
+  onSave: (blocks: ContentBlock[], staticIds: Set<number>) => Promise<void>;
 };
 
 const DEFAULT_COLOR: TextColor = "BLACK";
@@ -68,20 +70,12 @@ export default function ContentBlocksEditor({
   initialBlocks,
   onSave,
 }: Props) {
-  const [blocks, setBlocks] = useState<ContentBlockInput[]>(
-    [...initialBlocks]
-      .sort((a, b) => a.order - b.order)
-      .map(
-        ({
-          id: _id,
-          candidateId: _candidateId,
-          electionId: _electionId,
-          createdAt: _createdAt,
-          updatedAt: _updatedAt,
-          ...rest
-        }) => rest
-      )
+  const sortedInitial = useMemo(
+    () => [...initialBlocks].sort((a, b) => a.order - b.order),
+    [initialBlocks]
   );
+
+  const [blocks, setBlocks] = useState<ContentBlock[]>(sortedInitial);
 
   /** ------------- Toolbar state ------------- */
   const [_selectedColor, _setSelectedColor] =
@@ -102,6 +96,16 @@ export default function ContentBlocksEditor({
     Record<number, number>
   >({});
   const anyUploading = Object.values(uploadingMap).some(Boolean);
+  // these are the IDs of blocks that were present when we loaded the editor
+  const [staticIds, setStaticIds] = useState<Set<number>>(
+    sortedInitial
+      .map((b) => b.id)
+      .filter((id): id is number => typeof id === "number")
+      .reduce((set, id) => set.add(id), new Set<number>())
+  );
+  const serverUnchangedMapRef = useRef<Map<number | string, boolean>>(
+    buildServerUnchangedMap(sortedInitial)
+  );
   function setUploading(order: number, isUploading: boolean) {
     setUploadingMap((prev) => ({ ...prev, [order]: isUploading }));
   }
@@ -112,16 +116,28 @@ export default function ContentBlocksEditor({
   const handleSave = async () => {
     setIsSaving(true);
     try {
-      await onSave(blocks);
+      await onSave(blocks, staticIds);
     } finally {
       setIsSaving(false);
     }
   };
 
+  useEffect(() => {
+    const sorted = [...initialBlocks].sort((a, b) => a.order - b.order);
+    setBlocks(sorted);
+    setStaticIds(
+      sorted
+        .map((b) => b.id)
+        .filter((id): id is number => typeof id === "number")
+        .reduce((set, id) => set.add(id), new Set<number>())
+    );
+    serverUnchangedMapRef.current = buildServerUnchangedMap(sorted);
+  }, [initialBlocks]);
+
   /* ----------------- Helpers ----------------- */
   // const addBlock = (
   //   type: BlockType,
-  //   extra: Partial<ContentBlockInput> = {}
+  //   extra: Partial<ContentBlock> = {}
   // ) => {
   //   setBlocks((prev) => [
   //     ...prev,
@@ -130,7 +146,7 @@ export default function ContentBlocksEditor({
   //       order: prev.length,
   //       color: selectedColor,
   //       ...extra,
-  //     } as ContentBlockInput,
+  //     } as ContentBlock,
   //   ]);
   // };
 
@@ -140,7 +156,7 @@ export default function ContentBlocksEditor({
    *  – LIST ➜ TEXT: join items back into a multi‑line body
    *  – TEXT/LIST ➜ HEADING: collapse text into a single line
    */
-  // const convertblock = (type: BlockType, extra: Partial<ContentBlockInput> = {}) => {
+  // const convertblock = (type: BlockType, extra: Partial<ContentBlock> = {}) => {
   //   if (selectedOrder === null) {
   //     // nothing highlighted → just insert a new block
   //     addBlock(type, extra);
@@ -151,7 +167,7 @@ export default function ContentBlocksEditor({
   //     prev.map((b) => {
   //       if (b.order !== selectedOrder) return b;
 
-  //       const incoming: ContentBlockInput = { ...b, type, ...extra };
+  //       const incoming: ContentBlock = { ...b, type, ...extra };
 
   //       /* ---------- TEXT → LIST ---------- */
   //       if (type === "LIST") {
@@ -202,9 +218,17 @@ export default function ContentBlocksEditor({
   //   );
   // };
 
-  const updateBlock = (order: number, patch: Partial<ContentBlockInput>) => {
+  const updateBlock = (block: ContentBlock, patch: Partial<ContentBlock>) => {
+    if (typeof block.id === "number") {
+      setStaticIds((prev) => {
+        const newSet = new Set(prev);
+        newSet.delete(block.id!);
+        return newSet;
+      });
+      serverUnchangedMapRef.current.set(blockKey(block.id, block.order), false);
+    }
     setBlocks((prev) =>
-      prev.map((b) => (b.order === order ? { ...b, ...patch } : b))
+      prev.map((b) => (b.id === block.id ? { ...b, ...patch } : b))
     );
   };
 
@@ -234,13 +258,18 @@ export default function ContentBlocksEditor({
             key={block.order}
             block={block}
             candidateSlug={candidateSlug}
-            onChange={(patch) => updateBlock(block.order, patch)}
+            onChange={(patch) => updateBlock(block, patch)}
             // onDelete={() => deleteBlock(block.order)}
             uploading={uploadingMap[block.order] || false}
             setUploading={setUploading}
             progress={uploadProgressMap[block.order] ?? 0}
             setProgress={setProgress}
             setSelectedOrder={setSelectedOrder}
+            serverUnchanged={
+              serverUnchangedMapRef.current.get(
+                blockKey(block.id, block.order)
+              ) ?? false
+            }
           />
         ))}
       </SortableContext>
@@ -269,9 +298,10 @@ function SortableBlock({
   progress,
   setProgress,
   setSelectedOrder,
+  serverUnchanged,
 }: {
-  block: ContentBlockInput;
-  onChange: (patch: Partial<ContentBlockInput>) => void;
+  block: ContentBlock;
+  onChange: (patch: Partial<ContentBlock>) => void;
   // onDelete: () => void;
   candidateSlug: string;
   uploading: boolean;
@@ -279,6 +309,7 @@ function SortableBlock({
   progress: number;
   setProgress: (order: number, percent: number) => void;
   setSelectedOrder: (order: number) => void;
+  serverUnchanged: boolean;
 }) {
   const { attributes, listeners, setNodeRef, transform, transition } =
     useSortable({ id: block.order });
@@ -288,10 +319,9 @@ function SortableBlock({
     transition,
   };
 
-  const color = block.color ? colorClass[block.color] : "";
-
   const imageInputRef = useRef<HTMLInputElement | null>(null);
   const videoInputRef = useRef<HTMLInputElement | null>(null);
+  const blockKeyRef = useRef<number | string>(blockKey(block.id, block.order));
 
   const [hasEditedHeading, setHasEditedHeading] = useState(false);
   const [hasEditedText, setHasEditedText] = useState(false);
@@ -299,37 +329,58 @@ function SortableBlock({
     new Array(block.items?.length ?? 0).fill(false)
   );
 
-  /* ----- Render each block type inline-editable ----- */
+  useEffect(() => {
+    const currentKey = blockKey(block.id, block.order);
+    if (blockKeyRef.current !== currentKey) {
+      setEditedItems(new Array(block.items?.length ?? 0).fill(false));
+      setHasEditedHeading(false);
+      setHasEditedText(false);
+      blockKeyRef.current = currentKey;
+    }
+  }, [block.id, block.order, block.items?.length]);
+
+  const resolveColorClass = (locallyEdited: boolean) => {
+    if (block.color === "PURPLE") {
+      return colorClass.PURPLE;
+    }
+    if (block.color === "BLACK") {
+      return colorClass.BLACK;
+    }
+    const shouldStayGray = serverUnchanged && !locallyEdited;
+    return shouldStayGray ? colorClass.GRAY : colorClass.BLACK;
+  };
+
   let inner: React.ReactNode;
+
   switch (block.type) {
-    case "HEADING":
+    case "HEADING": {
+      const headingColor = resolveColorClass(hasEditedHeading);
       const headingClass =
         block.level === 1
-          ? `text-4xl font-bold ${hasEditedHeading ? "text-black" : color} px-2 py-1`
-          : `text-2xl font-semibold ${hasEditedHeading ? "text-black" : color} px-2 py-1`;
+          ? `text-4xl font-bold ${headingColor} px-2 py-1`
+          : `text-2xl font-semibold ${headingColor} px-2 py-1`;
 
-        inner = (
-          <h2
-            className={headingClass}
-            contentEditable
-            suppressContentEditableWarning
-            onInput={() => {
-              if (!hasEditedHeading) setHasEditedHeading(true);
-              onChange({ text: block.text ?? "" });
-            }}
-            onFocus={() => setSelectedOrder(block.order)}
-          >
-            {block.text ?? ""}
-          </h2>
-        );
+      inner = (
+        <h2
+          className={headingClass}
+          contentEditable
+          suppressContentEditableWarning
+          onInput={() => {
+            if (!hasEditedHeading) setHasEditedHeading(true);
+            onChange({ text: block.text ?? "" });
+          }}
+          onFocus={() => setSelectedOrder(block.order)}
+        >
+          {block.text ?? ""}
+        </h2>
+      );
       break;
-
-    case "TEXT":
+    }
+    case "TEXT": {
+      const textColor = resolveColorClass(hasEditedText);
       inner = (
         <div
-          className={`text-sm whitespace-pre-wrap ${
-            hasEditedText ? "text-black" : color
-          } px-2 py-1`}
+          className={`text-sm whitespace-pre-wrap ${textColor} px-2 py-1`}
           contentEditable
           suppressContentEditableWarning
           onInput={() => {
@@ -342,24 +393,27 @@ function SortableBlock({
         </div>
       );
       break;
-
+    }
     case "LIST": {
+      const listItems = block.items ?? [];
+      const listEdited = editedItems.some(Boolean);
+      const listColor = resolveColorClass(listEdited);
       const ListTag = block.listStyle === ListStyle.NUMBER ? "ol" : "ul";
       const listClass =
         block.listStyle === ListStyle.NUMBER
-          ? `list-decimal text-sm ml-6 ${color}`
-          : `list-disc text-sm ml-6 ${color}`;
-    
+          ? `list-decimal text-sm ml-6 ${listColor}`
+          : `list-disc text-sm ml-6 ${listColor}`;
+
       inner = (
         <>
           <ListTag className={listClass + " space-y-1"}>
-            {(block.items ?? []).map((item, idx) => (
+            {listItems.map((item, idx) => (
               <li key={idx} className="relative">
                 <span
                   contentEditable
                   suppressContentEditableWarning
                   className={`min-w-[4ch] pr-4 outline-none align-top ${
-                    editedItems[idx] ? "text-black" : color
+                    editedItems[idx] ? "text-black" : listColor
                   }`}
                   onInput={() => {
                     if (!editedItems[idx]) {
@@ -367,7 +421,7 @@ function SortableBlock({
                       updated[idx] = true;
                       setEditedItems(updated);
                     }
-    
+
                     const newItems = [...(block.items ?? [])];
                     newItems[idx] = block.items[idx] ?? "";
                     onChange({ items: newItems });
@@ -378,15 +432,11 @@ function SortableBlock({
                 </span>
                 <button
                   type="button"
-                  aria-label="Delete list item"
                   className="absolute -right-5 top-1.5 text-red-500 hover:text-red-600 opacity-100 transition"
                   onClick={() => {
-                    const newItems = (block.items ?? []).filter((_, i) => i !== idx);
+                    const newItems = listItems.filter((_, i) => i !== idx);
                     onChange({ items: newItems });
-    
-                    const updated = [...editedItems];
-                    updated.splice(idx, 1);
-                    setEditedItems(updated);
+                    setEditedItems((prev) => prev.filter((_, i) => i !== idx));
                   }}
                 >
                   <Trash2 className="w-3 h-3" />
@@ -408,12 +458,10 @@ function SortableBlock({
       );
       break;
     }
-
     case "DIVIDER":
       inner = <hr />;
       break;
-
-    case "IMAGE":
+    case "IMAGE": {
       if (uploading) {
         inner = <progress value={progress} max={100} className="w-full" />;
         break;
@@ -443,6 +491,8 @@ function SortableBlock({
           setProgress(block.order, 0);
         }
       };
+
+      const captionColor = resolveColorClass(false);
 
       inner = (
         <>
@@ -476,15 +526,23 @@ function SortableBlock({
             className="hidden"
             onChange={handleImageSelect}
           />
+          {block.caption ? (
+            <figcaption className={`text-sm mt-1 ${captionColor}`}>
+              {block.caption}
+            </figcaption>
+          ) : null}
         </>
       );
       break;
-
-    case "VIDEO":
+    }
+    case "VIDEO": {
       if (uploading) {
         inner = <progress value={progress} max={100} className="w-full" />;
         break;
       }
+
+      const captionColor = resolveColorClass(false);
+
       if (block.videoUrl) {
         const handleVideoSelect = async (
           e: React.ChangeEvent<HTMLInputElement>
@@ -521,6 +579,11 @@ function SortableBlock({
               className="hidden"
               onChange={handleVideoSelect}
             />
+            {block.caption ? (
+              <figcaption className={`text-sm mt-1 ${captionColor}`}>
+                {block.caption}
+              </figcaption>
+            ) : null}
           </>
         );
       } else {
@@ -547,7 +610,7 @@ function SortableBlock({
         );
       }
       break;
-
+    }
     default:
       inner = null;
   }
