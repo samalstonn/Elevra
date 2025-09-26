@@ -143,7 +143,9 @@ export const test = base.extend<Fixtures, WorkerFixtures>({
 
           for (const electionIdToDelete of electionIds) {
             try {
-              await prisma.election.delete({ where: { id: electionIdToDelete } });
+              await prisma.election.delete({
+                where: { id: electionIdToDelete },
+              });
             } catch {}
           }
         }
