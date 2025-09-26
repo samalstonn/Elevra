@@ -59,8 +59,8 @@ export default function OverviewPage() {
   useEffect(() => {
     if (!isLoaded || !user) return;
     const visited = Boolean(
-      (user.publicMetadata as Record<string, unknown>)?.
-        visitedCandidateDashboard === true
+      (user.publicMetadata as Record<string, unknown>)
+        ?.visitedCandidateDashboard === true
     );
     if (visited) return;
     const verifiedParam = searchParams.get("verified");
@@ -354,7 +354,6 @@ export default function OverviewPage() {
           </Link>
         </div>
       </div>
-      <h1 className="text-3xl font-bold text-gray-800">Dashboard Overview</h1>
 
       {/* Quick Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
