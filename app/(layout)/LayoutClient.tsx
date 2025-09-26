@@ -26,6 +26,22 @@ if (!clerkKey || clerkKey.trim() === "") {
   );
 }
 
+const BASE_KEYWORDS = [
+  "local elections",
+  "municipal elections",
+  "county election calendar",
+  "city council races",
+  "mayoral campaigns",
+  "school board elections",
+  "candidate portals",
+  "campaign promotion",
+  "voter guides",
+  "election results",
+  "elevra community",
+  "civic engagement platform",
+  "community elections",
+];
+
 function HeaderNav() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -69,6 +85,7 @@ export default function LayoutClient({
 }: {
   children: React.ReactNode;
 }) {
+  const pathname = usePathname();
   const [_isMobile, setIsMobile] = useState<boolean>(false);
   useEffect(() => {
     const mediaQuery = window.matchMedia("(max-width: 768px)");
@@ -77,6 +94,51 @@ export default function LayoutClient({
     mediaQuery.addEventListener("change", handler);
     return () => mediaQuery.removeEventListener("change", handler);
   }, []);
+
+  useEffect(() => { // takes keywords from the page and adds them to the meta keywords tag
+    const keywordMeta = document.querySelector<HTMLMetaElement>(
+      'meta[name="keywords"]'
+    );
+    if (!keywordMeta) {
+      return;
+    }
+
+    const normalize = (value: string) =>
+      value
+        .toLowerCase()
+        .replace(/\s+/g, " ")
+        .replace(/[^a-z0-9\s]/g, "")
+        .trim();
+
+    const dynamicKeywords = new Set<string>(BASE_KEYWORDS);
+
+    const titleKeywords = normalize(
+      document.title.replace(/\|\s*Elevra$/i, "")
+    )
+      .split(" ")
+      .filter((keyword) => keyword.length > 2);
+    titleKeywords.forEach((keyword) => dynamicKeywords.add(keyword));
+
+    const mainElement = document.querySelector("main");
+    const mainText = normalize(mainElement?.textContent ?? "");
+    if (mainText) {
+      const contentKeywords = mainText
+        .split(" ")
+        .filter((keyword) => keyword.length > 3);
+
+      for (const keyword of contentKeywords) {
+        if (dynamicKeywords.size >= BASE_KEYWORDS.length + 40) {
+          break;
+        }
+        dynamicKeywords.add(keyword);
+      }
+    }
+
+    keywordMeta.setAttribute(
+      "content",
+      Array.from(dynamicKeywords).join(", ")
+    );
+  }, [pathname]);
 
   return (
     <ClerkProvider publishableKey={clerkKey || ""}>

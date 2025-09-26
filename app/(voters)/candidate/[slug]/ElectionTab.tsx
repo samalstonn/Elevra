@@ -71,7 +71,7 @@ export function ElectionProfileTab({ link }: ElectionProfileTabProps) {
                 key={block.id}
                 className={`text-sm ${color}`}
                 dangerouslySetInnerHTML={{
-                  __html: mdToHtml(block.body ?? ""),
+                  __html: mdToHtml((block.body ?? "").replace(/\u00A0/g, " ")),
                 }}
               />
             );
