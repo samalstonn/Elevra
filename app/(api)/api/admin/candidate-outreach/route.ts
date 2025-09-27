@@ -285,14 +285,18 @@ export async function POST(req: NextRequest) {
       `;
 
       const sentAtIso = new Date().toISOString();
-      await sendBatchWithResend([
+      try{
+        await sendBatchWithResend([
         {
           to: "team@elevracommunity.com",
           subject: `[Outreach] ${step.template} summary (${batchResult.successes.length}/${recipients.length}) • ${sentAtIso}`,
           html: summaryHtml,
           from: body.from,
         }
-      ]);
+        ]);
+      }catch(err){
+        console.error("Error sending summary email:", err);
+      }
     }
   }
 
