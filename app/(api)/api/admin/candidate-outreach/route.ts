@@ -3,6 +3,7 @@ import {
   sendBatchWithResend,
   SendEmailParams,
   isEmailDryRun,
+  sendWithResend
 } from "@/lib/email/resend";
 import { renderEmailTemplate, TemplateKey } from "@/lib/email/templates/render";
 
@@ -286,14 +287,14 @@ export async function POST(req: NextRequest) {
 
       const sentAtIso = new Date().toISOString();
       try{
-        await sendBatchWithResend([
+        await sendWithResend(
         {
           to: "team@elevracommunity.com",
           subject: `[Outreach] ${step.template} summary (${batchResult.successes.length}/${recipients.length}) • ${sentAtIso}`,
           html: summaryHtml,
           from: body.from,
         }
-        ]);
+        );
       }catch(err){
         console.error("Error sending summary email:", err);
       }
