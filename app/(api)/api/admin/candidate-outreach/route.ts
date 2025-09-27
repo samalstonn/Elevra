@@ -286,16 +286,17 @@ export async function POST(req: NextRequest) {
       `;
 
       const sentAtIso = new Date().toISOString();
-      try{
+      try {
         await sendWithResend(
-        {
-          to: "team@elevracommunity.com",
-          subject: `[Outreach] ${step.template} summary (${batchResult.successes.length}/${recipients.length}) • ${sentAtIso}`,
-          html: summaryHtml,
-          from: body.from,
-        }
+          {
+            to: "team@elevracommunity.com",
+            subject: `[Outreach] ${step.template} summary (${batchResult.successes.length}/${recipients.length}) • ${sentAtIso}`,
+            html: summaryHtml,
+            from: body.from,
+          },
+          { bypassDryRun: true }
         );
-      }catch(err){
+      } catch (err) {
         console.error("Error sending summary email:", err);
       }
     }

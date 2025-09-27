@@ -54,17 +54,20 @@ export function isEmailDryRun(): boolean {
   return process.env.NODE_ENV === "development";
 }
 
-export async function sendWithResend({
-  to,
-  subject,
-  html,
-  from,
-  scheduledAt,
-}: SendEmailParams): Promise<{ id: string } | null> {
+export async function sendWithResend(
+  {
+    to,
+    subject,
+    html,
+    from,
+    scheduledAt,
+  }: SendEmailParams,
+  opts?: { bypassDryRun?: boolean }
+): Promise<{ id: string } | null> {
   // Global process-level throttle
   await enforceRateLimit();
   // Dry‑run mode: avoid sending real emails during dev/tests unless overridden.
-  if (isEmailDryRun()) {
+  if (isEmailDryRun() && !opts?.bypassDryRun) {
     console.log(`dryrun at ${new Date().toISOString()}`);
     const fakeId = `dryrun-${
       typeof scheduledAt === "string"
