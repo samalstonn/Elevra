@@ -188,6 +188,112 @@ export async function POST(req: NextRequest) {
       const recipient = recipients[f.index];
       failures.push({ index: f.index, email: recipient.email, error: f.error });
     }
+
+    // Send Summary Email to team@elevracommunity.com
+    if (batchResult.successes.length > 0 && !isEmailDryRun()) {
+      const scheduledWindows = Array.from(
+        new Set(
+          batchInputs
+            .map((input) => input.scheduledAt)
+            .filter(Boolean)
+            .map((value) =>
+              value instanceof Date ? value.toISOString() : value?.toString()
+            )
+        )
+      );
+      const scheduleSummary =
+        scheduledWindows.length === 0
+          ? "Immediate send"
+          : scheduledWindows.length === 1
+          ? scheduledWindows[0]
+          : scheduledWindows.join(", ");
+
+      const summaryLines = [
+        `Email outreach step "${step.template}" completed.`,
+        `Total recipients in step: ${recipients.length}`,
+        `Successful deliveries: ${batchResult.successes.length}`,
+        `Failures: ${batchResult.failures.length}`,
+        `Invalid rows filtered pre-send: ${invalid.length}`,
+        `Schedule: ${scheduleSummary}`,
+      ];
+
+      const failureDetailsHtml =
+        batchResult.failures.length > 0
+          ? `<ul>${batchResult.failures
+              .map((failure) => {
+                const to = Array.isArray(failure.to)
+                  ? failure.to.join(", ")
+                  : failure.to;
+                return `<li><strong>${to}</strong>: ${failure.error}</li>`;
+              })
+              .join("")}</ul>`
+          : "<p>No delivery failures reported.</p>";
+
+      const invalidDetailsHtml =
+        invalid.length > 0
+          ? `<ul>${invalid
+              .map((record) => `
+                <li>Row ${record.index + 1}: ${record.reason}</li>
+              `)
+              .join("")}</ul>`
+          : "<p>None</p>";
+
+      const summaryHtml = `
+        <div style="font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; line-height: 1.5;">
+          <h2 style="margin: 0 0 12px;">Candidate Outreach Step Summary</h2>
+          <p style="margin: 0 0 12px;">We completed the <strong>${step.template}</strong> step.</p>
+          <table style="border-collapse: collapse; margin: 0 0 16px;">
+            <tbody>
+              <tr>
+                <td style="padding: 4px 8px; font-weight: 600;">Template</td>
+                <td style="padding: 4px 8px;">${step.template}</td>
+              </tr>
+              <tr>
+                <td style="padding: 4px 8px; font-weight: 600;">Schedule</td>
+                <td style="padding: 4px 8px;">${scheduleSummary}</td>
+              </tr>
+              <tr>
+                <td style="padding: 4px 8px; font-weight: 600;">Total recipients</td>
+                <td style="padding: 4px 8px;">${recipients.length}</td>
+              </tr>
+              <tr>
+                <td style="padding: 4px 8px; font-weight: 600;">Successful deliveries</td>
+                <td style="padding: 4px 8px;">${batchResult.successes.length}</td>
+              </tr>
+              <tr>
+                <td style="padding: 4px 8px; font-weight: 600;">Failures</td>
+                <td style="padding: 4px 8px;">${batchResult.failures.length}</td>
+              </tr>
+              <tr>
+                <td style="padding: 4px 8px; font-weight: 600;">Invalid rows filtered</td>
+                <td style="padding: 4px 8px;">${invalid.length}</td>
+              </tr>
+            </tbody>
+          </table>
+          <div style="margin: 0 0 16px;">
+            <h3 style="margin: 0 0 8px;">Failure details</h3>
+            ${failureDetailsHtml}
+          </div>
+          <div>
+            <h3 style="margin: 0 0 8px;">Invalid rows filtered</h3>
+            ${invalidDetailsHtml}
+          </div>
+          <pre style="background: #f6f8fa; border-radius: 6px; padding: 12px; margin: 16px 0 0; white-space: pre-wrap;">${summaryLines.join(
+        "\n"
+      )}</pre>
+        </div>
+      `;
+
+      const sentAtIso = new Date().toISOString();
+      await sendBatchWithResend([
+        {
+          to: "team@elevracommunity.com",
+          subject: `[Outreach] ${step.template} summary (${batchResult.successes.length}/${recipients.length}) • ${sentAtIso}`,
+          html: summaryHtml,
+          from: body.from,
+        }
+      ]);
+    }
   }
 
   return NextResponse.json({
