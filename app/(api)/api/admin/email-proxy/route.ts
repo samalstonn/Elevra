@@ -30,12 +30,24 @@ export async function POST(req: NextRequest) {
     const targetPath = typeof __proxyPath === "string" && __proxyPath.startsWith("/api/admin/")
       ? __proxyPath
       : "/api/admin/email";
+    const forwardedHeaders: Record<string, string> = {
+      "Content-Type": "application/json",
+      "x-admin-secret": secret,
+    };
+
+    const cookieHeader = req.headers.get("cookie");
+    if (cookieHeader) {
+      forwardedHeaders.cookie = cookieHeader;
+    }
+
+    const authorizationHeader = req.headers.get("authorization");
+    if (authorizationHeader) {
+      forwardedHeaders.authorization = authorizationHeader;
+    }
+
     const res = await fetch(`${origin}${targetPath}`, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "x-admin-secret": secret,
-      },
+      headers: forwardedHeaders,
       body: JSON.stringify(payload),
       // no-store to avoid caching
       cache: "no-store",

@@ -3,8 +3,10 @@ import {
   sendBatchWithResend,
   SendEmailParams,
   isEmailDryRun,
-  sendWithResend
+  sendWithResend,
 } from "@/lib/email/resend";
+import { getAuth } from "@clerk/nextjs/server";
+import { clerkClient } from "@clerk/clerk-sdk-node";
 import { renderEmailTemplate, TemplateKey } from "@/lib/email/templates/render";
 
 export const runtime = "nodejs";
@@ -53,13 +55,48 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
+  // Identify admin user via Clerk session if available
+  // (x-admin-secret is a shared secret and does not identify the user by itself)
+  // We log the user ID, name, and email for auditing purposes if available.
+  // We also log the requester IP from x-forwarded-for or x-real-ip if available.
+  // This helps track who initiated the outreach in case of abuse.
+  const forwardedFor = req.headers.get("x-forwarded-for");
+  const requesterIp = forwardedFor
+    ? forwardedFor.split(",")[0]?.trim() || "unknown"
+    : req.headers.get("x-real-ip") || "unknown";
+
+  const authState = getAuth(req);
+  const adminUserId = authState?.userId ?? "unknown";
+  let adminName = "";
+  let adminEmail = "";
+  let adminDisplay = adminUserId === "unknown"
+    ? "Unauthenticated (header secret only)"
+    : adminUserId;
+
+  if (authState?.userId) {
+    try {
+      const user = await clerkClient.users.getUser(authState.userId);
+      adminName = [user.firstName, user.lastName].filter(Boolean).join(" ").trim();
+      adminEmail =
+        user.primaryEmailAddress?.emailAddress ??
+        user.emailAddresses?.[0]?.emailAddress ??
+        "";
+      const parts: string[] = [];
+      if (adminName) parts.push(adminName);
+      if (adminEmail) parts.push(`(${adminEmail})`);
+      adminDisplay = parts.length > 0 ? parts.join(" ") : authState.userId;
+    } catch (error) {
+      console.error("Failed to load admin user", error);
+      adminDisplay = authState.userId;
+    }
+  }
+
   let body: OutreachPayload;
   try {
     body = await req.json();
   } catch {
     return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
   }
-
   if (!process.env.RESEND_API_KEY) {
     return NextResponse.json(
       { error: "Missing RESEND_API_KEY env var" },
@@ -216,6 +253,10 @@ export async function POST(req: NextRequest) {
         `Failures: ${batchResult.failures.length}`,
         `Invalid rows filtered pre-send: ${invalid.length}`,
         `Schedule: ${scheduleSummary}`,
+        `Triggered by: ${adminDisplay}`,
+        `Admin email: ${adminEmail || "N/A"}`,
+        `Clerk user ID: ${adminUserId}`,
+        `Requester IP: ${requesterIp}`,
       ];
 
       const failureDetailsHtml =
@@ -269,6 +310,22 @@ export async function POST(req: NextRequest) {
                 <td style="padding: 4px 8px; font-weight: 600;">Invalid rows filtered</td>
                 <td style="padding: 4px 8px;">${invalid.length}</td>
               </tr>
+              <tr>
+                <td style="padding: 4px 8px; font-weight: 600;">Triggered by</td>
+                <td style="padding: 4px 8px;">${adminDisplay}</td>
+              </tr>
+              <tr>
+                <td style="padding: 4px 8px; font-weight: 600;">Admin email</td>
+                <td style="padding: 4px 8px;">${adminEmail || "N/A"}</td>
+              </tr>
+              <tr>
+                <td style="padding: 4px 8px; font-weight: 600;">Clerk user ID</td>
+                <td style="padding: 4px 8px;">${adminUserId}</td>
+              </tr>
+              <tr>
+                <td style="padding: 4px 8px; font-weight: 600;">Requester IP</td>
+                <td style="padding: 4px 8px;">${requesterIp}</td>
+              </tr>
             </tbody>
           </table>
           <div style="margin: 0 0 16px;">
@@ -287,15 +344,13 @@ export async function POST(req: NextRequest) {
 
       const sentAtIso = new Date().toISOString();
       try{
-        await sendWithResend(
-        {
+        await sendWithResend({
           to: "team@elevracommunity.com",
           subject: `[Outreach] ${step.template} summary (${batchResult.successes.length}/${recipients.length}) • ${sentAtIso}`,
           html: summaryHtml,
           from: body.from,
-        }
-        );
-      }catch(err){
+        });
+      } catch (err) {
         console.error("Error sending summary email:", err);
       }
     }
