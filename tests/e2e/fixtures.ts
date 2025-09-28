@@ -74,8 +74,15 @@ export const test = base.extend<Fixtures, WorkerFixtures>({
         if (bypassToken) {
           // Instruct Vercel to set the bypass cookie and accept the automation token
           seedUrl.searchParams.append("x-vercel-set-bypass-cookie", "true");
-          seedUrl.searchParams.append("x-vercel-protection-bypass", bypassToken);
+          seedUrl.searchParams.append(
+            "x-vercel-protection-bypass",
+            bypassToken
+          );
         }
+        // eslint-disable-next-line no-console
+        console.log(
+          `[e2e] Vercel bypass token detected (length ${bypassToken.length})`
+        );
 
         const res = await api.post(seedUrl.toString(), {
           headers: {
