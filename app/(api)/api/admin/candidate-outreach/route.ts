@@ -3,7 +3,10 @@ import {
   sendBatchWithResend,
   SendEmailParams,
   isEmailDryRun,
+  sendWithResend,
 } from "@/lib/email/resend";
+import { getAuth } from "@clerk/nextjs/server";
+import { clerkClient } from "@clerk/clerk-sdk-node";
 import { renderEmailTemplate, TemplateKey } from "@/lib/email/templates/render";
 
 export const runtime = "nodejs";
@@ -52,13 +55,48 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
+  // Identify admin user via Clerk session if available
+  // (x-admin-secret is a shared secret and does not identify the user by itself)
+  // We log the user ID, name, and email for auditing purposes if available.
+  // We also log the requester IP from x-forwarded-for or x-real-ip if available.
+  // This helps track who initiated the outreach in case of abuse.
+  const forwardedFor = req.headers.get("x-forwarded-for");
+  const requesterIp = forwardedFor
+    ? forwardedFor.split(",")[0]?.trim() || "unknown"
+    : req.headers.get("x-real-ip") || "unknown";
+
+  const authState = getAuth(req);
+  const adminUserId = authState?.userId ?? "unknown";
+  let adminName = "";
+  let adminEmail = "";
+  let adminDisplay = adminUserId === "unknown"
+    ? "Unauthenticated (header secret only)"
+    : adminUserId;
+
+  if (authState?.userId) {
+    try {
+      const user = await clerkClient.users.getUser(authState.userId);
+      adminName = [user.firstName, user.lastName].filter(Boolean).join(" ").trim();
+      adminEmail =
+        user.primaryEmailAddress?.emailAddress ??
+        user.emailAddresses?.[0]?.emailAddress ??
+        "";
+      const parts: string[] = [];
+      if (adminName) parts.push(adminName);
+      if (adminEmail) parts.push(`(${adminEmail})`);
+      adminDisplay = parts.length > 0 ? parts.join(" ") : authState.userId;
+    } catch (error) {
+      console.error("Failed to load admin user", error);
+      adminDisplay = authState.userId;
+    }
+  }
+
   let body: OutreachPayload;
   try {
     body = await req.json();
   } catch {
     return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
   }
-
   if (!process.env.RESEND_API_KEY) {
     return NextResponse.json(
       { error: "Missing RESEND_API_KEY env var" },
@@ -187,6 +225,134 @@ export async function POST(req: NextRequest) {
     for (const f of batchResult.failures) {
       const recipient = recipients[f.index];
       failures.push({ index: f.index, email: recipient.email, error: f.error });
+    }
+
+    // Send Summary Email to team@elevracommunity.com
+    if (batchResult.successes.length > 0 && !isEmailDryRun()) {
+      const scheduledWindows = Array.from(
+        new Set(
+          batchInputs
+            .map((input) => input.scheduledAt)
+            .filter(Boolean)
+            .map((value) =>
+              value instanceof Date ? value.toISOString() : value?.toString()
+            )
+        )
+      );
+      const scheduleSummary =
+        scheduledWindows.length === 0
+          ? "Immediate send"
+          : scheduledWindows.length === 1
+          ? scheduledWindows[0]
+          : scheduledWindows.join(", ");
+
+      const summaryLines = [
+        `Email outreach step "${step.template}" completed.`,
+        `Total recipients in step: ${recipients.length}`,
+        `Successful deliveries: ${batchResult.successes.length}`,
+        `Failures: ${batchResult.failures.length}`,
+        `Invalid rows filtered pre-send: ${invalid.length}`,
+        `Schedule: ${scheduleSummary}`,
+        `Triggered by: ${adminDisplay}`,
+        `Admin email: ${adminEmail || "N/A"}`,
+        `Clerk user ID: ${adminUserId}`,
+        `Requester IP: ${requesterIp}`,
+      ];
+
+      const failureDetailsHtml =
+        batchResult.failures.length > 0
+          ? `<ul>${batchResult.failures
+              .map((failure) => {
+                const to = Array.isArray(failure.to)
+                  ? failure.to.join(", ")
+                  : failure.to;
+                return `<li><strong>${to}</strong>: ${failure.error}</li>`;
+              })
+              .join("")}</ul>`
+          : "<p>No delivery failures reported.</p>";
+
+      const invalidDetailsHtml =
+        invalid.length > 0
+          ? `<ul>${invalid
+              .map((record) => `
+                <li>Row ${record.index + 1}: ${record.reason}</li>
+              `)
+              .join("")}</ul>`
+          : "<p>None</p>";
+
+      const summaryHtml = `
+        <div style="font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; line-height: 1.5;">
+          <h2 style="margin: 0 0 12px;">Candidate Outreach Step Summary</h2>
+          <p style="margin: 0 0 12px;">We completed the <strong>${step.template}</strong> step.</p>
+          <table style="border-collapse: collapse; margin: 0 0 16px;">
+            <tbody>
+              <tr>
+                <td style="padding: 4px 8px; font-weight: 600;">Template</td>
+                <td style="padding: 4px 8px;">${step.template}</td>
+              </tr>
+              <tr>
+                <td style="padding: 4px 8px; font-weight: 600;">Schedule</td>
+                <td style="padding: 4px 8px;">${scheduleSummary}</td>
+              </tr>
+              <tr>
+                <td style="padding: 4px 8px; font-weight: 600;">Total recipients</td>
+                <td style="padding: 4px 8px;">${recipients.length}</td>
+              </tr>
+              <tr>
+                <td style="padding: 4px 8px; font-weight: 600;">Successful deliveries</td>
+                <td style="padding: 4px 8px;">${batchResult.successes.length}</td>
+              </tr>
+              <tr>
+                <td style="padding: 4px 8px; font-weight: 600;">Failures</td>
+                <td style="padding: 4px 8px;">${batchResult.failures.length}</td>
+              </tr>
+              <tr>
+                <td style="padding: 4px 8px; font-weight: 600;">Invalid rows filtered</td>
+                <td style="padding: 4px 8px;">${invalid.length}</td>
+              </tr>
+              <tr>
+                <td style="padding: 4px 8px; font-weight: 600;">Triggered by</td>
+                <td style="padding: 4px 8px;">${adminDisplay}</td>
+              </tr>
+              <tr>
+                <td style="padding: 4px 8px; font-weight: 600;">Admin email</td>
+                <td style="padding: 4px 8px;">${adminEmail || "N/A"}</td>
+              </tr>
+              <tr>
+                <td style="padding: 4px 8px; font-weight: 600;">Clerk user ID</td>
+                <td style="padding: 4px 8px;">${adminUserId}</td>
+              </tr>
+              <tr>
+                <td style="padding: 4px 8px; font-weight: 600;">Requester IP</td>
+                <td style="padding: 4px 8px;">${requesterIp}</td>
+              </tr>
+            </tbody>
+          </table>
+          <div style="margin: 0 0 16px;">
+            <h3 style="margin: 0 0 8px;">Failure details</h3>
+            ${failureDetailsHtml}
+          </div>
+          <div>
+            <h3 style="margin: 0 0 8px;">Invalid rows filtered</h3>
+            ${invalidDetailsHtml}
+          </div>
+          <pre style="background: #f6f8fa; border-radius: 6px; padding: 12px; margin: 16px 0 0; white-space: pre-wrap;">${summaryLines.join(
+        "\n"
+      )}</pre>
+        </div>
+      `;
+
+      const sentAtIso = new Date().toISOString();
+      try{
+        await sendWithResend({
+          to: "team@elevracommunity.com",
+          subject: `[Outreach] ${step.template} summary (${batchResult.successes.length}/${recipients.length}) • ${sentAtIso}`,
+          html: summaryHtml,
+          from: body.from,
+        });
+      } catch (err) {
+        console.error("Error sending summary email:", err);
+      }
     }
   }
 
