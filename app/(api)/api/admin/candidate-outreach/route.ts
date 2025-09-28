@@ -343,7 +343,7 @@ export async function POST(req: NextRequest) {
       `;
 
       const sentAtIso = new Date().toISOString();
-      try {
+      try{
         await sendWithResend({
           to: "team@elevracommunity.com",
           subject: `[Outreach] ${step.template} summary (${batchResult.successes.length}/${recipients.length}) • ${sentAtIso}`,
