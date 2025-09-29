@@ -14,6 +14,7 @@ import Link from "next/link";
 import { Trash2, Eye } from "lucide-react";
 import { unchanged as isServerBlockUnchanged } from "@/lib/content-blocks";
 import { colorClass } from "@/lib/constants";
+import { elevraStarterTemplate } from "@/app/(templates)/basicwebpage";
 
 const blockKey = (id: number | null | undefined, order: number) =>
   typeof id === "number" ? id : `order-${order}`;
@@ -298,7 +299,6 @@ function SortableBlock({
   progress,
   setProgress,
   setSelectedOrder,
-  serverUnchanged,
 }: {
   block: ContentBlock;
   onChange: (patch: Partial<ContentBlock>) => void;
@@ -339,22 +339,15 @@ function SortableBlock({
     }
   }, [block.id, block.order, block.items?.length]);
 
-  const resolveColorClass = (locallyEdited: boolean) => {
-    if (block.color === "PURPLE") {
-      return colorClass.PURPLE;
-    }
-    if (block.color === "BLACK") {
-      return colorClass.BLACK;
-    }
-    const shouldStayGray = serverUnchanged && !locallyEdited;
-    return shouldStayGray ? colorClass.GRAY : colorClass.BLACK;
-  };
-
   let inner: React.ReactNode;
 
   switch (block.type) {
     case "HEADING": {
-      const headingColor = resolveColorClass(hasEditedHeading);
+      const headingColor =
+        block.text ==
+        elevraStarterTemplate.find((t) => t.order === block.order)?.text
+          ? colorClass.GRAY
+          : colorClass.BLACK;
       const headingClass =
         block.level === 1
           ? `text-4xl font-bold ${headingColor} px-2 py-1`
@@ -377,7 +370,11 @@ function SortableBlock({
       break;
     }
     case "TEXT": {
-      const textColor = resolveColorClass(hasEditedText);
+      const textColor =
+        block.body ==
+        elevraStarterTemplate.find((t) => t.order === block.order)?.body
+          ? colorClass.GRAY
+          : colorClass.BLACK;
       inner = (
         <div
           className={`text-sm whitespace-pre-wrap ${textColor} px-2 py-1`}
@@ -396,8 +393,11 @@ function SortableBlock({
     }
     case "LIST": {
       const listItems = block.items ?? [];
-      const listEdited = editedItems.some(Boolean);
-      const listColor = resolveColorClass(listEdited);
+      const listColor =
+        block.text ==
+        elevraStarterTemplate.find((t) => t.order === block.order)?.text
+          ? colorClass.GRAY
+          : colorClass.BLACK;
       const ListTag = block.listStyle === ListStyle.NUMBER ? "ol" : "ul";
       const listClass =
         block.listStyle === ListStyle.NUMBER
@@ -492,7 +492,7 @@ function SortableBlock({
         }
       };
 
-      const captionColor = resolveColorClass(false);
+      const captionColor = colorClass.BLACK;
 
       inner = (
         <>
@@ -541,7 +541,7 @@ function SortableBlock({
         break;
       }
 
-      const captionColor = resolveColorClass(false);
+      const captionColor = colorClass.BLACK;
 
       if (block.videoUrl) {
         const handleVideoSelect = async (
