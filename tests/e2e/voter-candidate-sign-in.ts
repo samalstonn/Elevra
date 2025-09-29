@@ -36,7 +36,8 @@ test("Sign In -> Voter goes to Voter Dashboard", async ({ page }) => {
       password,
     },
   });
-  await expect(page).toHaveURL(/\/(?:voter-)?dashboard(\/?|\?|$)/);
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+  await expect(page).toHaveURL(new RegExp(`${appUrl}/dashboard(/?|\\?|$)`));
   await clerk.signOut({ page });
 });
 
