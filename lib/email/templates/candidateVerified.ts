@@ -19,15 +19,19 @@ export function renderCandidateVerificationEmail({
   const greetingName = (firstName || "").trim() || "there";
   const sections = [
     {
-      title: "Edit your candidate profile",
+      title: "Edit your candidate profile:",
       body: "Make sure it stays up-to-date and compelling for voters.",
     },
     {
-      title: "Enjoy your verified badge",
+      title: "Publish your campaign page:",
+      body: "Candidates can create a specific webpage for each election to show voters who you are and what you stand for.",
+    },
+    {
+      title: "Enjoy your verified badge:",
       body: "Verified candidates see a boost in their profile visibility.",
     },
     {
-      title: "Share your profile",
+      title: "Share your profile:",
       body: "Invite supporters to view your page and grow engagement.",
     },
   ];

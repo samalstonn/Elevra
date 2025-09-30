@@ -14,7 +14,6 @@ import Link from "next/link";
 import { Trash2, Eye } from "lucide-react";
 import { unchanged as isServerBlockUnchanged } from "@/lib/content-blocks";
 import { colorClass } from "@/lib/constants";
-import { elevraStarterTemplate } from "@/app/(templates)/basicwebpage";
 
 const blockKey = (id: number | null | undefined, order: number) =>
   typeof id === "number" ? id : `order-${order}`;
@@ -28,7 +27,11 @@ function buildServerUnchangedMap(blocks: ContentBlock[]) {
 }
 
 const applyDefaultColor = (block: ContentBlock): ContentBlock => {
-  if (block.type === "HEADING" || block.type === "TEXT" || block.type === "LIST") {
+  if (
+    block.type === "HEADING" ||
+    block.type === "TEXT" ||
+    block.type === "LIST"
+  ) {
     const shouldBeGray = isServerBlockUnchanged(block);
     const desiredColor = shouldBeGray ? TextColor.GRAY : TextColor.BLACK;
     if (block.color !== desiredColor) {
@@ -371,7 +374,6 @@ function SortableBlock({
     }
   }, [block.id, block.order, block.items?.length]);
 
-
   useLayoutEffect(() => {
     if (typeof document === "undefined") return;
     if (block.type !== "HEADING") return;
@@ -597,7 +599,8 @@ function SortableBlock({
                       updated[idx] = true;
                       setEditedItems(updated);
                     }
-                    const initialItem = initialContentRef.current.items[idx] ?? "";
+                    const initialItem =
+                      initialContentRef.current.items[idx] ?? "";
                     const needsColorUpdate =
                       block.color !== TextColor.BLACK &&
                       newItems[idx] !== initialItem;
