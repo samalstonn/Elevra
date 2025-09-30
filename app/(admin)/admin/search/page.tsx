@@ -228,6 +228,9 @@ export default function AdminSearchPage() {
   const [visibilityFilter, setVisibilityFilter] = useState<
     "all" | "visible" | "hidden"
   >("all");
+  const [verificationFilter, setVerificationFilter] = useState<
+    "all" | "verified" | "unverified"
+  >("all");
   const [uploadedByFilter, setUploadedByFilter] = useState<string>("all");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -277,6 +280,8 @@ export default function AdminSearchPage() {
         if (filter !== "all") params.set("type", filter);
         if (visibilityFilter !== "all")
           params.set("visibility", visibilityFilter);
+        if (verificationFilter !== "all")
+          params.set("verified", verificationFilter);
         if (uploadedByFilter !== "all")
           params.set("uploadedBy", uploadedByFilter);
         const res = await fetch(`/api/admin/search?${params.toString()}`, {
@@ -328,7 +333,14 @@ export default function AdminSearchPage() {
       controller.abort();
       window.clearTimeout(handle);
     };
-  }, [query, filter, visibilityFilter, uploadedByFilter, isLoaded]);
+  }, [
+    query,
+    filter,
+    visibilityFilter,
+    verificationFilter,
+    uploadedByFilter,
+    isLoaded,
+  ]);
 
   useEffect(() => {
     if (!selected) {
@@ -740,6 +752,7 @@ export default function AdminSearchPage() {
     setQuery("");
     setFilter("all");
     setVisibilityFilter("all");
+    setVerificationFilter("all");
     setUploadedByFilter("all");
   };
 
@@ -820,6 +833,23 @@ export default function AdminSearchPage() {
                 <SelectItem value="all">All visibility</SelectItem>
                 <SelectItem value="visible">Visible</SelectItem>
                 <SelectItem value="hidden">Hidden</SelectItem>
+              </SelectContent>
+            </Select>
+            <Select
+              value={verificationFilter}
+              onValueChange={(value) =>
+                setVerificationFilter(
+                  value as "all" | "verified" | "unverified"
+                )
+              }
+            >
+              <SelectTrigger className="sm:w-[200px]">
+                <SelectValue placeholder="All verification" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All verification</SelectItem>
+                <SelectItem value="verified">Verified only</SelectItem>
+                <SelectItem value="unverified">Unverified only</SelectItem>
               </SelectContent>
             </Select>
             <Select
