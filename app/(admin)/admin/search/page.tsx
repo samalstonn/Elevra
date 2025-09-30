@@ -228,7 +228,11 @@ export default function AdminSearchPage() {
   const [visibilityFilter, setVisibilityFilter] = useState<
     "all" | "visible" | "hidden"
   >("all");
+  const [verificationFilter, setVerificationFilter] = useState<
+    "all" | "verified" | "unverified"
+  >("all");
   const [uploadedByFilter, setUploadedByFilter] = useState<string>("all");
+  const [limit, setLimit] = useState(20);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [results, setResults] = useState<{
@@ -277,8 +281,11 @@ export default function AdminSearchPage() {
         if (filter !== "all") params.set("type", filter);
         if (visibilityFilter !== "all")
           params.set("visibility", visibilityFilter);
+        if (verificationFilter !== "all")
+          params.set("verified", verificationFilter);
         if (uploadedByFilter !== "all")
           params.set("uploadedBy", uploadedByFilter);
+        if (limit !== 20) params.set("limit", String(limit));
         const res = await fetch(`/api/admin/search?${params.toString()}`, {
           signal: controller.signal,
         });
@@ -328,7 +335,15 @@ export default function AdminSearchPage() {
       controller.abort();
       window.clearTimeout(handle);
     };
-  }, [query, filter, visibilityFilter, uploadedByFilter, isLoaded]);
+  }, [
+    query,
+    filter,
+    visibilityFilter,
+    verificationFilter,
+    uploadedByFilter,
+    limit,
+    isLoaded,
+  ]);
 
   useEffect(() => {
     if (!selected) {
@@ -740,7 +755,9 @@ export default function AdminSearchPage() {
     setQuery("");
     setFilter("all");
     setVisibilityFilter("all");
+    setVerificationFilter("all");
     setUploadedByFilter("all");
+    setLimit(20);
   };
 
   if (!isLoaded) {
@@ -808,6 +825,20 @@ export default function AdminSearchPage() {
               </SelectContent>
             </Select>
             <Select
+              value={String(limit)}
+              onValueChange={(value) => setLimit(Number(value))}
+            >
+              <SelectTrigger className="sm:w-[120px]">
+                <SelectValue placeholder="Result limit" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="10">10 results</SelectItem>
+                <SelectItem value="20">20 results</SelectItem>
+                <SelectItem value="50">50 results</SelectItem>
+                <SelectItem value="100">100 results</SelectItem>
+              </SelectContent>
+            </Select>
+            <Select
               value={visibilityFilter}
               onValueChange={(value) =>
                 setVisibilityFilter(value as "all" | "visible" | "hidden")
@@ -820,6 +851,23 @@ export default function AdminSearchPage() {
                 <SelectItem value="all">All visibility</SelectItem>
                 <SelectItem value="visible">Visible</SelectItem>
                 <SelectItem value="hidden">Hidden</SelectItem>
+              </SelectContent>
+            </Select>
+            <Select
+              value={verificationFilter}
+              onValueChange={(value) =>
+                setVerificationFilter(
+                  value as "all" | "verified" | "unverified"
+                )
+              }
+            >
+              <SelectTrigger className="sm:w-[200px]">
+                <SelectValue placeholder="All verification" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All verification</SelectItem>
+                <SelectItem value="verified">Verified only</SelectItem>
+                <SelectItem value="unverified">Unverified only</SelectItem>
               </SelectContent>
             </Select>
             <Select

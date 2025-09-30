@@ -372,7 +372,7 @@ function SortableBlock({
       listCaretRef.current = null;
       listItemRefs.current = [];
     }
-  }, [block.id, block.order, block.items?.length]);
+  }, [block.body, block.items, block.id, block.order, block.items?.length]);
 
   useLayoutEffect(() => {
     if (typeof document === "undefined") return;

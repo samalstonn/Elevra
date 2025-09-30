@@ -4,7 +4,7 @@ import type { Prisma } from "@prisma/client";
 import prisma from "@/prisma/prisma";
 import { requireAdminOrSubAdmin } from "@/lib/admin-auth";
 
-const MAX_LIMIT = 50;
+const MAX_LIMIT = 100;
 
 type SearchType = "candidate" | "election" | "all";
 
@@ -39,6 +39,22 @@ export async function GET(request: Request) {
     : "all";
   const hiddenFilter =
     visibility === "hidden" ? true : visibility === "visible" ? false : null;
+  const rawVerification = (
+    searchParams.get("verified")?.toLowerCase() ?? "all"
+  ).trim();
+  const verification: "all" | "verified" | "unverified" = [
+    "all",
+    "verified",
+    "unverified",
+  ].includes(rawVerification)
+    ? (rawVerification as "all" | "verified" | "unverified")
+    : "all";
+  const verifiedFilter =
+    verification === "verified"
+      ? true
+      : verification === "unverified"
+        ? false
+        : null;
   const uploadedByParam = searchParams.get("uploadedBy")?.trim();
   const uploadedBy =
     uploadedByParam && uploadedByParam !== "all" ? uploadedByParam : null;
@@ -50,7 +66,12 @@ export async function GET(request: Request) {
   const candidatePromise =
     type === "candidate" || type === "all"
       ? prisma.candidate.findMany({
-          where: buildCandidateWhere(query, hiddenFilter, uploadedBy),
+          where: buildCandidateWhere(
+            query,
+            hiddenFilter,
+            uploadedBy,
+            verifiedFilter
+          ),
           include: {
             elections: {
               take: 10,
@@ -195,7 +216,8 @@ export async function GET(request: Request) {
 function buildCandidateWhere(
   query: string,
   hiddenFilter: boolean | null,
-  uploadedBy: string | null
+  uploadedBy: string | null,
+  verifiedFilter: boolean | null
 ) {
   const andConditions: Prisma.CandidateWhereInput[] = [];
 
@@ -236,6 +258,10 @@ function buildCandidateWhere(
 
   if (uploadedBy) {
     andConditions.push({ uploadedBy });
+  }
+
+  if (verifiedFilter !== null) {
+    andConditions.push({ verified: verifiedFilter });
   }
 
   if (andConditions.length === 0) {
