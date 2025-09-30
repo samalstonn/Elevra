@@ -15,7 +15,6 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
-import { X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { usePageTitle } from "@/lib/usePageTitle";
 import { decodeEditorLinkKey } from "../utils";
@@ -62,6 +61,25 @@ export default function MyPageEditor({ params }: EditorPageProps) {
   const activeLink = electionLinks.find(
     (link) => link.electionId === activeElectionId
   );
+
+  useEffect(() => {
+    if (!activeLink || typeof window === "undefined") {
+      return;
+    }
+
+    const hasShownToast =
+      sessionStorage.getItem("electionEditorBugToastShown") === "true";
+
+    if (!hasShownToast) {
+      toast({
+        title: "We\u2019re working on an issue",
+        description:
+          "We\u2019re experiencing a bug where edits to this page might not send correctly. Our team is on it and we\u2019ll let you know as soon as it\u2019s fixed.",
+        className: "border-yellow-300 bg-yellow-50 text-yellow-900",
+      });
+      sessionStorage.setItem("electionEditorBugToastShown", "true");
+    }
+  }, [activeLink, toast]);
 
   if (isLoading) {
     return (
