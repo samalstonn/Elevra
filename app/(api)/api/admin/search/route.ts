@@ -4,7 +4,7 @@ import type { Prisma } from "@prisma/client";
 import prisma from "@/prisma/prisma";
 import { requireAdminOrSubAdmin } from "@/lib/admin-auth";
 
-const MAX_LIMIT = 50;
+const MAX_LIMIT = 100;
 
 type SearchType = "candidate" | "election" | "all";
 

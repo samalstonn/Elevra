@@ -232,6 +232,7 @@ export default function AdminSearchPage() {
     "all" | "verified" | "unverified"
   >("all");
   const [uploadedByFilter, setUploadedByFilter] = useState<string>("all");
+  const [limit, setLimit] = useState(20);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [results, setResults] = useState<{
@@ -284,6 +285,7 @@ export default function AdminSearchPage() {
           params.set("verified", verificationFilter);
         if (uploadedByFilter !== "all")
           params.set("uploadedBy", uploadedByFilter);
+        if (limit !== 20) params.set("limit", String(limit));
         const res = await fetch(`/api/admin/search?${params.toString()}`, {
           signal: controller.signal,
         });
@@ -339,6 +341,7 @@ export default function AdminSearchPage() {
     visibilityFilter,
     verificationFilter,
     uploadedByFilter,
+    limit,
     isLoaded,
   ]);
 
@@ -754,6 +757,7 @@ export default function AdminSearchPage() {
     setVisibilityFilter("all");
     setVerificationFilter("all");
     setUploadedByFilter("all");
+    setLimit(20);
   };
 
   if (!isLoaded) {
@@ -818,6 +822,20 @@ export default function AdminSearchPage() {
                 </SelectItem>
                 <SelectItem value="candidate">Candidates</SelectItem>
                 <SelectItem value="election">Elections</SelectItem>
+              </SelectContent>
+            </Select>
+            <Select
+              value={String(limit)}
+              onValueChange={(value) => setLimit(Number(value))}
+            >
+              <SelectTrigger className="sm:w-[120px]">
+                <SelectValue placeholder="Result limit" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="10">10 results</SelectItem>
+                <SelectItem value="20">20 results</SelectItem>
+                <SelectItem value="50">50 results</SelectItem>
+                <SelectItem value="100">100 results</SelectItem>
               </SelectContent>
             </Select>
             <Select
