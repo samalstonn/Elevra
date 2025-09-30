@@ -76,6 +76,7 @@ export async function POST(request: Request) {
             id: b.id || -1, // Match by ID if provided, otherwise use -1 which won't match any existing record
           },
           update: {
+            order: b.order,
             type: b.type,
             color: b.color,
             level: b.level,

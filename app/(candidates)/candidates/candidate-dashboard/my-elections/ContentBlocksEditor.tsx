@@ -1,7 +1,7 @@
 "use client";
 
 import { ContentBlock, ListStyle, TextColor } from "@prisma/client";
-import { useState, useRef, useMemo, useEffect } from "react";
+import { useState, useRef, useMemo, useEffect, useLayoutEffect } from "react";
 import {
   SortableContext,
   verticalListSortingStrategy,
@@ -26,6 +26,17 @@ function buildServerUnchangedMap(blocks: ContentBlock[]) {
   });
   return map;
 }
+
+const applyDefaultColor = (block: ContentBlock): ContentBlock => {
+  if (block.type === "HEADING" || block.type === "TEXT" || block.type === "LIST") {
+    const shouldBeGray = isServerBlockUnchanged(block);
+    const desiredColor = shouldBeGray ? TextColor.GRAY : TextColor.BLACK;
+    if (block.color !== desiredColor) {
+      return { ...block, color: desiredColor };
+    }
+  }
+  return block;
+};
 
 function uploadMedia(
   file: File,
@@ -72,7 +83,10 @@ export default function ContentBlocksEditor({
   onSave,
 }: Props) {
   const sortedInitial = useMemo(
-    () => [...initialBlocks].sort((a, b) => a.order - b.order),
+    () =>
+      [...initialBlocks]
+        .sort((a, b) => a.order - b.order)
+        .map((block) => applyDefaultColor(block)),
     [initialBlocks]
   );
 
@@ -124,7 +138,9 @@ export default function ContentBlocksEditor({
   };
 
   useEffect(() => {
-    const sorted = [...initialBlocks].sort((a, b) => a.order - b.order);
+    const sorted = [...initialBlocks]
+      .sort((a, b) => a.order - b.order)
+      .map((block) => applyDefaultColor(block));
     setBlocks(sorted);
     setStaticIds(
       sorted
@@ -266,11 +282,6 @@ export default function ContentBlocksEditor({
             progress={uploadProgressMap[block.order] ?? 0}
             setProgress={setProgress}
             setSelectedOrder={setSelectedOrder}
-            serverUnchanged={
-              serverUnchangedMapRef.current.get(
-                blockKey(block.id, block.order)
-              ) ?? false
-            }
           />
         ))}
       </SortableContext>
@@ -309,7 +320,6 @@ function SortableBlock({
   progress: number;
   setProgress: (order: number, percent: number) => void;
   setSelectedOrder: (order: number) => void;
-  serverUnchanged: boolean;
 }) {
   const { attributes, listeners, setNodeRef, transform, transition } =
     useSortable({ id: block.order });
@@ -322,12 +332,26 @@ function SortableBlock({
   const imageInputRef = useRef<HTMLInputElement | null>(null);
   const videoInputRef = useRef<HTMLInputElement | null>(null);
   const blockKeyRef = useRef<number | string>(blockKey(block.id, block.order));
+  const headingRef = useRef<HTMLHeadingElement | null>(null);
+  const textRef = useRef<HTMLDivElement | null>(null);
+  const listItemRefs = useRef<Array<HTMLSpanElement | null>>([]);
+  const caretOffsetRef = useRef<number | null>(null);
+  const listCaretRef = useRef<{ index: number; offset: number } | null>(null);
 
   const [hasEditedHeading, setHasEditedHeading] = useState(false);
   const [hasEditedText, setHasEditedText] = useState(false);
   const [editedItems, setEditedItems] = useState<boolean[]>(
     new Array(block.items?.length ?? 0).fill(false)
   );
+  const initialContentRef = useRef<{
+    text: string;
+    body: string;
+    items: string[];
+  }>({
+    text: block.text ?? "",
+    body: block.body ?? "",
+    items: [...(block.items ?? [])],
+  });
 
   useEffect(() => {
     const currentKey = blockKey(block.id, block.order);
@@ -336,18 +360,95 @@ function SortableBlock({
       setHasEditedHeading(false);
       setHasEditedText(false);
       blockKeyRef.current = currentKey;
+      initialContentRef.current = {
+        text: block.text ?? "",
+        body: block.body ?? "",
+        items: [...(block.items ?? [])],
+      };
+      caretOffsetRef.current = null;
+      listCaretRef.current = null;
+      listItemRefs.current = [];
     }
   }, [block.id, block.order, block.items?.length]);
+
+  useLayoutEffect(() => {
+    if (typeof document === "undefined") return;
+    if (block.type !== "HEADING") return;
+    if (document.activeElement !== headingRef.current) return;
+    if (caretOffsetRef.current === null) return;
+    const el = headingRef.current;
+    if (!el) return;
+    const textNode = el.firstChild;
+    if (!textNode || textNode.nodeType !== Node.TEXT_NODE) return;
+    const selection = window.getSelection();
+    if (!selection) return;
+    const range = document.createRange();
+    const maxOffset = textNode.textContent?.length ?? 0;
+    const targetOffset = Math.min(caretOffsetRef.current, maxOffset);
+    range.setStart(textNode, targetOffset);
+    range.collapse(true);
+    selection.removeAllRanges();
+    selection.addRange(range);
+    caretOffsetRef.current = null;
+  }, [block.type, block.text]);
+
+  useLayoutEffect(() => {
+    if (typeof document === "undefined") return;
+    if (block.type !== "TEXT") return;
+    if (document.activeElement !== textRef.current) return;
+    if (caretOffsetRef.current === null) return;
+    const el = textRef.current;
+    if (!el) return;
+    const textNode = el.firstChild;
+    if (!textNode || textNode.nodeType !== Node.TEXT_NODE) return;
+    const selection = window.getSelection();
+    if (!selection) return;
+    const range = document.createRange();
+    const maxOffset = textNode.textContent?.length ?? 0;
+    const targetOffset = Math.min(caretOffsetRef.current, maxOffset);
+    range.setStart(textNode, targetOffset);
+    range.collapse(true);
+    selection.removeAllRanges();
+    selection.addRange(range);
+    caretOffsetRef.current = null;
+  }, [block.type, block.body]);
+
+  useLayoutEffect(() => {
+    if (typeof document === "undefined") return;
+    if (block.type !== "LIST") return;
+    const caret = listCaretRef.current;
+    if (!caret) return;
+    const target = listItemRefs.current[caret.index];
+    if (!target) return;
+    if (document.activeElement !== target) return;
+    const textNode = target.firstChild;
+    if (!textNode || textNode.nodeType !== Node.TEXT_NODE) return;
+    const selection = window.getSelection();
+    if (!selection) return;
+    const range = document.createRange();
+    const maxOffset = textNode.textContent?.length ?? 0;
+    const targetOffset = Math.min(caret.offset, maxOffset);
+    range.setStart(textNode, targetOffset);
+    range.collapse(true);
+    selection.removeAllRanges();
+    selection.addRange(range);
+    listCaretRef.current = null;
+  }, [block.type, block.items]);
+
+  const resolveColorClass = (color?: TextColor | null) => {
+    if (!color) return colorClass.BLACK;
+    return colorClass[color as keyof typeof colorClass] ?? colorClass.BLACK;
+  };
 
   let inner: React.ReactNode;
 
   switch (block.type) {
     case "HEADING": {
+      const baseColorClass = resolveColorClass(block.color);
       const headingColor =
-        block.text ==
-        elevraStarterTemplate.find((t) => t.order === block.order)?.text
+        block.color === TextColor.GRAY && !hasEditedHeading
           ? colorClass.GRAY
-          : colorClass.BLACK;
+          : baseColorClass;
       const headingClass =
         block.level === 1
           ? `text-4xl font-bold ${headingColor} px-2 py-1`
@@ -358,9 +459,34 @@ function SortableBlock({
           className={headingClass}
           contentEditable
           suppressContentEditableWarning
-          onInput={() => {
-            if (!hasEditedHeading) setHasEditedHeading(true);
-            onChange({ text: block.text ?? "" });
+          ref={headingRef}
+          onInput={(event) => {
+            const selection = window.getSelection();
+            const element = event.currentTarget;
+            if (selection && selection.rangeCount > 0) {
+              const range = selection.getRangeAt(0).cloneRange();
+              range.setStart(element, 0);
+              caretOffsetRef.current = range.toString().length;
+            } else {
+              caretOffsetRef.current = null;
+            }
+            const newText = event.currentTarget.textContent ?? "";
+            const textChanged = newText !== block.text;
+            if (textChanged && !hasEditedHeading) {
+              setHasEditedHeading(true);
+            }
+            const needsColorUpdate =
+              block.color !== TextColor.BLACK &&
+              newText !== initialContentRef.current.text;
+            if (!textChanged && !needsColorUpdate) {
+              caretOffsetRef.current = null;
+              return;
+            }
+            const patch: Partial<ContentBlock> = { text: newText };
+            if (needsColorUpdate) {
+              patch.color = TextColor.BLACK;
+            }
+            onChange(patch);
           }}
           onFocus={() => setSelectedOrder(block.order)}
         >
@@ -370,19 +496,44 @@ function SortableBlock({
       break;
     }
     case "TEXT": {
+      const baseColorClass = resolveColorClass(block.color);
       const textColor =
-        block.body ==
-        elevraStarterTemplate.find((t) => t.order === block.order)?.body
+        block.color === TextColor.GRAY && !hasEditedText
           ? colorClass.GRAY
-          : colorClass.BLACK;
+          : baseColorClass;
       inner = (
         <div
           className={`text-sm whitespace-pre-wrap ${textColor} px-2 py-1`}
           contentEditable
           suppressContentEditableWarning
-          onInput={() => {
-            if (!hasEditedText) setHasEditedText(true);
-            onChange({ body: block.body });
+          ref={textRef}
+          onInput={(event) => {
+            const selection = window.getSelection();
+            const element = event.currentTarget;
+            if (selection && selection.rangeCount > 0) {
+              const range = selection.getRangeAt(0).cloneRange();
+              range.setStart(element, 0);
+              caretOffsetRef.current = range.toString().length;
+            } else {
+              caretOffsetRef.current = null;
+            }
+            const newBody = event.currentTarget.textContent ?? "";
+            const textChanged = newBody !== block.body;
+            if (textChanged && !hasEditedText) {
+              setHasEditedText(true);
+            }
+            const needsColorUpdate =
+              block.color !== TextColor.BLACK &&
+              newBody !== initialContentRef.current.body;
+            if (!textChanged && !needsColorUpdate) {
+              caretOffsetRef.current = null;
+              return;
+            }
+            const patch: Partial<ContentBlock> = { body: newBody };
+            if (needsColorUpdate) {
+              patch.color = TextColor.BLACK;
+            }
+            onChange(patch);
           }}
           onFocus={() => setSelectedOrder(block.order)}
         >
@@ -393,16 +544,19 @@ function SortableBlock({
     }
     case "LIST": {
       const listItems = block.items ?? [];
+      const baseColorClass = resolveColorClass(block.color);
+      const hasEditedAnyItem = editedItems.some(Boolean);
       const listColor =
-        block.text ==
-        elevraStarterTemplate.find((t) => t.order === block.order)?.text
+        block.color === TextColor.GRAY && !hasEditedAnyItem
           ? colorClass.GRAY
-          : colorClass.BLACK;
+          : baseColorClass;
       const ListTag = block.listStyle === ListStyle.NUMBER ? "ol" : "ul";
       const listClass =
         block.listStyle === ListStyle.NUMBER
           ? `list-decimal text-sm ml-6 ${listColor}`
           : `list-disc text-sm ml-6 ${listColor}`;
+
+      listItemRefs.current.length = listItems.length;
 
       inner = (
         <>
@@ -412,19 +566,49 @@ function SortableBlock({
                 <span
                   contentEditable
                   suppressContentEditableWarning
+                  ref={(el) => {
+                    listItemRefs.current[idx] = el;
+                  }}
                   className={`min-w-[4ch] pr-4 outline-none align-top ${
-                    editedItems[idx] ? "text-black" : listColor
+                    block.color === TextColor.GRAY && !editedItems[idx]
+                      ? colorClass.GRAY
+                      : colorClass.BLACK
                   }`}
-                  onInput={() => {
-                    if (!editedItems[idx]) {
+                  onInput={(event) => {
+                    const selection = window.getSelection();
+                    const element = event.currentTarget;
+                    if (selection && selection.rangeCount > 0) {
+                      const range = selection.getRangeAt(0).cloneRange();
+                      range.setStart(element, 0);
+                      listCaretRef.current = {
+                        index: idx,
+                        offset: range.toString().length,
+                      };
+                    } else {
+                      listCaretRef.current = null;
+                    }
+                    const newItems = [...(block.items ?? [])];
+                    newItems[idx] = event.currentTarget.textContent ?? "";
+                    const existingItem = block.items?.[idx] ?? "";
+                    const textChanged = newItems[idx] !== existingItem;
+                    if (textChanged && !editedItems[idx]) {
                       const updated = [...editedItems];
                       updated[idx] = true;
                       setEditedItems(updated);
                     }
-
-                    const newItems = [...(block.items ?? [])];
-                    newItems[idx] = block.items[idx] ?? "";
-                    onChange({ items: newItems });
+                    const initialItem = initialContentRef.current.items[idx] ?? "";
+                    const needsColorUpdate =
+                      block.color !== TextColor.BLACK &&
+                      newItems[idx] !== initialItem;
+                    if (!textChanged && !needsColorUpdate) {
+                      listCaretRef.current = null;
+                      return;
+                    }
+                    const patch: Partial<ContentBlock> = { items: newItems };
+                    if (needsColorUpdate) {
+                      patch.color = TextColor.BLACK;
+                    }
+                    onChange(patch);
                   }}
                   onFocus={() => setSelectedOrder(block.order)}
                 >
@@ -435,7 +619,12 @@ function SortableBlock({
                   className="absolute -right-5 top-1.5 text-red-500 hover:text-red-600 opacity-100 transition"
                   onClick={() => {
                     const newItems = listItems.filter((_, i) => i !== idx);
-                    onChange({ items: newItems });
+                    listCaretRef.current = null;
+                    const patch: Partial<ContentBlock> = { items: newItems };
+                    if (block.color !== TextColor.BLACK) {
+                      patch.color = TextColor.BLACK;
+                    }
+                    onChange(patch);
                     setEditedItems((prev) => prev.filter((_, i) => i !== idx));
                   }}
                 >
@@ -446,7 +635,13 @@ function SortableBlock({
           </ListTag>
           <button
             onClick={() => {
-              onChange({ items: [...(block.items ?? []), ""] });
+              const newItems = [...(block.items ?? []), ""];
+              listCaretRef.current = null;
+              const patch: Partial<ContentBlock> = { items: newItems };
+              if (block.color !== TextColor.BLACK) {
+                patch.color = TextColor.BLACK;
+              }
+              onChange(patch);
               setEditedItems([...editedItems, false]);
             }}
             className="text-sm text-purple-600 hover:underline ml-6 mt-1"

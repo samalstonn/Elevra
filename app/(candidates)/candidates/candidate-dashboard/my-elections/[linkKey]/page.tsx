@@ -158,6 +158,20 @@ export default function MyPageEditor({ params }: EditorPageProps) {
             >
               ← Back to Overview
             </Button>
+            {/* <div className="bg-yellow-50 border border-yellow-200 text-black-800 text-xs md:text-sm p-3 md:p-4 rounded-lg flex flex-col md:flex-row md:items-center md:justify-between gap-2 shadow-sm">
+              <div className="flex-1 leading-snug">
+                ⚠️ We are currently experiencing a bug with saving content
+                blocks. We appreciate your patience as we work to resolve this
+                issue. In the meantime, please reach out to{" "}
+                <a
+                  href="mailto:team@elevracommunity.com"
+                  className="text-purple-600 underline hover:text-purple-700"
+                >
+                  team@elevracommunity.com
+                </a>{" "}
+                if you would like us to manually input your information!
+              </div>
+            </div> */}
             <h1 className="text-3xl font-semibold mt-2">
               {activeLink.election?.position ?? "Election Webpage"}
             </h1>
