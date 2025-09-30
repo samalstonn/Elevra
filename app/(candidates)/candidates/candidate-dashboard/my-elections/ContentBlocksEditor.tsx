@@ -14,6 +14,7 @@ import Link from "next/link";
 import { Trash2, Eye } from "lucide-react";
 import { unchanged as isServerBlockUnchanged } from "@/lib/content-blocks";
 import { colorClass } from "@/lib/constants";
+import { elevraStarterTemplate } from "@/app/(templates)/basicwebpage";
 
 const blockKey = (id: number | null | undefined, order: number) =>
   typeof id === "number" ? id : `order-${order}`;
@@ -369,6 +370,7 @@ function SortableBlock({
       listItemRefs.current = [];
     }
   }, [block.id, block.order, block.items?.length]);
+
 
   useLayoutEffect(() => {
     if (typeof document === "undefined") return;
