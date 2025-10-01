@@ -147,7 +147,7 @@ export default function MyPageEditor({ params }: EditorPageProps) {
     <>
       <div className="flex flex-col gap-6 w-full min-w-0">
         <div className="w-full max-w-4xl mx-auto min-w-0">
-          <div className="mb-6">
+          {/* <div className="mb-6">
             <div className="bg-blue-50 border border-yellow-200 text-black-800 text-xs md:text-sm p-3 md:p-4 rounded-lg flex flex-col md:flex-row md:items-center md:justify-between gap-2 shadow-sm">
               <div className="flex-1 leading-snug">
                 ⚠️ Due to the ever increasing amount of content on Elevra, we
@@ -163,70 +163,68 @@ export default function MyPageEditor({ params }: EditorPageProps) {
                 if anything happens to go wrong and you would like us to
                 manually input your information!
               </div>
-            </div>
-            <Button
-              type="button"
-              variant="ghost"
-              onClick={() =>
-                router.push("/candidates/candidate-dashboard/my-elections")
-              }
-              className="p-3 text-purple-600 hover:text-purple-700"
-            >
-              ← Back to Overview
-            </Button>
-            <h1 className="text-3xl font-semibold mt-2">
-              {activeLink.election?.position ?? "Election Webpage"}
-            </h1>
-            <p className="text-sm text-gray-500">
-              {activeLink.election?.city ?? ""}
-              {activeLink.election?.city && activeLink.election?.state
-                ? ", "
-                : ""}
-              {activeLink.election?.state ?? ""}
-            </p>
-          </div>
-          <ContentBlocksEditor
-            candidateSlug={candidateData.slug}
-            initialBlocks={activeLink.ContentBlock ?? []}
-            onSave={async (blocks, staticIds) => {
-              // Only send blocks that were actually updated
-              blocks = blocks.filter((b) => !staticIds.has(b.id));
-              try {
-                const res = await fetch("/api/v1/contentblocks/save", {
-                  method: "POST",
-                  headers: { "Content-Type": "application/json" },
-                  body: JSON.stringify({
-                    candidateId: candidateData.id,
-                    electionId,
-                    blocks,
-                  }),
-                });
-                const data = await res.json();
-                if (!res.ok || data.error) {
-                  toast({
-                    variant: "destructive",
-                    title: "Error saving blocks",
-                    description:
-                      data.error || "Block limits exceeded or unknown error.",
-                  });
-                  return;
-                }
-                toast({
-                  title: "Content saved",
-                  description:
-                    "Your election profile been updated successfully.",
-                });
-              } catch (err) {
+            </div> */}
+          <Button
+            type="button"
+            variant="ghost"
+            onClick={() =>
+              router.push("/candidates/candidate-dashboard/my-elections")
+            }
+            className="p-3 text-purple-600 hover:text-purple-700"
+          >
+            ← Back to Overview
+          </Button>
+          <h1 className="text-3xl font-semibold mt-2">
+            {activeLink.election?.position ?? "Election Webpage"}
+          </h1>
+          <p className="text-sm text-gray-500">
+            {activeLink.election?.city ?? ""}
+            {activeLink.election?.city && activeLink.election?.state
+              ? ", "
+              : ""}
+            {activeLink.election?.state ?? ""}
+          </p>
+        </div>
+        <ContentBlocksEditor
+          candidateSlug={candidateData.slug}
+          initialBlocks={activeLink.ContentBlock ?? []}
+          onSave={async (blocks, staticIds) => {
+            // Only send blocks that were actually updated
+            blocks = blocks.filter((b) => !staticIds.has(b.id));
+            try {
+              const res = await fetch("/api/v1/contentblocks/save", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  candidateId: candidateData.id,
+                  electionId,
+                  blocks,
+                }),
+              });
+              const data = await res.json();
+              if (!res.ok || data.error) {
                 toast({
                   variant: "destructive",
-                  title: "Network error",
-                  description: "Unable to save content blocks.",
+                  title: "Error saving blocks",
+                  description:
+                    data.error || "Block limits exceeded or unknown error.",
                 });
-                console.error("Error saving content blocks:", err);
+                return;
               }
-            }}
-          />
-        </div>
+              toast({
+                title: "Content saved",
+                description: "Your election profile been updated successfully.",
+              });
+            } catch (err) {
+              toast({
+                variant: "destructive",
+                title: "Network error",
+                description: "Unable to save content blocks.",
+              });
+              console.error("Error saving content blocks:", err);
+            }
+          }}
+        />
       </div>
       <Dialog open={showTutorial} onOpenChange={setShowTutorial}>
         <DialogContent className="max-w-md">
