@@ -8,11 +8,11 @@ export default function Footer() {
           &copy; {new Date().getFullYear()} Elevra. All rights reserved.
         </span>
         <div className="flex gap-4">
-          <Link href="/submit" className="hover:underline">
-            Submit Information
-          </Link>
           <Link href="/terms" className="hover:underline">
             Terms of Service
+          </Link>
+          <Link href="/submit" className="hover:underline">
+            Submit Information
           </Link>
           <Link href="/privacy" className="hover:underline">
             Privacy Policy
