@@ -15,6 +15,28 @@ const isPrivateRoute = createRouteMatcher([
 ]);
 
 export default clerkMiddleware(async (auth, req) => {
+  const pathname = req.nextUrl.pathname;
+
+  if (pathname.startsWith("/api") && !pathname.startsWith("/api/__internal/log")) {
+    try {
+      const logUrl = new URL("/api/__internal/log", req.url);
+      await fetch(logUrl, {
+        method: "POST",
+        headers: {
+          "content-type": "application/json",
+        },
+        body: JSON.stringify({
+          method: req.method,
+          pathname,
+          timestamp: new Date().toISOString(),
+        }),
+        cache: "no-store",
+      });
+    } catch (error) {
+      console.error("Failed to record API call", error);
+    }
+  }
+
   const { userId, sessionClaims } = await auth();
 
   // Protect private routes - require authentication
@@ -32,7 +54,6 @@ export default clerkMiddleware(async (auth, req) => {
     const isSubAdmin = user.privateMetadata?.isSubAdmin;
     const isAdmin = user.privateMetadata?.isAdmin;
 
-    const pathname = req.nextUrl.pathname;
     if (pathname.startsWith("/admin")) {
       const subAdminAllowed = [
         "/admin/sub-admin",
