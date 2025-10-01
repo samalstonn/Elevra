@@ -148,12 +148,11 @@ export default function MyPageEditor({ params }: EditorPageProps) {
       <div className="flex flex-col gap-6 w-full min-w-0">
         <div className="w-full max-w-4xl mx-auto min-w-0">
           <div className="mb-6">
-            <div className="bg-yellow-50 border border-yellow-200 text-black-800 text-xs md:text-sm p-3 md:p-4 rounded-lg flex flex-col md:flex-row md:items-center md:justify-between gap-2 shadow-sm">
+            <div className="bg-blue-50 border border-yellow-200 text-black-800 text-xs md:text-sm p-3 md:p-4 rounded-lg flex flex-col md:flex-row md:items-center md:justify-between gap-2 shadow-sm">
               <div className="flex-1 leading-snug">
                 ⚠️ Due to the ever increasing amount of content on Elevra, we
                 are currently experiencing an overload bug with saving edits to
-                this page. We appreciate your patience as we work to resolve
-                this issue. In the meantime, we ask you to create a backup of
+                this page. In the meantime, we ask you to create a backup of
                 your edits before saving and leaving this page. Reach out to{" "}
                 <a
                   href="mailto:team@elevracommunity.com"
@@ -161,8 +160,8 @@ export default function MyPageEditor({ params }: EditorPageProps) {
                 >
                   team@elevracommunity.com
                 </a>{" "}
-                if you anything goes wrong and you would like us to manually
-                input your information!
+                if anything happens to go wrong and you would like us to
+                manually input your information!
               </div>
             </div>
             <Button
