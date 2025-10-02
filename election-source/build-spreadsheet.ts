@@ -20,6 +20,17 @@ export type Row = {
   position: string;
   year: string | number;
   email: string;
+  name?: string;
+  districtType?: string;
+  district?: string;
+  raceLabel?: string;
+  termType?: string;
+  termLength?: string;
+  mailingAddress?: string;
+  phone?: string;
+  filingDate?: string;
+  partyPreference?: string;
+  status?: string;
 };
 
 export async function buildAndDownloadResultSheet(
