@@ -1,7 +1,4 @@
 import { NextResponse } from "next/server";
-import * as Sentry from "@sentry/nextjs";
-// Ensure Sentry.init runs on the server for this route
-import "@/sentry.server.config";
 
 import { logApiCall } from "@/lib/logging/api-logger";
 import { API_LOG_TOKEN_HEADER } from "@/lib/logging/constants";
@@ -20,30 +17,20 @@ export async function POST(request: Request) {
     }
 
     const payload = (await request.json()) as unknown;
-    const { method, pathname, timestamp, slug } = (payload ?? {}) as Record<string, unknown>;
+    const { method, pathname, timestamp } = (payload ?? {}) as Record<
+      string,
+      unknown
+    >;
 
-    if (typeof method !== "string" || typeof pathname !== "string" || typeof timestamp !== "string") {
+    if (
+      typeof method !== "string" ||
+      typeof pathname !== "string" ||
+      typeof timestamp !== "string"
+    ) {
       return NextResponse.json({ error: "Invalid payload" }, { status: 400 });
     }
 
-    const entry = {
-      method,
-      pathname,
-      timestamp,
-      slug: typeof slug === "string" ? slug : undefined,
-    } as const;
-
-    await logApiCall(entry);
-    // Also forward to Sentry as an info-level event for centralized storage/search
-    try {
-      Sentry.captureMessage("api_call", {
-        level: "info",
-        tags: { kind: "api" },
-        extra: entry,
-      });
-      // In serverless contexts, flush to improve delivery before the function exits
-      await Sentry.flush(2000);
-    } catch {}
+    await logApiCall({ method, pathname, timestamp });
     return NextResponse.json({ ok: true });
   } catch (error) {
     console.error("Failed to log API call", error);

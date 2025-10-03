@@ -14,23 +14,24 @@ export type ApiLogEntry = {
 };
 
 async function ensureLogFileDirectory() {
-  await mkdir(dirname(LOG_FILE_PATH), { recursive: true });
+  try {
+    await mkdir(dirname(LOG_FILE_PATH), { recursive: true });
+  } catch {
+    // Ignore errors (e.g., read-only FS in serverless)
+  }
 }
 
 export async function logApiCall(entry: ApiLogEntry) {
-  await ensureLogFileDirectory();
-  const parts = [
-    entry.timestamp,
-    entry.method.toUpperCase(),
-    entry.pathname,
-  ];
-
-  if (entry.slug) {
-    parts.push(`slug=${entry.slug}`);
+  // Best-effort local file append (useful in dev/self-hosted)
+  try {
+    await ensureLogFileDirectory();
+    const parts = [entry.timestamp, entry.method.toUpperCase(), entry.pathname];
+    if (entry.slug) parts.push(`slug=${entry.slug}`);
+    const line = `${parts.join(" ")}\n`;
+    await appendFile(LOG_FILE_PATH, line, { encoding: "utf8" });
+  } catch {
+    // Ignore file write failures (e.g., serverless read-only FS)
   }
-
-  const line = `${parts.join(" ")}\n`;
-  await appendFile(LOG_FILE_PATH, line, { encoding: "utf8" });
 }
 
 export function getApiLogFilePath() {
