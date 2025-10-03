@@ -50,7 +50,6 @@ export default clerkMiddleware(async (auth, req) => {
         }),
         cache: "no-store",
         // keepalive is a hint; supported in some runtimes
-        // @ts-expect-error
         keepalive: true,
       }).catch((error) => {
         console.error("Failed to record API call", error);
