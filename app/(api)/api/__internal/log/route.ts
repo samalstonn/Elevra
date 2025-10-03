@@ -17,7 +17,7 @@ export async function POST(request: Request) {
     }
 
     const payload = (await request.json()) as unknown;
-    const { method, pathname, timestamp } = (payload ?? {}) as Record<
+    const { method, pathname, timestamp, slug } = (payload ?? {}) as Record<
       string,
       unknown
     >;
@@ -30,7 +30,11 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Invalid payload" }, { status: 400 });
     }
 
-    await logApiCall({ method, pathname, timestamp });
+    if (slug !== undefined && typeof slug !== "string") {
+      return NextResponse.json({ error: "Invalid payload" }, { status: 400 });
+    }
+
+    await logApiCall({ method, pathname, timestamp, slug });
     return NextResponse.json({ ok: true });
   } catch (error) {
     console.error("Failed to log API call", error);
