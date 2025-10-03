@@ -34,12 +34,12 @@ jobs:
       - name: Install deps
         run: npm ci
 
-      # (Optional) Build once so we can use --prebuilt for faster deploys
-      - name: Build
-        run: npm run build
-
       - name: Install Vercel CLI
         run: npm i -g vercel
+
+      # (Optional) Build once so we can use --prebuilt for faster deploys
+      - name: Build
+        run: vercel build
 
       # Pull preview env vars into .vercel/. (no prompts)
       - name: Vercel env pull (preview)
