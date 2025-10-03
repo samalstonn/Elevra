@@ -34,11 +34,28 @@ const baseMetadata: Metadata = {
   description:
     "Elevra Community spotlights upcoming local elections, connects voters with nearby races, and gives candidates a modern portal to share their message.",
   icons: {
-    icon: "/favicon.ico",
+    icon: [
+      { url: "/favicon.ico" },
+      { url: "/favicon-32x32.png", sizes: "32x32", type: "image/png" },
+      { url: "/favicon-16x16.png", sizes: "16x16", type: "image/png" },
+      {
+        url: "/android-chrome-192x192.png",
+        sizes: "192x192",
+        type: "image/png",
+      },
+      {
+        url: "/android-chrome-512x512.png",
+        sizes: "512x512",
+        type: "image/png",
+      },
+    ],
+    apple: [{ url: "/apple-touch-icon.png", sizes: "180x180" }],
+    shortcut: [{ url: "/favicon.ico" }],
   },
   keywords: BASE_KEYWORDS,
   openGraph: {
-    title: "Elevra Community | Discover Local Elections & Candidate Portals",
+    title:
+      "Elevra Community | Making Local Elections Better for Candidates and Voters",
     description:
       "Explore municipal races, candidate profiles, and local election resources with Elevra Community. See elections near you and help campaigns reach their voters.",
     url: "https://www.elevracommunity.com",
@@ -54,11 +71,12 @@ const baseMetadata: Metadata = {
     locale: "en_US",
     type: "website",
   },
-  twitter: { //EDIT: do we have a twitter?
+  twitter: {
+    //EDIT: do we have a twitter?
     card: "summary_large_image",
     title: "Elevra Community | Local Elections Near You",
     description:
-      "Stay on top of local elections, review candidate portals, and connect with your community using Elevra Community.",
+      "Stay on top of local elections, review candidate profiles, and connect with your community using Elevra Community.",
     images: ["/Elevra.png"],
     site: "@ElevraCommunity",
     creator: "@ElevraCommunity",
