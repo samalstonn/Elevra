@@ -1,7 +1,10 @@
 # *
 User-agent: *
-Allow: /
 Disallow: /admin
+
+# *
+User-agent: *
+Allow: /
 
 # Host
 Host: https://www.elevracommunity.com
