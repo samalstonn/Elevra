@@ -36,20 +36,12 @@ export async function POST(request: Request) {
     await logApiCall(entry);
     // Forward to Sentry without blocking the caller
     try {
-      const msg = `api_call ${method.toUpperCase()} ${pathname}`;
-      // Sentry drops tags with empty string values; build tags defensively.
-      const tags: Record<string, string> = {
-        kind: "api",
-        method: method.toUpperCase(),
-        path: pathname,
-      };
-      if (entry.slug && entry.slug.trim().length > 0) {
-        tags.slug = entry.slug.trim();
-      }
-      Sentry.captureMessage(msg, {
+      const message = `${method.toUpperCase()} ${pathname}`;
+      Sentry.addBreadcrumb({
+        category: "api",
         level: "info",
-        tags,
-        extra: entry,
+        message,
+        data: { kind: "api", ...entry },
       });
       // Do not flush here; fire-and-forget to avoid impacting latency
     } catch {}
