@@ -34,6 +34,11 @@ export const test = base.extend<Fixtures, WorkerFixtures>({
         .slice(2, 8)}`;
       const slug = `${TEST_SLUG}-${uniqueSuffix}`;
       const creds = getCredsForWorker(workerInfo.workerIndex);
+      if (!creds?.userId) {
+        throw new Error(
+          `No Clerk userId available for worker ${workerInfo.workerIndex}. Ensure E2E_CLERK_USERS has at least as many entries as Playwright workers.`
+        );
+      }
       const payload = {
         elections: [
           {
@@ -56,7 +61,7 @@ export const test = base.extend<Fixtures, WorkerFixtures>({
                 hidden: false,
                 slug,
                 // Bind to this worker's Clerk user if provided
-                clerkUserId: creds.userId || null,
+                clerkUserId: null,
               },
             ],
           },
@@ -67,23 +72,30 @@ export const test = base.extend<Fixtures, WorkerFixtures>({
       let candidateId: number | null = null;
       let electionId: number | null = null;
 
-      try {
-        const res = await api.post(`${baseUrl}/api/admin/seed-structured`, {
-          headers: {
-            "content-type": "application/json",
-            "x-e2e-seed-secret": process.env.E2E_SEED_SECRET || "",
-          },
-          data: {
-            structured: JSON.stringify(payload),
-            hidden: false,
-          },
-        });
-
-        if (!res.ok()) {
-          throw new Error(
+      const postWithRetry = async (url: string, data: any, tries = 3) => {
+        let lastErr: any;
+        for (let i = 0; i < tries; i++) {
+          const res = await api.post(url, {
+            headers: {
+              "content-type": "application/json",
+              "x-e2e-seed-secret": process.env.E2E_SEED_SECRET || "",
+            },
+            data,
+          });
+          if (res.ok()) return res;
+          lastErr = new Error(
             `Failed to seed structured data: ${res.status()} ${await res.text()}`
           );
+          await new Promise((r) => setTimeout(r, 150 * (i + 1)));
         }
+        throw lastErr;
+      };
+
+      try {
+        const res = await postWithRetry(`${baseUrl}/api/admin/seed-structured`, {
+          structured: JSON.stringify(payload),
+          hidden: false,
+        });
 
         const body = await res.json();
         const first = body?.results?.[0];

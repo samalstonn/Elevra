@@ -8,7 +8,8 @@ import {
 import { test, expect, prisma, CandidateFixture, getCredsForWorker } from "./fixtures";
 
 test.afterEach(async ({ candidate }) => {
-  await resetCandidateVerification(candidate);
+  const { username } = getCredsForWorker(test.info().workerIndex);
+  await resetCandidateVerification(candidate, username!);
 });
 
 test("Correct Email - Already Signed In: Successful Verification and Sent to Dashboard with Popup", async ({
@@ -417,7 +418,7 @@ test("Correct Email - Not Signed In: Successful Verification and Sent to Dashboa
 // Reset candidate verification state after tests
 type CandidateInfo = CandidateFixture["candidate"];
 
-async function resetCandidateVerification(candidate: CandidateInfo) {
+async function resetCandidateVerification(candidate: CandidateInfo, originalEmail: string) {
   const { id, slug } = candidate;
   try {
     await prisma.candidate.update({
@@ -426,7 +427,7 @@ async function resetCandidateVerification(candidate: CandidateInfo) {
         verified: false,
         status: SubmissionStatus.PENDING,
         clerkUserId: null,
-        email: process.env.E2E_CLERK_USER_USERNAME, // reset to original email
+        email: originalEmail, // reset to the email used by this test
       },
     });
   } catch (err) {
