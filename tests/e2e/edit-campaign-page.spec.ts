@@ -1,5 +1,6 @@
 import { clerk } from "@clerk/testing/playwright";
 import { test, expect, getCredsForWorker, prisma } from "./fixtures";
+test.describe.configure({ mode: "serial" });
 import {
   expectAllBlocksToMatchCriteria,
   getCandidateBlocks,
@@ -11,6 +12,17 @@ import { elevraStarterTemplate } from "@/app/(templates)/basicwebpage";
 test("edit campaign page", async ({ page, candidate: _candidate }) => {
   await page.goto("/");
   const { username, password } = getCredsForWorker(test.info().workerIndex);
+  // Bind this test's Clerk user to the seeded candidate for login-dependent flows
+  const creds = getCredsForWorker(test.info().workerIndex);
+  // Ensure no other candidate holds this Clerk user before binding (avoid unique constraint)
+  await prisma.candidate.updateMany({
+    where: { clerkUserId: creds.userId, NOT: { id: _candidate.id } },
+    data: { clerkUserId: null },
+  });
+  await prisma.candidate.update({
+    where: { id: _candidate.id },
+    data: { email: creds.username!, clerkUserId: creds.userId },
+  });
   await clerk.signIn({
     page,
     signInParams: {
@@ -255,4 +267,10 @@ test("edit campaign page", async ({ page, candidate: _candidate }) => {
     unmodifiedBlocks,
     (block) => block.updatedAt.getTime() === block.createdAt.getTime()
   );
+
+  // Cleanup: detach Clerk user from candidate to avoid cross-test collisions
+  await prisma.candidate.update({
+    where: { id: _candidate.id },
+    data: { clerkUserId: null },
+  });
 });

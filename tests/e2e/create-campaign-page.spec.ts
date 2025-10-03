@@ -1,5 +1,6 @@
 import { clerk } from "@clerk/testing/playwright";
 import { test, expect, prisma, getCredsForWorker } from "./fixtures";
+test.describe.configure({ mode: "serial" });
 import {
   expectBlocksHaveColor,
   expectBlockToHaveColor,
@@ -11,6 +12,12 @@ import {
 test("create campaign page", async ({ page, candidate }) => {
   await page.goto("/");
   const { username, password } = getCredsForWorker(test.info().workerIndex);
+  // Bind this test's Clerk user to the seeded candidate for login-dependent flows
+  const creds = getCredsForWorker(test.info().workerIndex);
+  await prisma.candidate.update({
+    where: { id: candidate.id },
+    data: { email: creds.username!, clerkUserId: creds.userId },
+  });
   await clerk.signIn({
     page,
     signInParams: {
@@ -69,4 +76,9 @@ test("create campaign page", async ({ page, candidate }) => {
     latestLink!.electionId
   );
   expectBlocksHaveColor(prisma, candidate.id, latestLink!.electionId, "GRAY");
+  // Cleanup: detach Clerk user from candidate to avoid cross-test collisions
+  await prisma.candidate.update({
+    where: { id: candidate.id },
+    data: { clerkUserId: null },
+  });
 });
