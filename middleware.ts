@@ -21,10 +21,10 @@ export default clerkMiddleware(async (auth, req) => {
   if (
     req.method !== "OPTIONS" &&
     pathname.startsWith("/api") &&
-    !pathname.startsWith("/api/__internal/log")
+    !pathname.startsWith("/api/internal/log")
   ) {
     try {
-      const logUrl = new URL("/api/__internal/log", req.url);
+      const logUrl = new URL("/api/internal/log", req.url);
       const headers: Record<string, string> = {
         "content-type": "application/json",
       };
