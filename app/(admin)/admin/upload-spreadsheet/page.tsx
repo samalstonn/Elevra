@@ -347,6 +347,17 @@ export default function UploadSpreadsheetPage() {
       position: "",
       year: "",
       email: "",
+      name: "",
+      districtType: "",
+      district: "",
+      raceLabel: "",
+      termType: "",
+      termLength: "",
+      mailingAddress: "",
+      phone: "",
+      filingDate: "",
+      partyPreference: "",
+      status: "",
     };
     for (const key of Object.keys(obj)) {
       const norm = normalizeHeader(key);
@@ -374,6 +385,65 @@ export default function UploadSpreadsheetPage() {
         case "position":
           mapped.position = asStr(val);
           break;
+        case "positiontitle":
+        case "office":
+        case "seat":
+        case "contest":
+        case "role":
+          if (!mapped.position) {
+            mapped.position = asStr(val);
+          }
+          break;
+        case "race":
+        case "racename":
+        case "racetitle":
+          if (!mapped.position) {
+            mapped.position = asStr(val);
+          }
+          mapped.raceLabel = asStr(val);
+          break;
+        case "districttype":
+          mapped.districtType = asStr(val);
+          break;
+        case "district":
+          mapped.district = asStr(val);
+          break;
+        case "termtype":
+          mapped.termType = asStr(val);
+          break;
+        case "termlength":
+          mapped.termLength = asStr(val);
+          break;
+        case "mailingaddress":
+          mapped.mailingAddress = asStr(val);
+          break;
+        case "phone":
+          mapped.phone = asStr(val);
+          break;
+        case "filingdate":
+          mapped.filingDate = asStr(val);
+          break;
+        case "partypreference":
+          mapped.partyPreference = asStr(val);
+          break;
+        case "status":
+          mapped.status = asStr(val);
+          break;
+        case "name": {
+          const full = asStr(val);
+          mapped.name = full;
+          if (full && (!mapped.firstName || !mapped.lastName)) {
+            const parts = full.trim().split(/\s+/);
+            if (parts.length === 1) {
+              if (!mapped.firstName) mapped.firstName = parts[0];
+            } else if (parts.length > 1) {
+              if (!mapped.firstName) mapped.firstName = parts[0];
+              if (!mapped.lastName)
+                mapped.lastName = parts.slice(1).join(" ");
+            }
+          }
+          break;
+        }
         case "year":
           if (typeof val === "number" || typeof val === "string")
             mapped.year = val;
@@ -522,7 +592,7 @@ export default function UploadSpreadsheetPage() {
     }
     if (!hasRequiredHeaders(mapped[0])) {
       setError(
-        "Missing required headers. Expected: municipality, state, firstName, lastName, position, year, email"
+        "Missing required headers. Expected: municipality, state, firstName, lastName, position (or race/office), year, email"
       );
       setStatus("");
       // Still log what we have for debugging
@@ -573,8 +643,11 @@ export default function UploadSpreadsheetPage() {
       <h1 className="text-2xl font-bold mb-2">Upload Spreadsheet</h1>
       <p className="text-sm text-gray-600 mb-6">
         Upload a CSV or Excel file with headers: municipality, state, firstName,
-        lastName, position, year, email. We will log the first few rows to the
-        console for verification.
+        lastName, position (or race/office), year, email. Optional columns such as
+        District Type, District, Term Type, Term Length, Mailing Address, Phone,
+        Filing Date, Party Preference, or Status are detected automatically and
+        forwarded to Gemini. We will log the first few rows to the console for
+        verification.
       </p>
 
       <div className="space-y-3 bg-white/70 p-4 rounded border">

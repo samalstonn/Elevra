@@ -1,7 +1,6 @@
 # Agents Playbook
 
 ## Core Principles
-- Treat Clerk private metadata as the single source of truth for elevated access; on the client always gate admin-only UI with `user.privateMetadata?.isAdmin || user.privateMetadata?.isSubAdmin`.
 - Preserve React’s rules of hooks. Never introduce conditional hook calls or reorder existing hooks when modifying client components.
 - After substantial edits or refactors run `npm run build` to ensure Next.js, TypeScript, and Prisma code still compile together.
 - Follow project conventions: TypeScript everywhere, Tailwind CSS utility-first styling, and the shadcn-derived UI primitives under `components/ui`.
@@ -175,7 +174,6 @@ _All routes live under `app/(api)/api` and use Next.js route handlers._
 - Admin dashboard contains large client bundle; future work could split views into dynamic imports.
 
 ## Quick Reference Checklist For Agents
-- [ ] Confirm elevated UI uses `user.privateMetadata?.isAdmin || user.privateMetadata?.isSubAdmin` before rendering.
 - [ ] Keep hook call order untouched when editing existing React components.
 - [ ] Run `npm run build` after significant edits to validate types, Prisma, and route handlers.
 - [ ] Update Playwright specs if changing auth flows or admin tooling.
