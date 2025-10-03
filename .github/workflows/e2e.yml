@@ -2,7 +2,7 @@ name: e2e
 
 on:
   pull_request:
-    branches: [ dev, main ]
+    branches: [dev, main]
   workflow_dispatch:
 
 concurrency:
@@ -66,7 +66,7 @@ jobs:
       - name: Run Playwright tests against the deployed preview
         run: npx playwright test
         env:
-          NEXT_PUBLIC_APP_URL: ${{ env.NEXT_PUBLIC_APP_URL }}
+          NEXT_PUBLIC_APP_URL: ${{ steps.deploy.outputs.url }}
 
       # Always upload the HTML report & traces for debugging
       - name: Upload Playwright report
