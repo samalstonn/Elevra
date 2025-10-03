@@ -39,7 +39,8 @@ export default clerkMiddleware(async (auth, req) => {
       if (loggingToken) {
         headers[API_LOG_TOKEN_HEADER] = loggingToken;
       }
-      await fetch(logUrl, {
+      // Fire-and-forget: intentionally do not await
+      void fetch(logUrl, {
         method: "POST",
         headers,
         body: JSON.stringify({
@@ -48,9 +49,14 @@ export default clerkMiddleware(async (auth, req) => {
           timestamp: new Date().toISOString(),
         }),
         cache: "no-store",
+        // keepalive is a hint; supported in some runtimes
+        // @ts-expect-error
+        keepalive: true,
+      }).catch((error) => {
+        console.error("Failed to record API call", error);
       });
     } catch (error) {
-      console.error("Failed to record API call", error);
+      console.error("Failed to schedule API call log", error);
     }
   }
 

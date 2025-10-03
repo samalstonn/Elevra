@@ -34,15 +34,15 @@ export async function POST(request: Request) {
     } as const;
 
     await logApiCall(entry);
-    // Also forward to Sentry as an info-level event for centralized storage/search
+    // Forward to Sentry without blocking the caller
     try {
-      Sentry.captureMessage("api_call", {
+      const msg = `api_call ${method.toUpperCase()} ${pathname}`;
+      Sentry.captureMessage(msg, {
         level: "info",
-        tags: { kind: "api" },
+        tags: { kind: "api", method: method.toUpperCase(), path: pathname, slug: entry.slug ?? "" },
         extra: entry,
       });
-      // In serverless contexts, flush to improve delivery before the function exits
-      await Sentry.flush(2000);
+      // Do not flush here; fire-and-forget to avoid impacting latency
     } catch {}
     return NextResponse.json({ ok: true });
   } catch (error) {
