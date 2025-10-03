@@ -18,11 +18,18 @@ const isPrivateRoute = createRouteMatcher([
 export default clerkMiddleware(async (auth, req) => {
   const pathname = req.nextUrl.pathname;
 
-  if (
+  const isApiRequest = pathname.startsWith("/api");
+  const isLoggingRoute = pathname.startsWith("/api/internal/log");
+  const isCandidateRoute = pathname === "/api/candidate";
+  const shouldLogRequest =
     req.method !== "OPTIONS" &&
-    pathname.startsWith("/api") &&
-    !pathname.startsWith("/api/internal/log")
-  ) {
+    !isLoggingRoute &&
+    !isCandidateRoute &&
+    !(pathname === "/api/candidateViews/timeseries" && req.method === "GET") &&
+    !(pathname === "/api/photos" && req.method === "GET") &&
+    (isApiRequest || req.method === "GET");
+
+  if (shouldLogRequest) {
     try {
       const logUrl = new URL("/api/internal/log", req.url);
       const headers: Record<string, string> = {

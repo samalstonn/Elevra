@@ -17,13 +17,20 @@ export async function POST(request: Request) {
     }
 
     const payload = (await request.json()) as unknown;
-    const { method, pathname, timestamp } = (payload ?? {}) as Record<string, unknown>;
+    const { method, pathname, timestamp, slug } = (payload ?? {}) as Record<string, unknown>;
 
     if (typeof method !== "string" || typeof pathname !== "string" || typeof timestamp !== "string") {
       return NextResponse.json({ error: "Invalid payload" }, { status: 400 });
     }
 
-    await logApiCall({ method, pathname, timestamp });
+    const entry = {
+      method,
+      pathname,
+      timestamp,
+      slug: typeof slug === "string" ? slug : undefined,
+    } as const;
+
+    await logApiCall(entry);
     return NextResponse.json({ ok: true });
   } catch (error) {
     console.error("Failed to log API call", error);

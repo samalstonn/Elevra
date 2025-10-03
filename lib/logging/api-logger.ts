@@ -10,6 +10,7 @@ export type ApiLogEntry = {
   method: string;
   pathname: string;
   timestamp: string;
+  slug?: string;
 };
 
 async function ensureLogFileDirectory() {
@@ -18,9 +19,17 @@ async function ensureLogFileDirectory() {
 
 export async function logApiCall(entry: ApiLogEntry) {
   await ensureLogFileDirectory();
-  const line = `${entry.timestamp} ${entry.method.toUpperCase()} ${
-    entry.pathname
-  }\n`;
+  const parts = [
+    entry.timestamp,
+    entry.method.toUpperCase(),
+    entry.pathname,
+  ];
+
+  if (entry.slug) {
+    parts.push(`slug=${entry.slug}`);
+  }
+
+  const line = `${parts.join(" ")}\n`;
   await appendFile(LOG_FILE_PATH, line, { encoding: "utf8" });
 }
 
