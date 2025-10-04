@@ -24,7 +24,6 @@ import TourModal from "@/components/tour/TourModal";
 import { usePageTitle } from "@/lib/usePageTitle";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
-import { PremiumCampaignCard } from "@/components/PremiumCampaignCard";
 // import { elevraStarterTemplate } from "@/app/(templates)/basicwebpage";
 // import type { ContentBlock } from "@prisma/client";
 

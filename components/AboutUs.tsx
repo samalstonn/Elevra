@@ -17,7 +17,7 @@ const AboutUs = () => {
         viewport={{ once: true }}
         className="text-2xl sm:text-3xl font-extrabold text-black text-center"
       >
-        In 375 BC, Plato Wrote in "The Republic"...
+        In 375 BC, Plato Wrote in &ldquo;The Republic&rdquo;...
       </motion.h2>
 
       <motion.p
@@ -27,9 +27,9 @@ const AboutUs = () => {
         viewport={{ once: true }}
         className="mt-12 mx-36 text-xl text-gray-700 text-center"
       >
-        "So, then, no one in any position of rule, insofar as he is a ruler,
+        &ldquo;So, then, no one in any position of rule, insofar as he is a ruler,
         seeks or orders what is advantageous to himself, but what is
-        advantageous to his subjects."
+        advantageous to his subjects.&rdquo;
         <br />
         <br />
         <em className="text-md">- Find the Right Candidate on Elevra -</em>

@@ -3,8 +3,7 @@
 import React from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Star, Zap, Lock, Crown, Sparkles } from "lucide-react";
+import { Star, Zap, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface PremiumCampaignCardProps {

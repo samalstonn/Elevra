@@ -24,7 +24,7 @@ const freeFeatures = [
   "Verified Checkmark",
 ];
 
-export const premiumFeatures = [
+const premiumFeatures = [
   "Discoverable Profile",
   "See Profile Views",
   "Verified Checkmark",
