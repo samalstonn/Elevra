@@ -25,10 +25,10 @@ const AboutUs = () => {
         whileInView={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.7, ease: "easeInOut", delay: 0.4 }}
         viewport={{ once: true }}
-        className="mt-12 mx-36 text-xl text-gray-700 text-center"
+        className="mt-12 mx-[10%] text-lg sm:text-xl text-gray-700 text-center"
       >
-        &ldquo;So, then, no one in any position of rule, insofar as he is a ruler,
-        seeks or orders what is advantageous to himself, but what is
+        &ldquo;So, then, no one in any position of rule, insofar as he is a
+        ruler, seeks or orders what is advantageous to himself, but what is
         advantageous to his subjects.&rdquo;
         <br />
         <br />
@@ -50,7 +50,7 @@ const AboutUs = () => {
           About Elevra
         </h2>
 
-        <p className="mt-6 text-xl text-gray-700 text-center">
+        <p className="mt-6 text-lg sm:text-xl text-gray-700 text-center">
           Founded by students and faculty at Cornell University, Elevra was
           created to simplify local elections. We offer tools for candidates
           that start with creating a basic, discoverable webpage and scale to
