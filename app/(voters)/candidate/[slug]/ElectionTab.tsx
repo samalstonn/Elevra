@@ -60,7 +60,10 @@ export function ElectionProfileTab({ link }: ElectionProfileTabProps) {
                 ? `text-4xl font-bold ${color}`
                 : `text-2xl font-semibold ${color}`;
             return (
-              <h2 key={block.id} className={headingClass + " break-words whitespace-pre-line overflow-wrap break-all hyphens-auto"}>
+              <h2
+                key={block.id}
+                className={headingClass + " break-words whitespace-pre-line hyphens-auto"}
+              >
                 {block.text?.replace(/\u00A0/g, " ")}
               </h2>
             );
