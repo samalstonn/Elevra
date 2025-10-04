@@ -6,9 +6,6 @@ import {
   LayoutDashboard, // Overview
   User, // Profile Settings
   BarChart3, // Analytics
-  Mail, // Mailing Lists
-  HandCoins, // Donations (Premium)
-  Video, // Videos (Premium)
   Award, // Endorsements (Premium)
   Users, // Vendor Marketplace
   Menu,
@@ -48,37 +45,37 @@ const navItems = [
     icon: Award,
     premium: false,
   },
-  {
-    href: "/candidates/candidate-dashboard/donations",
-    label: "Donations",
-    icon: HandCoins,
-    premium: true,
-  },
+  // {
+  //   href: "/candidates/candidate-dashboard/donations",
+  //   label: "Donations",
+  //   icon: HandCoins,
+  //   premium: true,
+  // },
   // --- Premium Tabs ---
-  {
-    href: "/candidates/vendor-marketplace",
-    label: "Vendor Marketplace",
-    icon: Users,
-    premium: true,
-  },
+  // {
+  //   href: "/candidates/vendor-marketplace",
+  //   label: "Vendor Marketplace",
+  //   icon: Users,
+  //   premium: true,
+  // },
   {
     href: "/candidates/candidate-dashboard/analytics",
     label: "Analytics",
     icon: BarChart3,
     premium: true,
   },
-  {
-    href: "/candidates/candidate-dashboard/mailing-lists",
-    label: "Mailing Lists",
-    icon: Mail,
-    premium: true,
-  },
-  {
-    href: "/candidates/candidate-dashboard/videos",
-    label: "Videos",
-    icon: Video,
-    premium: true,
-  },
+  // {
+  //   href: "/candidates/candidate-dashboard/mailing-lists",
+  //   label: "Mailing Lists",
+  //   icon: Mail,
+  //   premium: true,
+  // },
+  // {
+  //   href: "/candidates/candidate-dashboard/videos",
+  //   label: "Videos",
+  //   icon: Video,
+  //   premium: true,
+  // },
 ];
 
 // Define the structure of the dashboard layout

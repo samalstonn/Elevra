@@ -2,17 +2,23 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   images: {
-    domains: [
-      "picsum.photos",
-      "placehold.co",
-      "icons.duckduckgo.com",
-      "logo.clearbit.com",
-    ],
     remotePatterns: [
+      // formerly `domains: ["picsum.photos"]`
+      { protocol: "https", hostname: "picsum.photos", pathname: "/**" },
+
+      // formerly `domains: ["placehold.co"]`
+      { protocol: "https", hostname: "placehold.co", pathname: "/**" },
+
+      // formerly `domains: ["icons.duckduckgo.com"]`
+      { protocol: "https", hostname: "icons.duckduckgo.com", pathname: "/**" },
+
+      // formerly `domains: ["logo.clearbit.com"]`
+      { protocol: "https", hostname: "logo.clearbit.com", pathname: "/**" },
+
+      // keep your Vercel Blob rule (allow any subdomain), restrict to /blocks/**
       {
         protocol: "https",
         hostname: "**.public.blob.vercel-storage.com",
-        port: "",
         pathname: "/blocks/**",
       },
     ],

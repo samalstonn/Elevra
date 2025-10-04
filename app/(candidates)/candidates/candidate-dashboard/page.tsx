@@ -15,7 +15,6 @@ import { FaShare } from "react-icons/fa"; // Importing FaShare
 import { Candidate, Donation } from "@prisma/client";
 import { useCandidate } from "@/lib/useCandidate";
 import AnalyticsChart from "@/components/AnalyticsChart";
-import ViewsHeatmap from "@/components/ViewsHeatmap";
 import { useSearchParams, useRouter } from "next/navigation";
 import { useUser } from "@clerk/nextjs";
 import {
@@ -235,10 +234,7 @@ export default function OverviewPage() {
         secondaryLabel="Skip tour"
         onSecondary={skipTour}
       >
-        <p>
-          See profile views, time‑of‑day activity, and quick actions to manage
-          your campaign.
-        </p>
+        <p>See profile views and quick actions to manage your campaign.</p>
         <p>
           Tip: Feel free to drag and drop this window anywhere on the screen!
           Scroll the background to explore your dashboard while keeping this
@@ -291,7 +287,10 @@ export default function OverviewPage() {
                 <Link
                   href={
                     candidate
-                      ? buildEditorPath(candidate.slug, electionLinks[0].electionId)
+                      ? buildEditorPath(
+                          candidate.slug,
+                          electionLinks[0].electionId
+                        )
                       : "/candidates/candidate-dashboard/my-elections"
                   }
                   className="text-purple-600 underline"
@@ -430,21 +429,7 @@ export default function OverviewPage() {
           )}
         </CardContent>
       </Card>
-      <Card>
-        <CardHeader>
-          <CardTitle>Time-of-Day Activity</CardTitle>
-          <CardDescription>
-            When people view your profile (local time).
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          {candidate ? (
-            <ViewsHeatmap candidateId={candidate.id} days={30} />
-          ) : (
-            <div className="text-xs text-gray-500">Loading heatmap...</div>
-          )}
-        </CardContent>
-      </Card>
+      {/* Moved Time-of-Day Activity heatmap to Analytics tab */}
       {/* Analytics Card */}
       {/* <Card className="col-span-4">
         <CardHeader>

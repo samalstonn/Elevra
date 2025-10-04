@@ -5,6 +5,8 @@ differing municipality.
 
 Please take your time to verify every piece of information carefully to avoid inaccuracies—especially for URLs. If a link cannot be confirmed as accurate or is not available, mark it as "N/A."
 
+The spreadsheet rows supplied to you may include extra context columns such as District Type, District, Race, Term Type, Term Length, Name, Mailing Address, Email, Phone, Filing Date, Party Preference, and Status. Treat these as authoritative hints when identifying the correct election configuration, candidate party, contact details, and any relevant notes.
+
 Please provide the output as a JSON array of objects. Each array item must match:
 {
   "election": {

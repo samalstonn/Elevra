@@ -30,6 +30,7 @@ export async function generateMetadata({
   }
 
   let title = `${candidate.name} – Candidate`;
+  let description = `Discover election details, endorsements, and updates from ${candidate.name} on Elevra.`;
   const electionIdParam = resolvedSearchParams?.election
     ? parseInt(resolvedSearchParams.election, 10)
     : undefined;
@@ -47,10 +48,25 @@ export async function generateMetadata({
       title = `${candidate.name} – ${election.position}${
         loc ? ` (${loc})` : ""
       }`;
+      description = `Explore the ${election.position.toLowerCase()} race${
+        loc ? ` in ${loc}` : ""
+      } with insights about ${candidate.name}.`;
     }
   }
 
-  return { title };
+  return {
+    title,
+    description,
+    openGraph: {
+      title,
+      description,
+    },
+    twitter: {
+      card: "summary",
+      title,
+      description,
+    },
+  } satisfies Metadata;
 }
 
 export default async function CandidatePage({

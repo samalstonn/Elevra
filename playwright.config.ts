@@ -16,22 +16,26 @@ const baseURL = process.env.NEXT_PUBLIC_APP_URL || `http://localhost:${PORT}`;
 export default defineConfig({
   // Look for tests in the "e2e" directory
   testDir: "./tests/e2e",
+  globalTeardown: "./tests/e2e/global.teardown.ts",
   // Set the number of retries for each, in case of failure
   retries: 1,
   // Run your local dev server before starting the tests.
-  webServer: {
-    command: "npm run dev",
-    // Base URL to use in actions like `await page.goto('/')`
-    url: baseURL,
-    // Set the timeout for the server to start
-    timeout: 120 * 1000,
-    // Reuse the server between tests
-    reuseExistingServer: !process.env.CI,
-    // Ensure emails are not actually sent during tests
-    env: {
-      EMAIL_DRY_RUN: "1",
-    },
-  },
+  // If we have a deployed URL, DO NOT start a server.
+  webServer: !baseURL.includes("localhost")
+    ? undefined
+    : {
+        command: "npm run dev",
+        // Base URL to use in actions like `await page.goto('/')`
+        url: baseURL,
+        // Set the timeout for the server to start
+        timeout: 120 * 1000,
+        // Reuse the server between tests
+        reuseExistingServer: !process.env.CI,
+        // Ensure emails are not actually sent during tests
+        env: {
+          EMAIL_DRY_RUN: "1",
+        },
+      },
   use: {
     // Base URL to use in actions like `await page.goto('/')`.
     baseURL,
@@ -77,7 +81,9 @@ export default defineConfig({
     {
       name: "Create Campaign",
       testMatch: "create-campaign-page.spec.ts",
-      use: { ...devices["Desktop Chrome"] },
+      use: {
+        ...devices["Desktop Chrome"],
+      },
       dependencies: ["global setup"],
     },
     {
@@ -85,6 +91,6 @@ export default defineConfig({
       testMatch: "edit-campaign-page.spec.ts",
       use: { ...devices["Desktop Chrome"] },
       dependencies: ["global setup"],
-    }
+    },
   ],
 });

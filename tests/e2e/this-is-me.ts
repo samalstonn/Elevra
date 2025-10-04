@@ -5,10 +5,11 @@ import {
   expectNoTemplateBlocks,
   expectEmailLogged,
 } from "../helpers";
-import { test, expect, prisma, CandidateFixture } from "./fixtures";
+import { test, expect, prisma, CandidateFixture, getCredsForWorker } from "./fixtures";
 
 test.afterEach(async ({ candidate }) => {
-  await resetCandidateVerification(candidate);
+  const { username } = getCredsForWorker(test.info().workerIndex);
+  await resetCandidateVerification(candidate, username!);
 });
 
 test("Correct Email - Already Signed In: Successful Verification and Sent to Dashboard with Popup", async ({
@@ -18,12 +19,13 @@ test("Correct Email - Already Signed In: Successful Verification and Sent to Das
   await page.goto(`/candidate/${candidate.slug}`);
   // Before verification, there should be no content blocks
   await expectNoTemplateBlocks(candidate.id, candidate.electionId, prisma);
+  const { username, password } = getCredsForWorker(test.info().workerIndex);
   await clerk.signIn({
     page,
     signInParams: {
       strategy: "password",
-      identifier: process.env.E2E_CLERK_USER_USERNAME!,
-      password: process.env.E2E_CLERK_USER_PASSWORD!,
+      identifier: username!,
+      password: password!,
     },
   });
   await expect(page).toHaveURL(
@@ -383,8 +385,8 @@ test("Correct Email - Not Signed In: Successful Verification and Sent to Dashboa
     page,
     signInParams: {
       strategy: "password",
-      identifier: process.env.E2E_CLERK_USER_USERNAME!,
-      password: process.env.E2E_CLERK_USER_PASSWORD!,
+      identifier: getCredsForWorker(test.info().workerIndex).username!,
+      password: getCredsForWorker(test.info().workerIndex).password!,
     },
   });
 
@@ -416,7 +418,7 @@ test("Correct Email - Not Signed In: Successful Verification and Sent to Dashboa
 // Reset candidate verification state after tests
 type CandidateInfo = CandidateFixture["candidate"];
 
-async function resetCandidateVerification(candidate: CandidateInfo) {
+async function resetCandidateVerification(candidate: CandidateInfo, originalEmail: string) {
   const { id, slug } = candidate;
   try {
     await prisma.candidate.update({
@@ -425,7 +427,7 @@ async function resetCandidateVerification(candidate: CandidateInfo) {
         verified: false,
         status: SubmissionStatus.PENDING,
         clerkUserId: null,
-        email: process.env.E2E_CLERK_USER_USERNAME, // reset to original email
+        email: originalEmail, // reset to the email used by this test
       },
     });
   } catch (err) {

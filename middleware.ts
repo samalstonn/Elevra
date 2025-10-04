@@ -3,8 +3,9 @@ import {
   clerkMiddleware,
   createRouteMatcher,
 } from "@clerk/nextjs/server";
-import { m } from "framer-motion";
 import { NextResponse } from "next/server";
+
+import { API_LOG_TOKEN_HEADER } from "@/lib/logging/constants";
 
 // Define protected routes
 const isPrivateRoute = createRouteMatcher([
@@ -15,6 +16,49 @@ const isPrivateRoute = createRouteMatcher([
 ]);
 
 export default clerkMiddleware(async (auth, req) => {
+  const pathname = req.nextUrl.pathname;
+
+  const isApiRequest = pathname.startsWith("/api");
+  const isLoggingRoute = pathname.startsWith("/api/internal/log");
+  const isCandidateRoute = pathname === "/api/candidate";
+  const shouldLogRequest =
+    req.method !== "OPTIONS" &&
+    !isLoggingRoute &&
+    !isCandidateRoute &&
+    !(pathname === "/api/candidateViews/timeseries" && req.method === "GET") &&
+    !(pathname === "/api/photos" && req.method === "GET") &&
+    (isApiRequest || req.method === "GET");
+
+  if (shouldLogRequest) {
+    try {
+      const logUrl = new URL("/api/internal/log", req.url);
+      const headers: Record<string, string> = {
+        "content-type": "application/json",
+      };
+      const loggingToken = process.env.API_LOG_TOKEN;
+      if (loggingToken) {
+        headers[API_LOG_TOKEN_HEADER] = loggingToken;
+      }
+      // Fire-and-forget: intentionally do not await
+      void fetch(logUrl, {
+        method: "POST",
+        headers,
+        body: JSON.stringify({
+          method: req.method,
+          pathname,
+          timestamp: new Date().toISOString(),
+        }),
+        cache: "no-store",
+        // keepalive is a hint; supported in some runtimes
+        keepalive: true,
+      }).catch((error) => {
+        console.error("Failed to record API call", error);
+      });
+    } catch (error) {
+      console.error("Failed to schedule API call log", error);
+    }
+  }
+
   const { userId, sessionClaims } = await auth();
 
   // Protect private routes - require authentication
@@ -32,7 +76,6 @@ export default clerkMiddleware(async (auth, req) => {
     const isSubAdmin = user.privateMetadata?.isSubAdmin;
     const isAdmin = user.privateMetadata?.isAdmin;
 
-    const pathname = req.nextUrl.pathname;
     if (pathname.startsWith("/admin")) {
       const subAdminAllowed = [
         "/admin/sub-admin",
