@@ -32,7 +32,7 @@ const AboutUs = () => {
         advantageous to his subjects.&rdquo;
         <br />
         <br />
-        <em className="text-md">- Find the Right Candidate on Elevra -</em>
+        <em className="text-md">- Find the Right Candidate on Elevra</em>
       </motion.p>
 
       {/* Section Spacer */}
