@@ -85,7 +85,7 @@ export function ElectionProfileTab({ link }: ElectionProfileTabProps) {
             return (
               <ListTag key={block.id} className={listClass}>
                 {(block.items ?? []).map((item, idx) => (
-                  <li key={idx}>{item}</li>
+                  <li key={idx}>{item.replace(/\u00A0/g, " ")}</li> //Added to fix weird space issue
                 ))}
               </ListTag>
             );
