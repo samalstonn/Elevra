@@ -8,7 +8,6 @@ import {
 } from "@clerk/nextjs";
 import "../globals.css";
 import { useState, useEffect, Suspense } from "react";
-import { Inter } from "next/font/google";
 import Link from "next/link";
 import { Analytics } from "@vercel/analytics/react";
 import { SpeedInsights } from "@vercel/speed-insights/next";
@@ -18,7 +17,6 @@ import { Toaster } from "@/components/ui/toaster";
 import Footer from "../(footer-pages)/Footer";
 import HeaderButtons from "./HeaderButtons";
 
-const inter = Inter({ subsets: ["latin"] });
 const clerkKey = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
 if (!clerkKey || clerkKey.trim() === "") {
   throw new Error(
@@ -143,9 +141,7 @@ export default function LayoutClient({
   return (
     <ClerkProvider publishableKey={clerkKey || ""}>
       <html lang="en" className="overflow-x-hidden">
-        <body
-          className={`${inter.className} flex min-h-full flex-col bg-background text-foreground antialiased overflow-x-hidden overflow-y-auto`}
-        >
+        <body className="flex min-h-full flex-col bg-background text-foreground antialiased overflow-x-hidden overflow-y-auto">
           {/* Header Section (wrapped in Suspense to support useSearchParams) */}
           <Suspense fallback={null}>
             <HeaderNav />

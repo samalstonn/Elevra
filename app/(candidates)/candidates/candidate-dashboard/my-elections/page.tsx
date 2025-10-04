@@ -24,6 +24,7 @@ import TourModal from "@/components/tour/TourModal";
 import { usePageTitle } from "@/lib/usePageTitle";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
+import { PremiumCampaignCard } from "@/components/PremiumCampaignCard";
 // import { elevraStarterTemplate } from "@/app/(templates)/basicwebpage";
 // import type { ContentBlock } from "@prisma/client";
 
@@ -357,6 +358,14 @@ export default function ProfileSettingsPage() {
           ready-made template.
         </p>
       </TourModal>
+
+      {/* Page Heading */}
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold text-gray-900">
+          Your Public Campaign Pages
+        </h1>
+      </div>
+
       <div className="mb-6">
         <div className="w-full">
           <div className="grid gap-6 sm:grid-cols-2 xl:grid-cols-3">
@@ -458,6 +467,11 @@ export default function ProfileSettingsPage() {
                         Missing slug
                       </Button>
                     )}
+                    {resultsHref ? (
+                      <Button asChild variant="secondary" size="sm">
+                        <Link href={resultsHref}>View Election</Link>
+                      </Button>
+                    ) : null}
                     <Button
                       variant="destructive"
                       size="sm"
@@ -474,15 +488,13 @@ export default function ProfileSettingsPage() {
                     >
                       Delete Campaign
                     </Button>
-                    {resultsHref ? (
-                      <Button asChild variant="secondary" size="sm">
-                        <Link href={resultsHref}>View Election</Link>
-                      </Button>
-                    ) : null}
                   </div>
                 </article>
               );
             })}
+            {/* Premium Campaign Card */}
+            {/* <PremiumCampaignCard /> */}
+
             <article className="flex h-full flex-col justify-between rounded-xl border-2 border-dashed border-purple-200 bg-purple-50/60 p-6 shadow-sm backdrop-blur transition hover:border-purple-300">
               <div className="space-y-4">
                 <div>

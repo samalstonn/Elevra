@@ -356,7 +356,9 @@ export default function CandidateClient({
         </div>
 
         {/* Tabs - Desktop: regular spacing, Mobile: horizontal scroll */}
-        <div className="w-full flex justify-center"> {/* Centers navbar on mobile and desktop! */}
+        <div className="w-full flex justify-center">
+          {" "}
+          {/* Centers navbar on mobile and desktop! */}
           <div
             className="flex gap-2 md:gap-4 overflow-x-auto scrollbar-hide py-2 px-1 md:px-0"
             style={{ WebkitOverflowScrolling: "touch" }}
@@ -404,9 +406,7 @@ export default function CandidateClient({
             </div>
             {/* Education */}
             <div className="mt-4 text-sm text-gray-700">
-              <h2 className="text-lg font-semibold text-gray-900">
-                Education
-              </h2>
+              <h2 className="text-lg font-semibold text-gray-900">Education</h2>
               {candidate.history && candidate.history.length > 0 ? (
                 <EducationPublic history={candidate.history} />
               ) : (
@@ -452,7 +452,7 @@ export default function CandidateClient({
           className=" w-full p-4 bg-white"
         >
           <h2 className="text-sm font-semibold text-gray-600 mb-3">
-            {activeElectionTab.election.position} Candidates
+            Other Candidates in the Same Election
           </h2>
 
           {/* Related candidates cards */}
@@ -532,7 +532,7 @@ export default function CandidateClient({
       >
         <div className="flex justify-between items-center mb-3 ">
           <h2 className="text-sm font-semibold text-gray-600">
-            People who viewed {candidate.name} also viewed
+            Suggested Candidates Around the Country
           </h2>
         </div>
         <div className="grid grid-cols-1 gap-3">

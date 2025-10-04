@@ -166,13 +166,24 @@ export default async function CandidatePage({
     },
   });
 
-  // Get suggested candidates (only those with actual images)
+  // Suggested list prioritizes candidates with real image content blocks
   const suggestedCandidates = await prisma.candidate.findMany({
     where: {
       id: { not: candidateID },
       hidden: false,
-      verified: true,
-      elections: { some: { election: { type: "LOCAL" } } },
+      elections: {
+        some: {
+          ContentBlock: {
+            some: {
+              type: "IMAGE",
+              imageUrl: {
+                notIn: ["/example-johnny.jpg", "/johnny-lawnsign.png"],
+                not: null,
+              },
+            },
+          },
+        },
+      },
     },
   });
 

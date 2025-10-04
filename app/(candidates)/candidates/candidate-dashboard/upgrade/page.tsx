@@ -19,29 +19,20 @@ import { usePageTitle } from "@/lib/usePageTitle";
 
 // Define the features for each plan
 const freeFeatures = [
-  "Dashboard Overview",
-  "Basic Profile Settings",
-  "Basic Analytics",
-  "1 Profile Photo",
+  "Discoverable Profile",
+  "See Profile Views",
+  "Verified Checkmark",
 ];
 
-const premiumFeatures = [
-  ...freeFeatures.filter(
-    (f) =>
-      f !== "1 Profile Photo" &&
-      f !== "Dashboard Overview" &&
-      f !== "Basic Analytics" &&
-      f !== "Basic Profile Settings" &&
-      !f.includes("Limited")
-  ), // Inherit non-limited free features
+export const premiumFeatures = [
+  "Discoverable Profile",
+  "See Profile Views",
+  "Verified Checkmark",
+  "Premium Campaign Page",
+  "Top of Google Search Results",
   "Advanced Analytics",
-  "Donation Tracking & Management",
-  "Video Uploads & Management",
-  "Verified Endorsement Management",
-  "Multiple Profile Photos",
+  "Verified Endorsements",
   "Priority Support",
-  "Vendor Discovery Access",
-  "Mailing List Management",
 ];
 
 // Define Plan structure (replace placeholder priceId with your actual Stripe Price ID)
@@ -49,7 +40,7 @@ const plans = [
   {
     name: "Free",
     price: "$0",
-    interval: "/ month",
+    interval: "/ Month",
     features: freeFeatures,
     isCurrent: true, // Placeholder: Determine this based on user's actual plan
     cta: "Current Plan",
@@ -57,8 +48,8 @@ const plans = [
   },
   {
     name: "Premium",
-    price: "$20",
-    interval: "/ month",
+    price: "$30",
+    interval: "/ One Time Fee",
     features: premiumFeatures,
     isCurrent: false, // Placeholder: Determine this based on user's actual plan
     cta: "Upgrade to Premium",
@@ -175,7 +166,7 @@ export default function UpgradePage() {
             key={plan.name}
             className={`relative flex flex-col h-full ${
               plan.highlight
-                ? "border-blue-500 border-2 shadow-lg"
+                ? "border-purple-700 border-2 shadow-lg"
                 : "shadow-sm"
             }`}
           >
@@ -183,7 +174,7 @@ export default function UpgradePage() {
               <div className="absolute -top-4 right-4 z-10">
                 <Badge
                   variant="default"
-                  className="bg-blue-600 text-white px-3 py-1 text-sm font-medium"
+                  className="bg-purple-700 text-white px-3 py-1 text-sm font-medium"
                 >
                   <Star className="w-3 h-3 mr-1 inline-block" /> Most Popular
                 </Badge>
@@ -217,7 +208,11 @@ export default function UpgradePage() {
             </CardContent>
             <CardFooter className="pt-4">
               <Button
-                className="w-full"
+                className={`w-full ${
+                  plan.highlight
+                    ? "bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white shadow-md transition-all duration-200 group-hover:shadow-lg"
+                    : ""
+                }`}
                 onClick={() => handleUpgradeClick(plan)}
                 disabled={
                   isLoading ||
