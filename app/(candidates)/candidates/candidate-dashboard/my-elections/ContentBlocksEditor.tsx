@@ -706,7 +706,7 @@ function SortableBlock({
             <Image
               src={block.imageUrl}
               alt={block.caption ?? ""}
-              className="w-full rounded mx-auto cursor-pointer hover:outline hover:outline-2 hover:outline-purple-600"
+              className="w-full rounded mx-auto cursor-pointer hover:outline hover:outline-2 hover:outline-purple-600 border border-black"
               width={0}
               height={0}
               sizes="100vw"

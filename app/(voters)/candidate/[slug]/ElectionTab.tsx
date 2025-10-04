@@ -43,7 +43,7 @@ export function ElectionProfileTab({ link }: ElectionProfileTabProps) {
   const blocksToRender = sortedBlocks.filter((b) => !unchanged(b));
 
   return (
-    <div className="space-y-6 mx-auto max-w-4xl px-4">
+    <div className="space-y-6 mx-auto max-w-4xl px-4 pt-8">
       {blocksToRender.length === 0 && (
         <EmptyState
           primary="Candidate overview is not available yet for this election."
@@ -62,7 +62,9 @@ export function ElectionProfileTab({ link }: ElectionProfileTabProps) {
             return (
               <h2
                 key={block.id}
-                className={headingClass + " break-words whitespace-pre-line hyphens-auto"}
+                className={
+                  headingClass + " break-words whitespace-pre-line hyphens-auto"
+                }
               >
                 {block.text?.replace(/\u00A0/g, " ")}
               </h2>
@@ -107,7 +109,7 @@ export function ElectionProfileTab({ link }: ElectionProfileTabProps) {
                     height={0}
                     sizes="100vw"
                     style={{ width: "50%", height: "auto" }}
-                    className="w-1/2 mx-auto rounded"
+                    className="w-1/2 mx-auto rounded border border-black"
                     priority={false}
                   />
                 )}
