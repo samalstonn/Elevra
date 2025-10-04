@@ -356,8 +356,11 @@ export default function CandidateClient({
         </div>
 
         {/* Tabs - Desktop: regular spacing, Mobile: horizontal scroll */}
-        <div className="md:inline-flex md:space-x-4 md:mb-4 md:justify-center md:w-full mt-6 mb-4 overflow-x-auto pb-2">
-          <div className="inline-flex space-x-2 md:space-x-4 w-max min-w-full md:min-w-0">
+        <div className="w-full flex justify-center"> {/* Centers navbar on mobile and desktop! */}
+          <div
+            className="flex gap-2 md:gap-4 overflow-x-auto scrollbar-hide py-2 px-1 md:px-0"
+            style={{ WebkitOverflowScrolling: "touch" }}
+          >
             <TabButton
               active={activeTab === "about"}
               onClick={() => setActiveTab("about")}

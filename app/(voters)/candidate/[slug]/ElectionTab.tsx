@@ -34,7 +34,7 @@ export type ElectionProfileTabProps = {
 function mdToHtml(markdown: string): string {
   marked.setOptions({ async: false });
   const raw = marked.parse(markdown) as string;
-  return DOMPurify.sanitize(raw);
+  return DOMPurify.sanitize(raw).replace(/\u00A0/g, " ");
 }
 
 export function ElectionProfileTab({ link }: ElectionProfileTabProps) {
@@ -60,8 +60,8 @@ export function ElectionProfileTab({ link }: ElectionProfileTabProps) {
                 ? `text-4xl font-bold ${color}`
                 : `text-2xl font-semibold ${color}`;
             return (
-              <h2 key={block.id} className={headingClass}>
-                {block.text}
+              <h2 key={block.id} className={headingClass + " break-words whitespace-pre-line overflow-wrap break-all hyphens-auto"}>
+                {block.text?.replace(/\u00A0/g, " ")}
               </h2>
             );
 
@@ -104,7 +104,7 @@ export function ElectionProfileTab({ link }: ElectionProfileTabProps) {
                     height={0}
                     sizes="100vw"
                     style={{ width: "50%", height: "auto" }}
-                    className="w-1/2 rounded"
+                    className="w-1/2 mx-auto rounded"
                     priority={false}
                   />
                 )}
