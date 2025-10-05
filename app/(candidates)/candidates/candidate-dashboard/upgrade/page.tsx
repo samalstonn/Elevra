@@ -91,26 +91,34 @@ export default function UpgradePage() {
   useEffect(() => {
     const status = searchParams?.get("status");
     if (!status || handledStatus === status) return;
+    if (status === "success" && !isLoaded) return;
 
-    if (status === "success") {
-      // Refresh user metadata to pick up the latest subscription tier
-      user?.reload?.();
-      toast({
-        title: "Upgrade Successful",
-        description: "You now have access to all premium features.",
-      });
-    }
+    const handleStatus = async () => {
+      if (status === "success") {
+        try {
+          await user?.reload?.();
+        } catch (error) {
+          console.error("Failed to reload user after upgrade", error);
+        }
+        toast({
+          title: "Upgrade Successful",
+          description: "You now have access to all premium features.",
+        });
+      }
 
-    if (status === "cancelled") {
-      toast({
-        title: "Checkout Cancelled",
-        description: "No changes were made to your subscription.",
-      });
-    }
+      if (status === "cancelled") {
+        toast({
+          title: "Checkout Cancelled",
+          description: "No changes were made to your subscription.",
+        });
+      }
 
-    setHandledStatus(status);
-    router.replace("/candidates/candidate-dashboard/upgrade");
-  }, [handledStatus, router, searchParams, toast, user]);
+      setHandledStatus(status);
+      router.replace("/candidates/candidate-dashboard/upgrade");
+    };
+
+    void handleStatus();
+  }, [handledStatus, isLoaded, router, searchParams, toast, user]);
 
   const plans = useMemo<Plan[]>(() => {
     return planDefinitions.map((definition) => {
