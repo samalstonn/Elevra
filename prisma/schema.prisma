@@ -251,6 +251,7 @@ model ElectionLink {
   ContentBlock    ContentBlock[]
   candidate       Candidate      @relation(fields: [candidateId], references: [id])
   election        Election       @relation(fields: [electionId], references: [id])
+  Document        Document?
 
   @@id([candidateId, electionId])
 }
@@ -276,6 +277,21 @@ model ContentBlock {
   electionLink ElectionLink @relation(fields: [candidateId, electionId], references: [candidateId, electionId], onDelete: Cascade)
 
   @@unique([candidateId, electionId, order])
+}
+
+model Document {
+  id            String       @id @default(cuid())
+  contentJson   Json // from editor.getJSON()
+  contentHtml   String       @db.Text // from editor.getHTML()
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+  candidateId   Int // id of user who created
+  electionId    Int // id of election
+  candidateSlug String // slug of user who created
+  clerkUserId   String // clerk user id of user who created
+  electionLink  ElectionLink @relation(fields: [candidateId, electionId], references: [candidateId, electionId], onDelete: Cascade)
+
+  @@unique([candidateId, electionId])
 }
 
 enum ElectionType {
