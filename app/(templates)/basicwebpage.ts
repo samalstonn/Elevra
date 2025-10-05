@@ -1,4 +1,4 @@
-export const elevraStarterTemplate: Array<{
+interface TemplateBlock {
   order: number;
   type: "HEADING" | "TEXT" | "IMAGE" | "LIST";
   level?: number;
@@ -8,7 +8,9 @@ export const elevraStarterTemplate: Array<{
   imageUrl?: string;
   listStyle?: "BULLET";
   items?: string[];
-}> = [
+}
+
+export const elevraStarterTemplate: Array<TemplateBlock> = [
   /* ───────────────────  MAIN HEADLINE  ────────────── */
   {
     order: 0,
@@ -102,5 +104,35 @@ I’m committed to strengthening that connection and doing everything I can to s
     order: 9,
     type: "IMAGE",
     imageUrl: "/johnny-lawnsign.png",
+  },
+];
+
+export const simpleTemplate: Array<TemplateBlock> = [
+  /* ───────────────────  MAIN HEADLINE  ────────────── */
+  {
+    order: 0,
+    type: "HEADING",
+    level: 1,
+    text: "I’m Johnny Appleseed & I’m running for the Hackensack Board of Education.",
+    color: "GRAY",
+  },
+
+  /* ────────────────  IMAGE  ─────────────── */
+  {
+    order: 1,
+    type: "IMAGE",
+    imageUrl: "/example-johnny.jpg",
+  },
+
+  /* ────────────────  INTRO TEXT  ─────────────── */
+  {
+    order: 2,
+    type: "TEXT",
+    body: `I was raised right here in Hackensack - walking these same halls, learning from exceptional teachers, and building friendships that shaped the person I am today.
+
+    Now, as I raise my own child in this community, I’m committed to helping ensure our schools remain strong for every student: safe, supportive, and inclusive for the next generation.
+
+    That’s why I’m running for the Board of Education on **November 4th 2025**`,
+    color: "GRAY",
   },
 ];
