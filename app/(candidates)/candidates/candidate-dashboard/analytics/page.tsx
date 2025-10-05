@@ -5,9 +5,6 @@ import { BasicAnalyticsDisplay } from "./BasicAnalyticsDisplay";
 // Import AdvancedAnalyticsDisplay later when implemented
 // import { AdvancedAnalyticsDisplay } from './AdvancedAnalyticsDisplay';
 // import { useAuth } from "@clerk/nextjs"; // To check subscription later
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { CreditCard } from "lucide-react";
-import Link from "next/link";
 import { usePageTitle } from "@/lib/usePageTitle";
 
 export default function AnalyticsPage() {

@@ -1,5 +1,5 @@
 "use client";
-import React, { useMemo, useState } from "react";
+import React, { useState } from "react";
 import { DashboardNav } from "../../../../components/DashboardNav";
 import { useUser } from "@clerk/nextjs";
 import {
@@ -68,20 +68,18 @@ export default function CandidateDashboardLayout({
     },
   ];
 
-  const navItemsToRender = useMemo(() => {
-    if (candidateTier === "premium") {
-      return navItems
-        .map((item) =>
-          item.requiresPremiumUnlock
-            ? { ...item, premium: false, requiresPremiumUnlock: false }
-            : item
-        )
-        .filter(
-          (item) => item.href !== "/candidates/candidate-dashboard/upgrade"
-        );
-    }
-    return navItems;
-  }, [candidateTier]);
+  const navItemsToRender =
+    candidateTier === "premium"
+      ? navItems
+          .map((item) =>
+            item.requiresPremiumUnlock
+              ? { ...item, premium: false, requiresPremiumUnlock: false }
+              : item
+          )
+          .filter(
+            (item) => item.href !== "/candidates/candidate-dashboard/upgrade"
+          )
+      : navItems;
 
   return (
     <div className="flex min-h-screen min-w-0 overflow-x-visible">
