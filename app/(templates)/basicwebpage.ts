@@ -130,9 +130,9 @@ export const simpleTemplate: Array<TemplateBlock> = [
     type: "TEXT",
     body: `I was raised right here in Hackensack - walking these same halls, learning from exceptional teachers, and building friendships that shaped the person I am today.
 
-    Now, as I raise my own child in this community, I’m committed to helping ensure our schools remain strong for every student: safe, supportive, and inclusive for the next generation.
+Now, as I raise my own child in this community, I’m committed to helping ensure our schools remain strong for every student: safe, supportive, and inclusive for the next generation.
 
-    That’s why I’m running for the Board of Education on **November 4th 2025**`,
+That’s why I’m running for the Board of Education on **November 4th 2025**`,
     color: "GRAY",
   },
 ];

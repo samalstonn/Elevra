@@ -1,8 +1,17 @@
 // app/(api)/api/electionlinks/route.ts
 import { NextResponse } from "next/server";
-import { PrismaClient, TextColor, BlockType, ListStyle } from "@prisma/client";
+import {
+  PrismaClient,
+  TextColor,
+  BlockType,
+  ListStyle,
+  Prisma,
+} from "@prisma/client";
 import { pick } from "lodash";
-import { elevraStarterTemplate } from "@/app/(templates)/basicwebpage";
+import {
+  elevraStarterTemplate,
+  simpleTemplate,
+} from "@/app/(templates)/basicwebpage";
 
 const prisma = new PrismaClient();
 
@@ -33,7 +42,7 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   try {
-    const { candidateId, electionId, profile } = await request.json();
+    const { candidateId, electionId, profile, key } = await request.json();
     if (typeof candidateId !== "number" || typeof electionId !== "number") {
       return NextResponse.json(
         { error: "candidateId and electionId must be numbers" },
@@ -58,71 +67,37 @@ export async function POST(request: Request) {
         : {}),
     };
 
+    // Clear existing content blocks for the given candidate and election
+    await prisma.contentBlock.deleteMany({
+      where: {
+        candidateId,
+        electionId,
+      },
+    });
+
     const newLinkWithBlocks = await prisma.$transaction(async (tx) => {
       // 1 ▸ Create the election link
       const link = await tx.electionLink.create({ data: linkData });
 
-      const dataToCreate = elevraStarterTemplate.map((block, _) => ({
-        ...block,
-        candidateId,
-        electionId,
-      }));
-
-      const _ = [
-        {
+      // Prepare blocks to create based on the selected template key
+      let dataToCreate: Prisma.ContentBlockCreateManyInput[];
+      if (key === "custom") {
+        dataToCreate = []; // No blocks for custom template
+      } else if (key === "simpleTemplate") {
+        dataToCreate = simpleTemplate.map((block, _) => ({
+          ...block,
           candidateId,
           electionId,
-          order: 0,
-          type: BlockType.HEADING,
-          level: 1,
-          text: "", // Candidate will fill later
-          color: TextColor.BLACK,
-        },
-        {
+        }));
+      } else if (key === "elevraStarterTemplate") {
+        dataToCreate = elevraStarterTemplate.map((block, _) => ({
+          ...block,
           candidateId,
           electionId,
-          order: 1,
-          type: BlockType.HEADING,
-          level: 2,
-          text: "Party name",
-          color: TextColor.PURPLE,
-        },
-        {
-          candidateId,
-          electionId,
-          order: 2,
-          type: BlockType.HEADING,
-          level: 2,
-          text: "Policies",
-          color: TextColor.BLACK,
-        },
-        {
-          candidateId,
-          electionId,
-          order: 3,
-          type: BlockType.LIST,
-          listStyle: ListStyle.BULLET,
-          items: [],
-          color: TextColor.BLACK,
-        },
-        {
-          candidateId,
-          electionId,
-          order: 4,
-          type: BlockType.HEADING,
-          level: 2,
-          text: "Notes",
-          color: TextColor.BLACK,
-        },
-        {
-          candidateId,
-          electionId,
-          order: 5,
-          type: BlockType.TEXT,
-          body: "",
-          color: TextColor.GRAY,
-        },
-      ];
+        }));
+      } else {
+        dataToCreate = []; // Fallback to no blocks if key is unrecognized
+      }
 
       // 2 ▸ Seed six starter blocks
       await tx.contentBlock.createMany({

@@ -171,6 +171,8 @@ export default function ProfileSettingsPage() {
       return;
     }
 
+    const key = templateSelection || "custom";
+
     // Ensure an election link exists (create it only now, when the user commits by clicking Customize)
     const hasLinkAlready = !!electionLinks.find(
       (l) => l.electionId === electionId
@@ -183,6 +185,7 @@ export default function ProfileSettingsPage() {
           body: JSON.stringify({
             candidateId: candidateData.id,
             electionId,
+            key,
           }),
         });
 
