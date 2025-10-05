@@ -8,6 +8,7 @@ import {
 import { getAuth } from "@clerk/nextjs/server";
 import { clerkClient } from "@clerk/clerk-sdk-node";
 import { renderEmailTemplate, TemplateKey } from "@/lib/email/templates/render";
+import { deriveSenderFields } from "@/lib/email/templates/sender";
 
 export const runtime = "nodejs";
 
@@ -72,6 +73,10 @@ export async function POST(req: NextRequest) {
   let adminDisplay = adminUserId === "unknown"
     ? "Unauthenticated (header secret only)"
     : adminUserId;
+  let senderName: string | undefined;
+  let senderTitle: string | undefined;
+  let senderLinkedInUrl: string | undefined;
+  let senderLinkedInLabel: string | undefined;
 
   if (authState?.userId) {
     try {
@@ -85,10 +90,28 @@ export async function POST(req: NextRequest) {
       if (adminName) parts.push(adminName);
       if (adminEmail) parts.push(`(${adminEmail})`);
       adminDisplay = parts.length > 0 ? parts.join(" ") : authState.userId;
+
+      const senderFields = deriveSenderFields(user);
+      senderName = senderFields.senderName || adminName || senderName;
+      senderTitle = senderFields.senderTitle || senderTitle;
+      senderLinkedInUrl = senderFields.senderLinkedInUrl || senderLinkedInUrl;
+      senderLinkedInLabel =
+        senderFields.senderLinkedInLabel || senderLinkedInLabel;
     } catch (error) {
       console.error("Failed to load admin user", error);
       adminDisplay = authState.userId;
     }
+  }
+
+  if (!senderName && adminName.trim()) {
+    senderName = adminName.trim();
+  }
+  senderName = senderName?.trim() || undefined;
+  senderTitle = senderTitle?.trim() || undefined;
+  senderLinkedInUrl = senderLinkedInUrl?.trim() || undefined;
+  senderLinkedInLabel = senderLinkedInLabel?.trim() || undefined;
+  if (senderLinkedInUrl && !/^https?:\/\//i.test(senderLinkedInUrl)) {
+    senderLinkedInUrl = `https://${senderLinkedInUrl}`;
   }
 
   let body: OutreachPayload;
@@ -186,6 +209,10 @@ export async function POST(req: NextRequest) {
           profileUrl: r.candidateLink,
           municipality: r.municipality || undefined,
           position: r.position || undefined,
+          senderName,
+          senderTitle,
+          senderLinkedInUrl,
+          senderLinkedInLabel,
         },
         { baseForFollowup: body.baseTemplate || "initial" }
       );

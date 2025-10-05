@@ -46,7 +46,17 @@ export type RenderInput = {
   ctaLabel?: string;
   municipality?: string;
   position?: string;
+  senderName?: string;
+  senderTitle?: string;
+  senderLinkedInUrl?: string;
+  senderLinkedInLabel?: string;
 };
+
+const DEFAULT_SENDER_NAME = "Adam Rose";
+const DEFAULT_SENDER_TITLE = "Elevra | Cornell ’25";
+const DEFAULT_SENDER_LINKEDIN_URL =
+  "https://www.linkedin.com/in/adamtherose/";
+const DEFAULT_SENDER_LINKEDIN_LABEL = "LinkedIn";
 
 export function renderEmailTemplate(
   key: TemplateKey,
@@ -70,6 +80,10 @@ export function renderEmailTemplate(
     : "near you";
   const locationSummary = stateName ? ` in ${stateName}` : "";
   const positionDescriptor = positionName ? `${positionName}` : "";
+  const senderNameValue = (data.senderName || "").trim();
+  const senderTitleValue = (data.senderTitle || "").trim();
+  const senderLinkedInUrlValue = (data.senderLinkedInUrl || "").trim();
+  const senderLinkedInLabelValue = (data.senderLinkedInLabel || "").trim();
 
   if (key === "followup") {
     const base = opts?.baseForFollowup || "initial";
@@ -81,6 +95,10 @@ export function renderEmailTemplate(
       profileUrl: data.profileUrl,
       municipality: data.municipality,
       position: data.position,
+      senderName: senderNameValue,
+      senderTitle: senderTitleValue,
+      senderLinkedInUrl: senderLinkedInUrlValue,
+      senderLinkedInLabel: senderLinkedInLabelValue,
     }).html;
     const src = readTemplateFile("followup");
     const html = interpolate(src, {
@@ -106,6 +124,10 @@ export function renderEmailTemplate(
       profileUrl: data.profileUrl,
       municipality: data.municipality,
       position: data.position,
+      senderName: senderNameValue,
+      senderTitle: senderTitleValue,
+      senderLinkedInUrl: senderLinkedInUrlValue,
+      senderLinkedInLabel: senderLinkedInLabelValue,
     }).html;
     const src = readTemplateFile("followup2");
     const html = interpolate(src, {
@@ -142,6 +164,12 @@ export function renderEmailTemplate(
 
   if (key === "initial") {
     const src = readTemplateFile("initial");
+    const senderName = (data.senderName || "").trim() || DEFAULT_SENDER_NAME;
+    const senderTitle = (data.senderTitle || "").trim() || DEFAULT_SENDER_TITLE;
+    const senderLinkedInUrl =
+      (data.senderLinkedInUrl || "").trim() || DEFAULT_SENDER_LINKEDIN_URL;
+    const senderLinkedInLabel =
+      (data.senderLinkedInLabel || "").trim() || DEFAULT_SENDER_LINKEDIN_LABEL;
     const html = interpolate(src, {
       greetingName,
       claimUrl: data.claimUrl || "",
@@ -150,6 +178,10 @@ export function renderEmailTemplate(
       locationDetail: locationDetail || "",
       positionDescriptor,
       positionName,
+      senderName,
+      senderTitle,
+      senderLinkedInUrl,
+      senderLinkedInLabel,
     });
     return { subject: SUBJECTS.initial, html };
   }
