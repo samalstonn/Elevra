@@ -43,7 +43,7 @@ const navItems = [
     href: "/candidates/candidate-dashboard/endorsements",
     label: "Endorsements",
     icon: Award,
-    premium: false,
+    premium: true,
   },
   // {
   //   href: "/candidates/candidate-dashboard/donations",
