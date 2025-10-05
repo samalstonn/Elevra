@@ -14,79 +14,6 @@ import {
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 
-const navItems = [
-  // --- Free Tabs ---
-  {
-    href: "/candidates/candidate-dashboard",
-    label: "Overview",
-    icon: LayoutDashboard,
-    premium: false,
-  },
-  {
-    href: "/candidates/candidate-dashboard/my-profile",
-    label: "Profile",
-    icon: User,
-    premium: false,
-  },
-  {
-    href: "/candidates/candidate-dashboard/my-elections",
-    label: "Campaign",
-    icon: Users,
-    premium: false,
-  },
-  // {
-  //   href: "/candidates/candidate-dashboard/my-elections/[linkKey]",
-  //   label: "Election Webpage",
-  //   icon: StickyNote,
-  //   premium: false,
-  // },
-  {
-    href: "/candidates/candidate-dashboard/endorsements",
-    label: "Endorsements",
-    icon: Award,
-    premium: true,
-    requiresPremiumUnlock: true,
-  },
-  // {
-  //   href: "/candidates/candidate-dashboard/donations",
-  //   label: "Donations",
-  //   icon: HandCoins,
-  //   premium: true,
-  // },
-  // --- Premium Tabs ---
-  // {
-  //   href: "/candidates/vendor-marketplace",
-  //   label: "Vendor Marketplace",
-  //   icon: Users,
-  //   premium: true,
-  // },
-  {
-    href: "/candidates/candidate-dashboard/analytics",
-    label: "Analytics",
-    icon: BarChart3,
-    premium: true,
-    requiresPremiumUnlock: true,
-  },
-  {
-    href: "/candidates/candidate-dashboard/upgrade",
-    label: "Upgrade Plan",
-    icon: Zap,
-    cta: true,
-  },
-  // {
-  //   href: "/candidates/candidate-dashboard/mailing-lists",
-  //   label: "Mailing Lists",
-  //   icon: Mail,
-  //   premium: true,
-  // },
-  // {
-  //   href: "/candidates/candidate-dashboard/videos",
-  //   label: "Videos",
-  //   icon: Video,
-  //   premium: true,
-  // },
-];
-
 // Define the structure of the dashboard layout
 export default function CandidateDashboardLayout({
   children,
@@ -95,18 +22,63 @@ export default function CandidateDashboardLayout({
 }) {
   const { user } = useUser(); // Or useAuth, currentUser etc.
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const candidateTier = (user?.publicMetadata?.candidateSubscriptionTier as
-    | string
-    | undefined)
-    ?.toLowerCase();
+  const candidateTier = (
+    user?.publicMetadata?.candidateSubscriptionTier as string | undefined
+  )?.toLowerCase();
+
+  const navItems = [
+    // --- Free Tabs ---
+    {
+      href: "/candidates/candidate-dashboard",
+      label: "Overview",
+      icon: LayoutDashboard,
+      premium: false,
+    },
+    {
+      href: "/candidates/candidate-dashboard/my-profile",
+      label: "Profile",
+      icon: User,
+      premium: false,
+    },
+    {
+      href: "/candidates/candidate-dashboard/my-elections",
+      label: candidateTier === "premium" ? "Premium Campaign" : "Campaign",
+      icon: Users,
+      premium: false,
+    },
+    {
+      href: "/candidates/candidate-dashboard/endorsements",
+      label: "Endorsements",
+      icon: Award,
+      premium: true,
+      requiresPremiumUnlock: true,
+    },
+    {
+      href: "/candidates/candidate-dashboard/analytics",
+      label: "Analytics",
+      icon: BarChart3,
+      premium: true,
+      requiresPremiumUnlock: true,
+    },
+    {
+      href: "/candidates/candidate-dashboard/upgrade",
+      label: "Upgrade Plan",
+      icon: Zap,
+      cta: true,
+    },
+  ];
 
   const navItemsToRender = useMemo(() => {
     if (candidateTier === "premium") {
-      return navItems.map((item) =>
-        item.requiresPremiumUnlock
-          ? { ...item, premium: false, requiresPremiumUnlock: false }
-          : item
-      ).filter((item) => item.href !== "/candidates/candidate-dashboard/upgrade");
+      return navItems
+        .map((item) =>
+          item.requiresPremiumUnlock
+            ? { ...item, premium: false, requiresPremiumUnlock: false }
+            : item
+        )
+        .filter(
+          (item) => item.href !== "/candidates/candidate-dashboard/upgrade"
+        );
     }
     return navItems;
   }, [candidateTier]);
