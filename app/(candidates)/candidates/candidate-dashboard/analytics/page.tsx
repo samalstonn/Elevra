@@ -26,21 +26,6 @@ export default function AnalyticsPage() {
       ) : (
         <>
           <BasicAnalyticsDisplay />
-          {/* Upgrade Prompt */}
-          <Alert className="bg-blue-50 border-blue-200 text-blue-800">
-            <CreditCard className="h-4 w-4 !text-blue-800" />{" "}
-            {/* Ensure icon color matches */}
-            <AlertTitle>Unlock Advanced Analytics</AlertTitle>
-            <AlertDescription>
-              Gain deeper insights into profile engagement, reach, and more.
-              <Link
-                href="/candidates/candidate-dashboard/upgrade"
-                className="font-semibold underline ml-2 hover:text-blue-900"
-              >
-                Upgrade Now
-              </Link>
-            </AlertDescription>
-          </Alert>
         </>
       )}
     </div>
