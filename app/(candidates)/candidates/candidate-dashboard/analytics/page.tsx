@@ -2,14 +2,10 @@
 
 import React from "react";
 import { BasicAnalyticsDisplay } from "./BasicAnalyticsDisplay";
-// Import AdvancedAnalyticsDisplay later when implemented
-// import { AdvancedAnalyticsDisplay } from './AdvancedAnalyticsDisplay';
-// import { useAuth } from "@clerk/nextjs"; // To check subscription later
 import { usePageTitle } from "@/lib/usePageTitle";
 
 export default function AnalyticsPage() {
   usePageTitle("Candidate Dashboard – Analytics");
-  // TODO: Replace with actual subscription check from Clerk user metadata
   const isPremiumUser = false; // Placeholder
 
   return (

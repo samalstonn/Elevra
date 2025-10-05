@@ -56,6 +56,8 @@ export default function OverviewPage() {
   const [showOptOut, setShowOptOut] = useState(false);
   const [showStep1, setShowStep1] = useState(false);
   const [pendingWelcome, setPendingWelcome] = useState(false);
+  const isPremium =
+    user?.publicMetadata.candidateSubscriptionTier === "premium";
 
   useEffect(() => {
     if (!candidate) return;
@@ -420,20 +422,22 @@ export default function OverviewPage() {
           )}
         </CardContent>
       </Card>
-      <Alert className="bg-blue-50 border-blue-200 text-blue-800">
-        <CreditCard className="h-4 w-4 !text-blue-800" />{" "}
-        {/* Ensure icon color matches */}
-        <AlertTitle>Unlock Advanced Analytics</AlertTitle>
-        <AlertDescription>
-          Gain deeper insights into profile engagement, reach, and more.
-          <Link
-            href="/candidates/candidate-dashboard/upgrade"
-            className="font-semibold underline ml-2 hover:text-blue-900"
-          >
-            Upgrade Now
-          </Link>
-        </AlertDescription>
-      </Alert>
+      {!isPremium && (
+        <Alert className="bg-blue-50 border-blue-200 text-blue-800">
+          <CreditCard className="h-4 w-4 !text-blue-800" />{" "}
+          {/* Ensure icon color matches */}
+          <AlertTitle>Unlock Advanced Analytics</AlertTitle>
+          <AlertDescription>
+            Gain deeper insights into profile engagement, reach, and more.
+            <Link
+              href="/candidates/candidate-dashboard/upgrade"
+              className="font-semibold underline ml-2 hover:text-blue-900"
+            >
+              Upgrade Now
+            </Link>
+          </AlertDescription>
+        </Alert>
+      )}
 
       {/* Quick Actions Card */}
       <Card>
