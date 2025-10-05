@@ -5,6 +5,7 @@ import { headers } from "next/headers";
 import { sendWithResend } from "@/lib/email/resend";
 import { SubmissionStatus, Donation, Candidate } from "@prisma/client";
 import { calculateFee } from "@/lib/functions";
+import { clerkClient } from "@clerk/nextjs/server";
 
 // Initialize Stripe
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
@@ -379,9 +380,65 @@ export async function POST(req: NextRequest) {
             );
           }
         }
+      } else if (
+        session.metadata?.purpose === "candidate_upgrade" &&
+        session.metadata?.userClerkId
+      ) {
+        const tier = (session.metadata.tier || "premium").toLowerCase();
+        const userClerkId = session.metadata.userClerkId;
+
+        try {
+          const clerk = await clerkClient();
+          await clerk.users.updateUserMetadata(userClerkId, {
+            publicMetadata: {
+              candidateSubscriptionTier: tier,
+              candidateSubscriptionUpdatedAt: new Date().toISOString(),
+            },
+          });
+
+          console.log(
+            "Updated Clerk metadata for candidate subscription",
+            userClerkId,
+            tier
+          );
+        } catch (metadataError) {
+          console.error(
+            "Failed to update candidate subscription metadata",
+            metadataError
+          );
+        }
+
+        if (session.metadata.candidateId) {
+          const candidateId = parseInt(session.metadata.candidateId, 10);
+
+          if (!Number.isNaN(candidateId)) {
+            try {
+              await prisma.candidate.update({
+                where: { id: candidateId },
+                data: {
+                  history: {
+                    push: `Upgraded to ${tier} plan via Stripe checkout on ${new Date().toISOString()}`,
+                  },
+                },
+              });
+
+              console.log(
+                "Logged candidate upgrade in history",
+                candidateId,
+                tier
+              );
+            } catch (candidateUpdateError) {
+              console.error(
+                "Failed to persist candidate upgrade history",
+                candidateUpdateError
+              );
+            }
+          }
+        }
       } else {
         console.log(
-          "Not a campaign donation or missing candidateId in metadata"
+          "Not a campaign donation or candidate upgrade event; metadata:",
+          session.metadata
         );
       }
     } else {
