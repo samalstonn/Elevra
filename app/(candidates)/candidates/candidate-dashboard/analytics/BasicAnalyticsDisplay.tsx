@@ -4,7 +4,7 @@ import React, { useEffect, useState } from "react";
 import { StatsCard } from "../../../../../components/StatsCard";
 import { EngagementChart } from "./EngagementChart";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Eye, Users, LucideProps } from "lucide-react";
+import { Eye, Users, Target, LucideProps } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useCandidate } from "@/lib/useCandidate";
 import ViewsHeatmap from "@/components/ViewsHeatmap";
@@ -37,21 +37,29 @@ export function BasicAnalyticsDisplay() {
           return;
         }
         // Fetch total views and total unique visitors for the last 30 days
-        const [viewsResp, uniquesResp] = await Promise.all([
+        const [viewsResp, uniquesResp, competitorsResp] = await Promise.all([
           fetch(
             `/api/candidateViews/timeseries?candidateID=${candidate.id}&days=30`
           ),
           fetch(
             `/api/candidateViews/unique-timeseries?candidateID=${candidate.id}&days=30`
           ),
+          fetch(
+            `/api/candidateViews/competition?candidateID=${candidate.id}&days=30`
+          ),
         ]);
         if (!viewsResp.ok) throw new Error("Failed to load views");
         if (!uniquesResp.ok) throw new Error("Failed to load unique visitors");
+        if (!competitorsResp.ok)
+          throw new Error("Failed to load competitor views");
         const viewsJson = (await viewsResp.json()) as {
           totalViews?: number;
         };
         const uniquesJson = (await uniquesResp.json()) as {
           totalUniqueVisitors?: number;
+        };
+        const competitorsJson = (await competitorsResp.json()) as {
+          totalViews?: number;
         };
 
         const computed: AnalyticsStat[] = [
@@ -64,6 +72,11 @@ export function BasicAnalyticsDisplay() {
             label: "Unique Visitors (Last 30d)",
             value: uniquesJson.totalUniqueVisitors ?? 0,
             icon: Users,
+          },
+          {
+            label: "Views from Candidates in Your Election (Last 30d)",
+            value: competitorsJson.totalViews ?? 0,
+            icon: Target,
           },
         ];
         setStats(computed);
