@@ -52,15 +52,15 @@ function formatSenderAddress(senderName?: string, customFrom?: string): string {
   if (customFrom) {
     return customFrom;
   }
-  
+
   if (senderName && senderName.trim()) {
     const cleanName = senderName.trim();
     // Validate that the name doesn't contain problematic characters
     if (/^[a-zA-Z\s\-\.]+$/.test(cleanName)) {
-      return `${cleanName} <team@elevracommunity.com>`;
+      return `${cleanName} <team@admin.elevracommunity.com>`;
     }
   }
-  
+
   return defaultFrom;
 }
 
@@ -276,7 +276,11 @@ export async function sendBatchWithResend(
         continue;
       }
 
-      successes.push({ index: globalIndex, to: item.to, id: dataEntry?.id ?? null });
+      successes.push({
+        index: globalIndex,
+        to: item.to,
+        id: dataEntry?.id ?? null,
+      });
     }
   };
 
