@@ -29,6 +29,7 @@ test("Testing Unpaid User to Paid User Workflow", async ({ page }) => {
 
   // Assert that unsubscribed users see upgrade prompts on the candidate dashboard
   await expect(page.locator("text=Unlock Advanced Analytics")).toBeVisible();
+
   await expect(page.locator("text=Upgrade Plan")).toBeVisible();
   // Assert that the "Endorsements" link is disabled and displays the correct text and icon
   const endorsementsLink = page.locator('a[aria-disabled="true"]', {

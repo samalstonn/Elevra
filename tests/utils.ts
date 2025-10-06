@@ -30,7 +30,7 @@ export async function removeUserMetadata(userId: string, keys: string[]) {
       delete updatedMetadata[key];
     });
 
-    const result = await ClerkClient.users.updateUserMetadata(userId, {
+    const result = await ClerkClient.users.updateUser(userId, {
       publicMetadata: updatedMetadata,
     });
     return result;
