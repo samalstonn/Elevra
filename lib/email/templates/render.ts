@@ -55,7 +55,7 @@ export type RenderInput = {
 const DEFAULT_SENDER_NAME = "Adam Rose";
 const DEFAULT_SENDER_TITLE = "Elevra | Cornell ’25";
 const DEFAULT_SENDER_LINKEDIN_URL =
-  "https://www.linkedin.com/in/adamtherose/";
+  "https://www.linkedin.com/company/elevracommunity/posts/?feedView=all";
 const DEFAULT_SENDER_LINKEDIN_LABEL = "LinkedIn";
 
 export function renderEmailTemplate(
