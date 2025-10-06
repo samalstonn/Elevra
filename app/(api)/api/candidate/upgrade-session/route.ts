@@ -69,6 +69,7 @@ export async function POST(request: NextRequest) {
     });
 
     if (!candidate) {
+
       return NextResponse.json(
         { error: "Candidate profile not found" },
         { status: 404 }
