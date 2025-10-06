@@ -1,24 +1,26 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { usePageTitle } from "@/lib/usePageTitle";
 import {
   type Row,
   type InsertResultItem,
   buildAndDownloadResultSheet,
 } from "@/election-source/build-spreadsheet";
-import { normalizeHeader, validateEmails } from "@/election-source/helpers";
+import { validateEmails } from "@/election-source/helpers";
 import { useUser } from "@clerk/nextjs";
 
-const REQUIRED_HEADERS = [
-  "municipality",
-  "state",
-  "firstName",
-  "lastName",
-  "position",
-  "year",
-  "email",
-] as const;
+import {
+  type BatchGroupSnapshot,
+  type BatchJobSnapshot,
+  type Step,
+  type StepStatus,
+  type StructuredBatchPayload,
+  extractElectionsFromJson,
+  groupRowsByMunicipalityAndPosition,
+  hasRequiredHeaders,
+  mapHeaders,
+} from "./helpers";
 
 export default function UploadSpreadsheetPage() {
   usePageTitle("Admin – Upload Spreadsheet");
@@ -35,6 +37,15 @@ export default function UploadSpreadsheetPage() {
   // Badge state sourced from server status so only one env is needed
   const [mockMode, setMockMode] = useState(false);
   const [modelName, setModelName] = useState<string>("");
+  const [useBatchMode, setUseBatchMode] = useState(false);
+  const [batchJob, setBatchJob] = useState<BatchJobSnapshot | null>(null);
+  const [batchGroups, setBatchGroups] = useState<BatchGroupSnapshot[]>([]);
+  const batchPollRef = useRef<NodeJS.Timeout | null>(null);
+  const batchPollingRef = useRef(false);
+  const batchCompletedRef = useRef(false);
+  const batchPollIntervalRef = useRef(30_000);
+  const previousBatchStatusRef = useRef<string | null>(null);
+  const batchSheetGeneratedRef = useRef(false);
   // Collapsible sections (start collapsed)
   const [showGeminiOutput, setShowGeminiOutput] = useState(false);
   const [showStructuredOutput, setShowStructuredOutput] = useState(false);
@@ -64,13 +75,6 @@ export default function UploadSpreadsheetPage() {
   }, []);
   const [insertResult, setInsertResult] = useState<string>("");
   const [goingLive, setGoingLive] = useState(false);
-  type StepStatus = "pending" | "in_progress" | "completed" | "error";
-  type Step = {
-    key: string;
-    label: string;
-    status: StepStatus;
-    detail?: string;
-  };
   const [goLiveSteps, setGoLiveSteps] = useState<Step[]>([]);
   const [goLiveLog, setGoLiveLog] = useState<
     { ts: number; level: "info" | "success" | "error"; message: string }[]
@@ -116,6 +120,11 @@ export default function UploadSpreadsheetPage() {
       setError("No valid municipality groups found.");
       return;
     }
+    if (useBatchMode) {
+      await runBatchFlow(groups);
+      return;
+    }
+    stopBatchPolling();
     setGoingLive(true);
     setError("");
     setInsertResult("");
@@ -313,16 +322,355 @@ export default function UploadSpreadsheetPage() {
     }
   }
 
-  function resetGoLiveProgress() {
-    setGoLiveSteps([
-      {
-        key: "process",
-        label: "Process groups (analyze → structure → insert)",
-        status: "pending",
-      },
-      { key: "post", label: "Build result sheet", status: "pending" },
-    ]);
+  async function runBatchFlow(
+    groups: Array<{
+      key: string;
+      municipality: string;
+      state: string;
+      position: string;
+      rows: Row[];
+    }>
+  ) {
+    stopBatchPolling();
+    batchCompletedRef.current = false;
+    batchSheetGeneratedRef.current = false;
+    previousBatchStatusRef.current = null;
+    setBatchJob(null);
+    setBatchGroups([]);
+    setGeminiOutput("");
+    setStructuredOutput("");
+    setInsertResult("");
+    resetGoLiveProgress(true);
+    setGoingLive(true);
+    setError("");
+    logProgress(
+      `Submitting ${groups.length} group${
+        groups.length === 1 ? "" : "s"
+      } to Gemini batch…`
+    );
+
+    try {
+      const res = await fetch("/api/gemini/batch", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          groups,
+          uploaderEmail: userEmail,
+          uploaderUserId: user?.id,
+          forceHidden,
+          displayName: `upload-${new Date().toISOString()}`,
+        }),
+      });
+      if (!res.ok) {
+        const text = await res.text().catch(() => "");
+        const message = text || `Failed to start Gemini batch (${res.status})`;
+        updateStep("submit", "error", message);
+        throw new Error(message);
+      }
+      const data: {
+        mock?: boolean;
+        jobId: number;
+        status: string;
+        analyzeJobName?: string | null;
+        analyzeMode?: string | null;
+        analyzeModel?: string | null;
+        analyzeFallbackUsed?: boolean;
+        pollIntervalMs?: number;
+        groupCount?: number;
+        forceHidden?: boolean;
+        displayName?: string | null;
+      } = await res.json();
+
+      setMockMode(Boolean(data.mock));
+      if (data.analyzeModel) {
+        setModelName(data.analyzeModel);
+      }
+
+      const pollInterval = Number(data.pollIntervalMs) || 30_000;
+      batchPollIntervalRef.current = pollInterval;
+
+      const snapshot: BatchJobSnapshot = {
+        id: data.jobId,
+        status: data.status,
+        displayName: data.displayName ?? `upload-${new Date().toISOString()}`,
+        uploaderEmail: userEmail,
+        analyzeJobName: data.analyzeJobName ?? null,
+        analyzeMode: data.analyzeMode ?? null,
+        analyzeModel: data.analyzeModel ?? null,
+        analyzeFallbackUsed: Boolean(data.analyzeFallbackUsed),
+        analyzeSubmittedAt: null,
+        analyzeCompletedAt: null,
+        analyzeError: null,
+        structureJobName: null,
+        structureMode: null,
+        structureModel: null,
+        structureFallbackUsed: false,
+        structureSubmittedAt: null,
+        structureCompletedAt: null,
+        structureError: null,
+        ingestRequestedAt: null,
+        ingestCompletedAt: null,
+        ingestError: null,
+        ingestEmailSentAt: null,
+        analyzeEmailSentAt: null,
+        estimatedTokens: null,
+        totalRows: parsedRows.length,
+        groupCount: data.groupCount ?? groups.length,
+        forceHidden: Boolean(data.forceHidden ?? forceHidden),
+        notes: null,
+      };
+      setBatchJob(snapshot);
+      setBatchGroups(
+        groups.map((g, index) => ({
+          id: index,
+          jobId: data.jobId,
+          key: g.key,
+          order: index,
+          municipality: g.municipality,
+          state: g.state,
+          position: g.position,
+          rowCount: g.rows.length,
+          analyzeText: null,
+          analyzeError: null,
+          structureText: null,
+          structureError: null,
+          structured: null,
+          status: "PENDING_ANALYZE",
+        }))
+      );
+
+      updateStep("submit", "completed", `Job #${data.jobId}`);
+      updateStep("analyze", "in_progress", "Analyze job queued");
+
+      scheduleBatchPoll(data.jobId, 0);
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "Failed to start batch job";
+      setError(message);
+      logProgress(message, "error");
+      setGoingLive(false);
+    }
+  }
+
+  function stopBatchPolling() {
+    if (batchPollRef.current) {
+      clearTimeout(batchPollRef.current);
+      batchPollRef.current = null;
+    }
+  }
+
+  function scheduleBatchPoll(jobId: number, delayMs: number) {
+    stopBatchPolling();
+    const timeout = delayMs <= 0 ? 0 : delayMs;
+    batchPollRef.current = setTimeout(() => {
+      void pollBatchStatus(jobId);
+    }, timeout);
+  }
+
+  async function pollBatchStatus(jobId: number) {
+    if (batchPollingRef.current) return;
+    batchPollingRef.current = true;
+    try {
+      const res = await fetch(`/api/gemini/batch/${jobId}/status`, {
+        cache: "no-store",
+      });
+      if (!res.ok) {
+        const txt = await res.text().catch(() => "");
+        const message =
+          txt || `Status check failed (${res.status}). Retrying soon.`;
+        logProgress(message, "error");
+        scheduleBatchPoll(jobId, Math.max(15000, batchPollIntervalRef.current));
+        return;
+      }
+      const data = (await res.json()) as {
+        job: BatchJobSnapshot;
+        groups: BatchGroupSnapshot[];
+      };
+      const job = data.job;
+      const groups = data.groups || [];
+      setBatchJob(job);
+      setBatchGroups(groups);
+      if (job.analyzeModel) {
+        setModelName(job.analyzeModel);
+      }
+      reflectBatchStatus(job);
+
+      if (job.status === "COMPLETED") {
+        batchCompletedRef.current = true;
+        setGoingLive(false);
+        updateStep("ingest", "completed", "Ingestion completed");
+        await handleBatchCompletion(job, groups);
+        stopBatchPolling();
+        return;
+      }
+
+      if (job.status === "FAILED") {
+        batchCompletedRef.current = true;
+        setGoingLive(false);
+        const failureMessage =
+          job.ingestError || job.structureError || job.analyzeError ||
+          "Gemini batch job failed";
+        setError(failureMessage);
+        logProgress(failureMessage, "error");
+        markFailedStep(job, failureMessage);
+        stopBatchPolling();
+        return;
+      }
+
+      if (!batchCompletedRef.current) {
+        scheduleBatchPoll(jobId, batchPollIntervalRef.current);
+      }
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : String(error ?? "Unknown error");
+      logProgress(`Status poll error: ${message}`, "error");
+      scheduleBatchPoll(jobId, Math.max(20000, batchPollIntervalRef.current));
+    } finally {
+      batchPollingRef.current = false;
+    }
+  }
+
+  function reflectBatchStatus(job: BatchJobSnapshot) {
+    if (previousBatchStatusRef.current === job.status) return;
+    previousBatchStatusRef.current = job.status;
+    switch (job.status) {
+      case "PENDING_ANALYZE":
+        updateStep("submit", "in_progress", "Pending analyze submission");
+        break;
+      case "ANALYZE_SUBMITTED":
+        updateStep("submit", "completed", `Job #${job.id}`);
+        updateStep("analyze", "in_progress", "Analyze job running");
+        logProgress("Analyze batch submitted", "info");
+        break;
+      case "ANALYZE_COMPLETED":
+        updateStep("analyze", "completed", "Analyze outputs ready");
+        updateStep("structure", "pending");
+        logProgress("Analyze step completed", "success");
+        break;
+      case "STRUCTURE_SUBMITTED":
+        updateStep("structure", "in_progress", "Structure job running");
+        logProgress("Structure batch submitted", "info");
+        break;
+      case "STRUCTURE_COMPLETED":
+        updateStep("structure", "completed", "Structure outputs ready");
+        updateStep("ingest", "pending");
+        logProgress("Structure step completed", "success");
+        break;
+      case "INGEST_PENDING":
+      case "INGEST_RUNNING":
+        updateStep("ingest", "in_progress", "Ingestion running");
+        logProgress("Ingestion started", "info");
+        break;
+      case "COMPLETED":
+        updateStep("ingest", "completed", "Ingestion completed");
+        logProgress("Batch job completed", "success");
+        break;
+      case "FAILED":
+        logProgress("Batch job failed", "error");
+        break;
+      default:
+        break;
+    }
+  }
+
+  function markFailedStep(job: BatchJobSnapshot, message: string) {
+    if (job.ingestError) {
+      updateStep("ingest", "error", message);
+    } else if (job.structureError) {
+      updateStep("structure", "error", message);
+    } else if (job.analyzeError) {
+      updateStep("analyze", "error", message);
+    } else {
+      updateStep("submit", "error", message);
+    }
+  }
+
+  async function handleBatchCompletion(
+    job: BatchJobSnapshot,
+    groups: BatchGroupSnapshot[]
+  ) {
+    if (batchSheetGeneratedRef.current) return;
+    batchSheetGeneratedRef.current = true;
+
+    const aggregatedElections: Array<Record<string, unknown>> = [];
+    const analyzeOutputs: string[] = [];
+    groups.forEach((group) => {
+      if (group.analyzeText) analyzeOutputs.push(group.analyzeText);
+      const structured = group.structured as StructuredBatchPayload | null;
+      if (structured && Array.isArray(structured.elections)) {
+        aggregatedElections.push(...structured.elections);
+      }
+    });
+
+    if (analyzeOutputs.length) {
+      setGeminiOutput(analyzeOutputs.join("\n\n"));
+      setShowGeminiOutput(true);
+    }
+
+    const structuredPayload = { elections: aggregatedElections };
+    const structuredJson = JSON.stringify(structuredPayload, null, 2);
+    setStructuredOutput(structuredJson);
+    if (aggregatedElections.length) {
+      setShowStructuredOutput(true);
+    }
+
+    let ingestResults: InsertResultItem[] = [];
+    if (job.notes) {
+      try {
+        const parsed = JSON.parse(job.notes);
+        if (Array.isArray(parsed?.ingestResults)) {
+          ingestResults = parsed.ingestResults as InsertResultItem[];
+          setInsertResult(JSON.stringify(ingestResults, null, 2));
+          setShowInsertResult(true);
+        }
+      } catch (error) {
+        console.error("Failed to parse ingest results from job notes", error);
+      }
+    }
+
+    try {
+      await buildAndDownloadResultSheet(
+        { results: ingestResults },
+        structuredJson,
+        rawRows,
+        parsedRows
+      );
+      updateStep("post", "completed", "Sheet downloaded");
+      logProgress("Result sheet built", "success");
+    } catch (error) {
+      console.error("Failed to build result sheet", error);
+      updateStep("post", "error", "Failed to build result sheet");
+    }
+  }
+
+  function resetGoLiveProgress(mode = useBatchMode) {
+    if (mode) {
+      setGoLiveSteps([
+        { key: "submit", label: "Submit batch job", status: "pending" },
+        { key: "analyze", label: "Gemini analyze job", status: "pending" },
+        { key: "structure", label: "Gemini structure job", status: "pending" },
+        { key: "ingest", label: "Database ingestion", status: "pending" },
+        { key: "post", label: "Build result sheet", status: "pending" },
+      ]);
+    } else {
+      setGoLiveSteps([
+        {
+          key: "process",
+          label: "Process groups (analyze → structure → insert)",
+          status: "pending",
+        },
+        { key: "post", label: "Build result sheet", status: "pending" },
+      ]);
+    }
     setGoLiveLog([]);
+    if (mode) {
+      stopBatchPolling();
+      setBatchJob(null);
+      setBatchGroups([]);
+      batchCompletedRef.current = false;
+      batchSheetGeneratedRef.current = false;
+      previousBatchStatusRef.current = null;
+    }
   }
 
   function updateStep(key: string, status: StepStatus, detail?: string) {
@@ -337,205 +685,6 @@ export default function UploadSpreadsheetPage() {
   ) {
     setGoLiveLog((prev) => [...prev, { ts: Date.now(), level, message }]);
   }
-
-  function mapHeaders<T extends Record<string, unknown>>(obj: T): Row {
-    const mapped: Row = {
-      municipality: "",
-      state: "",
-      firstName: "",
-      lastName: "",
-      position: "",
-      year: "",
-      email: "",
-      name: "",
-      districtType: "",
-      district: "",
-      raceLabel: "",
-      termType: "",
-      termLength: "",
-      mailingAddress: "",
-      phone: "",
-      filingDate: "",
-      partyPreference: "",
-      status: "",
-    };
-    for (const key of Object.keys(obj)) {
-      const norm = normalizeHeader(key);
-      const val = (obj as Record<string, unknown>)[key];
-      const asStr = (v: unknown): string =>
-        typeof v === "string" ? v : typeof v === "number" ? String(v) : "";
-      // Try to map common variations to our required names
-      switch (norm) {
-        case "municipality":
-          mapped.municipality = asStr(val);
-          break;
-        case "state":
-          mapped.state = asStr(val);
-          break;
-        case "firstName":
-        case "firstname":
-        case "first":
-          mapped.firstName = asStr(val);
-          break;
-        case "lastName":
-        case "lastname":
-        case "last":
-          mapped.lastName = asStr(val);
-          break;
-        case "position":
-          mapped.position = asStr(val);
-          break;
-        case "positiontitle":
-        case "office":
-        case "seat":
-        case "contest":
-        case "role":
-          if (!mapped.position) {
-            mapped.position = asStr(val);
-          }
-          break;
-        case "race":
-        case "racename":
-        case "racetitle":
-          if (!mapped.position) {
-            mapped.position = asStr(val);
-          }
-          mapped.raceLabel = asStr(val);
-          break;
-        case "districttype":
-          mapped.districtType = asStr(val);
-          break;
-        case "district":
-          mapped.district = asStr(val);
-          break;
-        case "termtype":
-          mapped.termType = asStr(val);
-          break;
-        case "termlength":
-          mapped.termLength = asStr(val);
-          break;
-        case "mailingaddress":
-          mapped.mailingAddress = asStr(val);
-          break;
-        case "phone":
-          mapped.phone = asStr(val);
-          break;
-        case "filingdate":
-          mapped.filingDate = asStr(val);
-          break;
-        case "partypreference":
-          mapped.partyPreference = asStr(val);
-          break;
-        case "status":
-          mapped.status = asStr(val);
-          break;
-        case "name": {
-          const full = asStr(val);
-          mapped.name = full;
-          if (full && (!mapped.firstName || !mapped.lastName)) {
-            const parts = full.trim().split(/\s+/);
-            if (parts.length === 1) {
-              if (!mapped.firstName) mapped.firstName = parts[0];
-            } else if (parts.length > 1) {
-              if (!mapped.firstName) mapped.firstName = parts[0];
-              if (!mapped.lastName)
-                mapped.lastName = parts.slice(1).join(" ");
-            }
-          }
-          break;
-        }
-        case "year":
-          if (typeof val === "number" || typeof val === "string")
-            mapped.year = val;
-          break;
-        case "email":
-        case "Email":
-          mapped.email = asStr(val);
-          break;
-        default:
-          break;
-      }
-    }
-    return mapped;
-  }
-
-  function hasRequiredHeaders(sample: Row): boolean {
-    return REQUIRED_HEADERS.every((h) => sample[h as keyof Row] !== undefined);
-  }
-
-  // --- Grouping utilities ---
-  const normalizeGroupKey = useCallback((r: Row): string => {
-    const city = (r.municipality || "").trim().toLowerCase();
-    const state = (r.state || "").trim().toLowerCase();
-    const position = String(r.position ?? "")
-      .replace(/\s+/g, " ")
-      .trim()
-      .toLowerCase();
-    return `${city}|${state}|${position || "unknown-position"}`;
-  }, []);
-
-  // --- Helpers for parsing structured JSON safely ---
-  type ElectionsEnvelope = { elections: unknown[] };
-  function hasElectionsArray(v: unknown): v is ElectionsEnvelope {
-    if (typeof v !== "object" || v === null) return false;
-    if (!("elections" in v)) return false;
-    const e = (v as { elections: unknown }).elections;
-    return Array.isArray(e);
-  }
-  function extractElectionsFromJson(text: string): unknown[] {
-    try {
-      const parsed: unknown = JSON.parse(text);
-      if (hasElectionsArray(parsed)) return parsed.elections;
-      if (Array.isArray(parsed)) return parsed as unknown[];
-      return [];
-    } catch {
-      return [];
-    }
-  }
-
-  const groupRowsByMunicipalityAndPosition = useCallback(
-    (
-      rows: Row[]
-    ): Array<{
-      key: string;
-      municipality: string;
-      state: string;
-      position: string;
-      rows: Row[];
-    }> => {
-      const map = new Map<
-        string,
-        {
-          key: string;
-          municipality: string;
-          state: string;
-          position: string;
-          rows: Row[];
-        }
-      >();
-      for (const r of rows) {
-        const key = normalizeGroupKey(r);
-        if (!map.has(key)) {
-          map.set(key, {
-            key,
-            municipality: (r.municipality || "").trim(),
-            state: (r.state || "").trim(),
-            position: String(r.position ?? "").trim(),
-            rows: [],
-          });
-        }
-        map.get(key)!.rows.push(r);
-      }
-      return Array.from(map.values()).sort((a, b) => {
-        const s = (a.state || "").localeCompare(b.state || "");
-        if (s !== 0) return s;
-        const m = (a.municipality || "").localeCompare(b.municipality || "");
-        if (m !== 0) return m;
-        return (a.position || "").localeCompare(b.position || "");
-      });
-    },
-    [normalizeGroupKey]
-  );
 
   async function handleFile(file: File) {
     setError("");
@@ -617,8 +766,12 @@ export default function UploadSpreadsheetPage() {
   // Derived groups preview based on current parsed rows
   const rowGroups = useMemo(
     () => groupRowsByMunicipalityAndPosition(parsedRows),
-    [parsedRows, groupRowsByMunicipalityAndPosition]
+    [parsedRows]
   );
+
+  useEffect(() => {
+    return () => stopBatchPolling();
+  }, []);
 
   if (!isLoaded) {
     return (
@@ -719,6 +872,30 @@ export default function UploadSpreadsheetPage() {
             Mark inserted elections and candidates as hidden
           </label>
         </div>
+        <div className="flex items-center gap-2 text-xs text-gray-700">
+          <input
+            id="batchModeToggle"
+            type="checkbox"
+            className="h-4 w-4"
+            checked={useBatchMode}
+            onChange={(e) => {
+              const next = e.target.checked;
+              stopBatchPolling();
+              setUseBatchMode(next);
+              resetGoLiveProgress(next);
+              if (!next) {
+                setBatchJob(null);
+                setBatchGroups([]);
+                batchCompletedRef.current = false;
+                batchSheetGeneratedRef.current = false;
+                previousBatchStatusRef.current = null;
+              }
+            }}
+          />
+          <label htmlFor="batchModeToggle" className="select-none">
+            Use Gemini batch mode (async analyze/structure/ingest)
+          </label>
+        </div>
         {rowGroups.length > 0 && (
           <div className="text-xs text-gray-700 bg-gray-50 border rounded p-2">
             <div className="font-medium mb-1">
@@ -817,6 +994,58 @@ export default function UploadSpreadsheetPage() {
                       </li>
                     ))}
                   </ul>
+                )}
+                {useBatchMode && batchJob && (
+                  <div className="mb-2 text-xs text-gray-700 space-y-2">
+                    <div>
+                      <span className="font-semibold">Batch Job:</span> #{" "}
+                      {batchJob.id} — {batchJob.status}
+                    </div>
+                    {batchJob.analyzeModel && (
+                      <div>
+                        Analyze model: {batchJob.analyzeModel}
+                        {batchJob.analyzeFallbackUsed ? " (fallback)" : ""}
+                      </div>
+                    )}
+                    {batchJob.structureModel && (
+                      <div>
+                        Structure model: {batchJob.structureModel}
+                        {batchJob.structureFallbackUsed ? " (fallback)" : ""}
+                      </div>
+                    )}
+                    {batchGroups.length > 0 && (
+                      <div className="border rounded">
+                        <table className="w-full text-[11px]">
+                          <thead className="bg-gray-50 text-gray-600">
+                            <tr>
+                              <th className="px-2 py-1 text-left">Group</th>
+                              <th className="px-2 py-1 text-left">Rows</th>
+                              <th className="px-2 py-1 text-left">Status</th>
+                              <th className="px-2 py-1 text-left">Notes</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {batchGroups.map((g) => (
+                              <tr key={g.key} className="border-t">
+                                <td className="px-2 py-1">
+                                  {(g.municipality || "(unknown)") +
+                                    (g.state ? `, ${g.state}` : "")}
+                                  {g.position ? ` – ${g.position}` : ""}
+                                </td>
+                                <td className="px-2 py-1">{g.rowCount}</td>
+                                <td className="px-2 py-1">
+                                  {g.status}
+                                </td>
+                                <td className="px-2 py-1 text-gray-500">
+                                  {g.structureError || g.analyzeError || ""}
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    )}
+                  </div>
                 )}
                 {goLiveLog.length > 0 && (
                   <div className="max-h-40 overflow-auto border-t pt-2">

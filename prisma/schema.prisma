@@ -278,6 +278,74 @@ model ContentBlock {
   @@unique([candidateId, electionId, order])
 }
 
+model GeminiBatchJob {
+  id                    Int                   @id @default(autoincrement())
+  createdAt             DateTime              @default(now())
+  updatedAt             DateTime              @updatedAt
+  displayName           String?
+  uploaderEmail         String
+  uploaderUserId        String?
+  status                GeminiBatchJobStatus  @default(PENDING_ANALYZE)
+  analyzeJobName        String?
+  analyzeMode           String?
+  analyzeModel          String?
+  analyzeSubmittedAt    DateTime?
+  analyzeCompletedAt    DateTime?
+  analyzeFallbackUsed   Boolean               @default(false)
+  analyzeError          String?
+  structureJobName      String?
+  structureMode         String?
+  structureModel        String?
+  structureSubmittedAt  DateTime?
+  structureCompletedAt  DateTime?
+  structureFallbackUsed Boolean               @default(false)
+  structureError        String?
+  ingestRequestedAt     DateTime?
+  ingestCompletedAt     DateTime?
+  ingestError           String?
+  analyzeEmailSentAt    DateTime?
+  ingestEmailSentAt     DateTime?
+  lastProcessedAt       DateTime?
+  estimatedTokens       Int?
+  totalRows             Int                   @default(0)
+  groupCount            Int                   @default(0)
+  analyzePrompt         String?
+  structurePrompt       String?
+  responseSchema        Json?
+  forceHidden           Boolean               @default(false)
+  notes                 String?
+  groups                GeminiBatchGroup[]
+}
+
+model GeminiBatchGroup {
+  id                         Int                       @id @default(autoincrement())
+  createdAt                  DateTime                  @default(now())
+  updatedAt                  DateTime                  @updatedAt
+  jobId                      Int
+  job                        GeminiBatchJob            @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  key                        String
+  order                      Int
+  municipality               String?
+  state                      String?
+  position                   String?
+  rowCount                   Int                       @default(0)
+  analyzeTokenEstimate       Int?
+  structureTokenEstimate     Int?
+  rows                       Json?
+  analyzeText                String?
+  structureText              String?
+  structured                 Json?
+  analyzeError               String?
+  structureError             String?
+  status                     GeminiBatchGroupStatus    @default(PENDING_ANALYZE)
+  analyzeCompletedAt         DateTime?
+  structureCompletedAt       DateTime?
+  ingestCompletedAt          DateTime?
+
+  @@unique([jobId, key])
+  @@index([jobId])
+}
+
 enum ElectionType {
   LOCAL
   STATE
@@ -329,4 +397,31 @@ enum TextColor {
   BLACK
   GRAY
   PURPLE
+}
+
+enum GeminiBatchJobStatus {
+  PENDING_ANALYZE
+  ANALYZE_SUBMITTED
+  ANALYZE_COMPLETED
+  ANALYZE_FAILED
+  STRUCTURE_SUBMITTED
+  STRUCTURE_COMPLETED
+  STRUCTURE_FAILED
+  INGEST_PENDING
+  INGEST_RUNNING
+  COMPLETED
+  FAILED
+}
+
+enum GeminiBatchGroupStatus {
+  PENDING_ANALYZE
+  ANALYZE_RUNNING
+  ANALYZE_COMPLETED
+  ANALYZE_FAILED
+  STRUCTURE_RUNNING
+  STRUCTURE_COMPLETED
+  STRUCTURE_FAILED
+  INGEST_RUNNING
+  INGEST_COMPLETED
+  INGEST_FAILED
 }

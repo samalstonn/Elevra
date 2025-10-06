@@ -2,6 +2,13 @@
   "functions": {
     "app/(api)/api/**/route.{js,ts}": {
       "maxDuration": 60
-    }
+    },
+    "crons": [
+      {
+        "path": "/api/cron/gemini-batch",
+        "method": "POST",
+        "schedule": "*/15 * * * *"
+      }
+    ]
   }
 }
