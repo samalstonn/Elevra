@@ -255,6 +255,23 @@ export default function CandidateOutreachPage() {
       </p>
 
       <div className="space-y-3 bg-white/70 p-4 rounded border">
+      <div></div>
+        <label className="block text-sm font-medium mb-1">
+          Email Dry Run Mode
+        </label>
+        <div className="flex items-center gap-2">
+          <input
+            type="checkbox"
+            id="email-dry-run"
+            checked={process.env.EMAIL_DRY_RUN === "1"}
+            readOnly
+            className="h-4 w-4"
+          />
+          <label htmlFor="email-dry-run" className="text-sm text-gray-700">
+            Enabled (emails will not actually be sent)
+          </label>
+        </div>
+      </div>
         <input
           type="file"
           accept=".csv,text/csv"
