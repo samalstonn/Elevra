@@ -1,4 +1,5 @@
 import Tiptap from "@/components/TipTap";
+import { SimpleEditor } from '@/components/tiptap-templates/simple/simple-editor'
 
 export const metadata = {
 	title: "Universities | Neighbor Vote",
@@ -12,7 +13,7 @@ export default function Page() {
 			<p className="mb-6 text-sm text-muted-foreground">
 				This is the text editor test page.
 			</p>
-			<Tiptap />
+			<SimpleEditor />
 		</main>
 	);
 }
