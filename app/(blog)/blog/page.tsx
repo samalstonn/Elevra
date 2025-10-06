@@ -1,17 +1,33 @@
 import prisma from "@/prisma/prisma";
 import Link from "next/link";
-import { notFound } from "next/navigation";
 
 export const revalidate = 60; // ISR
 
 export default async function BlogIndexPage() {
-  const posts = await prisma.blogPost.findMany({
-    where: { status: "PUBLISHED" },
-    orderBy: { publishedAt: "desc" },
-    take: 50,
-  });
+  let posts = [] as Awaited<
+    ReturnType<typeof prisma.blogPost.findMany>
+  >;
 
-  if (!posts) notFound();
+  try {
+    posts = await prisma.blogPost.findMany({
+      where: { status: "PUBLISHED" },
+      orderBy: { publishedAt: "desc" },
+      take: 50,
+    });
+  } catch (error) {
+    console.error("Failed to load blog posts", error);
+  }
+
+  if (!posts.length) {
+    return (
+      <main className="max-w-6xl mx-auto px-6 py-16">
+        <h1 className="text-3xl font-bold text-purple-800 mb-12 tracking-tight">
+          The Elevra Blog
+        </h1>
+        <p className="text-gray-600">No published posts yet. Check back soon.</p>
+      </main>
+    );
+  }
 
   return (
     <main className="max-w-6xl mx-auto px-6 py-16">
