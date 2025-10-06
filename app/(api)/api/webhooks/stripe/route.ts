@@ -182,10 +182,10 @@ export async function POST(req: NextRequest) {
         { status: 400 }
       );
     }
+    const session = event.data.object as Stripe.Checkout.Session;
 
     // Handle the event based on its type
     if (event.type === "checkout.session.completed") {
-      const session = event.data.object as Stripe.Checkout.Session;
       console.log("Processing completed checkout:", {
         sessionId: session.id,
         metadata: session.metadata,
@@ -443,6 +443,41 @@ export async function POST(req: NextRequest) {
       }
     } else {
       console.log("Ignored event type:", event.type);
+    }
+
+    // Send a summary email to the admin summarizing the transaction
+    try {
+      await sendWithResend({
+        to: process.env.ADMIN_EMAIL!,
+        subject: "Transaction Summary Notification",
+        html: `
+          <div style="font-family: Arial, sans-serif; padding: 20px; max-width: 600px;">
+            <h2 style="color: #6200ee;">Transaction Summary</h2>
+            <p>A transaction has been processed successfully:</p>
+            
+            <div style="background-color: #f5f5f5; padding: 15px; border-radius: 5px; margin: 15px 0;">
+              <p><strong>Event Type:</strong> ${event.type}</p>
+              <p><strong>Session ID:</strong> ${session.id}</p>
+              <p><strong>Amount Total:</strong> $${
+                (session.amount_total || 0) / 100
+              }</p>
+              <p><strong>Payment Status:</strong> ${session.payment_status}</p>
+              <p><strong>Created At:</strong> ${new Date(
+                session.created * 1000
+              ).toLocaleString()}</p>
+              <p><strong>Metadata:</strong> ${JSON.stringify(
+                session.metadata
+              )}</p>
+            </div>
+            
+            <hr style="border: 1px solid #eee; margin: 20px 0;" />
+            <p style="font-size: 12px; color: #888;">This is an automated message from Elevra Community.</p>
+          </div>
+        `,
+      });
+      console.log("Transaction summary email sent successfully");
+    } catch (emailError) {
+      console.error("Error sending transaction summary email:", emailError);
     }
 
     return NextResponse.json({ received: true });
