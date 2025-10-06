@@ -255,7 +255,7 @@ export default function CandidateOutreachPage() {
       </p>
 
       <div className="space-y-3 bg-white/70 p-4 rounded border">
-      <div></div>
+        <div></div>
         <label className="block text-sm font-medium mb-1">
           Email Dry Run Mode
         </label>
@@ -272,23 +272,23 @@ export default function CandidateOutreachPage() {
           </label>
         </div>
       </div>
-        <input
-          type="file"
-          accept=".csv,text/csv"
-          onChange={(e) => {
-            const f = e.target.files?.[0];
-            if (f) void handleFile(f);
-          }}
-          className="block w-full text-sm"
-        />
+      <input
+        type="file"
+        accept=".csv,text/csv"
+        onChange={(e) => {
+          const f = e.target.files?.[0];
+          if (f) void handleFile(f);
+        }}
+        className="block w-full text-sm"
+      />
 
-        {rows.length > 0 && (
-          <div className="text-xs text-gray-500">
-            Preview updates automatically using the first CSV row.
-          </div>
-        )}
+      {rows.length > 0 && (
+        <div className="text-xs text-gray-500">
+          Preview updates automatically using the first CSV row.
+        </div>
+      )}
 
-        {/* <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+      {/* <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div>
             <label className="block text-sm font-medium mb-1">
               Send Date (optional)
@@ -320,141 +320,138 @@ export default function CandidateOutreachPage() {
           </div>
         </div> */}
 
-        {status && <p className="text-green-700 text-sm">{status}</p>}
-        {error && <p className="text-red-700 text-sm">{error}</p>}
-        {!emailValidation.ok && (
-          <p className="text-red-700 text-xs">
-            Email validation failed ({emailValidation.errors.length})
-          </p>
-        )}
+      {status && <p className="text-green-700 text-sm">{status}</p>}
+      {error && <p className="text-red-700 text-sm">{error}</p>}
+      {!emailValidation.ok && (
+        <p className="text-red-700 text-xs">
+          Email validation failed ({emailValidation.errors.length})
+        </p>
+      )}
 
-        {!!rows.length && (
-          <div className="mt-2">
-            <div className="flex items-center justify-between mb-2">
-              <div className="text-sm text-gray-700">
-                Showing {previewRows.length} of {rows.length} rows
-              </div>
-              <button
-                type="button"
-                onClick={() => setShowAll((v) => !v)}
-                className="text-sm text-purple-700 underline"
-              >
-                {showAll ? "Show first 5" : "Show all"}
-              </button>
+      {!!rows.length && (
+        <div className="mt-2">
+          <div className="flex items-center justify-between mb-2">
+            <div className="text-sm text-gray-700">
+              Showing {previewRows.length} of {rows.length} rows
             </div>
-            <div className="overflow-x-auto border rounded">
-              <table className="min-w-full text-sm">
-                <thead className="bg-gray-50 text-left">
-                  <tr>
-                    <th className="p-2">First Name</th>
-                    <th className="p-2">Last Name</th>
-                    <th className="p-2">Email</th>
-                    <th className="p-2">Candidate Link</th>
-                    <th className="p-2">State</th>
-                    <th className="p-2">Municipality</th>
-                    <th className="p-2">Position</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {previewRows.map((r, i) => (
-                    <tr key={i} className="border-t">
-                      <td className="p-2">{r.firstName}</td>
-                      <td className="p-2">{r.lastName}</td>
-                      <td className="p-2">{r.email}</td>
-                      <td className="p-2 break-all">
-                        <a
-                          className="text-purple-700 hover:underline"
-                          href={r.candidateLink}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                        >
-                          {r.candidateLink}
-                        </a>
-                      </td>
-                      <td className="p-2">{r.state}</td>
-                      <td className="p-2">{r.municipality}</td>
-                      <td className="p-2">{r.position}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+            <button
+              type="button"
+              onClick={() => setShowAll((v) => !v)}
+              className="text-sm text-purple-700 underline"
+            >
+              {showAll ? "Show first 5" : "Show all"}
+            </button>
           </div>
-        )}
+          <div className="overflow-x-auto border rounded">
+            <table className="min-w-full text-sm">
+              <thead className="bg-gray-50 text-left">
+                <tr>
+                  <th className="p-2">First Name</th>
+                  <th className="p-2">Last Name</th>
+                  <th className="p-2">Email</th>
+                  <th className="p-2">Candidate Link</th>
+                  <th className="p-2">State</th>
+                  <th className="p-2">Municipality</th>
+                  <th className="p-2">Position</th>
+                </tr>
+              </thead>
+              <tbody>
+                {previewRows.map((r, i) => (
+                  <tr key={i} className="border-t">
+                    <td className="p-2">{r.firstName}</td>
+                    <td className="p-2">{r.lastName}</td>
+                    <td className="p-2">{r.email}</td>
+                    <td className="p-2 break-all">
+                      <a
+                        className="text-purple-700 hover:underline"
+                        href={r.candidateLink}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        {r.candidateLink}
+                      </a>
+                    </td>
+                    <td className="p-2">{r.state}</td>
+                    <td className="p-2">{r.municipality}</td>
+                    <td className="p-2">{r.position}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+      <div>
+        <label className="block text-sm font-medium mb-1">
+          Select Email Template
+        </label>
+        <select
+          value={templateType}
+          onChange={(e) => setTemplateType(e.target.value as TemplateKey)}
+          className="w-full rounded border px-3 py-2"
+        >
+          <option value="initial">Initial Outreach</option>
+          <option value="followup">Follow-up</option>
+          <option value="followup2">Follow-up 2</option>
+          <option value="verifiedUpdate">Verified: Templates Update</option>
+        </select>
+      </div>
+      {(templateType === "followup" || templateType === "followup2") && (
         <div>
           <label className="block text-sm font-medium mb-1">
-            Select Email Template
+            Base for Follow-up
           </label>
           <select
-            value={templateType}
-            onChange={(e) => setTemplateType(e.target.value as TemplateKey)}
+            value={baseForFollowup}
+            onChange={(e) =>
+              setBaseForFollowup(e.target.value as "initial" | "verifiedUpdate")
+            }
             className="w-full rounded border px-3 py-2"
           >
             <option value="initial">Initial Outreach</option>
-            <option value="followup">Follow-up</option>
-            <option value="followup2">Follow-up 2</option>
             <option value="verifiedUpdate">Verified: Templates Update</option>
           </select>
         </div>
-        {(templateType === "followup" || templateType === "followup2") && (
-          <div>
-            <label className="block text-sm font-medium mb-1">
-              Base for Follow-up
-            </label>
-            <select
-              value={baseForFollowup}
-              onChange={(e) =>
-                setBaseForFollowup(
-                  e.target.value as "initial" | "verifiedUpdate"
-                )
-              }
-              className="w-full rounded border px-3 py-2"
-            >
-              <option value="initial">Initial Outreach</option>
-              <option value="verifiedUpdate">Verified: Templates Update</option>
-            </select>
-          </div>
-        )}
+      )}
 
-        {(previewHtml || previewSubject) && (
-          <div className="mt-4">
-            <label className="text-sm font-medium mb-1 inline-block">
-              Preview
-            </label>
-            <div className="rounded border bg-white/60">
-              {previewSubject && (
-                <div className="px-3 py-2 border-b text-sm font-medium">
-                  Subject: <span className="font-normal">{previewSubject}</span>
-                </div>
-              )}
-              <div
-                className="p-3 text-sm"
-                dangerouslySetInnerHTML={{ __html: previewHtml }}
-              />
-            </div>
-          </div>
-        )}
-        <button
-          type="button"
-          onClick={onClickSend}
-          disabled={!rows.length || sending || !emailValidation.ok}
-          className="px-4 py-2 bg-purple-600 text-white rounded hover:bg-purple-700 disabled:opacity-50"
-        >
-          {sending ? "Sending…" : "Send Emails"}
-        </button>
-        {result && (
-          <div className="mt-4">
-            <label className="text-sm font-medium mb-1 inline-block">
-              Result
-            </label>
-            <textarea
-              readOnly
-              className="w-full h-64 rounded border px-3 py-2 font-mono text-xs"
-              value={result}
+      {(previewHtml || previewSubject) && (
+        <div className="mt-4">
+          <label className="text-sm font-medium mb-1 inline-block">
+            Preview
+          </label>
+          <div className="rounded border bg-white/60">
+            {previewSubject && (
+              <div className="px-3 py-2 border-b text-sm font-medium">
+                Subject: <span className="font-normal">{previewSubject}</span>
+              </div>
+            )}
+            <div
+              className="p-3 text-sm"
+              dangerouslySetInnerHTML={{ __html: previewHtml }}
             />
           </div>
-        )}
-      </div>
+        </div>
+      )}
+      <button
+        type="button"
+        onClick={onClickSend}
+        disabled={!rows.length || sending || !emailValidation.ok}
+        className="px-4 py-2 bg-purple-600 text-white rounded hover:bg-purple-700 disabled:opacity-50"
+      >
+        {sending ? "Sending…" : "Send Emails"}
+      </button>
+      {result && (
+        <div className="mt-4">
+          <label className="text-sm font-medium mb-1 inline-block">
+            Result
+          </label>
+          <textarea
+            readOnly
+            className="w-full h-64 rounded border px-3 py-2 font-mono text-xs"
+            value={result}
+          />
+        </div>
+      )}
 
       {confirmVisible && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4">
