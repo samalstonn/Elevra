@@ -197,44 +197,10 @@ export function BasicAnalyticsDisplay() {
           ))}
         </div>
       )}
-
-      {/* Engagement Chart */}
+      {/* Top Locations */}
       <Card>
         <CardHeader>
-          <CardTitle>Profile Engagement Overview</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {loading ? (
-            <div className="animate-pulse h-[300px] bg-gray-100 rounded-md"></div>
-          ) : error ? (
-            <p className="text-center text-red-500 py-12">
-              Failed to load chart data
-            </p>
-          ) : (
-            candidate && <EngagementChart candidateId={candidate.id} days={7} />
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Time-of-Day Activity Heatmap */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Time-of-Day Activity</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {candidate ? (
-            <ViewsHeatmap candidateId={candidate.id} days={30} />
-          ) : loading ? (
-            <div className="text-xs text-gray-500">Loading candidate...</div>
-          ) : (
-            <div className="text-xs text-gray-500">No candidate found</div>
-          )}
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Top Viewer Locations</CardTitle>
+          <CardTitle>Top Voter Locations</CardTitle>
         </CardHeader>
         <CardContent>
           {locationLoading ? (
@@ -269,6 +235,40 @@ export function BasicAnalyticsDisplay() {
               Location data is not available yet. Try again after more views are
               recorded.
             </p>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Engagement Chart */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Profile Engagement Overview</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {loading ? (
+            <div className="animate-pulse h-[300px] bg-gray-100 rounded-md"></div>
+          ) : error ? (
+            <p className="text-center text-red-500 py-12">
+              Failed to load chart data
+            </p>
+          ) : (
+            candidate && <EngagementChart candidateId={candidate.id} days={7} />
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Time-of-Day Activity Heatmap */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Time-of-Day Activity</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {candidate ? (
+            <ViewsHeatmap candidateId={candidate.id} days={30} />
+          ) : loading ? (
+            <div className="text-xs text-gray-500">Loading candidate...</div>
+          ) : (
+            <div className="text-xs text-gray-500">No candidate found</div>
           )}
         </CardContent>
       </Card>
