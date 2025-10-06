@@ -6,7 +6,6 @@ import { usePageTitle } from "@/lib/usePageTitle";
 
 export default function AnalyticsPage() {
   usePageTitle("Candidate Dashboard – Analytics");
-  // TODO: Replace with actual subscription check from Clerk user metadata
 
   return (
     <div className="space-y-6">

@@ -10,7 +10,14 @@ import {
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
-import { Eye, Edit, Mail, HandCoins, RefreshCcw } from "lucide-react"; // Icons
+import {
+  Eye,
+  Edit,
+  Mail,
+  HandCoins,
+  RefreshCcw,
+  CreditCard,
+} from "lucide-react"; // Icons
 import { FaShare } from "react-icons/fa"; // Importing FaShare
 import { Candidate, Donation } from "@prisma/client";
 import { useCandidate } from "@/lib/useCandidate";
@@ -27,6 +34,7 @@ import { FaCheckCircle } from "react-icons/fa";
 import TourModal from "@/components/tour/TourModal";
 import { usePageTitle } from "@/lib/usePageTitle";
 import { buildEditorPath } from "./my-elections/utils";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 // import ResultsSearchBar from "@/components/ResultsSearchBar";
 
 export type CandidateWithDonations = Candidate & { donations: Donation[] };
@@ -48,6 +56,8 @@ export default function OverviewPage() {
   const [showOptOut, setShowOptOut] = useState(false);
   const [showStep1, setShowStep1] = useState(false);
   const [pendingWelcome, setPendingWelcome] = useState(false);
+  const isPremium =
+    user?.publicMetadata.candidateSubscriptionTier === "premium";
 
   useEffect(() => {
     if (!candidate) return;
@@ -336,23 +346,6 @@ export default function OverviewPage() {
           </div>
         </DialogContent>
       </Dialog>
-      {/* Feature interest banner */}
-      <div className="bg-purple-50 border border-purple-200 text-purple-800 text-xs md:text-sm p-3 md:p-4 rounded-lg flex flex-col md:flex-row md:items-center md:justify-between gap-2 shadow-sm">
-        <div className="flex-1 leading-snug">
-          Curious about Mailing List Subscribers or Donation analytics? 📨💸
-          <br className="hidden md:block" />
-          If you’d like early access (or have ideas), let us know; we’re
-          building this with you.
-        </div>
-        <div className="flex items-center gap-2">
-          <Link
-            href="/feedback"
-            className="inline-flex items-center px-3 py-1.5 rounded-md bg-purple-600 text-white text-xs md:text-sm font-medium hover:bg-purple-700 transition"
-          >
-            Share Feedback
-          </Link>
-        </div>
-      </div>
 
       {/* Quick Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -429,19 +422,22 @@ export default function OverviewPage() {
           )}
         </CardContent>
       </Card>
-      {/* Moved Time-of-Day Activity heatmap to Analytics tab */}
-      {/* Analytics Card */}
-      {/* <Card className="col-span-4">
-        <CardHeader>
-          <CardTitle>Profile Activity</CardTitle>
-          <CardDescription>
-            Profile views and engagement metrics for the past 30 days
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="pl-2">
-          <AnalyticsChart />
-        </CardContent>
-      </Card> */}
+      {!isPremium && (
+        <Alert className="bg-blue-50 border-blue-200 text-blue-800">
+          <CreditCard className="h-4 w-4 !text-blue-800" />{" "}
+          {/* Ensure icon color matches */}
+          <AlertTitle>Unlock Advanced Analytics</AlertTitle>
+          <AlertDescription>
+            Gain deeper insights into profile engagement, reach, and more.
+            <Link
+              href="/candidates/candidate-dashboard/upgrade"
+              className="font-semibold underline ml-2 hover:text-blue-900"
+            >
+              Upgrade Now
+            </Link>
+          </AlertDescription>
+        </Alert>
+      )}
 
       {/* Quick Actions Card */}
       <Card>
