@@ -236,6 +236,7 @@ export async function POST(req: NextRequest) {
         subject: subjectToUse,
         html,
         from: body.from,
+        senderName,
         scheduledAt: stepScheduledAt,
       });
     }
@@ -376,6 +377,7 @@ export async function POST(req: NextRequest) {
           subject: `[Outreach] ${step.template} summary (${batchResult.successes.length}/${recipients.length}) • ${sentAtIso}`,
           html: summaryHtml,
           from: body.from,
+          senderName,
         });
       } catch (err) {
         console.error("Error sending summary email:", err);
