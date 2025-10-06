@@ -289,36 +289,3 @@ export async function expectCandidateFieldValue(
 
   expect(candidate[field]).toBe(expectedValue);
 }
-
-// Helper: update Clerk public metadata for a user
-export async function updateClerkPublicMetadata(
-  clerkClient: any,
-  userId: string,
-  metadata: { [key: string]: any }
-): Promise<void> {
-  expect(userId).toBeTruthy();
-  expect(Object.keys(metadata).length).toBeGreaterThan(0);
-
-  await clerkClient.users.updateUser(userId, {
-    publicMetadata: metadata,
-  });
-}
-
-// Helper: remove Clerk public metadata for a user
-export async function removeClerkPublicMetadata(
-  clerkClient: any,
-  userId: string,
-  keys: string[]
-): Promise<void> {
-  expect(userId).toBeTruthy();
-  expect(keys.length).toBeGreaterThan(0);
-
-  const updates = keys.reduce((acc, key) => {
-    acc[key] = null;
-    return acc;
-  }, {} as { [key: string]: any });
-
-  await clerkClient.users.updateUser(userId, {
-    publicMetadata: updates,
-  });
-}

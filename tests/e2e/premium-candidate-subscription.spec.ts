@@ -1,11 +1,22 @@
 import { test, expect } from "@playwright/test";
 import { clerk } from "@clerk/testing/playwright";
 import { getCredsForWorker } from "./fixtures";
-import { updateClerkPublicMetadata } from "../helpers";
+import { updateUserMetadata } from "../utils";
+import { removeUserMetadata } from "../utils";
+
+test.afterAll(async () => {
+  const { userId } = getCredsForWorker(test.info().workerIndex);
+  await removeUserMetadata(userId!, [
+    "candidateSubscriptionTier",
+    "candidateSubscriptionUpdatedAt",
+  ]);
+});
 
 test("Testing Unpaid User to Paid User Workflow", async ({ page }) => {
   await page.goto("/");
-  const { username, password } = getCredsForWorker(test.info().workerIndex);
+  const { username, password, userId } = getCredsForWorker(
+    test.info().workerIndex
+  );
   await clerk.signIn({
     page,
     signInParams: {
@@ -58,9 +69,9 @@ test("Testing Unpaid User to Paid User Workflow", async ({ page }) => {
   ).toBeVisible();
   await expect(page.locator("text=$30.00")).toBeVisible();
 
-  // Simulate successful payment by navigating back to the app
+  // Simulate successful payment by adding premium metadata to the user
 
-  updateClerkPublicMetadata(clerk, username!, {
+  updateUserMetadata(userId!, {
     candidateSubscriptionTier: "premium",
     candidateSubscriptionUpdatedAt: new Date().toISOString(),
   });
@@ -71,4 +82,16 @@ test("Testing Unpaid User to Paid User Workflow", async ({ page }) => {
     page.locator("text=Unlock Advanced Analytics")
   ).not.toBeVisible();
   await expect(page.locator("text=Upgrade Plan")).not.toBeVisible();
+
+  // Assert that the "Endorsements" link is enabled
+  const endorsementsLink2 = page.getByRole("link", { name: "Endorsements" });
+  await expect(endorsementsLink2).toBeEnabled();
+  await endorsementsLink2.click();
+  await expect(page).toHaveURL("/candidates/candidate-dashboard/endorsements");
+
+  // Assert that the "Analytics" link is enabled
+  const analyticsLink2 = page.getByRole("link", { name: "Analytics" });
+  await expect(analyticsLink2).toBeEnabled();
+  await analyticsLink2.click();
+  await expect(page).toHaveURL("/candidates/candidate-dashboard/analytics");
 });
