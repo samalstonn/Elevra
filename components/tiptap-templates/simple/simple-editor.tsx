@@ -26,6 +26,7 @@ import {
 // --- Tiptap Node ---
 import { ImageUploadNode } from "@/components/tiptap-node/image-upload-node/image-upload-node-extension"
 import { HorizontalRule } from "@/components/tiptap-node/horizontal-rule-node/horizontal-rule-node-extension"
+import { VideoNode } from "@/components/tiptap-node/video-node/video-node-extension"
 import "@/components/tiptap-node/blockquote-node/blockquote-node.scss"
 import "@/components/tiptap-node/code-block-node/code-block-node.scss"
 import "@/components/tiptap-node/horizontal-rule-node/horizontal-rule-node.scss"
@@ -39,7 +40,6 @@ import { HeadingDropdownMenu } from "@/components/tiptap-ui/heading-dropdown-men
 import { ImageUploadButton } from "@/components/tiptap-ui/image-upload-button"
 import { ListDropdownMenu } from "@/components/tiptap-ui/list-dropdown-menu"
 import { BlockquoteButton } from "@/components/tiptap-ui/blockquote-button"
-import { CodeBlockButton } from "@/components/tiptap-ui/code-block-button"
 import {
   ColorHighlightPopover,
   ColorHighlightPopoverContent,
@@ -68,20 +68,24 @@ import { useCursorVisibility } from "@/hooks/use-cursor-visibility"
 import { ThemeToggle } from "@/components/tiptap-templates/simple/theme-toggle"
 
 // --- Lib ---
-import { handleImageUpload, MAX_FILE_SIZE } from "@/lib/tiptap-utils"
+import { MAX_FILE_SIZE } from "@/lib/tiptap-utils"
 
 // --- Styles ---
 import "@/components/tiptap-templates/simple/simple-editor.scss"
 
 import content from "@/components/tiptap-templates/simple/data/content.json"
+import { Button as AppButton } from "@/components/ui/button"
+import Link from "next/link"
 
 const MainToolbarContent = ({
   onHighlighterClick,
   onLinkClick,
+  onVideoClick,
   isMobile,
 }: {
   onHighlighterClick: () => void
   onLinkClick: () => void
+  onVideoClick: () => void
   isMobile: boolean
 }) => {
   return (
@@ -102,7 +106,6 @@ const MainToolbarContent = ({
           portal={isMobile}
         />
         <BlockquoteButton />
-        <CodeBlockButton />
       </ToolbarGroup>
 
       <ToolbarSeparator />
@@ -111,7 +114,6 @@ const MainToolbarContent = ({
         <MarkButton type="bold" />
         <MarkButton type="italic" />
         <MarkButton type="strike" />
-        <MarkButton type="code" />
         <MarkButton type="underline" />
         {!isMobile ? (
           <ColorHighlightPopover />
@@ -140,16 +142,18 @@ const MainToolbarContent = ({
       <ToolbarSeparator />
 
       <ToolbarGroup>
-        <ImageUploadButton text="Add" />
+        <ImageUploadButton />
+        <Button onClick={onVideoClick}>Add Video</Button>
       </ToolbarGroup>
 
       <Spacer />
 
       {isMobile && <ToolbarSeparator />}
 
-      <ToolbarGroup>
+      {/* can add theme toggle but will have to fix other buttons first */}
+      {/* <ToolbarGroup>
         <ThemeToggle />
-      </ToolbarGroup>
+      </ToolbarGroup> */}
     </>
   )
 }
@@ -183,13 +187,20 @@ const MobileToolbarContent = ({
   </>
 )
 
-export function SimpleEditor() {
+type SimpleEditorProps = {
+  initialContent?: any
+  onSave?: (payload: { json: any; html: string }) => Promise<void> | void
+  candidateSlug?: string
+}
+
+export function SimpleEditor({ initialContent, onSave, candidateSlug }: SimpleEditorProps) {
   const isMobile = useIsMobile()
   const { height } = useWindowSize()
   const [mobileView, setMobileView] = React.useState<
     "main" | "highlighter" | "link"
   >("main")
   const toolbarRef = React.useRef<HTMLDivElement>(null)
+  const videoInputRef = React.useRef<HTMLInputElement | null>(null)
 
   const editor = useEditor({
     immediatelyRender: false,
@@ -212,6 +223,7 @@ export function SimpleEditor() {
         },
       }),
       HorizontalRule,
+      VideoNode,
       TextAlign.configure({ types: ["heading", "paragraph"] }),
       TaskList,
       TaskItem.configure({ nested: true }),
@@ -225,12 +237,76 @@ export function SimpleEditor() {
         accept: "image/*",
         maxSize: MAX_FILE_SIZE,
         limit: 3,
-        upload: handleImageUpload,
+        upload: async (file, onProgress, abortSignal) => {
+          if (!candidateSlug) {
+            throw new Error("candidateSlug is required for uploads")
+          }
+          const form = new FormData()
+          form.append("file", file)
+          form.append("candidateSlug", candidateSlug)
+
+          const xhr = new XMLHttpRequest()
+          const promise = new Promise<string>((resolve, reject) => {
+            xhr.open("PUT", "/api/blob/signed-url")
+            xhr.upload.onprogress = (event) => {
+              if (event.lengthComputable) {
+                const pct = Math.round((event.loaded / event.total) * 100)
+                onProgress?.({ progress: pct })
+              }
+            }
+            xhr.onload = () => {
+              if (xhr.status >= 200 && xhr.status < 300) {
+                try {
+                  const data = JSON.parse(xhr.responseText)
+                  if (data?.url) resolve(data.url)
+                  else reject(new Error("Invalid upload response"))
+                } catch (e) {
+                  reject(e as Error)
+                }
+              } else {
+                reject(new Error(`Upload failed (${xhr.status})`))
+              }
+            }
+            xhr.onerror = () => reject(new Error("Network error"))
+            xhr.send(form)
+          })
+
+          if (abortSignal) {
+            abortSignal.addEventListener("abort", () => xhr.abort())
+          }
+
+          return promise
+        },
         onError: (error) => console.error("Upload failed:", error),
       }),
     ],
-    content,
+    content: initialContent ?? content,
   })
+
+  // If initialContent changes after the editor is created (e.g., loaded from API), update content
+  React.useEffect(() => {
+    if (editor && initialContent) {
+      try {
+        editor.commands.setContent(initialContent)
+      } catch (e) {
+        console.error("Failed to set editor content", e)
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [editor, initialContent])
+
+  const [isSaving, setIsSaving] = React.useState(false)
+  const handleSave = async () => {
+    if (!editor || !onSave) return
+    setIsSaving(true)
+    try {
+      const json = editor.getJSON()
+      const html = editor.getHTML()
+      await onSave({ json, html })
+    } finally {
+      setIsSaving(false)
+    }
+  }
 
   const rect = useCursorVisibility({
     editor,
@@ -245,6 +321,20 @@ export function SimpleEditor() {
 
   return (
     <div className="simple-editor-wrapper">
+      {(onSave || candidateSlug) && (
+          <div className="mb-4 flex flex-row items-center justify-end gap-2">
+            {onSave && (
+              <AppButton onClick={handleSave} disabled={isSaving}>
+                {isSaving ? "Saving..." : "Save"}
+              </AppButton>
+            )}
+            {candidateSlug && (
+              <AppButton variant="purple" asChild>
+                <Link href={`/candidate/${candidateSlug}`}>View Public Profile</Link>
+              </AppButton>
+            )}
+          </div>
+        )}
       <EditorContext.Provider value={{ editor }}>
         <Toolbar
           ref={toolbarRef}
@@ -260,6 +350,7 @@ export function SimpleEditor() {
             <MainToolbarContent
               onHighlighterClick={() => setMobileView("highlighter")}
               onLinkClick={() => setMobileView("link")}
+              onVideoClick={() => videoInputRef.current?.click()}
               isMobile={isMobile}
             />
           ) : (
@@ -274,6 +365,40 @@ export function SimpleEditor() {
           editor={editor}
           role="presentation"
           className="simple-editor-content"
+        />
+
+        {/* Hidden input for video uploads */}
+        <input
+          ref={videoInputRef}
+          type="file"
+          accept="video/*"
+          className="hidden"
+          onChange={async (e) => {
+            const file = e.target.files?.[0]
+            if (!file) return
+            if (!candidateSlug) {
+              console.error("candidateSlug is required for uploads")
+              return
+            }
+            try {
+              const form = new FormData()
+              form.append("file", file)
+              form.append("candidateSlug", candidateSlug)
+              const res = await fetch("/api/blob/signed-url", {
+                method: "PUT",
+                body: form,
+              })
+              if (!res.ok) throw new Error(`Upload failed (${res.status})`)
+              const data = await res.json()
+              const url: string | undefined = data?.url
+              if (!url) throw new Error("Invalid upload response")
+              editor?.chain().focus().setVideo({ src: url }).run()
+            } catch (err) {
+              console.error("Video upload failed:", err)
+            } finally {
+              e.currentTarget.value = ""
+            }
+          }}
         />
       </EditorContext.Provider>
     </div>
