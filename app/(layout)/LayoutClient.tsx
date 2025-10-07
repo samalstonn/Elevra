@@ -3,8 +3,9 @@ import {
   ClerkProvider,
   SignedIn,
   SignedOut,
-  SignInButton,
+  // SignInButton, // Not using this currently, but keeping it for future reference
   UserButton,
+  useUser,
 } from "@clerk/nextjs";
 import "../globals.css";
 import { useState, useEffect, Suspense } from "react";
@@ -16,6 +17,7 @@ import SearchBar from "../../components/ResultsSearchBar";
 import { Toaster } from "@/components/ui/toaster";
 import Footer from "../(footer-pages)/Footer";
 import HeaderButtons from "./HeaderButtons";
+import SignUpRoleButton, { SIGNUP_ROLE_STORAGE_KEY } from "./SignUpRoleButton";
 
 const clerkKey = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
 if (!clerkKey || clerkKey.trim() === "") {
@@ -71,19 +73,17 @@ function HeaderNav() {
         </SignedIn>
         <SignedOut>
           <HeaderButtons pathname={pathname} />
-          <SignInButton />
+          <SignUpRoleButton />
+          { /* <SignInButton />  Omitting b/c of the new SignUp Button that opens the modal!*/}
         </SignedOut>
       </div>
     </header>
   );
 }
 
-export default function LayoutClient({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+function LayoutShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const { isSignedIn, user } = useUser();
   const [_isMobile, setIsMobile] = useState<boolean>(false);
   useEffect(() => {
     const mediaQuery = window.matchMedia("(max-width: 768px)");
@@ -92,6 +92,77 @@ export default function LayoutClient({
     mediaQuery.addEventListener("change", handler);
     return () => mediaQuery.removeEventListener("change", handler);
   }, []);
+
+  useEffect(() => {
+    if (!isSignedIn) {
+      return;
+    }
+
+    let storedRole: "candidate" | "voter" | null = null;
+    try {
+      const stored = localStorage.getItem(SIGNUP_ROLE_STORAGE_KEY);
+      if (stored === "candidate" || stored === "voter") {
+        storedRole = stored;
+      }
+    } catch (error) {
+      console.error("Unable to read stored sign-up role", error);
+    }
+
+    if (!storedRole) {
+      return;
+    }
+
+    type PublicMetadataShape = {
+      isCandidate?: boolean;
+      isVoter?: boolean;
+      [key: string]: unknown;
+    };
+
+    const publicMetadata = (user?.publicMetadata ?? {}) as PublicMetadataShape;
+    const roleAlreadySet =
+      (storedRole === "candidate" && publicMetadata?.isCandidate === true) ||
+      (storedRole === "voter" && publicMetadata?.isVoter === true);
+
+    if (roleAlreadySet) {
+      try {
+        localStorage.removeItem(SIGNUP_ROLE_STORAGE_KEY);
+      } catch (error) {
+        console.error("Unable to clear stored sign-up role", error);
+      }
+      return;
+    }
+
+    const controller = new AbortController();
+
+    (async () => {
+      try {
+        const response = await fetch("/api/user/metadata/role", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ role: storedRole }),
+          signal: controller.signal,
+        });
+
+        if (!response.ok) {
+          throw new Error(`Request failed with status ${response.status}`);
+        }
+
+        try {
+          localStorage.removeItem(SIGNUP_ROLE_STORAGE_KEY);
+        } catch (error) {
+          console.error("Unable to clear stored sign-up role", error);
+        }
+      } catch (error) {
+        if ((error as Error).name !== "AbortError") {
+          console.error("Failed to persist Clerk role metadata", error);
+        }
+      }
+    })();
+
+    return () => controller.abort();
+  }, [isSignedIn, user]);
 
   useEffect(() => { // takes keywords from the page and adds them to the meta keywords tag
     const keywordMeta = document.querySelector<HTMLMetaElement>(
@@ -139,26 +210,36 @@ export default function LayoutClient({
   }, [pathname]);
 
   return (
+    <html lang="en" className="overflow-x-hidden">
+      <body className="flex min-h-full flex-col bg-background text-foreground antialiased overflow-x-hidden overflow-y-auto">
+        {/* Header Section (wrapped in Suspense to support useSearchParams) */}
+        <Suspense fallback={null}>
+          <HeaderNav />
+        </Suspense>
+
+        {/* Main Content - Conditional styling for results page */}
+        <main className="flex-1 w-full">{children}</main>
+
+        {/* Footer Section */}
+        <Footer />
+
+        {/* Global analytics + toasts */}
+        <Analytics />
+        <SpeedInsights />
+        <Toaster />
+      </body>
+    </html>
+  );
+}
+
+export default function LayoutClient({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  return (
     <ClerkProvider publishableKey={clerkKey || ""}>
-      <html lang="en" className="overflow-x-hidden">
-        <body className="flex min-h-full flex-col bg-background text-foreground antialiased overflow-x-hidden overflow-y-auto">
-          {/* Header Section (wrapped in Suspense to support useSearchParams) */}
-          <Suspense fallback={null}>
-            <HeaderNav />
-          </Suspense>
-
-          {/* Main Content - Conditional styling for results page */}
-          <main className="flex-1 w-full">{children}</main>
-
-          {/* Footer Section */}
-          <Footer />
-
-          {/* Global analytics + toasts */}
-          <Analytics />
-          <SpeedInsights />
-          <Toaster />
-        </body>
-      </html>
+      <LayoutShell>{children}</LayoutShell>
     </ClerkProvider>
   );
 }
