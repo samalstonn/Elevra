@@ -403,6 +403,13 @@ export default function ProfileSettingsPage() {
               }
 
               const snippets = summarizeBlocks(link.ContentBlock);
+              const hasCustomDoc = !!link.Document?.contentHtml;
+              const docPreview = hasCustomDoc && link.Document
+                ? link.Document.contentHtml
+                    .replace(/<[^>]+>/g, " ")
+                    .replace(/\s+/g, " ")
+                    .trim()
+                : "";
               const resultsHref = buildResultsHref(link);
 
               return (
@@ -438,6 +445,17 @@ export default function ProfileSettingsPage() {
                             </p>
                           </div>
                         ))}
+                      </div>
+                    ) : hasCustomDoc ? (
+                      <div className="space-y-3">
+                        <div>
+                          <span className="text-[10px] uppercase tracking-wide text-purple-500">
+                            Custom Campaign
+                          </span>
+                          <p className="text-sm text-gray-700 leading-relaxed line-clamp-4">
+                            {docPreview}
+                          </p>
+                        </div>
                       </div>
                     ) : (
                       <p className="text-sm text-gray-500">

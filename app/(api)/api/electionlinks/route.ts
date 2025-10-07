@@ -28,7 +28,7 @@ export async function GET(request: Request) {
   try {
     const links = await prisma.electionLink.findMany({
       where: { candidateId },
-      include: { election: true, ContentBlock: true },
+      include: { election: true, ContentBlock: true, Document: true },
     });
     return NextResponse.json(links);
   } catch (error) {
