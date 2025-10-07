@@ -48,8 +48,8 @@ export function ElectionProfileTab({ link }: ElectionProfileTabProps) {
   return (
     <div className="space-y-6 mx-auto max-w-4xl px-4 pt-8">
       {blocksToRender.length === 0 && hasCustomDocument && (
-        <div
-          className={`text-sm ${colorClass.BLACK}`}
+        <article
+          className="prose prose-slate max-w-none"
           dangerouslySetInnerHTML={{
             __html: DOMPurify.sanitize(link.Document!.contentHtml),
           }}
