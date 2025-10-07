@@ -315,6 +315,16 @@ async function startStructureJobs(
     const { total: estimatedTokens, perRequest } = estimateTokensForBatch(
       structureRequests
     );
+    if (perRequest.length > 0) {
+      const avg = Math.round(estimatedTokens / perRequest.length);
+      const max = Math.max(...perRequest);
+      const min = Math.min(...perRequest);
+      console.log(
+        `[gemini-batch] structure token estimate → total=${estimatedTokens}, avg=${avg}, min=${min}, max=${max}, requests=${perRequest.length}`
+      );
+    } else {
+      console.log("[gemini-batch] structure token estimate → no requests to evaluate");
+    }
 
     const activeTokensAggregate = await prisma.geminiBatchJob.aggregate({
       _sum: { estimatedTokens: true },

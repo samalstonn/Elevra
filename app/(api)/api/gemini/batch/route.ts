@@ -205,6 +205,16 @@ export async function POST(req: NextRequest) {
     const { total: estimatedTokens, perRequest } = estimateTokensForBatch(
       analyzeRequests
     );
+    if (perRequest.length > 0) {
+      const avg = Math.round(estimatedTokens / perRequest.length);
+      const max = Math.max(...perRequest);
+      const min = Math.min(...perRequest);
+      console.log(
+        `[gemini-batch] analyze token estimate → total=${estimatedTokens}, avg=${avg}, min=${min}, max=${max}, requests=${perRequest.length}`
+      );
+    } else {
+      console.log("[gemini-batch] analyze token estimate → no requests to evaluate");
+    }
 
     const activeJobs = await prisma.geminiBatchJob.count({
       where: { status: { in: [...ACTIVE_JOB_STATUSES] } },
