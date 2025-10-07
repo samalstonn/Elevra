@@ -3,6 +3,11 @@
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { isElectionActive } from "@/lib/isElectionActive";
+import {
+  buildSuggestedElectionOrder,
+  orderLiveElectionsByPriority,
+  type CandidateElectionSummary,
+} from "@/lib/liveElectionOrdering";
 
 interface RawElectionSummary {
   city: string | null;
@@ -16,6 +21,11 @@ interface SuggestedElection {
   positions: string[];
   date: string | Date;
 }
+
+type SuggestedCandidateResponse = CandidateElectionSummary & {
+  id: number;
+  slug: string;
+};
 
 export interface LiveElectionBannerProps {
   title?: string;
@@ -44,11 +54,30 @@ export const LiveElectionBanner: React.FC<LiveElectionBannerProps> = ({
       setLoading(true);
       setError(null);
       try {
-        const res = await fetch("/api/elections?city=all&state=all", {
-          signal: controller.signal,
-        });
-        if (!res.ok) throw new Error("Failed to fetch elections");
-        let data: RawElectionSummary[] = await res.json();
+        const [electionRes, suggestedCandidatesRes] = await Promise.all([
+          fetch("/api/elections?city=all&state=all", {
+            signal: controller.signal,
+          }),
+          fetch("/api/suggested-candidates", {
+            signal: controller.signal,
+          }),
+        ]);
+
+        if (!electionRes.ok) throw new Error("Failed to fetch elections");
+        let data: RawElectionSummary[] = await electionRes.json();
+        let suggestedCandidateData: SuggestedCandidateResponse[] = [];
+
+        if (suggestedCandidatesRes.ok) {
+          suggestedCandidateData = await suggestedCandidatesRes.json();
+        } else {
+          const fallbackMessage = await suggestedCandidatesRes
+            .text()
+            .catch(() => suggestedCandidatesRes.statusText);
+          console.warn(
+            "Failed to fetch suggested candidates order",
+            fallbackMessage
+          );
+        }
         data = data.filter((e) => isElectionActive(new Date(e.date)));
         const map = new Map<
           string,
@@ -79,12 +108,16 @@ export const LiveElectionBanner: React.FC<LiveElectionBannerProps> = ({
             date: v.date,
           })
         );
-        grouped.sort((a, b) =>
-          `${a.city || ""}, ${a.state}`
-            .toLowerCase()
-            .localeCompare(`${b.city || ""}, ${b.state}`.toLowerCase())
+
+        const prioritizedKeys = buildSuggestedElectionOrder(
+          suggestedCandidateData
         );
-        if (!cancelled) setSuggested(grouped.slice(0, limit));
+        const ordered = orderLiveElectionsByPriority(grouped, prioritizedKeys);
+        const limited = ordered.slice(0, limit);
+
+        if (!cancelled) {
+          setSuggested(limited);
+        }
       } catch (err: unknown) {
         // Swallow abort errors; show others
         if (!cancelled) {
