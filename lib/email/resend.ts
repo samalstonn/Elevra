@@ -1,5 +1,12 @@
 import { CreateEmailOptions, Resend } from "resend";
 
+export type EmailAttachment = {
+  filename: string;
+  path?: string;
+  content?: string;
+  mimeType?: string;
+};
+
 export type SendEmailParams = {
   to: string | string[];
   subject: string;
@@ -7,6 +14,7 @@ export type SendEmailParams = {
   from?: string;
   // Accept Date (UTC ISO) or ISO string with timezone offset to honor local time
   scheduledAt?: Date | string;
+  attachments?: EmailAttachment[];
 };
 
 export type SendEmailBatchResult = {
@@ -60,6 +68,7 @@ export async function sendWithResend({
   html,
   from,
   scheduledAt,
+  attachments,
 }: SendEmailParams): Promise<{ id: string } | null> {
   // Global process-level throttle
   await enforceRateLimit();
@@ -79,7 +88,16 @@ export async function sendWithResend({
           to,
           subject,
           html,
+          attachments: attachments?.map((item) => ({
+            filename: item.filename,
+            path: item.path,
+            content: item.content,
+            mime_type: item.mimeType,
+          })),
         };
+        if (!sendParams.attachments?.length) {
+          delete (sendParams as { attachments?: unknown }).attachments;
+        }
         sendParams.scheduledAt = scheduledAt
           ? typeof scheduledAt === "string"
             ? scheduledAt
@@ -106,7 +124,16 @@ export async function sendWithResend({
     subject,
     html,
     replyTo: process.env.ADMIN_EMAIL,
+    attachments: attachments?.map((item) => ({
+      filename: item.filename,
+      path: item.path,
+      content: item.content,
+      mime_type: item.mimeType,
+    })),
   };
+  if (!sendParams.attachments?.length) {
+    delete (sendParams as { attachments?: unknown }).attachments;
+  }
 
   if (scheduledAt) {
     sendParams.scheduledAt =

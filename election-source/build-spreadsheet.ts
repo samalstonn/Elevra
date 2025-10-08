@@ -6,6 +6,7 @@ import { getRawValue } from "@/election-source/helpers";
 export type InsertResultItem = {
   city: string;
   state: string;
+  position: string;
   electionId: number;
   electionResultsUrl: string;
   candidateSlugs: string[];
