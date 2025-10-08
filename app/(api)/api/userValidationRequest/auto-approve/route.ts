@@ -4,7 +4,7 @@ import { SubmissionStatus } from "@prisma/client";
 import { sendWithResend } from "@/lib/email/resend";
 import { renderAdminNotification } from "@/lib/email/templates/adminNotification";
 import { renderCandidateVerificationEmail } from "@/lib/email/templates/candidateVerified";
-import { elevraStarterTemplate } from "@/app/(templates)/basicwebpage";
+/* import { elevraStarterTemplate } from "@/app/(templates)/basicwebpage"; */
 
 // Using Resend helper; no transporter needed
 

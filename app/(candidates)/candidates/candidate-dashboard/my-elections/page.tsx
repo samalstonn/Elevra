@@ -15,7 +15,7 @@ import {
   summarizeBlocks,
   TemplateCardDefinition,
   TemplateChoice,
-  type BlockSnippet,
+  /* type BlockSnippet, */
 } from "./utils";
 
 import {

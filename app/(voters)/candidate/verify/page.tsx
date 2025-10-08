@@ -1,7 +1,7 @@
 import { auth } from "@clerk/nextjs/server";
 import { clerkClient } from "@clerk/clerk-sdk-node";
 import prisma from "@/prisma/prisma";
-import { elevraStarterTemplate } from "@/app/(templates)/basicwebpage";
+/* import { elevraStarterTemplate } from "@/app/(templates)/basicwebpage"; */
 import { SubmissionStatus } from "@prisma/client";
 import { sendWithResend } from "@/lib/email/resend";
 import { renderAdminNotification } from "@/lib/email/templates/adminNotification";

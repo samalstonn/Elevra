@@ -1,4 +1,3 @@
-import Tiptap from "@/components/TipTap";
 import { SimpleEditor } from '@/components/tiptap-templates/simple/simple-editor'
 
 export const metadata = {

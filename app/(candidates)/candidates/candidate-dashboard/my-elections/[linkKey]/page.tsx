@@ -296,9 +296,12 @@ function SimpleEditorWrapper({
   candidateSlug: string;
 }) {
   const { toast } = useToast();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [initialContent, setInitialContent] = useState<any | undefined>(
     undefined
   );
+
+  // eslint-disable-next-line 
   const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
@@ -325,6 +328,7 @@ function SimpleEditorWrapper({
     };
   }, [candidateId, electionId]);
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const handleSave = async ({ json, html }: { json: any; html: string }) => {
     try {
       const res = await fetch(`/api/v1/document`, {

@@ -2,9 +2,9 @@
 import { NextResponse } from "next/server";
 import {
   PrismaClient,
-  TextColor,
+  /* TextColor,
   BlockType,
-  ListStyle,
+  ListStyle, */
   Prisma,
 } from "@prisma/client";
 import { pick } from "lodash";

@@ -65,7 +65,7 @@ import { useWindowSize } from "@/hooks/use-window-size"
 import { useCursorVisibility } from "@/hooks/use-cursor-visibility"
 
 // --- Components ---
-import { ThemeToggle } from "@/components/tiptap-templates/simple/theme-toggle"
+/* import { ThemeToggle } from "@/components/tiptap-templates/simple/theme-toggle" */
 
 // --- Lib ---
 import { MAX_FILE_SIZE } from "@/lib/tiptap-utils"
@@ -188,7 +188,9 @@ const MobileToolbarContent = ({
 )
 
 type SimpleEditorProps = {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   initialContent?: any
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   onSave?: (payload: { json: any; html: string }) => Promise<void> | void
   candidateSlug?: string
 }
@@ -292,7 +294,6 @@ export function SimpleEditor({ initialContent, onSave, candidateSlug }: SimpleEd
         console.error("Failed to set editor content", e)
       }
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [editor, initialContent])
 
   const [isSaving, setIsSaving] = React.useState(false)
