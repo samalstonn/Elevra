@@ -76,6 +76,9 @@ export const test = base.extend<Fixtures, WorkerFixtures>({
       let candidateId: number | null = null;
       let electionId: number | null = null;
 
+      if (!process.env.E2E_SEED_SECRET && !process.env.SEED_API_TOKEN) {
+        throw new Error("Missing E2E_SEED_SECRET or SEED_API_TOKEN in environment");
+      }
       const postWithRetry = async (url: string, data: any, tries = 3) => {
         let lastErr: any;
         for (let i = 0; i < tries; i++) {
@@ -83,6 +86,7 @@ export const test = base.extend<Fixtures, WorkerFixtures>({
             headers: {
               "content-type": "application/json",
               "x-e2e-seed-secret": process.env.E2E_SEED_SECRET || "",
+              "Authorization": `Bearer ${process.env.SEED_API_TOKEN ?? ""}`,
               ...(vercelBypassHeaders ?? {}),
             },
             data,
