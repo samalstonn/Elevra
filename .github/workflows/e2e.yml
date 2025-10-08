@@ -83,6 +83,13 @@ jobs:
       - name: Install Vercel CLI
         run: npm i -g vercel
 
+      - name: Verify bypass token is configured
+        run: |
+          if [ -z "${VERCEL_BYPASS_TOKEN:-}" ]; then
+            echo "::error::VERCEL_BYPASS_TOKEN is not set. Add the hashed bypass token as a GitHub Actions secret." >&2
+            exit 1
+          fi
+
       # Pull preview env vars into .vercel/. (no prompts)
       - name: Vercel env pull (preview)
         run: vercel pull --yes --environment=preview --token "$VERCEL_TOKEN"
@@ -113,6 +120,7 @@ jobs:
         run: npx playwright test
         env:
           NEXT_PUBLIC_APP_URL: ${{ steps.deploy.outputs.url }}
+          VERCEL_BYPASS_TOKEN: ${{ secrets.VERCEL_BYPASS_TOKEN }}
 
       # Always upload the HTML report & traces for debugging
       - name: Upload Playwright report
