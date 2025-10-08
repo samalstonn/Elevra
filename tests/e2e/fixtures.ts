@@ -9,6 +9,12 @@ import { prisma } from "../prisma-client";
 export const TEST_SLUG =
   process.env.E2E_CANDIDATE_SLUG || "existing-candidate-slug";
 
+const vercelBypassHeaders = process.env.VERCEL_BYPASS_TOKEN
+  ? { "x-vercel-protection-bypass": process.env.VERCEL_BYPASS_TOKEN }
+  : undefined;
+
+const MAX_LOGGED_BODY_CHARS = 500;
+
 type Candidate = {
   id: number;
   electionId: number;
@@ -72,6 +78,9 @@ export const test = base.extend<Fixtures, WorkerFixtures>({
       let candidateId: number | null = null;
       let electionId: number | null = null;
 
+      if (!process.env.E2E_SEED_SECRET && !process.env.SEED_API_TOKEN) {
+        throw new Error("Missing E2E_SEED_SECRET or SEED_API_TOKEN in environment");
+      }
       const postWithRetry = async (url: string, data: any, tries = 3) => {
         let lastErr: any;
         for (let i = 0; i < tries; i++) {
@@ -79,12 +88,25 @@ export const test = base.extend<Fixtures, WorkerFixtures>({
             headers: {
               "content-type": "application/json",
               "x-e2e-seed-secret": process.env.E2E_SEED_SECRET || "",
+              Authorization: `Bearer ${process.env.SEED_API_TOKEN ?? ""}`,
+              ...(vercelBypassHeaders ?? {}),
             },
             data,
           });
           if (res.ok()) return res;
+
+          const status = `${res.status()} ${res.statusText()}`.trim();
+          const rawBody = await res.text();
+          const bodyPreview = rawBody
+            ? rawBody.slice(0, MAX_LOGGED_BODY_CHARS)
+            : "<empty>";
+
+          console.error(
+            `[seed] attempt ${i + 1}/${tries} failed for ${url}: ${status}. body=${bodyPreview}`
+          );
+
           lastErr = new Error(
-            `Failed to seed structured data: ${res.status()} ${await res.text()}`
+            `Failed to seed structured data: ${status}. body=${bodyPreview}`
           );
           await new Promise((r) => setTimeout(r, 150 * (i + 1)));
         }
