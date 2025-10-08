@@ -118,7 +118,7 @@ export default function BioSettingsPage() {
       <TourModal
         open={showStep2}
         onOpenChange={setShowStep2}
-        title="Profile (Step 2 of 4)"
+        title="Profile (Step 2 of 3)"
         backLabel="Back"
         onBack={backToOverview}
         primaryLabel="Next: Campaign"

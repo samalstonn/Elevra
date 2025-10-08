@@ -236,7 +236,7 @@ export default function OverviewPage() {
       <TourModal
         open={showStep1}
         onOpenChange={setShowStep1}
-        title="Overview (Step 1 of 4)"
+        title="Overview (Step 1 of 3)"
         backLabel="Back"
         onBack={backToWelcome}
         primaryLabel="Next: Profile"

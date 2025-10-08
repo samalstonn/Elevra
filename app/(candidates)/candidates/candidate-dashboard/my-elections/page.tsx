@@ -79,12 +79,11 @@ export default function ProfileSettingsPage() {
     router.push("/candidates/candidate-dashboard");
   };
 
-  const nextToEndorsements = () => {
+  const finishTour = () => {
     try {
-      localStorage.setItem("elevra_tour_step", "4");
+      localStorage.removeItem("elevra_tour_step");
     } catch {}
     setShowStep3(false);
-    router.push("/candidates/candidate-dashboard/endorsements?tour=1");
   };
   const backToProfile = () => {
     try {
@@ -334,11 +333,11 @@ export default function ProfileSettingsPage() {
       <TourModal
         open={showStep3}
         onOpenChange={setShowStep3}
-        title="Campaign (Step 3 of 4)"
+        title="Campaign (Step 3 of 3)"
         backLabel="Back"
         onBack={backToProfile}
-        primaryLabel="Next: Endorsements"
-        onPrimary={nextToEndorsements}
+        primaryLabel="Finish Tour"
+        onPrimary={finishTour}
         secondaryLabel="Skip tour"
         onSecondary={skipTour}
       >
