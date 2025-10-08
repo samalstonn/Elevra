@@ -13,6 +13,8 @@ const vercelBypassHeaders = process.env.VERCEL_BYPASS_TOKEN
   ? { "x-vercel-protection-bypass": process.env.VERCEL_BYPASS_TOKEN }
   : undefined;
 
+const MAX_LOGGED_BODY_CHARS = 500;
+
 type Candidate = {
   id: number;
   electionId: number;
@@ -86,14 +88,25 @@ export const test = base.extend<Fixtures, WorkerFixtures>({
             headers: {
               "content-type": "application/json",
               "x-e2e-seed-secret": process.env.E2E_SEED_SECRET || "",
-              "Authorization": `Bearer ${process.env.SEED_API_TOKEN ?? ""}`,
+              Authorization: `Bearer ${process.env.SEED_API_TOKEN ?? ""}`,
               ...(vercelBypassHeaders ?? {}),
             },
             data,
           });
           if (res.ok()) return res;
+
+          const status = `${res.status()} ${res.statusText()}`.trim();
+          const rawBody = await res.text();
+          const bodyPreview = rawBody
+            ? rawBody.slice(0, MAX_LOGGED_BODY_CHARS)
+            : "<empty>";
+
+          console.error(
+            `[seed] attempt ${i + 1}/${tries} failed for ${url}: ${status}. body=${bodyPreview}`
+          );
+
           lastErr = new Error(
-            `Failed to seed structured data: ${res.status()} ${await res.text()}`
+            `Failed to seed structured data: ${status}. body=${bodyPreview}`
           );
           await new Promise((r) => setTimeout(r, 150 * (i + 1)));
         }
