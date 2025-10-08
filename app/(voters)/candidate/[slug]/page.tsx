@@ -2,6 +2,10 @@ export const dynamic = "force-dynamic";
 import { notFound } from "next/navigation";
 import { headers } from "next/headers";
 import prisma from "@/prisma/prisma";
+import {
+  buildSuggestedCandidateWhere,
+  suggestedCandidateOrderBy,
+} from "@/lib/suggestedCandidates";
 import CandidateClient from "./CandidateClient";
 import { Candidate } from "@prisma/client";
 import { currentUser } from "@clerk/nextjs/server";
@@ -168,23 +172,8 @@ export default async function CandidatePage({
 
   // Suggested list prioritizes candidates with real image content blocks
   const suggestedCandidates = await prisma.candidate.findMany({
-    where: {
-      id: { not: candidateID },
-      hidden: false,
-      elections: {
-        some: {
-          ContentBlock: {
-            some: {
-              type: "IMAGE",
-              imageUrl: {
-                notIn: ["/example-johnny.jpg", "/johnny-lawnsign.png"],
-                not: null,
-              },
-            },
-          },
-        },
-      },
-    },
+    where: buildSuggestedCandidateWhere(candidateID),
+    orderBy: suggestedCandidateOrderBy,
   });
 
   // Check if current user can edit this candidate profile
