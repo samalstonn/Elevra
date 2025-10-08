@@ -9,6 +9,10 @@ import { prisma } from "../prisma-client";
 export const TEST_SLUG =
   process.env.E2E_CANDIDATE_SLUG || "existing-candidate-slug";
 
+const vercelBypassHeaders = process.env.VERCEL_BYPASS_TOKEN
+  ? { "x-vercel-protection-bypass": process.env.VERCEL_BYPASS_TOKEN }
+  : undefined;
+
 type Candidate = {
   id: number;
   electionId: number;
@@ -79,6 +83,7 @@ export const test = base.extend<Fixtures, WorkerFixtures>({
             headers: {
               "content-type": "application/json",
               "x-e2e-seed-secret": process.env.E2E_SEED_SECRET || "",
+              ...(vercelBypassHeaders ?? {}),
             },
             data,
           });
