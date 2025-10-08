@@ -46,13 +46,6 @@ export default function MyPageEditor({ params }: EditorPageProps) {
   const decodedLinkKey = useMemo(() => decodeEditorLinkKey(linkKey), [linkKey]);
   const activeElectionId = decodedLinkKey?.electionId ?? null;
 
-  // Show tutorial on first load unless the user opted out
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    const hide = localStorage.getItem("mypage_tutorial_hide");
-    const tourStep = localStorage.getItem("elevra_tour_step");
-    if (hide !== "true" && !tourStep) setShowTutorial(true);
-  }, []);
   const closeTutorial = () => {
     if (dontShowAgain && typeof window !== "undefined") {
       localStorage.setItem("mypage_tutorial_hide", "true");
@@ -63,6 +56,23 @@ export default function MyPageEditor({ params }: EditorPageProps) {
   const activeLink = electionLinks.find(
     (link) => link.electionId === activeElectionId
   );
+
+  // Show tutorial on first load unless the user opted out and we're not in the custom campaign creator
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (!activeLink) return;
+    const isCustomCampaign =
+      !activeLink.ContentBlock || activeLink.ContentBlock.length === 0;
+    if (isCustomCampaign) {
+      setShowTutorial(false);
+      return;
+    }
+    const hide = localStorage.getItem("mypage_tutorial_hide");
+    const tourStep = localStorage.getItem("elevra_tour_step");
+    if (hide !== "true" && !tourStep) {
+      setShowTutorial(true);
+    }
+  }, [activeLink]);
 
   if (isLoading) {
     return (

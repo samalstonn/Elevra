@@ -41,33 +41,7 @@
         },
         {
           "type": "text",
-          "text": " template! This template integrates "
-        },
-        {
-          "type": "text",
-          "marks": [
-            {
-              "type": "bold"
-            }
-          ],
-          "text": "open source"
-        },
-        {
-          "type": "text",
-          "text": " UI components and Tiptap extensions licensed under "
-        },
-        {
-          "type": "text",
-          "marks": [
-            {
-              "type": "bold"
-            }
-          ],
-          "text": "MIT"
-        },
-        {
-          "type": "text",
-          "text": "."
+          "text": " template! This template allows you to create and edit rich text content with ease, including headings, paragraphs, and styled text such as italicized or highlighted text. You can also add videos and images to enhance your content."
         }
       ]
     }

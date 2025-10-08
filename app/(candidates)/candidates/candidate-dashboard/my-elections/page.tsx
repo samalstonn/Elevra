@@ -35,6 +35,7 @@ import TourModal from "@/components/tour/TourModal";
 import { usePageTitle } from "@/lib/usePageTitle";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
+import { PremiumCampaignCard } from "@/components/PremiumCampaignCard";
 
 export default function ProfileSettingsPage() {
   usePageTitle("Candidate Dashboard – Campaign");
@@ -524,7 +525,7 @@ export default function ProfileSettingsPage() {
               );
             })}
             {/* Premium Campaign Card */}
-            {/* <PremiumCampaignCard /> */}
+            {!isPremium && <PremiumCampaignCard />}
 
             <article className="flex h-full flex-col justify-between rounded-xl border-2 border-dashed border-purple-200 bg-purple-50/60 p-6 shadow-sm backdrop-blur transition hover:border-purple-300">
               <div className="space-y-4">
