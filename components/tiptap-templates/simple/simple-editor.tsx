@@ -34,6 +34,7 @@ import "@/components/tiptap-node/list-node/list-node.scss"
 import "@/components/tiptap-node/image-node/image-node.scss"
 import "@/components/tiptap-node/heading-node/heading-node.scss"
 import "@/components/tiptap-node/paragraph-node/paragraph-node.scss"
+import "@/components/tiptap-node/image-upload-node/image-upload-node.scss/"
 
 // --- Tiptap UI ---
 import { HeadingDropdownMenu } from "@/components/tiptap-ui/heading-dropdown-menu"
@@ -197,6 +198,13 @@ type SimpleEditorProps = {
 }
 
 export function SimpleEditor({ initialContent, onSave, candidateSlug }: SimpleEditorProps) {
+  const formatFileSize = (bytes: number) => {
+    if (!bytes) return ""
+    const k = 1024
+    const sizes = ["Bytes", "KB", "MB", "GB"]
+    const i = Math.floor(Math.log(bytes) / Math.log(k))
+    return `${parseFloat((bytes / Math.pow(k, i)).toFixed(2))} ${sizes[i]}`
+  }
   const isMobile = useIsMobile()
   const { height } = useWindowSize()
   const { toast } = useToast()
@@ -205,6 +213,11 @@ export function SimpleEditor({ initialContent, onSave, candidateSlug }: SimpleEd
   >("main")
   const toolbarRef = React.useRef<HTMLDivElement>(null)
   const videoInputRef = React.useRef<HTMLInputElement | null>(null)
+  const videoXhrRef = React.useRef<XMLHttpRequest | null>(null)
+  const [isVideoUploading, setIsVideoUploading] = React.useState(false)
+  const [videoProgress, setVideoProgress] = React.useState(0)
+  const [videoName, setVideoName] = React.useState<string>("")
+  const [videoSize, setVideoSize] = React.useState<number>(0)
 
   const editor = useEditor({
     immediatelyRender: false,
@@ -336,7 +349,7 @@ export function SimpleEditor({ initialContent, onSave, candidateSlug }: SimpleEd
       {(onSave || candidateSlug) && (
           <div className="mb-4 flex flex-row items-center justify-end gap-2">
             {onSave && (
-              <AppButton onClick={handleSave} disabled={isSaving}>
+              <AppButton onClick={handleSave} disabled={isSaving || isVideoUploading}>
                 {isSaving ? "Saving..." : "Save"}
               </AppButton>
             )}
@@ -373,6 +386,48 @@ export function SimpleEditor({ initialContent, onSave, candidateSlug }: SimpleEd
           )}
         </Toolbar>
 
+        {isVideoUploading && (
+          <div className="tiptap-image-upload mt-3">
+            <div className="tiptap-image-upload-previews">
+              <div className="tiptap-image-upload-preview">
+                <div
+                  className="tiptap-image-upload-progress"
+                  style={{ width: `${videoProgress}%` }}
+                />
+                <div className="tiptap-image-upload-preview-content">
+                  <div className="tiptap-image-upload-file-info">
+                    <div className="tiptap-image-upload-file-icon" />
+                    <div className="tiptap-image-upload-details">
+                      <span className="tiptap-image-upload-text">{videoName || "Uploading video"}</span>
+                      <span className="tiptap-image-upload-subtext">
+                        {formatFileSize(videoSize)}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="tiptap-image-upload-actions">
+                    <span className="tiptap-image-upload-progress-text">
+                      {Math.min(100, Math.max(0, Math.round(videoProgress)))}%
+                    </span>
+                    <Button
+                      type="button"
+                      data-style="ghost"
+                      onClick={() => {
+                        try {
+                          videoXhrRef.current?.abort()
+                        } catch {}
+                        setIsVideoUploading(false)
+                        setVideoProgress(0)
+                      }}
+                    >
+                      Cancel
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
         <EditorContent
           editor={editor}
           role="presentation"
@@ -404,18 +459,66 @@ export function SimpleEditor({ initialContent, onSave, candidateSlug }: SimpleEd
               return
             }
             try {
+              setIsVideoUploading(true)
+              setVideoProgress(5)
+              setVideoName(file.name)
+              setVideoSize(file.size)
+
               const form = new FormData()
               form.append("file", file)
               form.append("candidateSlug", candidateSlug)
-              const res = await fetch("/api/blob/signed-url", {
-                method: "PUT",
-                body: form,
+
+              const xhr = new XMLHttpRequest()
+              videoXhrRef.current = xhr
+
+              await new Promise<string>((resolve, reject) => {
+                xhr.open("PUT", "/api/blob/signed-url")
+                xhr.upload.onloadstart = () => setVideoProgress(1)
+                xhr.upload.onprogress = (event) => {
+                  const total = event.total && event.total > 0 ? event.total : file.size
+                  const pct = Math.round((event.loaded / total) * 100)
+                  // Avoid showing 100% until the request fully completes
+                  setVideoProgress(Math.min(95, Math.max(1, pct)))
+                }
+                xhr.onload = () => {
+                  try {
+                    if (xhr.status >= 200 && xhr.status < 300) {
+                      const data = JSON.parse(xhr.responseText)
+                      if (data?.url) resolve(data.url)
+                      else reject(new Error("Invalid upload response"))
+                    } else {
+                      reject(new Error(`Upload failed (${xhr.status})`))
+                    }
+                  } catch (err) {
+                    reject(err as Error)
+                  }
+                }
+                xhr.onerror = () => reject(new Error("Network error"))
+                xhr.onabort = () => reject(new Error("Upload cancelled"))
+                xhr.send(form)
               })
-              if (!res.ok) throw new Error(`Upload failed (${res.status})`)
-              const data = await res.json()
-              const url: string | undefined = data?.url
-              if (!url) throw new Error("Invalid upload response")
-              editor?.chain().focus().setVideo({ src: url }).run()
+                .then((url) => {
+                  setVideoProgress(100)
+                  editor?.chain().focus().setVideo({ src: url }).run()
+                })
+                .catch((err) => {
+                  console.error("Video upload failed:", err)
+                  toast({
+                    variant: "destructive",
+                    title: "Upload failed",
+                    description:
+                      err instanceof Error ? err.message : "Unable to upload video.",
+                  })
+                })
+                .finally(() => {
+                  setTimeout(() => {
+                    setIsVideoUploading(false)
+                    setVideoProgress(0)
+                    setVideoName("")
+                    setVideoSize(0)
+                  }, 400)
+                  videoXhrRef.current = null
+                })
             } catch (err) {
               console.error("Video upload failed:", err)
               toast({
@@ -423,8 +526,6 @@ export function SimpleEditor({ initialContent, onSave, candidateSlug }: SimpleEd
                 title: "Upload failed",
                 description: err instanceof Error ? err.message : "Unable to upload video.",
               })
-            } finally {
-              e.currentTarget.value = ""
             }
           }}
         />
