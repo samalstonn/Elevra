@@ -20,7 +20,51 @@ jobs:
       VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
       VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
       VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+
+      # Core application secrets
+      NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY }}
+      CLERK_SECRET_KEY: ${{ secrets.CLERK_SECRET_KEY }}
       DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      SHADOW_DATABASE_URL: ${{ secrets.SHADOW_DATABASE_URL }}
+      NEXT_PUBLIC_APP_URL: ${{ secrets.NEXT_PUBLIC_APP_URL }}
+
+      # Email configuration
+      EMAIL_DRY_RUN: ${{ secrets.EMAIL_DRY_RUN }}
+      EMAIL_DRY_RUN_LOG: ${{ secrets.EMAIL_DRY_RUN_LOG }}
+      ADMIN_EMAIL: ${{ secrets.ADMIN_EMAIL }}
+
+      # Logging configuration
+      API_LOG_TOKEN: ${{ secrets.API_LOG_TOKEN }}
+      API_LOG_DIRECTORY: ${{ secrets.API_LOG_DIRECTORY }}
+      API_LOG_FILE: ${{ secrets.API_LOG_FILE }}
+
+      # E2E test controls and credentials
+      E2E_CANDIDATE_SLUG: ${{ secrets.E2E_CANDIDATE_SLUG }}
+      E2E_SEED_SECRET: ${{ secrets.E2E_SEED_SECRET }}
+      E2E_CLERK_USERS: ${{ secrets.E2E_CLERK_USERS }}
+      E2E_CLERK_USER_USERNAME: ${{ secrets.E2E_CLERK_USER_USERNAME }}
+      E2E_CLERK_USER_PASSWORD: ${{ secrets.E2E_CLERK_USER_PASSWORD }}
+      E2E_CLERK_USER_ID: ${{ secrets.E2E_CLERK_USER_ID }}
+      E2E_CLERK_USER_USERNAME_LIST: ${{ secrets.E2E_CLERK_USER_USERNAME_LIST }}
+      E2E_CLERK_USER_PASSWORD_LIST: ${{ secrets.E2E_CLERK_USER_PASSWORD_LIST }}
+      E2E_CLERK_USER_ID_LIST: ${{ secrets.E2E_CLERK_USER_ID_LIST }}
+      E2E_CLERK_USER_USERNAMES: ${{ secrets.E2E_CLERK_USER_USERNAMES }}
+      E2E_CLERK_USER_PASSWORDS: ${{ secrets.E2E_CLERK_USER_PASSWORDS }}
+      E2E_CLERK_USER_IDS: ${{ secrets.E2E_CLERK_USER_IDS }}
+      E2E_NONMATCH_EMAIL: ${{ secrets.E2E_NONMATCH_EMAIL }}
+      E2E_NONMATCH_PASSWORD: ${{ secrets.E2E_NONMATCH_PASSWORD }}
+      ADMIN_EMAIL_SECRET: ${{ secrets.ADMIN_EMAIL_SECRET }}
+
+      # Legacy/optional test vars
+      E2E_BASE_URL: ${{ secrets.E2E_BASE_URL }}
+      E2E_TEST_EMAIL: ${{ secrets.E2E_TEST_EMAIL }}
+      E2E_TEST_PASSWORD: ${{ secrets.E2E_TEST_PASSWORD }}
+
+      # Other optional envs
+      NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN: ${{ secrets.NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN }}
+      SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
+      SENTRY_ENVIRONMENT: ${{ secrets.SENTRY_ENVIRONMENT }}
+      SENTRY_TRACES_SAMPLE_RATE: ${{ secrets.SENTRY_TRACES_SAMPLE_RATE }}
 
     steps:
       - name: Checkout
