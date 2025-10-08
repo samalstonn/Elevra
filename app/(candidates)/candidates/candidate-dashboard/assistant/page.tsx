@@ -98,7 +98,8 @@ export default function CandidateAssistantPage() {
 
   const orderedMessages = useMemo(() => {
     return [...messages].sort(
-      (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+      (a, b) =>
+        new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
     );
   }, [messages]);
 
@@ -236,9 +237,7 @@ export default function CandidateAssistantPage() {
                   >
                     <div className="flex items-center justify-between">
                       <span className="font-medium">
-                        {message.role === "assistant"
-                          ? "Assistant"
-                          : "You"}
+                        {message.role === "assistant" ? "Assistant" : "You"}
                       </span>
                       <time className="text-xs text-muted-foreground">
                         {new Date(message.createdAt).toLocaleTimeString([], {
@@ -278,14 +277,16 @@ export default function CandidateAssistantPage() {
 
             {followUps.length > 0 && (
               <div className="rounded-md border border-dashed p-3 text-xs text-muted-foreground">
-                <p className="font-medium text-foreground">Suggested follow-ups</p>
+                <p className="font-medium text-foreground">
+                  Suggested follow-ups
+                </p>
                 <div className="mt-2 flex flex-wrap gap-2">
                   {followUps.map((item) => (
                     <Button
                       key={item}
                       type="button"
                       variant="ghost"
-                      size="xs"
+                      size="sm"
                       onClick={() => handlePromptClick(item)}
                     >
                       {item}
