@@ -202,11 +202,11 @@ export default function OverviewPage() {
         onSecondary={handleWelcomeOptOut}
       >
         <p>
-          Nice to have you here,{" "}
-          {user?.firstName || user?.username || "Candidate"}. We prepared a
-          quick tour to help you get started. It will help you set up your
-          profile, manage campaigns, and engage with voters. It only takes a few
-          minutes!
+          Great to have you here,{" "}
+          {user?.firstName || user?.username || "Candidate"}. This quick tour
+          shows you how to polish your profile, launch campaign pages, and find
+          the premium features like advanced analytics, endorsements, and custom
+          templates. It only takes a couple of minutes.
         </p>
       </TourModal>
 
@@ -243,12 +243,15 @@ export default function OverviewPage() {
         secondaryLabel="Skip tour"
         onSecondary={skipTour}
       >
-        <p>See profile views and quick actions to manage your campaign.</p>
         <p>
-          Tip: Feel free to drag and drop this window anywhere on the screen!
-          Scroll the background to explore your dashboard while keeping this
-          guide handy.
+          Track your profile views here and use the quick actions to edit, share,
+          or restart your campaign setup.
         </p>
+        <p>
+          Upgrade anytime from the sidebar to unlock advanced analytics and a
+          managed endorsements hub when you’re ready for more.
+        </p>
+        <p>Tip: Drag this window wherever you like while you explore.</p>
       </TourModal>
       <Dialog open={showVerifiedModal} onOpenChange={setShowVerifiedModal}>
         <DialogContent className="sm:max-w-[640px]">

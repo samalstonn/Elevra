@@ -35,7 +35,7 @@ export default function CandidateClient({
   electionLinks: (ElectionLink & {
     election: ElectionWithCandidates;
     ContentBlock: ContentBlock[];
-    Document?: Document | null;
+    //Document?: Document | null; //currently broken in prisma as well; double check prisma.schema and page.tsx to see the issue with ElectionLink 
   })[];
   suggestedCandidates: Candidate[];
   isEditable: boolean;

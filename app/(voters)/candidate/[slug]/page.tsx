@@ -109,7 +109,6 @@ export default async function CandidatePage({
     },
     include: {
       ContentBlock: true,
-      Document: true,
       election: {
         include: {
           candidates: {

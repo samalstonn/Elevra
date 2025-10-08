@@ -93,6 +93,7 @@ export default function ProfileSettingsPage() {
       localStorage.removeItem("elevra_tour_step");
     } catch {}
     setShowStep3(false);
+    router.replace("/candidates/candidate-dashboard/my-elections");
   };
   const backToProfile = () => {
     try {
@@ -397,13 +398,16 @@ export default function ProfileSettingsPage() {
         onSecondary={skipTour}
       >
         <p>
-          Use the actions here to manage how voters see the most important part
-          of the public part of Elevra, <strong>your campaign</strong>.
+          Use these actions to shape the public campaign page voters explore —
+          add elections, refine talking points, and keep everything current.
         </p>
         <p>
-          Tip: No need to start from scratch! Click{" "}
-          <strong>Edit Campaign Page</strong> on the campaign card to launch one
-          of our templates.
+          Want more control? Upgrading unlocks the advanced templates and fully
+          custom campaign page so you can tailor every section.
+        </p>
+        <p>
+          Tip: Click <strong>Edit Campaign Page</strong> on any card to launch
+          the editor and choose the template that fits your strategy.
         </p>
       </TourModal>
 

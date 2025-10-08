@@ -126,11 +126,15 @@ export default function BioSettingsPage() {
         secondaryLabel="Skip tour"
         onSecondary={skipTour}
       >
-        <p>Keep your name, role, bio, education, and links accurate.</p>
-        <p>Voters will get to know you better when you share your story!</p>
         <p>
-          Tip: Candidates with complete profiles receive much more traction!
+          Keep your basics, bio, education, and links up to date so voters see
+          the full story.
         </p>
+        <p>
+          A polished profile powers your public page today and unlocks stronger
+          endorsements and analytics when you upgrade.
+        </p>
+        <p>Tip: Fully completed profiles attract noticeably more traction.</p>
       </TourModal>
       <div className="flex flex-col md:flex-row gap-6 min-w-0">
         <div className="flex flex-col space-y-4 w-full md:w-[40%]">
