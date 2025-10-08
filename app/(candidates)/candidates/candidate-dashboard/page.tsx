@@ -33,7 +33,6 @@ import {
 import { FaCheckCircle } from "react-icons/fa";
 import TourModal from "@/components/tour/TourModal";
 import { usePageTitle } from "@/lib/usePageTitle";
-import { buildEditorPath } from "./my-elections/utils";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 // import ResultsSearchBar from "@/components/ResultsSearchBar";
 
