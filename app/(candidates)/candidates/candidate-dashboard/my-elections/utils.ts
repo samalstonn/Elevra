@@ -135,6 +135,28 @@ export const ELEVRA_STARTER_TEMPLATE_PREVIEW: BlockSnippet[] = [
     text: "Feature visuals for your campaign signs, portrait, or videos.",
   },
 ];
+export const CUSTOM_TEMPLATE_PREVIEW: BlockSnippet[] = [
+  {
+    label: "Heading",
+    text: "Craft a unique headline that captures the essence of your campaign.",
+  },
+  {
+    label: "Vision Statement",
+    text: "Share your vision for the future and the impact you aim to create.",
+  },
+  {
+    label: "Personal Story",
+    text: "Tell a compelling story about your journey and what drives you.",
+  },
+  {
+    label: "Key Issues",
+    text: "Highlight the top issues you are passionate about addressing.",
+  },
+  {
+    label: "Call to Action",
+    text: "Encourage voters to support your campaign and get involved.",
+  },
+];
 
 export const SIMPLE_TEMPLATE_PREVIEW: BlockSnippet[] = [
   {

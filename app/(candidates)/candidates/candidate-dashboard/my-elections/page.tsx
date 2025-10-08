@@ -4,12 +4,14 @@ import React, { useEffect, useState } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Terminal } from "lucide-react";
+import { useUser } from "@clerk/nextjs";
 
 import SearchBar from "@/components/ResultsSearchBar";
 import { ElectionLinkWithElection, useCandidate } from "@/lib/useCandidate";
 import {
   buildEditorPath,
   buildResultsHref,
+  CUSTOM_TEMPLATE_PREVIEW,
   ELEVRA_STARTER_TEMPLATE_PREVIEW,
   SIMPLE_TEMPLATE_PREVIEW,
   summarizeBlocks,
@@ -44,6 +46,7 @@ export default function ProfileSettingsPage() {
     isLoading,
     refresh,
   } = useCandidate();
+  const { isLoaded, isSignedIn, user } = useUser();
 
   const [showAddElectionModal, setShowAddElectionModal] = useState(false);
   const [showTemplateModal, setShowTemplateModal] = useState(false);
@@ -60,6 +63,7 @@ export default function ProfileSettingsPage() {
   // Tour state (Step 3)
   const [showStep3, setShowStep3] = useState(false);
   const searchParams = useSearchParams();
+
   useEffect(() => {
     try {
       const optOut = localStorage.getItem("elevra_tour_opt_out");
@@ -304,27 +308,42 @@ export default function ProfileSettingsPage() {
     );
   }
 
+  if (!isLoaded || !isSignedIn || !user) {
+    return (
+      <Alert variant="default">
+        <Terminal className="h-4 w-4" />
+        <AlertTitle>Not Signed In</AlertTitle>
+        <AlertDescription>
+          Please sign in to access your candidate dashboard.
+        </AlertDescription>
+      </Alert>
+    );
+  }
+  const isPremium = user.publicMetadata.candidateSubscriptionTier === "premium";
   const templateCards: TemplateCardDefinition[] = [];
 
   if (activeTemplateLink) {
-    templateCards.push({
-      key: "simpleTemplate",
-      title: "Simple Template",
-      description: "Basic Template to Reach Out to Voters",
-      snippets: SIMPLE_TEMPLATE_PREVIEW,
-    });
-    templateCards.push({
-      key: "elevraStarterTemplate",
-      title: "Elevra Starter Template",
-      description: "Introduce voters to your campaign",
-      snippets: ELEVRA_STARTER_TEMPLATE_PREVIEW,
-    });
-    templateCards.push({
-      key: "custom",
-      title: "Custom Campaign",
-      description: "Customize your campaign page from scratch",
-      snippets: [],
-    });
+    if (!isPremium) {
+      templateCards.push({
+        key: "simpleTemplate",
+        title: "Simple Template",
+        description: "Basic Template to Reach Out to Voters",
+        snippets: SIMPLE_TEMPLATE_PREVIEW,
+      });
+    } else {
+      templateCards.push({
+        key: "elevraStarterTemplate",
+        title: "Elevra Template",
+        description: "Introduce voters to your campaign",
+        snippets: ELEVRA_STARTER_TEMPLATE_PREVIEW,
+      });
+      templateCards.push({
+        key: "custom",
+        title: "Custom Campaign",
+        description: "Customize your campaign page from scratch",
+        snippets: CUSTOM_TEMPLATE_PREVIEW,
+      });
+    }
   }
 
   return (
@@ -347,8 +366,8 @@ export default function ProfileSettingsPage() {
         </p>
         <p>
           Tip: No need to start from scratch! Click{" "}
-          <strong>Edit Campaign Page</strong> on the campaign card to launch one of 
-          our templates.
+          <strong>Edit Campaign Page</strong> on the campaign card to launch one
+          of our templates.
         </p>
       </TourModal>
 
@@ -403,12 +422,13 @@ export default function ProfileSettingsPage() {
 
               const snippets = summarizeBlocks(link.ContentBlock);
               const hasCustomDoc = !!link.Document?.contentHtml;
-              const docPreview = hasCustomDoc && link.Document
-                ? link.Document.contentHtml
-                    .replace(/<[^>]+>/g, " ")
-                    .replace(/\s+/g, " ")
-                    .trim()
-                : "";
+              const docPreview =
+                hasCustomDoc && link.Document
+                  ? link.Document.contentHtml
+                      .replace(/<[^>]+>/g, " ")
+                      .replace(/\s+/g, " ")
+                      .trim()
+                  : "";
               const resultsHref = buildResultsHref(link);
 
               return (
