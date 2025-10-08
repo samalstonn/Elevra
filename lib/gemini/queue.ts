@@ -210,7 +210,7 @@ export async function createSpreadsheetUpload(
         batches: true,
       },
     });
-  });
+  }, { timeout: 30000 });
 }
 
 export async function listDispatchableJobs(limit: number, now = new Date()) {

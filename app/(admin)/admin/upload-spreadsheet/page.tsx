@@ -244,8 +244,18 @@ export default function UploadSpreadsheetPage() {
       });
 
       if (!res.ok) {
-        const txt = await res.text().catch(() => "");
-        throw new Error(txt || `Upload failed (${res.status})`);
+        let message = `Upload failed (${res.status})`;
+        try {
+          const payload = (await res.json()) as { error?: string; details?: string };
+          if (payload?.error) {
+            message = payload.error;
+            if (payload.details) message += ` – ${payload.details}`;
+          }
+        } catch {
+          const txt = await res.text().catch(() => "");
+          if (txt) message = txt;
+        }
+        throw new Error(message);
       }
 
       const data = (await res.json()) as {

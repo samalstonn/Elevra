@@ -21,8 +21,8 @@ model Election {
   state       String
   type        ElectionType
   hidden      Boolean        @default(false)
+  uploadedBy  String         @default("team@elevracommunity.com")
   candidates  ElectionLink[]
-  uploadedBy  String         @default("team@elevracommunity.com") // email of user who uploaded
 }
 
 model Candidate {
@@ -47,13 +47,13 @@ model Candidate {
   currentRole   String?
   currentState  String?
   currentCity   String?
+  uploadedBy    String                 @default("team@elevracommunity.com")
   profileViews  CandidateProfileView[]
   donations     Donation[]
   elections     ElectionLink[]
   endorsements  Endorsement[]
   Testimonial   Testimonial[]
   Vendors       Vendor[]               @relation("CandidateToVendor")
-  uploadedBy    String                 @default("team@elevracommunity.com") // email of user who uploaded
 }
 
 model Donation {
@@ -292,8 +292,8 @@ model SpreadsheetUpload {
   completedAt       DateTime?
   createdAt         DateTime                @default(now())
   updatedAt         DateTime                @updatedAt
-  batches           UploadElectionBatch[]
   jobs              GeminiJob[]             @relation("SpreadsheetUploadJobs")
+  batches           UploadElectionBatch[]
   notifications     UploadNotificationLog[]
 
   @@index([status, queuedAt])
@@ -303,7 +303,6 @@ model SpreadsheetUpload {
 model UploadElectionBatch {
   id             String            @id @default(cuid())
   uploadId       String
-  upload         SpreadsheetUpload @relation(fields: [uploadId], references: [id], onDelete: Cascade)
   groupKey       String?
   municipality   String?
   state          String?
@@ -319,6 +318,7 @@ model UploadElectionBatch {
   createdAt      DateTime          @default(now())
   updatedAt      DateTime          @updatedAt
   jobs           GeminiJob[]       @relation("BatchJobs")
+  upload         SpreadsheetUpload @relation(fields: [uploadId], references: [id], onDelete: Cascade)
 
   @@index([uploadId])
   @@index([status])
@@ -328,8 +328,6 @@ model GeminiJob {
   id                      String               @id @default(cuid())
   uploadId                String?
   batchId                 String?
-  upload                  SpreadsheetUpload?   @relation("SpreadsheetUploadJobs", fields: [uploadId], references: [id], onDelete: Cascade)
-  batch                   UploadElectionBatch? @relation("BatchJobs", fields: [batchId], references: [id], onDelete: Cascade)
   type                    GeminiJobType
   status                  GeminiJobStatus      @default(PENDING)
   priority                Int                  @default(0)
@@ -344,10 +342,12 @@ model GeminiJob {
   completedAt             DateTime?
   createdAt               DateTime             @default(now())
   updatedAt               DateTime             @updatedAt
-  attempts                GeminiJobAttempt[]
   estimatedRequestTokens  Int?
   estimatedResponseTokens Int?
   metadata                Json?
+  batch                   UploadElectionBatch? @relation("BatchJobs", fields: [batchId], references: [id], onDelete: Cascade)
+  upload                  SpreadsheetUpload?   @relation("SpreadsheetUploadJobs", fields: [uploadId], references: [id], onDelete: Cascade)
+  attempts                GeminiJobAttempt[]
 
   @@index([status, nextRunAt])
   @@index([type, status])
@@ -358,7 +358,6 @@ model GeminiJob {
 model GeminiJobAttempt {
   id              String                 @id @default(cuid())
   jobId           String
-  job             GeminiJob              @relation(fields: [jobId], references: [id], onDelete: Cascade)
   modelUsed       String
   startedAt       DateTime               @default(now())
   completedAt     DateTime?
@@ -373,6 +372,7 @@ model GeminiJobAttempt {
   createdAt       DateTime               @default(now())
   rateWindowStart DateTime?
   isFallback      Boolean?               @default(false)
+  job             GeminiJob              @relation(fields: [jobId], references: [id], onDelete: Cascade)
 
   @@index([jobId])
 }
@@ -394,7 +394,6 @@ model GeminiRateWindow {
 model UploadNotificationLog {
   id         String                   @id @default(cuid())
   uploadId   String
-  upload     SpreadsheetUpload        @relation(fields: [uploadId], references: [id], onDelete: Cascade)
   email      String
   type       UploadNotificationType
   status     UploadNotificationStatus @default(QUEUED)
@@ -404,6 +403,7 @@ model UploadNotificationLog {
   sentAt     DateTime?
   createdAt  DateTime                 @default(now())
   updatedAt  DateTime                 @updatedAt
+  upload     SpreadsheetUpload        @relation(fields: [uploadId], references: [id], onDelete: Cascade)
 
   @@index([uploadId])
   @@index([type])
