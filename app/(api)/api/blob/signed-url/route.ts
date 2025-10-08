@@ -33,15 +33,15 @@ export async function PUT(req: NextRequest) {
     );
   }
 
-  // Validate file size (5MB for images, 25MB for videos)
+  // Validate file size (10MB for images, 200MB for videos)
   const maxSize = file.type.startsWith("image/")
-    ? 5 * 1024 * 1024
-    : 25 * 1024 * 1024;
+    ? 10 * 1024 * 1024
+    : 200 * 1024 * 1024;
   if (file.size > maxSize) {
     return NextResponse.json(
       {
         error: `File size exceeds the ${
-          file.type.startsWith("image/") ? "5MB" : "25MB"
+          file.type.startsWith("image/") ? "10MB" : "200MB"
         } limit`,
       },
       { status: 400 }

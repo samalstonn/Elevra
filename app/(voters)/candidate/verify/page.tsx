@@ -1,7 +1,7 @@
 import { auth } from "@clerk/nextjs/server";
 import { clerkClient } from "@clerk/clerk-sdk-node";
 import prisma from "@/prisma/prisma";
-import { elevraStarterTemplate } from "@/app/(templates)/basicwebpage";
+/* import { elevraStarterTemplate } from "@/app/(templates)/basicwebpage"; */
 import { SubmissionStatus } from "@prisma/client";
 import { sendWithResend } from "@/lib/email/resend";
 import { renderAdminNotification } from "@/lib/email/templates/adminNotification";
@@ -80,25 +80,6 @@ export default async function VerifyPage({
           clerkUserId: userId,
         },
       });
-      // Backfill blocks for any existing election links without content
-      const links = await prisma.electionLink.findMany({
-        where: { candidateId: candidateRec.id },
-        select: { electionId: true },
-      });
-      for (const link of links) {
-        const count = await prisma.contentBlock.count({
-          where: { candidateId: candidateRec.id, electionId: link.electionId },
-        });
-        if (count === 0) {
-          await prisma.contentBlock.createMany({
-            data: elevraStarterTemplate.map((block) => ({
-              ...block,
-              candidateId: candidateRec.id,
-              electionId: link.electionId,
-            })),
-          });
-        }
-      }
     } catch (err) {
       console.error("Direct auto-approve failed:", err);
       redirect("/candidate/verify/error");
