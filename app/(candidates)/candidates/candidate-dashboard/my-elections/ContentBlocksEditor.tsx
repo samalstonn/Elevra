@@ -9,6 +9,7 @@ import {
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { Button } from "@/components/ui/button";
+import { useToast } from "@/hooks/use-toast";
 import Image from "next/image";
 import Link from "next/link";
 import { Trash2, Eye } from "lucide-react";
@@ -85,6 +86,7 @@ export default function ContentBlocksEditor({
   initialBlocks,
   onSave,
 }: Props) {
+  const { toast } = useToast();
   const sortedInitial = useMemo(
     () =>
       [...initialBlocks]
@@ -589,11 +591,7 @@ function SortableBlock({
           onChange({ imageUrl: url });
         } catch (error) {
           console.error("Upload failed:", error);
-          alert(
-            `Upload failed: ${
-              error instanceof Error ? error.message : String(error)
-            }`
-          );
+          alert(`Upload failed: ${error instanceof Error ? error.message : String(error)}`);
         } finally {
           setUploading(block.order, false);
           setProgress(block.order, 0);

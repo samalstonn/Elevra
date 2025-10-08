@@ -2,7 +2,7 @@ import type { Node as TiptapNode } from "@tiptap/pm/model"
 import { NodeSelection, Selection, TextSelection } from "@tiptap/pm/state"
 import type { Editor } from "@tiptap/react"
 
-export const MAX_FILE_SIZE = 5 * 1024 * 1024 // 5MB
+export const MAX_FILE_SIZE = 10 * 1024 * 1024 // 10MB (kept in sync with server limit)
 
 export const MAC_SYMBOLS: Record<string, string> = {
   mod: "⌘",

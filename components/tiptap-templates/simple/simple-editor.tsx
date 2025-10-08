@@ -75,6 +75,7 @@ import "@/components/tiptap-templates/simple/simple-editor.scss"
 
 import content from "@/components/tiptap-templates/simple/data/content.json"
 import { Button as AppButton } from "@/components/ui/button"
+import { useToast } from "@/hooks/use-toast"
 import Link from "next/link"
 
 const MainToolbarContent = ({
@@ -198,6 +199,7 @@ type SimpleEditorProps = {
 export function SimpleEditor({ initialContent, onSave, candidateSlug }: SimpleEditorProps) {
   const isMobile = useIsMobile()
   const { height } = useWindowSize()
+  const { toast } = useToast()
   const [mobileView, setMobileView] = React.useState<
     "main" | "highlighter" | "link"
   >("main")
@@ -240,6 +242,15 @@ export function SimpleEditor({ initialContent, onSave, candidateSlug }: SimpleEd
         maxSize: MAX_FILE_SIZE,
         limit: 3,
         upload: async (file, onProgress, abortSignal) => {
+          // Client-side size guard for images (10MB)
+          if (file.size > MAX_FILE_SIZE) {
+            toast({
+              variant: "destructive",
+              title: "File too large",
+              description: "Image exceeds the 10MB limit.",
+            })
+            throw new Error("Image exceeds 10MB limit")
+          }
           if (!candidateSlug) {
             throw new Error("candidateSlug is required for uploads")
           }
@@ -381,6 +392,17 @@ export function SimpleEditor({ initialContent, onSave, candidateSlug }: SimpleEd
               console.error("candidateSlug is required for uploads")
               return
             }
+            // Client-side size guard for videos (200MB)
+            const MAX_VIDEO = 200 * 1024 * 1024
+            if (file.size > MAX_VIDEO) {
+              toast({
+                variant: "destructive",
+                title: "File too large",
+                description: "Video exceeds the 200MB limit.",
+              })
+              e.currentTarget.value = ""
+              return
+            }
             try {
               const form = new FormData()
               form.append("file", file)
@@ -396,6 +418,11 @@ export function SimpleEditor({ initialContent, onSave, candidateSlug }: SimpleEd
               editor?.chain().focus().setVideo({ src: url }).run()
             } catch (err) {
               console.error("Video upload failed:", err)
+              toast({
+                variant: "destructive",
+                title: "Upload failed",
+                description: err instanceof Error ? err.message : "Unable to upload video.",
+              })
             } finally {
               e.currentTarget.value = ""
             }
