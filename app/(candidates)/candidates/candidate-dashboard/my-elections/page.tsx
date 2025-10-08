@@ -25,6 +25,7 @@ import {
   DialogTitle,
   DialogFooter,
   DialogDescription,
+  DialogClose,
 } from "@/components/ui/dialog";
 import Link from "next/link";
 import { useSearchParams, useRouter } from "next/navigation";
@@ -348,8 +349,8 @@ export default function ProfileSettingsPage() {
         </p>
         <p>
           Tip: No need to start from scratch! Click{" "}
-          <strong>Edit Campaign Page</strong> on the campaign card to launch our
-          ready-made template.
+          <strong>Edit Campaign Page</strong> on the campaign card to launch one of 
+          our templates.
         </p>
       </TourModal>
 
@@ -535,7 +536,7 @@ export default function ProfileSettingsPage() {
         open={showTemplateModal}
         onOpenChange={handleTemplateDialogChange}
       >
-        <DialogContent className="max-w-3xl">
+        <DialogContent className="template-dialog w-[80%] rounded-lg sm:w-full max-w-3xl max-h-[85vh] overflow-y-auto sm:max-h-none sm:overflow-visible">
           <DialogHeader>
             <DialogTitle>Choose a Template</DialogTitle>
             <DialogDescription>
