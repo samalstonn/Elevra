@@ -25,7 +25,6 @@ import {
   DialogTitle,
   DialogFooter,
   DialogDescription,
-  DialogClose,
 } from "@/components/ui/dialog";
 import Link from "next/link";
 import { useSearchParams, useRouter } from "next/navigation";
