@@ -48,6 +48,10 @@ export default function ProfileSettingsPage() {
     refresh,
   } = useCandidate();
   const { isLoaded, isSignedIn, user } = useUser();
+  const candidateTier = (
+    user?.publicMetadata?.candidateSubscriptionTier as string | undefined
+  )?.toLowerCase();
+  const isPremium = candidateTier === "premium";
 
   const [showAddElectionModal, setShowAddElectionModal] = useState(false);
   const [showTemplateModal, setShowTemplateModal] = useState(false);
@@ -120,8 +124,40 @@ export default function ProfileSettingsPage() {
     setShowTemplateModal(true);
   };
 
-  const goToEditor = (link: ElectionLinkWithElection) => {
+  const goToEditor = async (link: ElectionLinkWithElection) => {
     if (!candidateData?.slug) return;
+
+    const hasBlocks = (link.ContentBlock?.length ?? 0) > 0;
+    const hasCustomDoc = Boolean(link.Document?.contentHtml);
+    if (!isPremium && !hasBlocks && !hasCustomDoc) {
+      try {
+        const res = await fetch("/api/v1/contentblocks/apply-template", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            candidateId: candidateData.id,
+            electionId: link.electionId,
+            templateKey: "SIMPLE_TEMPLATE",
+          }),
+        });
+        if (!res.ok) {
+          const data = await res.json().catch(() => ({}));
+          throw new Error(data.error || "Failed to seed campaign template");
+        }
+        refresh();
+      } catch (err) {
+        console.error("Error seeding simple template", err);
+        toast({
+          variant: "destructive",
+          title: "Could not open editor",
+          description:
+            err instanceof Error
+              ? err.message
+              : "Please try again after refreshing the page.",
+        });
+        return;
+      }
+    }
 
     const editPath = buildEditorPath(candidateData.slug, link.electionId);
     router.push(editPath);
@@ -320,7 +356,6 @@ export default function ProfileSettingsPage() {
       </Alert>
     );
   }
-  const isPremium = user.publicMetadata.candidateSubscriptionTier === "premium";
   const templateCards: TemplateCardDefinition[] = [];
 
   if (activeTemplateLink) {
@@ -490,7 +525,9 @@ export default function ProfileSettingsPage() {
                       <Button
                         variant="purple"
                         size="sm"
-                        onClick={() => goToEditor(link)}
+                        onClick={() => {
+                          void goToEditor(link);
+                        }}
                       >
                         Edit Campaign Page
                       </Button>

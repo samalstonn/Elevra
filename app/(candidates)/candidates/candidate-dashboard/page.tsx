@@ -293,21 +293,7 @@ export default function OverviewPage() {
                   Campaign tab
                 </Link>{" "}
                 on the left to update your election details and customize your
-                public page. Prefer to jump straight into editing? Open the{" "}
-                <Link
-                  href={
-                    candidate
-                      ? buildEditorPath(
-                          candidate.slug,
-                          electionLinks[0].electionId
-                        )
-                      : "/candidates/candidate-dashboard/my-elections"
-                  }
-                  className="text-purple-600 underline"
-                >
-                  campaign editor
-                </Link>
-                .
+                public page.
               </p>
             )}
             <p>
