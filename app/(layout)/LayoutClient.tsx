@@ -17,7 +17,10 @@ import SearchBar from "../../components/ResultsSearchBar";
 import { Toaster } from "@/components/ui/toaster";
 import Footer from "../(footer-pages)/Footer";
 import HeaderButtons from "./HeaderButtons";
-import SignUpRoleButton, { SIGNUP_ROLE_STORAGE_KEY } from "./SignUpRoleButton";
+import SignUpRoleButton, {
+  SIGNUP_ROLE_STORAGE_KEY,
+  SIGNUP_RETURNING_STORAGE_KEY,
+} from "./SignUpRoleButton";
 
 const clerkKey = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
 if (!clerkKey || clerkKey.trim() === "") {
@@ -96,6 +99,12 @@ function LayoutShell({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (!isSignedIn) {
       return;
+    }
+
+    try {
+      localStorage.setItem(SIGNUP_RETURNING_STORAGE_KEY, "1");
+    } catch (error) {
+      console.error("Failed to persist returning sign-in flag", error);
     }
 
     let storedRole: "candidate" | "voter" | null = null;

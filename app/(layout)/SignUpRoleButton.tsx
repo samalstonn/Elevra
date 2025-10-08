@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import {
@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/dialog";
 
 const SIGNUP_ROLE_STORAGE_KEY = "elevra_signup_role";
+const SIGNUP_RETURNING_STORAGE_KEY = "elevra_has_signed_in";
 
 const storeRoleSelection = (role: "candidate" | "voter") => {
   try {
@@ -25,8 +26,18 @@ const storeRoleSelection = (role: "candidate" | "voter") => {
 export default function SignUpRoleButton() {
   const router = useRouter();
   const [open, setOpen] = useState(false);
+  const [hasSignedInBefore, setHasSignedInBefore] = useState(false);
 
   const closeDialog = useCallback(() => setOpen(false), []);
+
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem(SIGNUP_RETURNING_STORAGE_KEY);
+      setHasSignedInBefore(stored === "1");
+    } catch (error) {
+      console.error("Failed to read returning sign-in state", error);
+    }
+  }, []);
 
   const handleCandidate = useCallback(() => {
     storeRoleSelection("candidate");
@@ -44,8 +55,11 @@ export default function SignUpRoleButton() {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button size="sm" variant="whitePrimaryOutline" className="md:text-base md:p-4">
-          Sign Up
+        <Button
+          size="sm"
+          variant="whitePrimaryOutline"
+          className="md:text-base md:p-4">
+          {hasSignedInBefore ? "Sign In" : "Sign Up"}
         </Button>
       </DialogTrigger>
       <DialogContent>
@@ -68,4 +82,4 @@ export default function SignUpRoleButton() {
   );
 }
 
-export { SIGNUP_ROLE_STORAGE_KEY };
+export { SIGNUP_ROLE_STORAGE_KEY, SIGNUP_RETURNING_STORAGE_KEY };
