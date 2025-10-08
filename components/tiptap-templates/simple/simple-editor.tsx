@@ -6,6 +6,8 @@ import { EditorContent, EditorContext, useEditor } from "@tiptap/react"
 // --- Tiptap Core Extensions ---
 import { StarterKit } from "@tiptap/starter-kit"
 import { Image } from "@tiptap/extension-image"
+import { ResizableImage } from "tiptap-extension-resizable-image"
+import "tiptap-extension-resizable-image/styles.css"
 import { TaskItem, TaskList } from "@tiptap/extension-list"
 import { TextAlign } from "@tiptap/extension-text-align"
 import { Typography } from "@tiptap/extension-typography"
@@ -246,6 +248,10 @@ export function SimpleEditor({ initialContent, onSave, candidateSlug }: SimpleEd
       TaskItem.configure({ nested: true }),
       Highlight.configure({ multicolor: true }),
       Image,
+      ResizableImage.configure({
+          defaultWidth: 200,
+          defaultHeight: 200,
+      }),
       Typography,
       Superscript,
       Subscript,

@@ -80,6 +80,7 @@
     "stripe": "^17.7.0",
     "tailwind-merge": "^3.0.2",
     "tailwindcss-animate": "^1.0.7",
+    "tiptap-extension-resizable-image": "^2.0.0",
     "uuid": "^11.1.0",
     "xlsx": "^0.18.5",
     "zod": "^3.24.2"
