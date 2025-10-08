@@ -9,6 +9,7 @@ import {
   Award, // Endorsements (Premium)
   Users, // Vendor Marketplace
   Menu,
+  Sparkles,
 } from "lucide-react";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
@@ -31,6 +32,12 @@ const navItems = [
     href: "/candidates/candidate-dashboard/my-elections",
     label: "Campaign",
     icon: Users,
+    premium: false,
+  },
+  {
+    href: "/candidates/candidate-dashboard/assistant",
+    label: "Assistant",
+    icon: Sparkles,
     premium: false,
   },
   // {

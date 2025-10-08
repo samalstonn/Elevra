@@ -54,6 +54,7 @@ model Candidate {
   Testimonial   Testimonial[]
   Vendors       Vendor[]               @relation("CandidateToVendor")
   uploadedBy    String                 @default("team@elevracommunity.com") // email of user who uploaded
+  ChatSession   ChatSession[]
 }
 
 model Donation {
@@ -278,6 +279,35 @@ model ContentBlock {
   @@unique([candidateId, electionId, order])
 }
 
+model ChatSession {
+  id          Int           @id @default(autoincrement())
+  candidateId Int
+  clerkUserId String
+  title       String?
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  messages    ChatMessage[]
+
+  candidate Candidate @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+
+  @@index([candidateId])
+  @@index([clerkUserId])
+}
+
+model ChatMessage {
+  id         Int      @id @default(autoincrement())
+  sessionId  Int
+  role       ChatRole
+  content    String
+  citations  Json?
+  tokenUsage Int?
+  createdAt  DateTime @default(now())
+
+  session ChatSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@index([sessionId])
+}
+
 enum ElectionType {
   LOCAL
   STATE
@@ -329,4 +359,10 @@ enum TextColor {
   BLACK
   GRAY
   PURPLE
+}
+
+enum ChatRole {
+  user
+  assistant
+  system
 }

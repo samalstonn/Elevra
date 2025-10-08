@@ -24,6 +24,7 @@ export default defineConfig({
   globalTeardown: "./tests/e2e/global.teardown.ts",
   // Set the number of retries for each, in case of failure
   retries: 1,
+  workers: 2,
   // Run your local dev server before starting the tests.
   // If we have a deployed URL, DO NOT start a server.
   webServer: !baseURL.includes("localhost")
