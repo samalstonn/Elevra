@@ -3,6 +3,7 @@ import {
   ContentBlock,
   BlockType,
   ListStyle,
+  Document,
 } from "@prisma/client";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -28,7 +29,7 @@ function resolveColorClass(block: ContentBlock) {
 }
 
 export type ElectionProfileTabProps = {
-  link: ElectionLink & { ContentBlock: ContentBlock[] };
+  link: ElectionLink & { ContentBlock: ContentBlock[]; Document?: Document | null };
 };
 
 function mdToHtml(markdown: string): string {
@@ -42,9 +43,19 @@ export function ElectionProfileTab({ link }: ElectionProfileTabProps) {
 
   const blocksToRender = sortedBlocks.filter((b) => !unchanged(b));
 
+  const hasCustomDocument = !!link.Document && !!link.Document.contentHtml;
+
   return (
     <div className="space-y-6 mx-auto max-w-4xl px-4 pt-8">
-      {blocksToRender.length === 0 && (
+      {blocksToRender.length === 0 && hasCustomDocument && (
+        <article
+          className="prose prose-slate max-w-none"
+          dangerouslySetInnerHTML={{
+            __html: DOMPurify.sanitize(link.Document!.contentHtml),
+          }}
+        />
+      )}
+      {blocksToRender.length === 0 && !hasCustomDocument && (
         <EmptyState
           primary="Candidate overview is not available yet for this election."
           secondary="Check back soon as the candidate adds details."

@@ -8,12 +8,14 @@ export type CandidateVerificationEmailParams = {
   dashboardUrl: string;
   profileUrl?: string;
   supportEmail?: string;
+  blogUrl?: string;
 };
 
 export function renderCandidateVerificationEmail({
   firstName,
   dashboardUrl,
   profileUrl,
+  blogUrl = process.env.NEXT_PUBLIC_APP_URL + "/blog",
   supportEmail = "team@elevracommunity.com",
 }: CandidateVerificationEmailParams): { subject: string; html: string } {
   const greetingName = (firstName || "").trim() || "there";
@@ -48,6 +50,9 @@ export function renderCandidateVerificationEmail({
   const profileLink = profileUrl
     ? `<p style="margin:0 0 16px 0;font-size:15px;">🔗 View your public profile: <a href="${profileUrl}" style="color:#6d28d9;text-decoration:underline;">${profileUrl}</a></p>`
     : "";
+  const blogLink = blogUrl
+    ? `<p style="margin:0 0 16px 0;font-size:15px;">🔗 Read our blog: <a href="${blogUrl}" style="color:#6d28d9;text-decoration:underline;">${blogUrl}</a></p>`
+    : "";
 
   const html = `
   <div style="${EMAIL_FONT};padding:32px;background:#f8fafc;">
@@ -70,12 +75,10 @@ export function renderCandidateVerificationEmail({
             ${sectionItems}
           </ul>
           ${profileLink}
+          ${blogLink}
           <p style="margin:0 0 16px 0;font-size:15px;">
             You're ready to engage with voters on Elevra. Let us know which features matter most to you at
             <a href="mailto:${supportEmail}" style="color:#6d28d9;text-decoration:underline;">${supportEmail}</a>.
-          </p>
-          <p style="margin:0 0 24px 0;font-size:15px;">
-            Heads up: We'd love your feedback--reply to this email anytime with ideas or questions. We're building Elevra for candidates like you, and your input helps shape the platform.
           </p>
           <div style="text-align:center;margin:28px 0 12px 0;">
             <a href="${dashboardUrl}" style="display:inline-block;background:#7c3aed;color:#ffffff;text-decoration:none;padding:14px 28px;border-radius:999px;font-weight:600;font-size:16px;">Go to Candidate Dashboard</a>

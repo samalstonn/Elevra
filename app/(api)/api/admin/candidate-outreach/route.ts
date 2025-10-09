@@ -8,6 +8,7 @@ import {
 import { getAuth } from "@clerk/nextjs/server";
 import { clerkClient } from "@clerk/clerk-sdk-node";
 import { renderEmailTemplate, TemplateKey } from "@/lib/email/templates/render";
+import { deriveSenderFields } from "@/lib/email/templates/sender";
 
 export const runtime = "nodejs";
 
@@ -69,14 +70,22 @@ export async function POST(req: NextRequest) {
   const adminUserId = authState?.userId ?? "unknown";
   let adminName = "";
   let adminEmail = "";
-  let adminDisplay = adminUserId === "unknown"
-    ? "Unauthenticated (header secret only)"
-    : adminUserId;
+  let adminDisplay =
+    adminUserId === "unknown"
+      ? "Unauthenticated (header secret only)"
+      : adminUserId;
+  let senderName: string | undefined;
+  let senderTitle: string | undefined;
+  let senderLinkedInUrl: string | undefined;
+  let senderLinkedInLabel: string | undefined;
 
   if (authState?.userId) {
     try {
       const user = await clerkClient.users.getUser(authState.userId);
-      adminName = [user.firstName, user.lastName].filter(Boolean).join(" ").trim();
+      adminName = [user.firstName, user.lastName]
+        .filter(Boolean)
+        .join(" ")
+        .trim();
       adminEmail =
         user.primaryEmailAddress?.emailAddress ??
         user.emailAddresses?.[0]?.emailAddress ??
@@ -85,10 +94,28 @@ export async function POST(req: NextRequest) {
       if (adminName) parts.push(adminName);
       if (adminEmail) parts.push(`(${adminEmail})`);
       adminDisplay = parts.length > 0 ? parts.join(" ") : authState.userId;
+
+      const senderFields = deriveSenderFields(user);
+      senderName = senderFields.senderName || adminName || senderName;
+      senderTitle = senderFields.senderTitle || senderTitle;
+      senderLinkedInUrl = senderFields.senderLinkedInUrl || senderLinkedInUrl;
+      senderLinkedInLabel =
+        senderFields.senderLinkedInLabel || senderLinkedInLabel;
     } catch (error) {
       console.error("Failed to load admin user", error);
       adminDisplay = authState.userId;
     }
+  }
+
+  if (!senderName && adminName.trim()) {
+    senderName = adminName.trim();
+  }
+  senderName = senderName?.trim() || undefined;
+  senderTitle = senderTitle?.trim() || undefined;
+  senderLinkedInUrl = senderLinkedInUrl?.trim() || undefined;
+  senderLinkedInLabel = senderLinkedInLabel?.trim() || undefined;
+  if (senderLinkedInUrl && !/^https?:\/\//i.test(senderLinkedInUrl)) {
+    senderLinkedInUrl = `https://${senderLinkedInUrl}`;
   }
 
   let body: OutreachPayload;
@@ -146,7 +173,7 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const defaultInitialSubject = `Your Candidate Profile is Live on Elevra`;
+  const defaultInitialSubject = `Your Election is Live on Elevra`;
   // Parse schedule time if provided
   let scheduledAt: Date | undefined = undefined;
   if (typeof body.scheduledAtIso === "string" && body.scheduledAtIso.trim()) {
@@ -163,7 +190,8 @@ export async function POST(req: NextRequest) {
   const failures: { index: number; email: string; error: string }[] = [];
 
   const selectedType: TemplateKey =
-    (body.templateType as TemplateKey) || (body.followup ? "followup" : "initial");
+    (body.templateType as TemplateKey) ||
+    (body.followup ? "followup" : "initial");
   const hasSequence = Array.isArray(body.sequence) && body.sequence.length > 0;
   const steps: { template: TemplateKey; offsetDays?: number }[] = hasSequence
     ? (body.sequence as { template: TemplateKey; offsetDays?: number }[])
@@ -186,16 +214,27 @@ export async function POST(req: NextRequest) {
           profileUrl: r.candidateLink,
           municipality: r.municipality || undefined,
           position: r.position || undefined,
+          senderName,
+          senderTitle,
+          senderLinkedInUrl,
+          senderLinkedInLabel,
         },
         { baseForFollowup: body.baseTemplate || "initial" }
       );
-      const subjectToUse = (body.subject || subject || defaultInitialSubject).trim();
+      const subjectToUse = (
+        body.subject ||
+        subject ||
+        defaultInitialSubject
+      ).trim();
 
       // Compute scheduledAt per step (offset from base scheduledAtIso or now)
       let stepScheduledAt = scheduledAt;
       if (step.offsetDays && (scheduledAt || true)) {
         const base = scheduledAt ? scheduledAt : new Date();
-        const offsetMs = Math.max(0, Math.floor(step.offsetDays * 24 * 60 * 60 * 1000));
+        const offsetMs = Math.max(
+          0,
+          Math.floor(step.offsetDays * 24 * 60 * 60 * 1000)
+        );
         const offset = new Date(base.getTime() + offsetMs);
         if (offset.getTime() >= Date.now() + 60_000) {
           stepScheduledAt = offset;
@@ -209,6 +248,7 @@ export async function POST(req: NextRequest) {
         subject: subjectToUse,
         html,
         from: body.from,
+        senderName,
         scheduledAt: stepScheduledAt,
       });
     }
@@ -274,16 +314,20 @@ export async function POST(req: NextRequest) {
       const invalidDetailsHtml =
         invalid.length > 0
           ? `<ul>${invalid
-              .map((record) => `
+              .map(
+                (record) => `
                 <li>Row ${record.index + 1}: ${record.reason}</li>
-              `)
+              `
+              )
               .join("")}</ul>`
           : "<p>None</p>";
 
       const summaryHtml = `
         <div style="font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; line-height: 1.5;">
           <h2 style="margin: 0 0 12px;">Candidate Outreach Step Summary</h2>
-          <p style="margin: 0 0 12px;">We completed the <strong>${step.template}</strong> step.</p>
+          <p style="margin: 0 0 12px;">We completed the <strong>${
+            step.template
+          }</strong> step.</p>
           <table style="border-collapse: collapse; margin: 0 0 16px;">
             <tbody>
               <tr>
@@ -300,11 +344,15 @@ export async function POST(req: NextRequest) {
               </tr>
               <tr>
                 <td style="padding: 4px 8px; font-weight: 600;">Successful deliveries</td>
-                <td style="padding: 4px 8px;">${batchResult.successes.length}</td>
+                <td style="padding: 4px 8px;">${
+                  batchResult.successes.length
+                }</td>
               </tr>
               <tr>
                 <td style="padding: 4px 8px; font-weight: 600;">Failures</td>
-                <td style="padding: 4px 8px;">${batchResult.failures.length}</td>
+                <td style="padding: 4px 8px;">${
+                  batchResult.failures.length
+                }</td>
               </tr>
               <tr>
                 <td style="padding: 4px 8px; font-weight: 600;">Invalid rows filtered</td>
@@ -337,18 +385,19 @@ export async function POST(req: NextRequest) {
             ${invalidDetailsHtml}
           </div>
           <pre style="background: #f6f8fa; border-radius: 6px; padding: 12px; margin: 16px 0 0; white-space: pre-wrap;">${summaryLines.join(
-        "\n"
-      )}</pre>
+            "\n"
+          )}</pre>
         </div>
       `;
 
       const sentAtIso = new Date().toISOString();
-      try{
+      try {
         await sendWithResend({
           to: "team@elevracommunity.com",
           subject: `[Outreach] ${step.template} summary (${batchResult.successes.length}/${recipients.length}) • ${sentAtIso}`,
           html: summaryHtml,
           from: body.from,
+          senderName,
         });
       } catch (err) {
         console.error("Error sending summary email:", err);

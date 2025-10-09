@@ -4,9 +4,16 @@ import React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
-import {
-  Lock, // Lock icon for premium
-} from "lucide-react";
+import { Lock } from "lucide-react"; // Lock icon for premium
+
+interface navItem {
+  href: string;
+  label: string;
+  icon: React.ComponentType<React.SVGProps<SVGSVGElement>>;
+  premium?: boolean; // Optional property to indicate if the tab is premium
+  cta?: boolean;
+  requiresPremiumUnlock?: boolean;
+}
 // import { useAuth } from "@clerk/nextjs"; // To get subscription status later
 
 interface navItem {
@@ -14,6 +21,7 @@ interface navItem {
   label: string;
   icon: React.ComponentType<React.SVGProps<SVGSVGElement>>;
   premium?: boolean; // Optional property to indicate if the tab is premium
+  cta?: boolean;
 }
 
 type DashboardNavProps = {
@@ -28,9 +36,6 @@ const isPremiumUser = false; // Placeholder - replace with actual check using Cl
 export function DashboardNav({ navItems, person }: DashboardNavProps) {
   const user = person;
   const pathname = usePathname();
-  // TODO: Fetch user metadata to check subscription status
-  // const { user } = useUser(); // Or useAuth, currentUser etc.
-  // const isPremium = user?.publicMetadata?.subscriptionTier === 'premium'; // Example check
 
   return (
     <nav className="flex flex-col p-4 space-y-1">
@@ -39,7 +44,11 @@ export function DashboardNav({ navItems, person }: DashboardNavProps) {
           pathname === item.href ||
           (item.href !== `/${user}s/${user}-dashboard` &&
             pathname.startsWith(item.href));
-        const isLocked = item.premium && !isPremiumUser;
+        const isLocked =
+          item.premium && item.requiresPremiumUnlock && !isPremiumUser;
+        const ctaStyles = item.cta
+          ? "border border-purple-200 bg-gradient-to-r from-purple-50 to-purple-100 text-purple-700 hover:from-purple-100 hover:to-purple-200"
+          : "";
 
         // Don't render locked items for now, or render with lock icon/disabled state
         // if (isLocked) return null; // Option 1: Hide locked items
@@ -53,7 +62,8 @@ export function DashboardNav({ navItems, person }: DashboardNavProps) {
               isActive
                 ? "bg-purple-100 text-purple-700"
                 : "text-gray-600 hover:bg-gray-50 hover:text-gray-900",
-              isLocked ? "text-gray-400 cursor-not-allowed opacity-70" : "" // Style locked items
+              isLocked ? "text-gray-400 cursor-not-allowed opacity-70" : "",
+              ctaStyles
             )}
             aria-disabled={isLocked} // Accessibility for disabled links
             onClick={(e) => isLocked && e.preventDefault()} // Prevent click action if locked

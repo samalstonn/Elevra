@@ -27,9 +27,9 @@ const AboutUs = () => {
         viewport={{ once: true }}
         className="mt-12 mx-[10%] text-lg sm:text-xl text-gray-700 text-center"
       >
-        &ldquo;So, then, no one in any position of rule, insofar as he is a
-        ruler, seeks or orders what is advantageous to himself, but what is
-        advantageous to his subjects.&rdquo;
+        &ldquo;No one in any position of rule, insofar as he is a ruler, seeks
+        or orders what is advantageous to himself, but what is advantageous to
+        his subjects.&rdquo;
         <br />
         <br />
         <em className="text-md">- Find the Right Candidate on Elevra</em>
@@ -51,12 +51,12 @@ const AboutUs = () => {
         </h2>
 
         <p className="mt-6 text-lg sm:text-xl text-gray-700 text-center">
-          Founded by students and faculty at Cornell University, Elevra was
-          created to simplify local elections. We offer tools for candidates
-          that start with creating a basic, discoverable webpage and scale to
-          powerful pages with advanced insights. Voters can instantly find
-          campaigns by searching their own zip codes or explore elections around
-          the country. We put local elections in one place.
+          Elevra was built to simplify local elections. Our platform helps
+          candidates create campaign pages that scale with their needs - from
+          simple public profiles to advanced, data-driven pages. Voters can
+          instantly find campaigns by searching their ZIP code or explore
+          elections across the country. Elevra brings local elections together
+          in one place.
         </p>
       </motion.div>
     </motion.section>

@@ -14,5 +14,7 @@ Sentry.init({
     if (txn.transaction === "POST /api/internal/log") return null;
     return txn;
   },
-  integrations: [Sentry.consoleIntegration({ levels: ["error", "warn"] })],
+  integrations: [
+    Sentry.consoleIntegration({ levels: ["log", "error", "warn"] }),
+  ],
 });
