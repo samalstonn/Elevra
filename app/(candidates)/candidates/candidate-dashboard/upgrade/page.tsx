@@ -19,11 +19,7 @@ import { useUser } from "@clerk/nextjs";
 import { useRouter, useSearchParams } from "next/navigation";
 
 // Define the features for each plan
-const freeFeatures = [
-  "Discoverable Profile",
-  "See Profile Views",
-  "Verified Checkmark",
-];
+const freeFeatures = ["Discoverable Profile", "Verified Checkmark"];
 
 const premiumFeatures = [
   "Discoverable Profile",
@@ -73,7 +69,9 @@ export default function UpgradePage() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const { user, isLoaded } = useUser();
-  const [loadingPlan, setLoadingPlan] = useState<CandidatePlanTier | null>(null);
+  const [loadingPlan, setLoadingPlan] = useState<CandidatePlanTier | null>(
+    null
+  );
   const [handledStatus, setHandledStatus] = useState<string | null>(null);
 
   const currentPlan = useMemo<CandidatePlanTier>(() => {
