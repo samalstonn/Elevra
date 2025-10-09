@@ -1,3 +1,5 @@
+import { formatGreetingName } from "./formatGreetingName";
+
 const EMAIL_FONT =
   'font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,"Helvetica Neue",Arial,"Noto Sans","Apple Color Emoji","Segoe UI Emoji"';
 
@@ -18,7 +20,7 @@ export function renderCandidateVerificationEmail({
   blogUrl = process.env.NEXT_PUBLIC_APP_URL + "/blog",
   supportEmail = "team@elevracommunity.com",
 }: CandidateVerificationEmailParams): { subject: string; html: string } {
-  const greetingName = (firstName || "").trim() || "there";
+  const greetingName = formatGreetingName(firstName);
   const sections = [
     {
       title: "Edit your candidate profile:",
