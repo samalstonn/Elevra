@@ -279,13 +279,7 @@ export default function OverviewPage() {
               .
             </li>
             <li>
-              Visit your{" "}
-              <Link
-                href="/candidates/candidate-dashboard/my-elections"
-                className="text-purple-600 underline"
-              >
-                Campaign tab
-              </Link>{" "}
+              Visit your <strong>Campaign tab </strong>
               to update your election details and customize your public page.
             </li>
             <li>

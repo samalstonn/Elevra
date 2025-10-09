@@ -37,11 +37,11 @@
               }
             }
           ],
-          "text": "Elevra Simple Editor"
+          "text": "Elevra Custom Editor!"
         },
         {
           "type": "text",
-          "text": " template! This template allows you to create and edit rich text content with ease, including headings, paragraphs, and styled text such as italicized or highlighted text. You can also add videos and images to enhance your content."
+          "text": " This template allows you to create and edit rich text content with ease, including headings, paragraphs, and styled text such as italicized or highlighted text. You can also add videos and images to enhance your content."
         }
       ]
     }

@@ -406,8 +406,8 @@ export default function ProfileSettingsPage() {
           custom campaign page so you can tailor every section.
         </p>
         <p>
-          Tip: Click <strong>Edit Campaign Page</strong> on any card to launch
-          the editor and choose the template that fits your strategy.
+          Tip: Click <strong>Edit Campaign Page</strong> to launch the editor
+          and get started.
         </p>
       </TourModal>
 
