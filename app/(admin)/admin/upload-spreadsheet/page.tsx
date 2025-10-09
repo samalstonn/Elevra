@@ -76,6 +76,7 @@ export default function UploadSpreadsheetPage() {
   usePageTitle("Admin – Upload Spreadsheet");
   const [statusMessage, setStatusMessage] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
+  const [batchAction, setBatchAction] = useState<string | null>(null);
   const [parsedRows, setParsedRows] = useState<Row[]>([]);
   const [emailValidation, setEmailValidation] = useState<{ ok: boolean; errors: string[] }>({
     ok: true,
@@ -291,6 +292,65 @@ export default function UploadSpreadsheetPage() {
     forceHidden,
     startPolling,
   ]);
+
+  const handleBatchAction = useCallback(
+    async (batchId: string, action: "retry" | "skip") => {
+      if (!activeUpload) return;
+      const uploadId = activeUpload.uploadId;
+      if (!uploadId) return;
+
+      let reason: string | undefined;
+      if (action === "skip") {
+        const input = window.prompt(
+          "Optional reason for marking this batch for re-upload:",
+          "Manual review required"
+        );
+        if (input === null) return;
+        reason = input.trim();
+      }
+
+      const actionKey = `${batchId}:${action}`;
+      setBatchAction(actionKey);
+      setErrorMessage("");
+      setStatusMessage(
+        action === "retry"
+          ? "Requeuing batch for Gemini processing…"
+          : "Marking batch for manual review…"
+      );
+      try {
+        const res = await fetch(
+          `/api/gemini/uploads/${uploadId}/batches/${batchId}`,
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(
+              reason ? { action, reason } : { action }
+            ),
+          }
+        );
+        if (!res.ok) {
+          const text = await res.text().catch(() => "");
+          throw new Error(text || `Batch action failed (${res.status})`);
+        }
+        const data = (await res.json()) as { upload: UploadStatusView | null };
+        if (data.upload) {
+          setActiveUpload(data.upload);
+          setStatusMessage(
+            action === "retry"
+              ? "Batch requeued successfully."
+              : "Batch flagged for manual review."
+          );
+        }
+      } catch (error) {
+        const message =
+          error instanceof Error ? error.message : "Failed to update batch.";
+        setErrorMessage(message);
+      } finally {
+        setBatchAction(null);
+      }
+    },
+    [activeUpload]
+  );
 
   const processRows = useCallback(
     async (rows: Array<Record<string, unknown>>, fileName: string) => {
@@ -540,9 +600,31 @@ export default function UploadSpreadsheetPage() {
                       </p>
                       <p className="text-xs text-muted-foreground">Batch ID: {batch.id}</p>
                     </div>
-                    <span className="rounded bg-purple-50 px-2 py-1 text-xs font-medium text-purple-700">
-                      {batch.status}
-                    </span>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="rounded bg-purple-50 px-2 py-1 text-xs font-medium text-purple-700">
+                        {batch.status}
+                      </span>
+                      {(["FAILED", "NEEDS_REUPLOAD"].includes(batch.status)) && (
+                        <button
+                          type="button"
+                          className="rounded border border-purple-600 px-2 py-1 text-xs font-medium text-purple-600 hover:bg-purple-600 hover:text-white disabled:opacity-50"
+                          disabled={batchAction === `${batch.id}:retry`}
+                          onClick={() => handleBatchAction(batch.id, "retry")}
+                        >
+                          {batchAction === `${batch.id}:retry` ? "Requeuing…" : "Retry"}
+                        </button>
+                      )}
+                      {batch.status !== "COMPLETED" && batch.status !== "NEEDS_REUPLOAD" && (
+                        <button
+                          type="button"
+                          className="rounded border border-amber-600 px-2 py-1 text-xs font-medium text-amber-600 hover:bg-amber-600 hover:text-white disabled:opacity-50"
+                          disabled={batchAction === `${batch.id}:skip`}
+                          onClick={() => handleBatchAction(batch.id, "skip")}
+                        >
+                          {batchAction === `${batch.id}:skip` ? "Marking…" : "Mark for Re-upload"}
+                        </button>
+                      )}
+                    </div>
                   </div>
                   {batch.errorReason && (
                     <p className="text-xs text-red-600">{batch.errorReason}</p>

@@ -12,6 +12,7 @@ import {
 import type { Row } from "@/election-source/build-spreadsheet";
 import type { InsertResultItem } from "@/election-source/build-spreadsheet";
 import { prisma } from "@/lib/prisma";
+import { sendWithResend } from "@/lib/email/resend";
 import {
   ANALYZE_FALLBACK_MODELS,
   ANALYZE_PRIMARY_MODEL,
@@ -81,6 +82,30 @@ type NotificationSuccessOptions = JobCompleteBaseOptions & {
   recipients: string[];
 };
 
+type StageSummary = {
+  queuedAt?: string | null;
+  analyzeCompletedAt?: string | null;
+  structureCompletedAt?: string | null;
+  insertCompletedAt?: string | null;
+};
+
+type StageChangeFlags = {
+  analyzeJustCompleted: boolean;
+  structureJustCompleted: boolean;
+  insertJustCompleted: boolean;
+};
+
+type SummaryUpdate = {
+  uploadStatus: SpreadsheetUploadStatus;
+  summary: Record<string, unknown>;
+  stageChanges: StageChangeFlags;
+  counts: { total: number; byStatus: Record<string, number> };
+  fallbackCounts: { analyze: number; structure: number };
+  failureCount: number;
+};
+
+const TEAM_EMAIL = "team@elevracommunity.com";
+
 export async function createSpreadsheetUpload(
   input: CreateSpreadsheetUploadInput
 ) {
@@ -101,7 +126,7 @@ export async function createSpreadsheetUpload(
     forceHidden ?? true
   );
 
-  return prisma.$transaction(async (tx) => {
+  const uploadRecord = await prisma.$transaction(async (tx) => {
     const upload = await tx.spreadsheetUpload.create({
       data: {
         uploaderEmail,
@@ -211,6 +236,16 @@ export async function createSpreadsheetUpload(
       },
     });
   }, { timeout: 30000 });
+
+  const summaryUpdate = await refreshUploadSummary(prisma, uploadRecord.id);
+  await sendStageNotification({
+    uploadId: uploadRecord.id,
+    type: UploadNotificationType.QUEUED,
+    summary: summaryUpdate?.summary,
+  });
+  await processSummaryUpdate(uploadRecord.id, summaryUpdate);
+
+  return uploadRecord;
 }
 
 export async function listDispatchableJobs(limit: number, now = new Date()) {
@@ -283,18 +318,22 @@ export async function recordAnalyzeSuccess({
   batchTokens,
   statusCode,
 }: AnalyzeSuccessOptions) {
-  return prisma.$transaction(async (tx) => {
+  let summaryUpdate: SummaryUpdate | null = null;
+  let uploadIdRef: string | null = null;
+
+  await prisma.$transaction(async (tx) => {
     const job = await tx.geminiJob.findUnique({
       where: { id: jobId },
     });
     if (!job) throw new Error(`Gemini job ${jobId} not found`);
+    uploadIdRef = job.uploadId;
 
-    const parsed = safeJsonParse(analysisText);
+    const { value: parsed, cleaned } = parseJsonLoose(analysisText);
     if (job.batchId) {
       await tx.uploadElectionBatch.update({
         where: { id: job.batchId },
         data: {
-          analysisJson: (parsed ?? analysisText) as JsonValue,
+          analysisJson: (parsed ?? cleaned) as JsonValue,
           status: UploadBatchStatus.STRUCTURING,
           errorReason: null,
         },
@@ -308,7 +347,7 @@ export async function recordAnalyzeSuccess({
       responseTokens,
       batchTokens,
       statusCode,
-      responseBody: (parsed ?? analysisText) as JsonValue,
+      responseBody: (parsed ?? cleaned) as JsonValue,
     });
 
     await tx.geminiJob.update({
@@ -322,9 +361,17 @@ export async function recordAnalyzeSuccess({
 
     await unlockDependentJobs(tx, jobId);
     if (job.uploadId) {
-      await refreshUploadSummary(tx, job.uploadId);
+      summaryUpdate = await refreshUploadSummary(tx, job.uploadId);
     }
   });
+
+  if (uploadIdRef && summaryUpdate) {
+    const summaryData = summaryUpdate as SummaryUpdate;
+    await processSummaryUpdate(uploadIdRef, summaryData);
+    if (summaryData.uploadStatus === SpreadsheetUploadStatus.COMPLETED) {
+      await cleanupUploadData(uploadIdRef);
+    }
+  }
 }
 
 export async function recordStructureSuccess({
@@ -336,16 +383,20 @@ export async function recordStructureSuccess({
   batchTokens,
   statusCode,
 }: StructureSuccessOptions) {
-  return prisma.$transaction(async (tx) => {
+  let summaryUpdate: SummaryUpdate | null = null;
+  let uploadIdRef: string | null = null;
+
+  await prisma.$transaction(async (tx) => {
     const job = await tx.geminiJob.findUnique({ where: { id: jobId } });
     if (!job) throw new Error(`Gemini job ${jobId} not found`);
+    uploadIdRef = job.uploadId;
 
-    const parsed = safeJsonParse(structuredText);
+    const { value: parsed, cleaned } = parseJsonLoose(structuredText);
     if (job.batchId) {
       await tx.uploadElectionBatch.update({
         where: { id: job.batchId },
         data: {
-          structuredJson: (parsed ?? structuredText) as JsonValue,
+          structuredJson: (parsed ?? cleaned) as JsonValue,
           status: UploadBatchStatus.INSERTING,
           errorReason: null,
         },
@@ -359,7 +410,7 @@ export async function recordStructureSuccess({
       responseTokens,
       batchTokens,
       statusCode,
-      responseBody: (parsed ?? structuredText) as JsonValue,
+      responseBody: (parsed ?? cleaned) as JsonValue,
     });
 
     await tx.geminiJob.update({
@@ -373,9 +424,17 @@ export async function recordStructureSuccess({
 
     await unlockDependentJobs(tx, jobId);
     if (job.uploadId) {
-      await refreshUploadSummary(tx, job.uploadId);
+      summaryUpdate = await refreshUploadSummary(tx, job.uploadId);
     }
   });
+
+  if (uploadIdRef && summaryUpdate) {
+    const summaryData = summaryUpdate as SummaryUpdate;
+    await processSummaryUpdate(uploadIdRef, summaryData);
+    if (summaryData.uploadStatus === SpreadsheetUploadStatus.COMPLETED) {
+      await cleanupUploadData(uploadIdRef);
+    }
+  }
 }
 
 export async function recordInsertSuccess({
@@ -387,9 +446,13 @@ export async function recordInsertSuccess({
   batchTokens,
   statusCode,
 }: InsertSuccessOptions) {
-  return prisma.$transaction(async (tx) => {
+  let summaryUpdate: SummaryUpdate | null = null;
+  let uploadIdRef: string | null = null;
+
+  await prisma.$transaction(async (tx) => {
     const job = await tx.geminiJob.findUnique({ where: { id: jobId } });
     if (!job) throw new Error(`Gemini job ${jobId} not found`);
+    uploadIdRef = job.uploadId;
 
     if (job.batchId) {
       await tx.uploadElectionBatch.update({
@@ -427,10 +490,18 @@ export async function recordInsertSuccess({
       if (results.length) {
         await appendInsertResults(tx, job.uploadId, results);
       }
-      await refreshUploadSummary(tx, job.uploadId);
+      summaryUpdate = await refreshUploadSummary(tx, job.uploadId);
       await maybeEnqueueFinalizationJobs(tx, job.uploadId);
     }
   });
+
+  if (uploadIdRef && summaryUpdate) {
+    const summaryData = summaryUpdate as SummaryUpdate;
+    await processSummaryUpdate(uploadIdRef, summaryData);
+    if (summaryData.uploadStatus === SpreadsheetUploadStatus.COMPLETED) {
+      await cleanupUploadData(uploadIdRef);
+    }
+  }
 }
 
 export async function recordWorkbookSuccess({
@@ -440,9 +511,13 @@ export async function recordWorkbookSuccess({
   filename,
   summary,
 }: WorkbookSuccessOptions) {
-  return prisma.$transaction(async (tx) => {
+  let summaryUpdate: SummaryUpdate | null = null;
+  let uploadIdRef: string | null = null;
+
+  await prisma.$transaction(async (tx) => {
     const job = await tx.geminiJob.findUnique({ where: { id: jobId } });
     if (!job) throw new Error(`Gemini job ${jobId} not found`);
+    uploadIdRef = job.uploadId;
 
     await finalizeAttempt(tx, attemptId, {
       status: GeminiJobAttemptStatus.SUCCEEDED,
@@ -466,9 +541,17 @@ export async function recordWorkbookSuccess({
       if (summary && Object.keys(summary).length) {
         await mergeUploadSummary(tx, job.uploadId, summary);
       }
-      await refreshUploadSummary(tx, job.uploadId);
+      summaryUpdate = await refreshUploadSummary(tx, job.uploadId);
     }
   });
+
+  if (uploadIdRef && summaryUpdate) {
+    const summaryData = summaryUpdate as SummaryUpdate;
+    await processSummaryUpdate(uploadIdRef, summaryData);
+    if (summaryData.uploadStatus === SpreadsheetUploadStatus.COMPLETED) {
+      await cleanupUploadData(uploadIdRef);
+    }
+  }
 }
 
 export async function recordNotificationSuccess({
@@ -477,9 +560,13 @@ export async function recordNotificationSuccess({
   messageId,
   recipients,
 }: NotificationSuccessOptions) {
-  return prisma.$transaction(async (tx) => {
+  let summaryUpdate: SummaryUpdate | null = null;
+  let uploadIdRef: string | null = null;
+
+  await prisma.$transaction(async (tx) => {
     const job = await tx.geminiJob.findUnique({ where: { id: jobId } });
     if (!job) throw new Error(`Gemini job ${jobId} not found`);
+    uploadIdRef = job.uploadId;
 
     await finalizeAttempt(tx, attemptId, {
       status: GeminiJobAttemptStatus.SUCCEEDED,
@@ -510,10 +597,25 @@ export async function recordNotificationSuccess({
           sentAt: new Date(),
         },
       });
-      await refreshUploadSummary(tx, job.uploadId);
+      summaryUpdate = await refreshUploadSummary(tx, job.uploadId);
     }
   });
+
+  if (uploadIdRef && summaryUpdate) {
+    const summaryData = summaryUpdate as SummaryUpdate;
+    await processSummaryUpdate(uploadIdRef, summaryData);
+    if (summaryData.uploadStatus === SpreadsheetUploadStatus.COMPLETED) {
+      await cleanupUploadData(uploadIdRef);
+    }
+  }
 }
+
+type BatchFailureContext = {
+  uploadId: string;
+  batchId: string;
+  jobType: GeminiJobType;
+  errorMessage: string;
+};
 
 export async function recordJobFailure({
   jobId,
@@ -526,9 +628,14 @@ export async function recordJobFailure({
   batchTokens,
   statusCode,
 }: JobFailureOptions) {
-  return prisma.$transaction(async (tx) => {
+  let summaryUpdate: SummaryUpdate | null = null;
+  let uploadIdRef: string | null = null;
+  let failureContext: BatchFailureContext | null = null;
+
+  await prisma.$transaction(async (tx) => {
     const job = await tx.geminiJob.findUnique({ where: { id: jobId } });
     if (!job) throw new Error(`Gemini job ${jobId} not found`);
+    uploadIdRef = job.uploadId ?? null;
 
     await finalizeAttempt(tx, attemptId, {
       status: GeminiJobAttemptStatus.FAILED,
@@ -559,19 +666,45 @@ export async function recordJobFailure({
     });
 
     if (job.batchId && status === GeminiJobStatus.FAILED) {
-      await setBatchStatus(tx, job.batchId, UploadBatchStatus.FAILED, errorMessage);
+      await setBatchStatus(
+        tx,
+        job.batchId,
+        UploadBatchStatus.NEEDS_REUPLOAD,
+        errorMessage
+      );
     }
 
     if (job.uploadId) {
-      await refreshUploadSummary(tx, job.uploadId);
+      summaryUpdate = await refreshUploadSummary(tx, job.uploadId);
+    }
+
+    if (job.uploadId && job.batchId && status === GeminiJobStatus.FAILED) {
+      failureContext = {
+        uploadId: job.uploadId,
+        batchId: job.batchId,
+        jobType: job.type,
+        errorMessage,
+      };
     }
   });
+
+  if (uploadIdRef && summaryUpdate) {
+    const summaryData = summaryUpdate as SummaryUpdate;
+    await processSummaryUpdate(uploadIdRef, summaryData);
+    if (summaryData.uploadStatus === SpreadsheetUploadStatus.COMPLETED) {
+      await cleanupUploadData(uploadIdRef);
+    }
+  }
+  if (failureContext) {
+    await sendBatchFailureNotification(failureContext);
+  }
 }
 
 export async function resetStaleJobs(
   maxDurationMs = DEFAULT_JOB_TIMEOUT_MS
 ) {
   const cutoff = new Date(Date.now() - maxDurationMs);
+  const summaryQueue: Array<{ uploadId: string; update: SummaryUpdate }> = [];
   const staleJobs = await prisma.geminiJob.findMany({
     where: {
       status: GeminiJobStatus.IN_PROGRESS,
@@ -621,13 +754,29 @@ export async function resetStaleJobs(
       });
 
       if (job.batchId && status === GeminiJobStatus.FAILED) {
-        await setBatchStatus(tx, job.batchId, UploadBatchStatus.FAILED, timeoutMessage);
+        await setBatchStatus(
+          tx,
+          job.batchId,
+          UploadBatchStatus.NEEDS_REUPLOAD,
+          timeoutMessage
+        );
       }
 
       if (job.uploadId) {
-        await refreshUploadSummary(tx, job.uploadId);
+        const update = await refreshUploadSummary(tx, job.uploadId);
+        if (update) {
+          summaryQueue.push({ uploadId: job.uploadId, update });
+        }
       }
     });
+  }
+
+  for (const entry of summaryQueue) {
+    const updateSnapshot = entry.update;
+    await processSummaryUpdate(entry.uploadId, updateSnapshot);
+    if (updateSnapshot.uploadStatus === SpreadsheetUploadStatus.COMPLETED) {
+      await cleanupUploadData(entry.uploadId);
+    }
   }
 
   return staleJobs.length;
@@ -811,7 +960,10 @@ async function maybeEnqueueFinalizationJobs(tx: DbClient, uploadId: string) {
   });
 }
 
-async function refreshUploadSummary(tx: DbClient, uploadId: string) {
+async function refreshUploadSummary(
+  tx: DbClient,
+  uploadId: string
+): Promise<SummaryUpdate | null> {
   const upload = await tx.spreadsheetUpload.findUnique({
     where: { id: uploadId },
     include: {
@@ -822,8 +974,9 @@ async function refreshUploadSummary(tx: DbClient, uploadId: string) {
       },
     },
   });
-  if (!upload) return;
+  if (!upload) return null;
   const now = new Date();
+  const nowIso = now.toISOString();
   const counts = upload.batches.reduce(
     (acc, batch) => {
       acc.total += 1;
@@ -841,10 +994,63 @@ async function refreshUploadSummary(tx: DbClient, uploadId: string) {
   }
 
   const baseSummary = toSummaryObject(upload.summaryJson);
+  const previousStages = toStageSummary(baseSummary.stages);
+
+  const analyzeCompleteNow =
+    counts.total > 0 &&
+    (counts.byStatus[UploadBatchStatus.QUEUED] || 0) === 0 &&
+    (counts.byStatus[UploadBatchStatus.ANALYZING] || 0) === 0;
+  const structureCompleteNow =
+    analyzeCompleteNow && (counts.byStatus[UploadBatchStatus.STRUCTURING] || 0) === 0;
+  const insertCompleteNow =
+    structureCompleteNow &&
+    (counts.byStatus[UploadBatchStatus.INSERTING] || 0) === 0 &&
+    (counts.byStatus[UploadBatchStatus.COMPLETED] || 0) === counts.total &&
+    counts.total > 0;
+
+  const analyzeJustCompleted =
+    analyzeCompleteNow && !previousStages.analyzeCompletedAt;
+  const structureJustCompleted =
+    structureCompleteNow && !previousStages.structureCompletedAt;
+  const insertJustCompleted =
+    insertCompleteNow && !previousStages.insertCompletedAt;
+
+  const stageInfo: StageSummary = {
+    queuedAt: previousStages.queuedAt ?? nowIso,
+    analyzeCompletedAt: previousStages.analyzeCompletedAt ?? (analyzeJustCompleted ? nowIso : null),
+    structureCompletedAt: previousStages.structureCompletedAt ?? (structureJustCompleted ? nowIso : null),
+    insertCompletedAt: previousStages.insertCompletedAt ?? (insertJustCompleted ? nowIso : null),
+  };
+
+  const [analyzeFallback, structureFallback] = await Promise.all([
+    tx.geminiJobAttempt.count({
+      where: {
+        job: { uploadId, type: GeminiJobType.ANALYZE },
+        isFallback: true,
+      },
+    }),
+    tx.geminiJobAttempt.count({
+      where: {
+        job: { uploadId, type: GeminiJobType.STRUCTURE },
+        isFallback: true,
+      },
+    }),
+  ]);
+
+  const failureCount =
+    (counts.byStatus[UploadBatchStatus.FAILED] || 0) +
+    (counts.byStatus[UploadBatchStatus.NEEDS_REUPLOAD] || 0);
+
   const nextSummary = {
     ...baseSummary,
     totals: counts,
-    updatedAt: now.toISOString(),
+    stages: stageInfo,
+    fallbacks: {
+      analyze: analyzeFallback,
+      structure: structureFallback,
+    },
+    failureCount,
+    updatedAt: nowIso,
   };
 
   await tx.spreadsheetUpload.update({
@@ -856,6 +1062,22 @@ async function refreshUploadSummary(tx: DbClient, uploadId: string) {
       summaryJson: nextSummary as JsonValue,
     },
   });
+
+  return {
+    uploadStatus,
+    summary: nextSummary,
+    stageChanges: {
+      analyzeJustCompleted,
+      structureJustCompleted,
+      insertJustCompleted,
+    },
+    counts,
+    fallbackCounts: {
+      analyze: analyzeFallback,
+      structure: structureFallback,
+    },
+    failureCount,
+  };
 }
 
 async function mergeUploadSummary(
@@ -945,11 +1167,22 @@ function jsonArrayOrNull(values: readonly string[]): JsonValue | undefined {
   return values.length ? (values as unknown as JsonValue) : undefined;
 }
 
-function safeJsonParse(text: string): unknown {
+function parseJsonLoose(
+  text: string
+): { value: unknown | null; cleaned: string } {
+  const trimmed = text.trim();
   try {
-    return JSON.parse(text);
+    return { value: JSON.parse(trimmed), cleaned: trimmed };
   } catch {
-    return null;
+    const repaired = repairJsonString(trimmed);
+    if (repaired !== trimmed) {
+      try {
+        return { value: JSON.parse(repaired), cleaned: repaired };
+      } catch {
+        // continue
+      }
+    }
+    return { value: null, cleaned: repaired };
   }
 }
 
@@ -962,4 +1195,583 @@ function toSummaryObject(value: unknown): Record<string, unknown> {
     return value as Record<string, unknown>;
   }
   return {};
+}
+
+function toStageSummary(value: unknown): StageSummary {
+  if (!value || typeof value !== "object") {
+    return {};
+  }
+  const input = value as Record<string, unknown>;
+  return {
+    queuedAt: typeof input.queuedAt === "string" ? input.queuedAt : null,
+    analyzeCompletedAt:
+      typeof input.analyzeCompletedAt === "string" ? input.analyzeCompletedAt : null,
+    structureCompletedAt:
+      typeof input.structureCompletedAt === "string"
+        ? input.structureCompletedAt
+        : null,
+    insertCompletedAt:
+      typeof input.insertCompletedAt === "string" ? input.insertCompletedAt : null,
+  };
+}
+
+function repairJsonString(text: string): string {
+  let output = text;
+  // Remove Markdown code fences (e.g., ```json ... ```).
+  output = output.replace(/^```(?:json)?\s*([\s\S]*?)```$/gi, "$1");
+  // Replace smart quotes with standard ASCII equivalents.
+  output = output
+    .replace(/\u2018|\u2019|\u201A|\u201B/g, "'")
+    .replace(/\u201C|\u201D|\u201E|\u201F/g, '"');
+  // Normalize explicit "N/A" strings to null to avoid invalid tokens like ""N/A"".
+  output = output.replace(/"N\/A"/g, "null");
+  // Replace bare N/A tokens (not adjacent to quotes) with null.
+  output = output.replace(/\bN\/A\b/g, (match, offset, str) => {
+    const prev = str[offset - 1];
+    const next = str[offset + match.length];
+    if (prev === '"' || next === '"') {
+      return match;
+    }
+    return "null";
+  });
+  // Remove trailing commas before object/array terminators.
+  output = output.replace(/,\s*(?=[}\]])/g, "");
+  return output;
+}
+
+async function processSummaryUpdate(
+  uploadId: string,
+  update: SummaryUpdate | null
+) {
+  if (!update) return;
+  if (update.stageChanges.analyzeJustCompleted) {
+    await sendStageNotification({
+      uploadId,
+      type: UploadNotificationType.ANALYZE_COMPLETE,
+      summary: update.summary,
+    });
+  }
+  if (update.stageChanges.structureJustCompleted) {
+    await sendStageNotification({
+      uploadId,
+      type: UploadNotificationType.STRUCTURE_COMPLETE,
+      summary: update.summary,
+    });
+  }
+  if (update.stageChanges.insertJustCompleted) {
+    await sendStageNotification({
+      uploadId,
+      type: UploadNotificationType.INSERT_COMPLETE,
+      summary: update.summary,
+    });
+  }
+}
+
+type StageNotificationArgs = {
+  uploadId: string;
+  type: UploadNotificationType;
+  summary?: Record<string, unknown>;
+};
+
+async function sendStageNotification({
+  uploadId,
+  type,
+  summary,
+}: StageNotificationArgs) {
+  if (type !== UploadNotificationType.BATCH_FAILURE) {
+    const existing = await prisma.uploadNotificationLog.findFirst({
+      where: {
+        uploadId,
+        type,
+        status: UploadNotificationStatus.SENT,
+      },
+    });
+    if (existing) return;
+  }
+
+  const upload = await prisma.spreadsheetUpload.findUnique({
+    where: { id: uploadId },
+    select: {
+      uploaderEmail: true,
+      originalFilename: true,
+      summaryJson: true,
+    },
+  });
+  if (!upload) return;
+
+  const summaryData = summary ?? toSummaryObject(upload.summaryJson);
+  const recipients = collectRecipients(upload.uploaderEmail);
+  if (!recipients.length) return;
+
+  const { subject, html, metadata } = buildStageNotificationContent(
+    type,
+    uploadId,
+    upload.originalFilename ?? undefined,
+    summaryData
+  );
+
+  await deliverNotification({
+    uploadId,
+    type,
+    recipients,
+    subject,
+    html,
+    metadata: {
+      ...metadata,
+      summary: summaryData,
+    },
+  });
+}
+
+async function sendBatchFailureNotification(ctx: BatchFailureContext) {
+  const existing = await prisma.uploadNotificationLog.findFirst({
+    where: {
+      uploadId: ctx.uploadId,
+      type: UploadNotificationType.BATCH_FAILURE,
+      status: UploadNotificationStatus.SENT,
+      metadata: { path: ["batchId"], equals: ctx.batchId },
+    },
+  });
+  if (existing) return;
+
+  const [upload, batch] = await Promise.all([
+    prisma.spreadsheetUpload.findUnique({
+      where: { id: ctx.uploadId },
+      select: { uploaderEmail: true, originalFilename: true },
+    }),
+    prisma.uploadElectionBatch.findUnique({
+      where: { id: ctx.batchId },
+      select: {
+        municipality: true,
+        state: true,
+        position: true,
+      },
+    }),
+  ]);
+  if (!upload) return;
+
+  const recipients = collectRecipients(upload.uploaderEmail);
+  if (!recipients.length) return;
+
+  const title = upload.originalFilename ?? ctx.uploadId;
+  const batchLabel = batch
+    ? [batch.position, batch.municipality, batch.state]
+        .filter(Boolean)
+        .join(" – ")
+    : ctx.batchId;
+
+  const subject = `Gemini batch failure – ${title}`;
+  const html = `
+    <p>Gemini could not process the batch <strong>${escapeHtml(
+      batchLabel
+    )}</strong>.</p>
+    <ul>
+      <li><strong>Upload ID:</strong> ${escapeHtml(ctx.uploadId)}</li>
+      <li><strong>Job type:</strong> ${escapeHtml(ctx.jobType)}</li>
+      <li><strong>Error:</strong> ${escapeHtml(ctx.errorMessage)}</li>
+    </ul>
+    <p>The batch has been marked for manual review. Use the admin dashboard to retry once the issue is resolved.</p>
+  `;
+
+  await deliverNotification({
+    uploadId: ctx.uploadId,
+    type: UploadNotificationType.BATCH_FAILURE,
+    recipients,
+    subject,
+    html,
+    metadata: {
+      batchId: ctx.batchId,
+      jobType: ctx.jobType,
+      error: ctx.errorMessage,
+    },
+  });
+}
+
+type DeliverNotificationArgs = {
+  uploadId: string;
+  type: UploadNotificationType;
+  recipients: string[];
+  subject: string;
+  html: string;
+  metadata?: Record<string, unknown>;
+};
+
+async function deliverNotification({
+  uploadId,
+  type,
+  recipients,
+  subject,
+  html,
+  metadata,
+}: DeliverNotificationArgs) {
+  if (!recipients.length) return;
+
+  const batchIdFilter =
+    metadata && typeof (metadata as Record<string, unknown>).batchId === "string"
+      ? String((metadata as Record<string, unknown>).batchId)
+      : undefined;
+
+  const dedupeConditions: Prisma.UploadNotificationLogWhereInput = {
+    uploadId,
+    type,
+    status: UploadNotificationStatus.SENT,
+  };
+  if (batchIdFilter) {
+    dedupeConditions.metadata = {
+      path: ["batchId"],
+      equals: batchIdFilter,
+    };
+  }
+
+  const existing = await prisma.uploadNotificationLog.findFirst({
+    where: dedupeConditions,
+  });
+  if (existing) return;
+
+  const log = await prisma.uploadNotificationLog.create({
+    data: {
+      uploadId,
+      email: recipients.join(", "),
+      type,
+      status: UploadNotificationStatus.QUEUED,
+      metadata: normalizeMetadata(metadata),
+    },
+  });
+
+  try {
+    const result = await sendWithResend({
+      to: recipients,
+      subject,
+      html,
+    });
+    await prisma.uploadNotificationLog.update({
+      where: { id: log.id },
+      data: {
+        status: UploadNotificationStatus.SENT,
+        responseId: result?.id ?? null,
+        sentAt: new Date(),
+      },
+    });
+  } catch (error) {
+    console.error("Failed to send upload notification", {
+      uploadId,
+      type,
+      error,
+    });
+    await prisma.uploadNotificationLog.update({
+      where: { id: log.id },
+      data: {
+        status: UploadNotificationStatus.FAILED,
+        error: error instanceof Error ? error.message : String(error),
+      },
+    });
+  }
+}
+
+function buildStageNotificationContent(
+  type: UploadNotificationType,
+  uploadId: string,
+  originalFilename: string | undefined,
+  summary: Record<string, unknown>
+): { subject: string; html: string; metadata?: Record<string, unknown> } {
+  const totals = readTotals(summary);
+  const fallbacks = readFallbacks(summary);
+  const stageSource =
+    (summary as { stages?: unknown }).stages !== undefined
+      ? (summary as { stages?: unknown }).stages
+      : undefined;
+  const stages = toStageSummary(stageSource);
+  const title = originalFilename || uploadId;
+
+  const baseLines = [
+    `Total batches: ${totals.total}`,
+    `Completed: ${totals.byStatus[UploadBatchStatus.COMPLETED] || 0}`,
+    `Queued: ${totals.byStatus[UploadBatchStatus.QUEUED] || 0}`,
+    `Analyzing: ${totals.byStatus[UploadBatchStatus.ANALYZING] || 0}`,
+    `Structuring: ${totals.byStatus[UploadBatchStatus.STRUCTURING] || 0}`,
+    `Inserting: ${totals.byStatus[UploadBatchStatus.INSERTING] || 0}`,
+    `Failures: ${totals.byStatus[UploadBatchStatus.FAILED] || 0}`,
+    `Fallback (analyze): ${fallbacks.analyze}`,
+    `Fallback (structure): ${fallbacks.structure}`,
+  ];
+
+  let subject = "";
+  let intro = "";
+
+  switch (type) {
+    case UploadNotificationType.QUEUED:
+      subject = `Gemini upload queued – ${title}`;
+      intro =
+        "The spreadsheet has been queued for Gemini processing. We'll notify you as each phase completes.";
+      break;
+    case UploadNotificationType.ANALYZE_COMPLETE:
+      subject = `Gemini analyze phase complete – ${title}`;
+      intro = `All analyze jobs finished at ${formatIso(stages.analyzeCompletedAt)}. Structure jobs are starting next.`;
+      break;
+    case UploadNotificationType.STRUCTURE_COMPLETE:
+      subject = `Gemini structure phase complete – ${title}`;
+      intro = `Structure jobs finished at ${formatIso(stages.structureCompletedAt)}. Insert jobs are now running.`;
+      break;
+    case UploadNotificationType.INSERT_COMPLETE:
+      subject = `Gemini insert phase complete – ${title}`;
+      intro = `All insert jobs finished at ${formatIso(
+        stages.insertCompletedAt
+      )}. Workbook generation and final notification will follow.`;
+      break;
+    default:
+      subject = `Gemini update – ${title}`;
+      intro = "Here is the current status of your Gemini upload.";
+      break;
+  }
+
+  const html = `
+    <p>${intro}</p>
+    ${renderHtmlList(baseLines)}
+    <p><strong>Upload ID:</strong> ${escapeHtml(uploadId)}</p>
+  `;
+
+  return { subject, html };
+}
+
+function readTotals(summary: Record<string, unknown>): {
+  total: number;
+  byStatus: Record<string, number>;
+} {
+  const totalsRaw = toSummaryObject(summary.totals);
+  const total = typeof totalsRaw.total === "number" ? totalsRaw.total : 0;
+  const byStatusRaw = toSummaryObject(totalsRaw.byStatus);
+  const byStatus: Record<string, number> = {};
+  for (const [key, value] of Object.entries(byStatusRaw)) {
+    if (typeof value === "number") {
+      byStatus[key] = value;
+    }
+  }
+  return { total, byStatus };
+}
+
+function readFallbacks(summary: Record<string, unknown>): {
+  analyze: number;
+  structure: number;
+} {
+  const raw = toSummaryObject(summary.fallbacks);
+  return {
+    analyze: typeof raw.analyze === "number" ? raw.analyze : 0,
+    structure: typeof raw.structure === "number" ? raw.structure : 0,
+  };
+}
+
+function collectRecipients(uploaderEmail?: string | null): string[] {
+  const set = new Set<string>();
+  set.add(TEAM_EMAIL);
+  if (uploaderEmail && uploaderEmail.includes("@")) {
+    set.add(uploaderEmail);
+  }
+  return Array.from(set);
+}
+
+function renderHtmlList(items: string[]): string {
+  const filtered = items.filter(Boolean);
+  if (!filtered.length) return "";
+  const inner = filtered
+    .map((item) => `<li>${escapeHtml(item)}</li>`)
+    .join("");
+  return `<ul>${inner}</ul>`;
+}
+
+function formatIso(value?: string | null): string {
+  if (!value) return "N/A";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value;
+  return date.toLocaleString("en-US", { timeZone: "UTC" });
+}
+
+function escapeHtml(value: string): string {
+  return value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
+function normalizeMetadata(value?: Record<string, unknown>): Prisma.InputJsonValue {
+  if (!value) {
+    return JSON.parse("null") as Prisma.InputJsonValue;
+  }
+  try {
+    return JSON.parse(JSON.stringify(value)) as Prisma.InputJsonValue;
+  } catch {
+    return value as Prisma.InputJsonValue;
+  }
+}
+
+async function cleanupUploadData(uploadId: string) {
+  await prisma.uploadElectionBatch.updateMany({
+    where: { uploadId },
+    data: {
+      rawRows: Prisma.JsonNull,
+      analysisJson: Prisma.JsonNull,
+      structuredJson: Prisma.JsonNull,
+    },
+  });
+  await mergeUploadSummary(prisma, uploadId, {
+    cleanedAt: new Date().toISOString(),
+  });
+}
+
+export async function retryUploadBatch(uploadId: string, batchId: string) {
+  let summaryUpdate: SummaryUpdate | null = null;
+  await prisma.$transaction(async (tx) => {
+    const batch = await tx.uploadElectionBatch.findUnique({
+      where: { id: batchId },
+    });
+    if (!batch || batch.uploadId !== uploadId) {
+      throw new Error("Batch not found for upload");
+    }
+
+    if (batch.analyzeJobId) {
+      await tx.geminiJobAttempt.deleteMany({
+        where: { jobId: batch.analyzeJobId },
+      });
+      await tx.geminiJob.update({
+        where: { id: batch.analyzeJobId },
+        data: {
+          status: GeminiJobStatus.READY,
+          retryCount: 0,
+          lastError: null,
+          startedAt: null,
+          completedAt: null,
+          nextRunAt: new Date(),
+        },
+      });
+    }
+    if (batch.structureJobId) {
+      await tx.geminiJobAttempt.deleteMany({
+        where: { jobId: batch.structureJobId },
+      });
+      await tx.geminiJob.update({
+        where: { id: batch.structureJobId },
+        data: {
+          status: GeminiJobStatus.PENDING,
+          retryCount: 0,
+          lastError: null,
+          startedAt: null,
+          completedAt: null,
+          nextRunAt: new Date(),
+        },
+      });
+    }
+    if (batch.insertJobId) {
+      await tx.geminiJobAttempt.deleteMany({
+        where: { jobId: batch.insertJobId },
+      });
+      await tx.geminiJob.update({
+        where: { id: batch.insertJobId },
+        data: {
+          status: GeminiJobStatus.PENDING,
+          retryCount: 0,
+          lastError: null,
+          startedAt: null,
+          completedAt: null,
+          nextRunAt: new Date(),
+        },
+      });
+    }
+
+    await tx.uploadElectionBatch.update({
+      where: { id: batchId },
+      data: {
+        status: UploadBatchStatus.QUEUED,
+        errorReason: null,
+        analysisJson: Prisma.JsonNull,
+        structuredJson: Prisma.JsonNull,
+      },
+    });
+
+    summaryUpdate = await refreshUploadSummary(tx, uploadId);
+  });
+
+  if (summaryUpdate) {
+    await processSummaryUpdate(uploadId, summaryUpdate);
+  }
+
+  return getUploadProgress(uploadId);
+}
+
+export async function skipUploadBatch(
+  uploadId: string,
+  batchId: string,
+  reason?: string
+) {
+  let summaryUpdate: SummaryUpdate | null = null;
+  let failureContext: BatchFailureContext | null = null;
+
+  await prisma.$transaction(async (tx) => {
+    const batch = await tx.uploadElectionBatch.findUnique({
+      where: { id: batchId },
+    });
+    if (!batch || batch.uploadId !== uploadId) {
+      throw new Error("Batch not found for upload");
+    }
+
+    const note = reason?.trim().length ? reason.trim() : "Marked for re-upload";
+
+    if (batch.analyzeJobId) {
+      await tx.geminiJob.update({
+        where: { id: batch.analyzeJobId },
+        data: {
+          status: GeminiJobStatus.SKIPPED,
+          lastError: note,
+          completedAt: new Date(),
+        },
+      });
+    }
+    if (batch.structureJobId) {
+      await tx.geminiJob.update({
+        where: { id: batch.structureJobId },
+        data: {
+          status: GeminiJobStatus.SKIPPED,
+          lastError: note,
+          completedAt: new Date(),
+        },
+      });
+    }
+    if (batch.insertJobId) {
+      await tx.geminiJob.update({
+        where: { id: batch.insertJobId },
+        data: {
+          status: GeminiJobStatus.SKIPPED,
+          lastError: note,
+          completedAt: new Date(),
+        },
+      });
+    }
+
+    await tx.uploadElectionBatch.update({
+      where: { id: batchId },
+      data: {
+        status: UploadBatchStatus.NEEDS_REUPLOAD,
+        errorReason: note,
+        analysisJson: Prisma.JsonNull,
+        structuredJson: Prisma.JsonNull,
+      },
+    });
+
+    summaryUpdate = await refreshUploadSummary(tx, uploadId);
+    failureContext = {
+      uploadId,
+      batchId,
+      jobType: GeminiJobType.ANALYZE,
+      errorMessage: note,
+    };
+  });
+
+  if (summaryUpdate) {
+    await processSummaryUpdate(uploadId, summaryUpdate);
+  }
+  if (failureContext) {
+    await sendBatchFailureNotification(failureContext);
+  }
+
+  return getUploadProgress(uploadId);
 }
