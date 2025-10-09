@@ -33,6 +33,7 @@ import { FaCheckCircle } from "react-icons/fa";
 import TourModal from "@/components/tour/TourModal";
 import { usePageTitle } from "@/lib/usePageTitle";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { CandidateProfileHeader } from "@/components/CandidateProfileHeader";
 // import ResultsSearchBar from "@/components/ResultsSearchBar";
 
 export type CandidateWithDonations = Candidate & { donations: Donation[] };
@@ -235,7 +236,8 @@ export default function OverviewPage() {
         onSecondary={skipTour}
       >
         <p>
-          Use the quick actions to edit, share, or restart your campaign setup.
+          Preview your profile header here. Use the quick actions to edit,
+          share, or restart your campaign setup.
         </p>
         <p>
           Upgrade anytime from the sidebar to unlock advanced analytics like
@@ -310,6 +312,30 @@ export default function OverviewPage() {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Public Profile Preview */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Public Profile Preview</CardTitle>
+          <CardDescription>
+            This is how your campaign header appears to voters.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {candidate ? (
+            <div className="rounded-lg border border-dashed border-border bg-white p-4">
+              <CandidateProfileHeader
+                candidate={candidate}
+                showVerifyButton={false}
+              />
+            </div>
+          ) : (
+            <div className="text-sm text-muted-foreground">
+              Loading profile preview...
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       {/* Quick Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
