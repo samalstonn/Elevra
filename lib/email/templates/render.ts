@@ -1,6 +1,8 @@
 import fs from "node:fs";
 import path from "node:path";
 
+import { formatGreetingName, formatLocationValue } from "./formatGreetingName";
+
 export type TemplateKey =
   | "initial"
   | "followup"
@@ -8,7 +10,7 @@ export type TemplateKey =
   | "followup2";
 
 const SUBJECTS: Record<TemplateKey, string> = {
-  initial: "Your Election is Live on Elevra",
+  initial: "Welcome to Elevra",
   followup: "RE: Claim your Elevra profile",
   followup2: "RE: Don't miss out on Elevra",
   verifiedUpdate: "Update: Templates are back — create your candidate webpage",
@@ -63,10 +65,10 @@ export function renderEmailTemplate(
   data: RenderInput,
   opts?: { baseForFollowup?: TemplateKey }
 ): { subject: string; html: string } {
-  const greetingName = (data.candidateFirstName || "").trim() || "there";
-  const stateName = (data.state || "").trim();
-  const municipalityName = (data.municipality || "").trim();
-  const positionName = (data.position || "").trim();
+  const greetingName = formatGreetingName(data.candidateFirstName);
+  const stateName = formatLocationValue(data.state);
+  const municipalityName = formatLocationValue(data.municipality);
+  const positionName = formatLocationValue(data.position);
 
   const locationDetail =
     municipalityName && stateName
