@@ -48,7 +48,7 @@ export default function MyPageEditor({ params }: EditorPageProps) {
   const decodedLinkKey = useMemo(() => decodeEditorLinkKey(linkKey), [linkKey]);
   const activeElectionId = decodedLinkKey?.electionId ?? null;
 
-  const { user, isLoaded } = useUser();
+  const { user } = useUser();
   const isPremium =
     user?.publicMetadata.candidateSubscriptionTier === "premium";
 
