@@ -261,7 +261,7 @@ function EducationList({
                       alt={`${e.name} logo`}
                       width={40}
                       height={40}
-                      className="rounded bg-white"
+                      className="rounded bg-card"
                       fallbackSrc={[ddg, "/default-image-college.png"]}
                     />
                   </div>
@@ -274,10 +274,10 @@ function EducationList({
                     </div>
                     {e.degree ? (
                       <div className="text-sm mt-1">
-                        <span className="text-gray-500 font-medium">
+                        <span className="text-muted-foreground font-medium">
                           Degree:
                         </span>{" "}
-                        <span className="text-gray-800">{e.degree}</span>
+                        <span className="text-foreground">{e.degree}</span>
                         {e.graduationYear ? (
                           <span className="text-muted-foreground">
                             {" "}
@@ -287,20 +287,20 @@ function EducationList({
                       </div>
                     ) : e.graduationYear ? (
                       <div className="text-sm mt-1">
-                        <span className="text-gray-500 font-medium">
+                        <span className="text-muted-foreground font-medium">
                           Graduation:
                         </span>{" "}
-                        <span className="text-gray-800">
+                        <span className="text-foreground">
                           {e.graduationYear}
                         </span>
                       </div>
                     ) : null}
                     {e.activities && (
                       <div className="text-sm mt-1 line-clamp-2">
-                        <span className="text-gray-500 font-medium">
+                        <span className="text-muted-foreground font-medium">
                           Activities and societies:
                         </span>{" "}
-                        <span className="text-gray-700">{e.activities}</span>
+                        <span className="text-foreground/90">{e.activities}</span>
                       </div>
                     )}
                   </div>

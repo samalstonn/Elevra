@@ -62,8 +62,8 @@ export default function CandidateDonationsClient({ user, data }: Props) {
   return (
     <div className="min-h-screen p-6 space-y-12">
       <header className="space-y-2">
-        <h1 className="text-3xl font-bold text-gray-900">Donations Overview</h1>
-        <p className="text-gray-600">
+        <h1 className="text-3xl font-bold text-foreground">Donations Overview</h1>
+        <p className="text-muted-foreground">
           Welcome, {user.firstName || user.username || "Candidate"}! Here&apos;s
           a summary of your campaign&apos;s contributions.
         </p>
@@ -76,11 +76,11 @@ export default function CandidateDonationsClient({ user, data }: Props) {
       </section>
 
       <section>
-        <h2 className="text-2xl font-semibold text-gray-900 mb-4">
+        <h2 className="text-2xl font-semibold text-foreground mb-4">
           Recent Contributions
         </h2>
         {data.donations.length === 0 ? (
-          <div className="p-6 border border-gray-200 rounded-xl text-center text-gray-500">
+          <div className="p-6 border border-border/70 rounded-xl text-center text-muted-foreground">
             No donations received yet.
           </div>
         ) : (
@@ -88,30 +88,30 @@ export default function CandidateDonationsClient({ user, data }: Props) {
             {data.donations.map((donation) => (
               <li
                 key={donation.id}
-                className="p-4 border border-gray-200 rounded-xl flex items-center justify-between gap-4 bg-white shadow-sm"
+                className="p-4 border border-border/70 rounded-xl flex items-center justify-between gap-4 bg-card shadow-sm"
               >
                 <div className="flex items-center gap-4">
-                  <div className="rounded-full bg-gray-100 p-2">
-                    <UserCircle2 className="h-6 w-6 text-gray-500" />
+                  <div className="rounded-full bg-muted p-2">
+                    <UserCircle2 className="h-6 w-6 text-muted-foreground" />
                   </div>
                   <div>
-                    <p className="font-medium text-gray-800">
+                    <p className="font-medium text-foreground">
                       {donation.donorName}
                     </p>
-                    <p className="text-sm text-gray-500">
+                    <p className="text-sm text-muted-foreground">
                       {donation.donorEmail}
                     </p>
                   </div>
                 </div>
                 <div className="text-right">
-                  <p className="text-lg font-semibold text-purple-600">
+                  <p className="text-lg font-semibold text-purple-600 dark:text-purple-300">
                     $
                     {Number(donation.amount).toLocaleString(undefined, {
                       minimumFractionDigits: 2,
                       maximumFractionDigits: 2,
                     })}
                   </p>
-                  <p className="text-xs text-gray-400">
+                  <p className="text-xs text-muted-foreground">
                     {donation.paidAt
                       ? new Date(donation.paidAt).toLocaleDateString()
                       : "Pending"}

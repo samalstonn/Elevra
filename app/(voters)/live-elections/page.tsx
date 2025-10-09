@@ -131,12 +131,14 @@ export default function LiveElectionsPage() {
               href={`/results?city=${encodeURIComponent(
                 election.city || ""
               )}&state=${encodeURIComponent(election.state)}`}
-              className="block border-l-2 border-purple-600 bg-white rounded-lg px-6 py-4 shadow-lg hover:shadow-xl hover:bg-purple-50 transition w-full"
+              className="block border-l-2 border-purple-600/80 dark:border-purple-400/60 bg-card px-6 py-4 rounded-lg shadow-lg hover:shadow-xl hover:bg-purple-50/80 dark:hover:bg-purple-500/25 transition w-full"
             >
               <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
                 <div>
-                  <h2 className="text-lg font-bold mb-2">{location}</h2>
-                  <ul className="list-disc list-inside text-sm text-gray-700 grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-1">
+                  <h2 className="text-lg font-bold mb-2 text-foreground">
+                    {location}
+                  </h2>
+                  <ul className="list-disc list-inside text-sm text-muted-foreground grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-1">
                     {election.positions.map((pos: string, idx: number) => (
                       <li key={idx}>{pos}</li>
                     ))}

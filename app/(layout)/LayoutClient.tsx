@@ -14,6 +14,12 @@ import { Analytics } from "@vercel/analytics/react";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { usePathname, useSearchParams } from "next/navigation";
 import SearchBar from "../../components/ResultsSearchBar";
+import {
+  DARK_MEDIA_QUERY,
+  THEME_STORAGE_KEY,
+  ThemeProvider,
+} from "@/components/providers/theme-provider";
+import { ThemeToggle } from "@/components/ThemeToggle";
 import { Toaster } from "@/components/ui/toaster";
 import Footer from "../(footer-pages)/Footer";
 import HeaderButtons from "./HeaderButtons";
@@ -45,6 +51,8 @@ const BASE_KEYWORDS = [
   "community elections",
 ];
 
+const THEME_INITIALIZER = `(function(){try{var root=document.documentElement;var storageKey="${THEME_STORAGE_KEY}";var mediaQuery="${DARK_MEDIA_QUERY}";var stored=localStorage.getItem(storageKey);var media=window.matchMedia(mediaQuery);var theme=stored==="light"||stored==="dark"?stored:(media.matches?"dark":"light");if(theme==="dark"){root.classList.add("dark");}else{root.classList.remove("dark");}root.style.colorScheme=theme;}catch(error){}})();`;
+
 function HeaderNav() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -70,6 +78,7 @@ function HeaderNav() {
         </div>
       )}
       <div className="flex items-center gap-4 shrink-0">
+        <ThemeToggle />
         <SignedIn>
           <HeaderButtons pathname={pathname} />
           <UserButton afterSignOutUrl={fullPath} />
@@ -219,25 +228,32 @@ function LayoutShell({ children }: { children: React.ReactNode }) {
   }, [pathname]);
 
   return (
-    <html lang="en" className="overflow-x-hidden">
-      <body className="flex min-h-full flex-col bg-background text-foreground antialiased overflow-x-hidden overflow-y-auto">
-        {/* Header Section (wrapped in Suspense to support useSearchParams) */}
-        <Suspense fallback={null}>
-          <HeaderNav />
-        </Suspense>
+    <ThemeProvider>
+      <html lang="en" className="overflow-x-hidden">
+        <head>
+          <script
+            dangerouslySetInnerHTML={{ __html: THEME_INITIALIZER }}
+          />
+        </head>
+        <body className="flex min-h-full flex-col bg-background text-foreground antialiased overflow-x-hidden overflow-y-auto">
+          {/* Header Section (wrapped in Suspense to support useSearchParams) */}
+          <Suspense fallback={null}>
+            <HeaderNav />
+          </Suspense>
 
-        {/* Main Content - Conditional styling for results page */}
-        <main className="flex-1 w-full">{children}</main>
+          {/* Main Content - Conditional styling for results page */}
+          <main className="flex-1 w-full">{children}</main>
 
-        {/* Footer Section */}
-        <Footer />
+          {/* Footer Section */}
+          <Footer />
 
-        {/* Global analytics + toasts */}
-        <Analytics />
-        <SpeedInsights />
-        <Toaster />
-      </body>
-    </html>
+          {/* Global analytics + toasts */}
+          <Analytics />
+          <SpeedInsights />
+          <Toaster />
+        </body>
+      </html>
+    </ThemeProvider>
   );
 }
 

@@ -113,9 +113,9 @@ export default function CandidateDashboardLayout({
       </Sheet>
 
       {/* Desktop Sidebar - Hidden on Mobile */}
-      <aside className="hidden md:block w-64 bg-white border-r border-gray-200 flex flex-col">
-        <div className="p-4 border-b border-gray-200">
-          <h2 className="text-xl font-semibold text-gray-800">
+      <aside className="hidden md:block w-64 bg-card border-r border-border flex flex-col">
+        <div className="p-4 border-b border-border/70">
+          <h2 className="text-xl font-semibold text-foreground">
             Welcome, {user?.firstName || "Candidate"}!
           </h2>
         </div>

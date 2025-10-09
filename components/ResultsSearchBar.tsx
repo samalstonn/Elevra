@@ -7,7 +7,7 @@ import Link from "next/link";
 
 // 2) Add this just after your imports:
 const CHIP_CLASS =
-  "inline-flex items-center bg-gray-200 px-2 py-1 rounded-full mr-2 mb-2 text-sm";
+  "inline-flex items-center bg-muted px-2 py-1 rounded-full mr-2 mb-2 text-sm text-muted-foreground gap-1";
 
 export type SearchResult = {
   id: string;
@@ -140,19 +140,19 @@ export default function SearcxhBar({
             key={item.id}
             role="option"
             aria-selected={selectedItems.some((s) => s.id === item.id)}
-            className={`px-4 py-2 text-sm cursor-pointer flex flex-col hover:bg-purple-50 transition-colors `}
+            className={`px-4 py-2 text-sm cursor-pointer flex flex-col transition-colors hover:bg-purple-50/80 dark:hover:bg-purple-500/20`}
             style={{ textAlign: "left" }}
           >
             <span className="font-medium" style={{ textAlign: "left" }}>
               {item.name}
             </span>
             <span
-              className="text-gray-500 text-xs"
+              className="text-muted-foreground text-xs"
               style={{ textAlign: "left" }}
             >
               {item.currentRole} •{" "}
               {item.currentCity && item.currentState ? (
-                <span className="text-purple-500">
+                <span className="text-purple-500 dark:text-purple-300">
                   {item.currentCity}, {item.currentState}
                 </span>
               ) : null}
@@ -165,14 +165,14 @@ export default function SearcxhBar({
     else if (item.position) {
       return (
         <>
-          <div className="font-semibold">{item.position}</div>
+          <div className="font-semibold text-foreground">{item.position}</div>
           {item.city && item.state && (
-            <div className="text-gray-600 text-sm">
+            <div className="text-muted-foreground text-sm">
               {item.city}, {item.state}
             </div>
           )}
           {item.date && (
-            <div className="text-purple-500 text-xs">
+            <div className="text-purple-500 dark:text-purple-300 text-xs">
               {new Date(item.date).toLocaleDateString()}
             </div>
           )}
@@ -214,25 +214,28 @@ export default function SearcxhBar({
         </div>
       )}
       <motion.div
-        className={`flex items-center bg-white border border-gray-300 px-3 py-2 rounded-full ${
+        className={`flex items-center px-3 py-2 rounded-full border border-border bg-card/90 backdrop-blur-sm dark:bg-card/70 ${
           shadow ? "shadow-md" : ""
         }`}
         initial={{ opacity: 0 }}
         animate={{ opacity: 1, transition: { duration: 0.3 } }}
       >
-        <Search className="text-gray-500 mr-2 w-5 h-5" />
+        <Search className="text-muted-foreground mr-2 w-5 h-5" />
         <input
           type="text"
-          className="outline-none w-full text-sm text-gray-700 placeholder-gray-400"
+          className="outline-none w-full text-sm bg-transparent text-foreground placeholder:text-muted-foreground"
           placeholder={placeholder}
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
         />
       </motion.div>
       {results.length > 0 && (
-        <ul className="absolute left-0 right-0 bg-white border border-gray-300 mt-1 rounded-md shadow-lg max-h-60 overflow-y-auto z-10">
+        <ul className="absolute left-0 right-0 bg-card border border-border/80 mt-1 rounded-md shadow-lg max-h-60 overflow-y-auto z-10 backdrop-blur-sm">
           {results.map((item, index) => (
-            <li key={item.id || index} className="px-4 py-2 hover:bg-gray-100">
+            <li
+              key={item.id || index}
+              className="px-4 py-2 transition-colors hover:bg-muted/70"
+            >
               {/* Render differently based on if we use onResultSelect prop */}
               {onResultSelect ? (
                 <div
@@ -265,7 +268,7 @@ export default function SearcxhBar({
         </ul>
       )}
       {isLoading && (
-        <div className="absolute right-2 top-2 text-gray-500 text-xs">
+        <div className="absolute right-2 top-2 text-muted-foreground text-xs">
           Loading...
         </div>
       )}

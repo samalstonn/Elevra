@@ -59,10 +59,10 @@ export default function CandidateEndorsementsClient({ user, data }: Props) {
   return (
     <div className="min-h-screen p-6 space-y-12">
       <header className="space-y-2">
-        <h1 className="text-3xl font-bold text-gray-900">
+        <h1 className="text-3xl font-bold text-foreground">
           Endorsements Overview
         </h1>
-        <p className="text-gray-600">
+        <p className="text-muted-foreground">
           Welcome, {user.firstName || user.username || "Candidate"}! Here&apos;s
           a summary of endorsements you&apos;ve received.
         </p>
@@ -75,11 +75,11 @@ export default function CandidateEndorsementsClient({ user, data }: Props) {
       </section>
 
       <section>
-        <h2 className="text-2xl font-semibold text-gray-900 mb-4">
+        <h2 className="text-2xl font-semibold text-foreground mb-4">
           Recent Endorsements
         </h2>
         {endorsements.length === 0 ? (
-          <div className="p-6 border border-gray-200 rounded-xl text-center text-gray-500">
+          <div className="p-6 border border-border/70 rounded-xl text-center text-muted-foreground">
             No endorsements yet.
           </div>
         ) : (
@@ -87,7 +87,7 @@ export default function CandidateEndorsementsClient({ user, data }: Props) {
             {endorsements.map((endorsement) => (
               <li
                 key={endorsement.id}
-                className="relative p-4 border border-gray-200 rounded-xl flex items-start gap-4 bg-white shadow-sm"
+                className="relative p-4 border border-border/70 rounded-xl flex items-start gap-4 bg-card shadow-sm"
               >
                 <button
                   onClick={() => handleDelete(endorsement.id)}
@@ -96,20 +96,22 @@ export default function CandidateEndorsementsClient({ user, data }: Props) {
                 >
                   &times;
                 </button>
-                <div className="rounded-full bg-gray-100 p-2">
-                  <UserCircle2 className="h-6 w-6 text-gray-500" />
+                <div className="rounded-full bg-muted p-2">
+                  <UserCircle2 className="h-6 w-6 text-muted-foreground" />
                 </div>
                 <div className="flex-1">
-                  <p className="font-medium text-gray-800">
+                  <p className="font-medium text-foreground">
                     {endorsement.endorserName}
                   </p>
                   {endorsement.relationshipDescription && (
-                    <p className="text-sm text-gray-500">
+                    <p className="text-sm text-muted-foreground">
                       {endorsement.relationshipDescription}
                     </p>
                   )}
-                  <p className="mt-2 text-gray-700">{endorsement.content}</p>
-                  <p className="mt-2 text-xs text-gray-400">
+                  <p className="mt-2 text-foreground/90">
+                    {endorsement.content}
+                  </p>
+                  <p className="mt-2 text-xs text-muted-foreground">
                     {new Date(endorsement.createdAt).toLocaleDateString()}
                   </p>
                 </div>

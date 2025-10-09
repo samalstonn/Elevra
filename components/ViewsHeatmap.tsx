@@ -59,13 +59,15 @@ export default function ViewsHeatmap({
 
   if (candidateId == null || Number.isNaN(candidateId)) {
     return (
-      <div className="text-xs text-gray-500">Waiting for candidate...</div>
+      <div className="text-xs text-muted-foreground">
+        Waiting for candidate...
+      </div>
     );
   }
 
   if (loading)
     return (
-      <div className="text-xs text-gray-500">
+      <div className="text-xs text-muted-foreground">
         Loading time-of-day activity...
       </div>
     );
@@ -99,16 +101,16 @@ export default function ViewsHeatmap({
     : max;
   const hoursCount = isMobile ? Math.ceil(24 / HOUR_GROUP) : 24;
   const scaleColor = (value: number) => {
-    if (colorMax === 0) return "#f3f4f6"; // gray-100 when no data
+    if (colorMax === 0) return "rgba(148, 163, 184, 0.12)";
     const ratioRaw = value / colorMax;
     const ratio = Math.min(1, Math.max(0, ratioRaw)); // clamp 0..1
-    // Interpolate light purple to deep purple (no overshoot due to clamp)
-    const start = { r: 237, g: 233, b: 254 }; // indigo-50
-    const end = { r: 91, g: 33, b: 182 }; // indigo-800
+    const start = { r: 148, g: 163, b: 184 };
+    const end = { r: 168, g: 85, b: 247 };
     const r = Math.round(start.r + (end.r - start.r) * ratio);
     const g = Math.round(start.g + (end.g - start.g) * ratio);
     const b = Math.round(start.b + (end.b - start.b) * ratio);
-    return `rgb(${r}, ${g}, ${b})`;
+    const alpha = 0.18 + ratio * 0.5;
+    return `rgba(${r}, ${g}, ${b}, ${alpha.toFixed(3)})`;
   };
   return (
     <div className="space-y-3">
@@ -132,7 +134,7 @@ export default function ViewsHeatmap({
               return (
                 <div
                   key={h}
-                  className="text-center text-[10px] text-gray-500"
+                  className="text-center text-[10px] text-muted-foreground"
                   title={`${hour12}:00 ${isAM ? "AM" : "PM"}`}
                 >
                   {label}
@@ -149,7 +151,7 @@ export default function ViewsHeatmap({
             return (
               <div
                 key={idx}
-                className="text-center text-[10px] text-gray-500"
+                className="text-center text-[10px] text-muted-foreground"
                 title={`${startHour12}:00 - ${endHour12}:59`}
               >
                 {label}
@@ -158,7 +160,7 @@ export default function ViewsHeatmap({
           })}
           {displayMatrix.map((row, day) => (
             <React.Fragment key={day}>
-              <div className="text-[11px] font-medium text-gray-600 flex items-center">
+              <div className="text-[11px] font-medium text-muted-foreground flex items-center">
                 {dayLabels[day]}
               </div>
               {row.map((val, colIdx) => {
@@ -186,7 +188,7 @@ export default function ViewsHeatmap({
                       setHover({ day, hour: colIdx, value: val })
                     }
                     onMouseLeave={() => setHover(null)}
-                    className="relative h-5 w-full rounded-sm transition-colors focus:outline-none focus:ring-1 focus:ring-purple-500"
+                    className="relative h-5 w-full rounded-sm transition-colors focus:outline-none focus:ring-1 focus:ring-purple-400/60"
                     style={{ backgroundColor: color }}
                     aria-label={`${val} view${val !== 1 ? "s" : ""} on ${
                       dayLabels[day]
@@ -218,9 +220,9 @@ export default function ViewsHeatmap({
         </div>
       </div>
       <div className="flex items-center gap-2">
-        <span className="text-[10px] text-gray-500">Low</span>
-        <div className="flex-1 h-2 bg-gradient-to-r from-indigo-50 to-indigo-800 rounded" />
-        <span className="text-[10px] text-gray-500">High</span>
+        <span className="text-[10px] text-muted-foreground">Low</span>
+        <div className="flex-1 h-2 bg-gradient-to-r from-purple-200/60 via-purple-500/60 to-purple-900/60 dark:from-purple-900/40 dark:via-purple-600/60 dark:to-purple-400/80 rounded" />
+        <span className="text-[10px] text-muted-foreground">High</span>
       </div>
     </div>
   );

@@ -307,11 +307,11 @@ export default function SearchBar({ onSearch }: SearchBarProps) {
     <div className="w-full px-4 sm:px-6 lg:px-8">
       <div
         ref={searchContainerRef}
-        className="relative flex items-center shadow-lg rounded-full w-full max-w-4xl mx-auto p-2 sm:p-3"
+        className="relative flex items-center w-full max-w-4xl mx-auto p-2 sm:p-3 rounded-full border border-border/60 bg-transparent backdrop-blur-sm"
         onClick={handleContainerClick}
       >
         {/* Icon */}
-        <div className="pl-2 pb-1 flex items-center justify-center text-gray-600">
+        <div className="pl-2 pb-1 flex items-center justify-center text-muted-foreground">
           <MapPinned className="w-6 h-6 sm:w-7 sm:h-7" />
         </div>
 
@@ -329,7 +329,7 @@ export default function SearchBar({ onSearch }: SearchBarProps) {
                 setShowSuggestions(true);
               }
             }}
-            className="w-full px-4 py-2 text-base sm:px-6 sm:py-4 sm:text-lg border-none rounded-l-full focus:outline-none focus:ring-0 text-left search-input"
+            className="w-full px-4 py-2 text-base sm:px-6 sm:py-4 sm:text-lg border-none rounded-l-full bg-transparent focus:outline-none focus:ring-0 text-left text-foreground placeholder:text-muted-foreground search-input"
             style={{ textAlign: "left" }}
             aria-autocomplete="list"
             aria-expanded={showSuggestions}
@@ -360,20 +360,21 @@ export default function SearchBar({ onSearch }: SearchBarProps) {
           className={`
             flex items-center justify-center w-10 h-10 sm:w-14 sm:h-14
             border-2 border-purple-600
-            bg-white
-            text-purple-600
-            hover:bg-purple-50
+            bg-purple-600
+            text-purple-50
+            hover:bg-purple-500
             disabled:opacity-50
             rounded-full
             transition-all
             cursor-pointer
+            focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-300/60
           `}
           aria-label="Search location"
         >
           {isSubmitting ? (
-            <Loader2 className="w-6 h-6 sm:w-7 sm:h-7 text-purple-600 animate-spin" />
+            <Loader2 className="w-6 h-6 sm:w-7 sm:h-7 text-white animate-spin" />
           ) : (
-            <ChevronRight className="w-6 h-6 sm:w-7 sm:h-7 text-purple-600" />
+            <ChevronRight className="w-6 h-6 sm:w-7 sm:h-7 text-white" />
           )}
         </button>
       </div>

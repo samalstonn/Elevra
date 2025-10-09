@@ -138,7 +138,7 @@ export const LiveElectionBanner: React.FC<LiveElectionBannerProps> = ({
 
   return (
     <section
-      className={`bg-purple-50 border-y border-purple-200 py-5 ${className}`}
+      className={`bg-purple-50 dark:bg-purple-900/20 border-y border-purple-200/70 dark:border-purple-400/30 py-5 ${className}`}
       style={
         fullWidth
           ? {
@@ -195,15 +195,15 @@ export const LiveElectionBanner: React.FC<LiveElectionBannerProps> = ({
                   aria-label={`View election results for ${location}`}
                   aria-hidden={isDuplicate}
                   role="listitem"
-                  className="shrink-0 w-52 sm:w-60 md:w-64 bg-white rounded-md px-3 py-2.5 shadow-sm hover:shadow-md hover:bg-purple-100 transition flex flex-col justify-between focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-500"
+                  className="shrink-0 w-52 sm:w-60 md:w-64 rounded-md border border-border/60 bg-white/95 dark:bg-card/80 px-3 py-2.5 shadow-sm hover:shadow-md hover:bg-purple-100/90 dark:hover:bg-purple-500/25 transition flex flex-col justify-between focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-400/60"
                 >
                   <span
-                    className="font-medium text-xs sm:text-sm text-gray-900 truncate"
+                    className="font-medium text-xs sm:text-sm text-foreground truncate"
                     title={location}
                   >
                     {location}
                   </span>
-                  <div className="mt-0.5 text-[10px] sm:text-[11px] text-gray-600 leading-snug line-clamp-3">
+                  <div className="mt-0.5 text-[10px] sm:text-[11px] text-muted-foreground leading-snug line-clamp-3">
                     {e.positions.slice(0, 3).join(" • ")}
                     {e.positions.length > 3 && ` • +${e.positions.length - 3}`}
                   </div>
@@ -211,7 +211,7 @@ export const LiveElectionBanner: React.FC<LiveElectionBannerProps> = ({
               );
             })}
           </div>
-          <div className="pointer-events-none absolute inset-y-0 right-0 w-12 bg-gradient-to-l from-purple-50 to-transparent" />
+          <div className="pointer-events-none absolute inset-y-0 right-0 w-12 bg-gradient-to-l from-purple-50/90 via-purple-50/30 to-transparent dark:from-background/80 dark:via-background/20" />
         </div>
       )}
       {showViewAllLink && suggested.length > 0 && (

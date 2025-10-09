@@ -201,7 +201,6 @@ export default function OverviewPage() {
           templates. It only takes a couple of minutes.
         </p>
       </TourModal>
-
       {/* Tour: Opt-out friendly confirmation */}
       <TourModal
         open={showOptOut}
@@ -222,7 +221,6 @@ export default function OverviewPage() {
           page!
         </p>
       </TourModal>
-
       {/* Tour: Step 1 (Overview) */}
       <TourModal
         open={showStep1}
@@ -312,70 +310,6 @@ export default function OverviewPage() {
           </div>
         </DialogContent>
       </Dialog>
-
-      {/* Public Profile Preview */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Public Profile Preview</CardTitle>
-          <CardDescription>
-            This is how your campaign header appears to voters.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          {candidate ? (
-            <div className="rounded-lg border border-dashed border-border bg-white p-4">
-              <CandidateProfileHeader
-                candidate={candidate}
-                showVerifyButton={false}
-              />
-            </div>
-          ) : (
-            <div className="text-sm text-muted-foreground">
-              Loading profile preview...
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Quick Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <Card className="opacity-50 bg-gray-50">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
-              Mailing List Subscribers
-            </CardTitle>
-            <Mail className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">0</div>
-            <p className="text-xs text-muted-foreground">Coming soon...</p>{" "}
-            {/* Placeholder change */}
-          </CardContent>
-        </Card>
-        <Card className="opacity-50 bg-gray-50">
-          {" "}
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
-              Total Donations
-            </CardTitle>
-            <HandCoins className="h-4 w-4 text-muted-foreground" />{" "}
-            {/* Use correct icon */}
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              $
-              {typeof donationTotal === "number"
-                ? donationTotal.toLocaleString(undefined, {
-                    minimumFractionDigits: 2,
-                    maximumFractionDigits: 2,
-                  })
-                : donationTotal}
-            </div>
-            <p className="text-xs text-muted-foreground">Coming soon...</p>{" "}
-          </CardContent>
-        </Card>
-      </div>
-
       {/* Quick Actions Card */}
       <Card>
         <CardHeader>
@@ -433,6 +367,29 @@ export default function OverviewPage() {
           </Button> */}
         </CardContent>
       </Card>
+      {/* Public Profile Preview */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Public Profile Preview</CardTitle>
+          <CardDescription>
+            This is how your campaign header appears to voters.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {candidate ? (
+            <div className="rounded-lg border border-dashed border-border bg-card p-4">
+              <CandidateProfileHeader
+                candidate={candidate}
+                showVerifyButton={false}
+              />
+            </div>
+          ) : (
+            <div className="text-sm text-muted-foreground">
+              Loading profile preview...
+            </div>
+          )}
+        </CardContent>
+      </Card>{" "}
       {!isPremium && (
         <Alert className="bg-blue-50 border-blue-200 text-blue-800">
           <CreditCard className="h-4 w-4 !text-blue-800" />{" "}
@@ -449,6 +406,44 @@ export default function OverviewPage() {
           </AlertDescription>
         </Alert>
       )}
+      {/* Quick Stats Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <Card className="opacity-50 bg-muted/40 dark:bg-muted/30">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">
+              Mailing List Subscribers
+            </CardTitle>
+            <Mail className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">0</div>
+            <p className="text-xs text-muted-foreground">Coming soon...</p>{" "}
+            {/* Placeholder change */}
+          </CardContent>
+        </Card>
+        <Card className="opacity-50 bg-muted/40 dark:bg-muted/30">
+          {" "}
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">
+              Total Donations
+            </CardTitle>
+            <HandCoins className="h-4 w-4 text-muted-foreground" />{" "}
+            {/* Use correct icon */}
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              $
+              {typeof donationTotal === "number"
+                ? donationTotal.toLocaleString(undefined, {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2,
+                  })
+                : donationTotal}
+            </div>
+            <p className="text-xs text-muted-foreground">Coming soon...</p>{" "}
+          </CardContent>
+        </Card>
+      </div>
       {/* Placeholder for Recent Activity or Notifications */}
       {/* <Card>
         <CardHeader>

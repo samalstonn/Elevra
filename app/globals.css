@@ -3,9 +3,7 @@
 @tailwind utilities;
 
 body {
-  font-family: 'Noto Sans Japanese', sans-serif;
-  background-color: #ffffff;
-  color: #333333;
+  font-family: "Noto Sans Japanese", sans-serif;
 }
 
 /* Utility to aggressively wrap long uninterrupted tokens (URLs, long roles, etc.) */
@@ -97,6 +95,72 @@ body {
    input:-webkit-autofill,
    textarea:-webkit-autofill,
    select:-webkit-autofill {
-     -webkit-box-shadow: 0 0 0 50px #ffffff inset !important;
-     -webkit-text-fill-color: #000000 !important;
+     -webkit-box-shadow: 0 0 0 50px hsl(var(--background)) inset !important;
+     -webkit-text-fill-color: hsl(var(--foreground)) !important;
    }
+
+@layer base {
+  .dark .bg-white {
+    background-color: hsl(var(--card)) !important;
+  }
+  .dark .bg-white\/80 {
+    background-color: hsl(var(--card) / 0.8) !important;
+  }
+  .dark .bg-white\/70 {
+    background-color: hsl(var(--card) / 0.7) !important;
+  }
+  .dark .bg-white\/60 {
+    background-color: hsl(var(--card) / 0.6) !important;
+  }
+  .dark .bg-white\/50 {
+    background-color: hsl(var(--card) / 0.5) !important;
+  }
+  .dark .bg-gray-50 {
+    background-color: rgba(255, 255, 255, 0.04) !important;
+  }
+  .dark .bg-gray-100 {
+    background-color: rgba(255, 255, 255, 0.08) !important;
+  }
+  .dark .bg-gray-200 {
+    background-color: rgba(255, 255, 255, 0.12) !important;
+  }
+  .dark .hover\:bg-gray-50:hover {
+    background-color: rgba(255, 255, 255, 0.06) !important;
+  }
+  .dark .hover\:bg-gray-100:hover {
+    background-color: rgba(255, 255, 255, 0.1) !important;
+  }
+  .dark .bg-purple-50,
+  .dark .hover\:bg-purple-50:hover {
+    background-color: rgba(168, 85, 247, 0.16) !important;
+    color: hsl(var(--primary-foreground));
+  }
+  .dark .bg-purple-100 {
+    background-color: rgba(168, 85, 247, 0.28) !important;
+    color: hsl(var(--primary-foreground));
+  }
+  .dark .border-gray-100,
+  .dark .border-gray-200,
+  .dark .border-gray-300 {
+    border-color: rgba(255, 255, 255, 0.12) !important;
+  }
+  .dark .border-purple-200 {
+    border-color: rgba(168, 85, 247, 0.35) !important;
+  }
+  .dark .text-gray-900,
+  .dark .text-gray-800,
+  .dark .text-black {
+    color: hsl(var(--foreground)) !important;
+  }
+  .dark .text-gray-700,
+  .dark .text-gray-600,
+  .dark .text-gray-500,
+  .dark .text-gray-400,
+  .dark .text-gray-300 {
+    color: hsl(var(--muted-foreground)) !important;
+  }
+  .dark .text-gray-200,
+  .dark .text-gray-100 {
+    color: hsl(var(--muted-foreground)) !important;
+  }
+}

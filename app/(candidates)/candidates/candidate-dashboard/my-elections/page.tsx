@@ -413,7 +413,7 @@ export default function ProfileSettingsPage() {
 
       {/* Page Heading */}
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900">
+        <h1 className="text-3xl font-bold text-foreground">
           Your Public Campaign Pages
         </h1>
       </div>
@@ -426,14 +426,14 @@ export default function ProfileSettingsPage() {
                 return (
                   <article
                     key="placeholder-current"
-                    className="flex h-full flex-col justify-between rounded-xl border border-dashed border-gray-300 bg-white/70 p-6 shadow-sm"
+                    className="flex h-full flex-col justify-between rounded-xl border border-dashed border-border/70 bg-card/80 dark:bg-card/70 p-6 shadow-sm"
                   >
                     <div className="space-y-4">
                       <div>
-                        <h2 className="text-xl font-semibold text-gray-700">
+                        <h2 className="text-xl font-semibold text-foreground">
                           Add Your First Campaign
                         </h2>
-                        <p className="text-sm text-gray-500">
+                        <p className="text-sm text-muted-foreground">
                           Create your campaign and unlock your personalized
                           campaign page.
                         </p>
@@ -474,14 +474,14 @@ export default function ProfileSettingsPage() {
               return (
                 <article
                   key={link.electionId}
-                  className="flex h-full flex-col justify-between rounded-xl border bg-white/80 p-6 shadow-sm backdrop-blur transition hover:shadow-md"
+                  className="flex h-full flex-col justify-between rounded-xl border border-border/60 bg-card/80 dark:bg-card/70 p-6 shadow-sm backdrop-blur transition hover:shadow-md"
                 >
                   <div className="space-y-3">
                     <div>
-                      <h2 className="text-xl font-semibold text-gray-900">
+                      <h2 className="text-xl font-semibold text-foreground">
                         {link.election?.position ?? "Election"}
                       </h2>
-                      <p className="text-sm text-gray-500">
+                      <p className="text-sm text-muted-foreground">
                         {link.election?.city ?? ""}
                         {link.election?.city && link.election?.state
                           ? ", "
@@ -499,7 +499,7 @@ export default function ProfileSettingsPage() {
                             <span className="text-[10px] uppercase tracking-wide text-purple-500">
                               {snippet.label}
                             </span>
-                            <p className="text-sm text-gray-700 leading-relaxed line-clamp-4">
+                            <p className="text-sm text-muted-foreground leading-relaxed line-clamp-4">
                               {snippet.text}
                             </p>
                           </div>
@@ -511,13 +511,13 @@ export default function ProfileSettingsPage() {
                           <span className="text-[10px] uppercase tracking-wide text-purple-500">
                             Custom Campaign
                           </span>
-                          <p className="text-sm text-gray-700 leading-relaxed line-clamp-4">
+                          <p className="text-sm text-muted-foreground leading-relaxed line-clamp-4">
                             {docPreview}
                           </p>
                         </div>
                       </div>
                     ) : (
-                      <p className="text-sm text-gray-500">
+                      <p className="text-sm text-muted-foreground">
                         You haven’t customized this election yet. Jump into the
                         editor to personalize your template.
                       </p>
@@ -619,16 +619,16 @@ export default function ProfileSettingsPage() {
                   type="button"
                   onClick={() => setTemplateSelection(card.key)}
                   className={cn(
-                    "w-full rounded-lg border p-4 text-left transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-500",
+                    "w-full rounded-lg border p-4 text-left transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-500/60",
                     isSelected
-                      ? "border-purple-500 bg-purple-50 shadow-sm"
-                      : "border-gray-200 hover:border-purple-200 hover:bg-purple-50/40"
+                      ? "border-purple-500 bg-purple-50 dark:bg-purple-500/15 shadow-sm"
+                      : "border-border hover:border-purple-300/70 hover:bg-purple-50/40 dark:hover:bg-purple-500/10"
                   )}
                   aria-pressed={isSelected}
                 >
                   <div className="flex flex-col h-full">
                     <div className="flex items-center justify-between gap-2 mb-1">
-                      <p className="text-sm font-semibold text-gray-900">
+                      <p className="text-sm font-semibold text-foreground">
                         {card.title}
                       </p>
                       <span
@@ -636,11 +636,11 @@ export default function ProfileSettingsPage() {
                           "h-2.5 w-2.5 rounded-full border flex-shrink-0",
                           isSelected
                             ? "border-purple-600 bg-purple-600"
-                            : "border-gray-300 bg-white"
+                            : "border-border bg-card"
                         )}
                       />
                     </div>
-                    <p className="text-xs text-gray-500 mb-3">
+                    <p className="text-xs text-muted-foreground mb-3">
                       {card.description}
                     </p>
                     <div className="flex-1 space-y-2">
@@ -649,7 +649,7 @@ export default function ProfileSettingsPage() {
                           <span className="text-[10px] uppercase tracking-wide text-purple-500">
                             {snippet.label}
                           </span>
-                          <p className="text-xs text-gray-600 line-clamp-2">
+                          <p className="text-xs text-muted-foreground line-clamp-2">
                             {snippet.text}
                           </p>
                         </div>
@@ -693,7 +693,7 @@ export default function ProfileSettingsPage() {
           <DialogHeader>
             <DialogTitle className="text-lg">Find an Election</DialogTitle>
           </DialogHeader>
-          <p className="text-sm text-gray-500 mb-4">
+          <p className="text-sm text-muted-foreground mb-4">
             Search by city, state, or position to link your campaign.
           </p>
           <SearchBar

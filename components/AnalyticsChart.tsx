@@ -139,7 +139,9 @@ export default function AnalyticsChart({
   })();
   return (
     <div className="h-[300px] w-full">
-      {loading && <div className="text-xs text-gray-500">Loading chart...</div>}
+      {loading && (
+        <div className="text-xs text-muted-foreground">Loading chart...</div>
+      )}
       {error && <div className="text-xs text-red-500">{error}</div>}
       {!loading && !error && data.length > 0 && (
         <ResponsiveContainer width="100%" height="100%">
@@ -152,7 +154,10 @@ export default function AnalyticsChart({
               bottom: 0,
             }}
           >
-            <CartesianGrid strokeDasharray="3 3" />
+            <CartesianGrid
+              stroke="rgba(148, 163, 184, 0.2)"
+              strokeDasharray="3 3"
+            />
             <XAxis
               dataKey="date"
               interval={0}
@@ -175,15 +180,35 @@ export default function AnalyticsChart({
                 // Last resort: return raw tick
                 return String(tick);
               }}
-              tick={{ fontSize: isMobile ? 10 : 12 }}
+              tick={{
+                fontSize: isMobile ? 10 : 12,
+                fill: "hsl(var(--muted-foreground))",
+              }}
               minTickGap={isMobile ? 4 : 5}
+              axisLine={{ stroke: "hsl(var(--border))" }}
+              tickLine={{ stroke: "hsl(var(--border))" }}
             />
-            <YAxis tick={{ fontSize: 12 }} />
+            <YAxis
+              tick={{ fontSize: 12, fill: "hsl(var(--muted-foreground))" }}
+              axisLine={{ stroke: "hsl(var(--border))" }}
+              tickLine={{ stroke: "hsl(var(--border))" }}
+            />
             <Tooltip
               formatter={(value: number) => [
                 value,
                 isMobile ? "Views (3-day)" : "Profile Views",
               ]}
+              contentStyle={{
+                backgroundColor: "hsl(var(--card))",
+                border: "1px solid hsl(var(--border))",
+                borderRadius: "0.75rem",
+                color: "hsl(var(--foreground))",
+              }}
+              labelStyle={{
+                color: "hsl(var(--muted-foreground))",
+                fontWeight: 500,
+              }}
+              cursor={{ stroke: "hsl(var(--primary))", strokeWidth: 1 }}
               labelFormatter={(label, payload) => {
                 const isoDayPattern = /^\d{4}-\d{2}-\d{2}$/;
                 const fmtIso = (str: string) => {
@@ -214,10 +239,10 @@ export default function AnalyticsChart({
             <Area
               type="monotone"
               dataKey="views"
-              stroke="#8884d8"
-              fill="#8884d8"
+              stroke="hsl(var(--primary))"
+              fill="hsl(var(--primary))"
               name="Profile Views"
-              fillOpacity={0.4}
+              fillOpacity={0.25}
             />
           </AreaChart>
         </ResponsiveContainer>
