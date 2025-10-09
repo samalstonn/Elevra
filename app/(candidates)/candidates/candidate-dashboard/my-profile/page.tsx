@@ -130,10 +130,7 @@ export default function BioSettingsPage() {
           Keep your basics, bio, education, and links up to date so voters see
           the full story.
         </p>
-        <p>
-          A polished profile powers your public page today and unlocks stronger
-          endorsements and analytics when you upgrade.
-        </p>
+        <p>A polished profile powers your public page.</p>
         <p>Tip: Fully completed profiles attract noticeably more traction.</p>
       </TourModal>
       <div className="flex flex-col md:flex-row gap-6 min-w-0">
