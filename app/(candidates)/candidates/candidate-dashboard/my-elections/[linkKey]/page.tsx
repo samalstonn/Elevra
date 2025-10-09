@@ -20,6 +20,7 @@ import { useRouter } from "next/navigation";
 import { usePageTitle } from "@/lib/usePageTitle";
 import { decodeEditorLinkKey } from "../utils";
 import { SimpleEditor } from "@/components/tiptap-templates/simple/simple-editor";
+import { useUser } from "@clerk/nextjs";
 
 interface EditorPageProps {
   params: Promise<{
@@ -42,9 +43,14 @@ export default function MyPageEditor({ params }: EditorPageProps) {
 
   const [showTutorial, setShowTutorial] = useState(false);
   const [dontShowAgain, setDontShowAgain] = useState(false);
+  const [showPremiumNotice, setShowPremiumNotice] = useState(true);
 
   const decodedLinkKey = useMemo(() => decodeEditorLinkKey(linkKey), [linkKey]);
   const activeElectionId = decodedLinkKey?.electionId ?? null;
+
+  const { user, isLoaded } = useUser();
+  const isPremium =
+    user?.publicMetadata.candidateSubscriptionTier === "premium";
 
   const closeTutorial = () => {
     if (dontShowAgain && typeof window !== "undefined") {
@@ -292,6 +298,58 @@ export default function MyPageEditor({ params }: EditorPageProps) {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      {isPremium &&
+        activeLink.ContentBlock?.length === 3 &&
+        showPremiumNotice && (
+          <Dialog open={showPremiumNotice} onOpenChange={setShowPremiumNotice}>
+            <DialogContent className="max-w-md">
+              <button
+                className="absolute top-4 right-4 text-gray-500 hover:text-gray-700"
+                onClick={() => setShowPremiumNotice(false)}
+                aria-label="Close"
+              >
+                <X className="h-4 w-4" />
+              </button>
+              <DialogHeader>
+                <DialogTitle>Premium User Notice</DialogTitle>
+              </DialogHeader>
+
+              <div className="space-y-2 text-sm text-gray-700">
+                <p>
+                  We noticed you{" "}
+                  <strong>
+                    are a premium user working with our basic campaign template.
+                  </strong>{" "}
+                  Please delete your campaign and re-add to see our premium
+                  template or start from scratch with our versatile editor!
+                </p>
+                <p>
+                  Reach out to{" "}
+                  <a
+                    href="mailto:team@elevracommunity.com"
+                    className="text-purple-600 underline hover:text-purple-700"
+                  >
+                    team@elevracommunity.com
+                  </a>{" "}
+                  with any questions.
+                </p>
+                <p className="text-sm text-gray-700">
+                  Make sure to copy anything from the basic template you want to
+                  keep before proceeding!
+                </p>
+              </div>
+
+              <DialogFooter className="flex justify-start mt-4">
+                <Button
+                  onClick={() => setShowPremiumNotice(false)}
+                  variant="purple"
+                >
+                  Got it
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+        )}
     </>
   );
 }
@@ -311,7 +369,7 @@ function SimpleEditorWrapper({
     undefined
   );
 
-  // eslint-disable-next-line 
+  // eslint-disable-next-line
   const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
@@ -321,7 +379,8 @@ function SimpleEditorWrapper({
         const res = await fetch(
           `/api/v1/document?candidateId=${candidateId}&electionId=${electionId}`
         );
-        if (!res.ok) throw new Error(`Failed to fetch document (${res.status})`);
+        if (!res.ok)
+          throw new Error(`Failed to fetch document (${res.status})`);
         const data = await res.json();
         if (!cancelled && data?.exists && data?.json) {
           setInitialContent(data.json);

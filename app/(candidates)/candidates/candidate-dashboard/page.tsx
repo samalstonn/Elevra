@@ -244,8 +244,8 @@ export default function OverviewPage() {
         onSecondary={skipTour}
       >
         <p>
-          Track your profile views here and use the quick actions to edit, share,
-          or restart your campaign setup.
+          Track your profile views here and use the quick actions to edit,
+          share, or restart your campaign setup.
         </p>
         <p>
           Upgrade anytime from the sidebar to unlock advanced analytics and a
@@ -258,55 +258,47 @@ export default function OverviewPage() {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <FaCheckCircle className="text-green-500" />
-              You’re Verified on Elevra!
+              Welcome to Elevra!
             </DialogTitle>
           </DialogHeader>
-          <div className="text-left text-gray-700 text-sm space-y-4 leading-relaxed">
-            <p>
-              Your candidate profile is live and discoverable to voters. Welcome
-              aboard!
-            </p>
-            <ul className="list-disc pl-5 space-y-2">
-              <li>
-                <strong>You have a verified badge</strong> beside your name —
-                verified candidates show up higher in search.
-              </li>
-            </ul>
-            {electionLinks && electionLinks.length > 0 && (
-              <p>
-                Your campaign is now active for{" "}
-                <strong>
-                  {electionLinks
-                    .map((l) => {
-                      const { position, city, state } = l.election || {};
-                      let result = position || "";
-                      if (city) result += ` in ${city}`;
-                      if (state) result += `, ${state}`;
-                      return result;
-                    })
-                    .filter(Boolean)
-                    .join("; ")}
-                </strong>
-                . Visit the{" "}
-                <Link
-                  href="/candidates/candidate-dashboard/my-elections"
-                  className="text-purple-600 underline"
-                >
-                  Campaign tab
-                </Link>{" "}
-                on the left to update your election details and customize your
-                public page.
-              </p>
-            )}
-            <p>
-              You’re ready to engage with voters on Elevra! Please let us know
-              at team@elevracommunity.com what features are important to you.
-            </p>
-            <p>
-              We’d love your feedback — reply to your onboarding email or
-              contact us anytime with ideas or questions.
-            </p>
-          </div>
+          <ul className="text-left text-gray-700 text-sm space-y-4 leading-relaxed list-disc pl-5">
+            <li>
+              Your campaign is now active for{" "}
+              <strong>
+                {electionLinks
+                  .map((l) => {
+                    const { position, city, state } = l.election || {};
+                    let result = position || "";
+                    if (city) result += ` in ${city}`;
+                    if (state) result += `, ${state}`;
+                    return result;
+                  })
+                  .filter(Boolean)
+                  .join("; ")}
+              </strong>
+              .
+            </li>
+            <li>
+              Visit your{" "}
+              <Link
+                href="/candidates/candidate-dashboard/my-elections"
+                className="text-purple-600 underline"
+              >
+                Campaign tab
+              </Link>{" "}
+              to update your election details and customize your public page.
+            </li>
+            <li>
+              Email us at{" "}
+              <a
+                href="mailto:team@elevracommunity.com"
+                className="text-purple-600 underline"
+              >
+                team@elevracommunity.com
+              </a>{" "}
+              to let us know how else we can help with your campaign!
+            </li>
+          </ul>
           <div className="flex justify-end gap-2">
             <Button
               variant="outline"

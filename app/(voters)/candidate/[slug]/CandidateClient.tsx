@@ -10,7 +10,7 @@ import { FaCheckCircle, FaUserPlus, FaShare } from "react-icons/fa";
 import { Edit } from "lucide-react"; // Icons
 import { Button } from "@/components/ui/button";
 import { Candidate, Election } from "@prisma/client";
-import type { ContentBlock, ElectionLink } from "@prisma/client";
+import type { ContentBlock, ElectionLink, Document } from "@prisma/client";
 import { TabButton } from "@/components/ui/tab-button";
 import { EndorsementTab } from "./EndorsementTab";
 import { ContactTab } from "./ContactTab";
@@ -35,7 +35,7 @@ export default function CandidateClient({
   electionLinks: (ElectionLink & {
     election: ElectionWithCandidates;
     ContentBlock: ContentBlock[];
-    //Document?: Document | null; //currently broken in prisma as well; double check prisma.schema and page.tsx to see the issue with ElectionLink 
+    Document?: Document | null;
   })[];
   suggestedCandidates: Candidate[];
   isEditable: boolean;
