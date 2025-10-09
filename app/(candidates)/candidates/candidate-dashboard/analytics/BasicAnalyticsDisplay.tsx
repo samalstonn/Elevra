@@ -1,10 +1,17 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
+import AnalyticsChart from "@/components/AnalyticsChart";
 import { StatsCard } from "../../../../../components/StatsCard";
 import { EngagementChart } from "./EngagementChart";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Users, Target, MapPin, LucideProps } from "lucide-react";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Users, Target, MapPin, Eye, LucideProps } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useCandidate } from "@/lib/useCandidate";
 import ViewsHeatmap from "@/components/ViewsHeatmap";
@@ -32,6 +39,11 @@ interface LocationSummary {
     country?: string | null;
     source: "ipinfo" | "private" | "unknown";
   }[];
+}
+
+interface TimeseriesResponse {
+  totalViews?: number;
+  data?: { views?: number }[];
 }
 
 export function BasicAnalyticsDisplay() {
@@ -69,14 +81,26 @@ export function BasicAnalyticsDisplay() {
         if (!uniquesResp.ok) throw new Error("Failed to load unique visitors");
         if (!competitorsResp.ok)
           throw new Error("Failed to load competitor views");
-        const uniquesJson = (await uniquesResp.json()) as {
-          totalUniqueVisitors?: number;
-        };
-        const competitorsJson = (await competitorsResp.json()) as {
-          totalViews?: number;
-        };
+        const [viewsJson, uniquesJson, competitorsJson] = await Promise.all([
+          viewsResp.json() as Promise<TimeseriesResponse>,
+          uniquesResp.json() as Promise<{ totalUniqueVisitors?: number }>,
+          competitorsResp.json() as Promise<{ totalViews?: number }>,
+        ]);
+
+        const totalViews =
+          viewsJson.totalViews ??
+          viewsJson.data?.reduce(
+            (acc, point) => acc + (point.views ?? 0),
+            0
+          ) ??
+          0;
 
         const computed: AnalyticsStat[] = [
+          {
+            label: "Profile Views (Last 30d)",
+            value: totalViews,
+            icon: Eye,
+          },
           {
             label: "Unique Visitors (Last 30d)",
             value: uniquesJson.totalUniqueVisitors ?? 0,
@@ -197,6 +221,25 @@ export function BasicAnalyticsDisplay() {
           ))}
         </div>
       )}
+      {/* Profile Views Time Series */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Profile Views Over Time</CardTitle>
+          <CardDescription>Daily views for the last 30 days.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          {candidate ? (
+            <AnalyticsChart candidateId={candidate.id} days={30} />
+          ) : loading ? (
+            <div className="text-xs text-gray-500">Loading candidate...</div>
+          ) : (
+            <div className="text-xs text-gray-500">
+              Please create a campaign to have a visible profile
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
       {/* Top Locations */}
       <Card>
         <CardHeader>

@@ -21,7 +21,6 @@ import {
 import { FaShare } from "react-icons/fa"; // Importing FaShare
 import { Candidate, Donation } from "@prisma/client";
 import { useCandidate } from "@/lib/useCandidate";
-import AnalyticsChart from "@/components/AnalyticsChart";
 import { useSearchParams, useRouter } from "next/navigation";
 import { useUser } from "@clerk/nextjs";
 import {
@@ -44,9 +43,6 @@ export default function OverviewPage() {
   const router = useRouter();
   const { user, isLoaded } = useUser();
   const _verifiedSlug = searchParams.get("slug");
-  const [profileViews, setProfileViews] = useState<number | string>(
-    "Please create a campaign to have a visible profile"
-  );
   const [donationTotal, _] = useState<number | string>("Loading...");
   const { data: candidate, electionLinks } = useCandidate();
   const [showVerifiedModal, setShowVerifiedModal] = useState(false);
@@ -57,11 +53,6 @@ export default function OverviewPage() {
   const [pendingWelcome, setPendingWelcome] = useState(false);
   const isPremium =
     user?.publicMetadata.candidateSubscriptionTier === "premium";
-
-  useEffect(() => {
-    if (!candidate) return;
-    // Remove old single count fetch; replaced by timeseries aggregate via chart callback
-  }, [candidate]);
 
   // First-visit Welcome via Clerk metadata (always on first dashboard visit)
   useEffect(() => {
@@ -244,12 +235,11 @@ export default function OverviewPage() {
         onSecondary={skipTour}
       >
         <p>
-          Track your profile views here and use the quick actions to edit,
-          share, or restart your campaign setup.
+          Use the quick actions to edit, share, or restart your campaign setup.
         </p>
         <p>
-          Upgrade anytime from the sidebar to unlock advanced analytics and a
-          managed endorsements hub when you’re ready for more.
+          Upgrade anytime from the sidebar to unlock advanced analytics like
+          profile views, voter locations, along with a managed endorsements hub.
         </p>
         <p>Tip: Drag this window wherever you like while you explore.</p>
       </TourModal>
@@ -322,26 +312,7 @@ export default function OverviewPage() {
       </Dialog>
 
       {/* Quick Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Profile Views</CardTitle>
-            <Eye className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            {typeof profileViews === "string" ? (
-              <div className="text-xs text-gray-500 font-normal leading-snug">
-                {profileViews}
-              </div>
-            ) : (
-              <div className="text-2xl font-bold">{profileViews}</div>
-            )}
-            {/* <p className="text-xs text-muted-foreground">
-              +10% from last month
-            </p>{" "} */}
-            {/* Placeholder change */}
-          </CardContent>
-        </Card>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <Card className="opacity-50 bg-gray-50">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">
@@ -378,40 +349,6 @@ export default function OverviewPage() {
           </CardContent>
         </Card>
       </div>
-      {/* Profile Views Time Series */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Profile Views Over Time</CardTitle>
-          <CardDescription>Daily views for the last 30 days.</CardDescription>
-        </CardHeader>
-        <CardContent>
-          {candidate ? (
-            <AnalyticsChart
-              candidateId={candidate.id}
-              days={30}
-              onDataLoaded={({ total }) => setProfileViews(total)}
-            />
-          ) : (
-            <div className="text-xs text-gray-500">Loading candidate...</div>
-          )}
-        </CardContent>
-      </Card>
-      {!isPremium && (
-        <Alert className="bg-blue-50 border-blue-200 text-blue-800">
-          <CreditCard className="h-4 w-4 !text-blue-800" />{" "}
-          {/* Ensure icon color matches */}
-          <AlertTitle>Unlock Advanced Analytics</AlertTitle>
-          <AlertDescription>
-            Gain deeper insights into profile engagement, reach, and more.
-            <Link
-              href="/candidates/candidate-dashboard/upgrade"
-              className="font-semibold underline ml-2 hover:text-blue-900"
-            >
-              Upgrade Now
-            </Link>
-          </AlertDescription>
-        </Alert>
-      )}
 
       {/* Quick Actions Card */}
       <Card>
@@ -470,7 +407,22 @@ export default function OverviewPage() {
           </Button> */}
         </CardContent>
       </Card>
-
+      {!isPremium && (
+        <Alert className="bg-blue-50 border-blue-200 text-blue-800">
+          <CreditCard className="h-4 w-4 !text-blue-800" />{" "}
+          {/* Ensure icon color matches */}
+          <AlertTitle>Unlock Advanced Analytics</AlertTitle>
+          <AlertDescription>
+            Gain deeper insights into profile engagement, reach, and more.
+            <Link
+              href="/candidates/candidate-dashboard/upgrade"
+              className="font-semibold underline ml-2 hover:text-blue-900"
+            >
+              Upgrade Now
+            </Link>
+          </AlertDescription>
+        </Alert>
+      )}
       {/* Placeholder for Recent Activity or Notifications */}
       {/* <Card>
         <CardHeader>
