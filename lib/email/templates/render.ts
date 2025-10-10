@@ -185,7 +185,7 @@ export function renderEmailTemplate(
       senderLinkedInUrl,
       senderLinkedInLabel,
     });
-    return { subject: SUBJECTS.initial + senderName, html };
+    return { subject: SUBJECTS.initial + " " + greetingName, html };
   }
 
   throw new Error(`Unknown template key: ${key}`);
