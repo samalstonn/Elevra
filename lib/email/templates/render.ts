@@ -11,7 +11,7 @@ export type TemplateKey =
 
 const SUBJECTS: Record<TemplateKey, string> = {
   initial: "Welcome to Elevra",
-  followup: "RE: Claim your Elevra profile",
+  followup: "RE: Your Election is Live",
   followup2: "RE: Don't miss out on Elevra",
   verifiedUpdate: "Update: Templates are back — create your candidate webpage",
 };
