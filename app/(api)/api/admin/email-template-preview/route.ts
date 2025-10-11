@@ -1,5 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import { renderEmailTemplate, TemplateKey } from "@/lib/email/templates/render";
+import {
+  createEmailTemplateRenderContext,
+  renderEmailTemplate,
+  TemplateKey,
+} from "@/lib/email/templates/render";
 import { deriveSenderFields, SenderFields } from "@/lib/email/templates/sender";
 import { getAuth } from "@clerk/nextjs/server";
 import { clerkClient } from "@clerk/clerk-sdk-node";
@@ -97,7 +101,8 @@ export async function POST(req: NextRequest) {
     const senderLinkedInLabel =
       requestSenderLinkedInLabel || derivedSender.senderLinkedInLabel;
 
-    const { subject, html } = renderEmailTemplate(
+    const context = createEmailTemplateRenderContext();
+    const { subject, html } = await renderEmailTemplate(
       key,
       {
         candidateFirstName:
@@ -119,7 +124,8 @@ export async function POST(req: NextRequest) {
         senderLinkedInUrl,
         senderLinkedInLabel,
       },
-      { baseForFollowup }
+      { baseForFollowup },
+      context
     );
     return NextResponse.json({ subject, html });
   } catch (e) {

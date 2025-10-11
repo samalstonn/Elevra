@@ -1,6 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 
+import { prisma } from "@/lib/prisma";
 import { formatGreetingName, formatLocationValue } from "./formatGreetingName";
 
 export type TemplateKey =
@@ -9,12 +10,69 @@ export type TemplateKey =
   | "verifiedUpdate"
   | "followup2";
 
-const SUBJECTS: Record<TemplateKey, string> = {
-  initial: "Welcome to Elevra",
-  followup: "RE: Your Election is Live",
-  followup2: "RE: Don't miss out on Elevra",
-  verifiedUpdate: "Update: Templates are back — create your candidate webpage",
+export type EmailDocumentRecord = {
+  key: TemplateKey;
+  title: string;
+  subjectTemplate: string;
+  htmlTemplate: string;
+  description?: string;
 };
+
+type RenderContextInternal = {
+  cache: Map<TemplateKey, EmailDocumentRecord>;
+  visited: Set<TemplateKey>;
+};
+
+export type RenderContext = RenderContextInternal;
+
+const DEFAULT_TITLES: Record<TemplateKey, string> = {
+  initial: "Candidate Outreach – Initial",
+  followup: "Candidate Outreach – Follow-up",
+  followup2: "Candidate Outreach – Final Reminder",
+  verifiedUpdate: "Candidate Outreach – Templates Update",
+};
+
+const DEFAULT_SUBJECT_TEMPLATES: Record<TemplateKey, string> = {
+  initial: "Welcome to Elevra {{greetingName}}",
+  followup: "RE: Your election{{locationSummary}} is live on Elevra",
+  followup2: "Final reminder: Elevra voters{{locationSummary}} are active",
+  verifiedUpdate:
+    "Update: Templates are back — create your Elevra page{{locationSummary}}",
+};
+
+const DEFAULT_DESCRIPTIONS: Partial<Record<TemplateKey, string>> = {
+  initial:
+    "Introduces Elevra. Placeholders: {{greetingName}}, {{claimUrl}}, {{locationFragment}}, {{positionDescriptor}}, {{senderName}}.",
+  followup:
+    "Short follow-up referencing original note. Placeholders: {{greetingName}}, {{claimUrl}}, {{locationSummary}}, {{originalHtml}}.",
+  followup2:
+    "Final reminder highlighting metrics. Placeholders: {{greetingName}}, {{claimUrl}}, {{locationSummary}}, {{originalHtml}}.",
+  verifiedUpdate:
+    "Notify candidates that templates returned. Placeholders: {{greetingName}}, {{templatesUrl}}, {{profileLink}}, {{locationFragment}}.",
+};
+
+export const EMAIL_TEMPLATE_VARIABLES: readonly string[] = [
+  "greetingName",
+  "claimUrl",
+  "templatesUrl",
+  "profileUrl",
+  "profileLink",
+  "ctaLabel",
+  "municipalityName",
+  "stateName",
+  "locationFragment",
+  "locationSummary",
+  "locationDetail",
+  "positionDescriptor",
+  "positionName",
+  "originalHtml",
+  "senderName",
+  "senderTitle",
+  "senderLinkedInUrl",
+  "senderLinkedInLabel",
+];
+
+const defaultHtmlCache = new Map<TemplateKey, string>();
 
 function readTemplateFile(key: TemplateKey): string {
   const file =
@@ -29,15 +87,155 @@ function readTemplateFile(key: TemplateKey): string {
   return fs.readFileSync(filePath, "utf8");
 }
 
-function interpolate(html: string, vars: Record<string, string>): string {
-  return html.replace(
+function loadDefaultHtml(key: TemplateKey): string {
+  const cached = defaultHtmlCache.get(key);
+  if (cached) return cached;
+  const html = readTemplateFile(key);
+  defaultHtmlCache.set(key, html);
+  return html;
+}
+
+function buildDefaultDocument(key: TemplateKey): EmailDocumentRecord {
+  return {
+    key,
+    title: DEFAULT_TITLES[key],
+    subjectTemplate: DEFAULT_SUBJECT_TEMPLATES[key],
+    htmlTemplate: loadDefaultHtml(key),
+    description: DEFAULT_DESCRIPTIONS[key],
+  };
+}
+
+function isUniqueConstraintError(error: unknown): boolean {
+  return (
+    typeof error === "object" &&
+    error !== null &&
+    "code" in error &&
+    (error as { code?: string }).code === "P2002"
+  );
+}
+
+function isMissingTableError(error: unknown): boolean {
+  return (
+    typeof error === "object" &&
+    error !== null &&
+    "code" in error &&
+    (error as { code?: string }).code === "P2021"
+  );
+}
+
+async function fetchEmailDocument(
+  key: TemplateKey,
+  context: RenderContextInternal
+): Promise<EmailDocumentRecord> {
+  const cached = context.cache.get(key);
+  if (cached) {
+    return cached;
+  }
+
+  let existing:
+    | {
+        title: string;
+        subjectTemplate: string;
+        htmlTemplate: string;
+        description: string | null;
+      }
+    | null = null;
+
+  try {
+    existing = await prisma.emailDocument.findUnique({
+      where: { key },
+      select: {
+        title: true,
+        subjectTemplate: true,
+        htmlTemplate: true,
+        description: true,
+      },
+    });
+  } catch (error) {
+    if (isMissingTableError(error)) {
+      const defaults = buildDefaultDocument(key);
+      context.cache.set(key, { ...defaults });
+      return defaults;
+    }
+    throw error;
+  }
+
+  let record: EmailDocumentRecord;
+  if (existing) {
+    record = {
+      key,
+      title: existing.title,
+      subjectTemplate: existing.subjectTemplate,
+      htmlTemplate: existing.htmlTemplate,
+      description: existing.description ?? undefined,
+    };
+  } else {
+    const defaults = buildDefaultDocument(key);
+    record = { ...defaults };
+    try {
+      await prisma.emailDocument.create({
+        data: {
+          key,
+          title: defaults.title,
+          subjectTemplate: defaults.subjectTemplate,
+          htmlTemplate: defaults.htmlTemplate,
+          description: defaults.description,
+        },
+      });
+    } catch (error) {
+      if (isUniqueConstraintError(error) || isMissingTableError(error)) {
+        // ignore duplicates or missing table in lower environments
+      } else {
+        console.error("Failed to seed default email document", {
+          key,
+          error,
+        });
+      }
+    }
+  }
+
+  context.cache.set(key, record);
+  return record;
+}
+
+function interpolate(template: string, vars: Record<string, string>): string {
+  return template.replace(
     /\{\{\s*([a-zA-Z0-9_]+)\s*\}\}/g,
-    (_: string, k: string) => {
-      const v = vars[k];
-      return v != null ? String(v) : "";
+    (_match: string, token: string) => {
+      const value = vars[token];
+      return value != null ? value : "";
     }
   );
 }
+
+function normalizeSubject(subject: string): string {
+  return subject
+    .replace(/\s+/g, " ")
+    .replace(/\s+,/g, ",")
+    .replace(/\s+!/g, "!")
+    .replace(/\s+\?/g, "?")
+    .replace(/\s+;/g, ";")
+    .replace(/\s+:/g, ":")
+    .trim();
+}
+
+function sanitizeUrl(value: string): string {
+  if (!value) return "";
+  if (!/^https?:\/\//i.test(value)) {
+    return `https://${value}`;
+  }
+  return value;
+}
+
+function normalizeString(value?: string | null): string {
+  return typeof value === "string" ? value.trim() : "";
+}
+
+const DEFAULT_SENDER_NAME = "Adam Rose";
+const DEFAULT_SENDER_TITLE = "Elevra | Cornell ’25";
+const DEFAULT_SENDER_LINKEDIN_URL =
+  "https://www.linkedin.com/company/elevracommunity/posts/?feedView=all";
+const DEFAULT_SENDER_LINKEDIN_LABEL = "LinkedIn";
 
 export type RenderInput = {
   candidateFirstName?: string;
@@ -54,139 +252,116 @@ export type RenderInput = {
   senderLinkedInLabel?: string;
 };
 
-const DEFAULT_SENDER_NAME = "Adam Rose";
-const DEFAULT_SENDER_TITLE = "Elevra | Cornell ’25";
-const DEFAULT_SENDER_LINKEDIN_URL =
-  "https://www.linkedin.com/company/elevracommunity/posts/?feedView=all";
-const DEFAULT_SENDER_LINKEDIN_LABEL = "LinkedIn";
+type RenderOptions = { baseForFollowup?: TemplateKey };
 
-export function renderEmailTemplate(
+export function createEmailTemplateRenderContext(): RenderContext {
+  return {
+    cache: new Map<TemplateKey, EmailDocumentRecord>(),
+    visited: new Set<TemplateKey>(),
+  };
+}
+
+export async function renderEmailTemplate(
   key: TemplateKey,
   data: RenderInput,
-  opts?: { baseForFollowup?: TemplateKey }
-): { subject: string; html: string } {
-  const greetingName = formatGreetingName(data.candidateFirstName);
-  const stateName = formatLocationValue(data.state);
-  const municipalityName = formatLocationValue(data.municipality);
-  const positionName = formatLocationValue(data.position);
-
-  const locationDetail =
-    municipalityName && stateName
-      ? `${municipalityName}, ${stateName}`
-      : municipalityName
-      ? municipalityName
-      : stateName;
-
-  const locationFragment = municipalityName
-    ? `in ${municipalityName}`
-    : "near you";
-  const locationSummary = stateName ? ` in ${stateName}` : "";
-  const positionDescriptor = positionName ? `${positionName}` : "";
-  const senderNameValue = (data.senderName || "").trim();
-  const senderTitleValue = (data.senderTitle || "").trim();
-  const senderLinkedInUrlValue = (data.senderLinkedInUrl || "").trim();
-  const senderLinkedInLabelValue = (data.senderLinkedInLabel || "").trim();
-
-  if (key === "followup") {
-    const base = opts?.baseForFollowup || "initial";
-    const original = renderEmailTemplate(base, {
-      candidateFirstName: data.candidateFirstName,
-      state: data.state,
-      claimUrl: data.claimUrl,
-      templatesUrl: data.templatesUrl,
-      profileUrl: data.profileUrl,
-      municipality: data.municipality,
-      position: data.position,
-      senderName: senderNameValue,
-      senderTitle: senderTitleValue,
-      senderLinkedInUrl: senderLinkedInUrlValue,
-      senderLinkedInLabel: senderLinkedInLabelValue,
-    }).html;
-    const src = readTemplateFile("followup");
-    const html = interpolate(src, {
-      greetingName,
-      claimUrl: data.claimUrl || "",
-      locationFragment,
-      locationSummary,
-      locationDetail: locationDetail || "",
-      positionDescriptor,
-      positionName,
-      originalHtml: original,
-    });
-    return { subject: SUBJECTS.followup, html };
+  opts?: RenderOptions,
+  context?: RenderContext
+): Promise<{ subject: string; html: string }> {
+  const ctx = context ?? createEmailTemplateRenderContext();
+  if (ctx.visited.has(key)) {
+    throw new Error(`Circular email template render detected for "${key}"`);
   }
 
-  if (key === "followup2") {
-    const base = opts?.baseForFollowup || "initial";
-    const original = renderEmailTemplate(base, {
-      candidateFirstName: data.candidateFirstName,
-      state: data.state,
-      claimUrl: data.claimUrl,
-      templatesUrl: data.templatesUrl,
-      profileUrl: data.profileUrl,
-      municipality: data.municipality,
-      position: data.position,
-      senderName: senderNameValue,
-      senderTitle: senderTitleValue,
-      senderLinkedInUrl: senderLinkedInUrlValue,
-      senderLinkedInLabel: senderLinkedInLabelValue,
-    }).html;
-    const src = readTemplateFile("followup2");
-    const html = interpolate(src, {
-      greetingName,
-      claimUrl: data.claimUrl || "",
-      locationFragment,
-      locationSummary,
-      locationDetail: locationDetail || "",
-      positionDescriptor,
-      positionName,
-      originalHtml: original,
-    });
-    return { subject: SUBJECTS.followup2, html };
-  }
+  ctx.visited.add(key);
+  try {
+    const template = await fetchEmailDocument(key, ctx);
 
-  if (key === "verifiedUpdate") {
-    const src = readTemplateFile("verifiedUpdate");
-    const profileLink = data.profileUrl
-      ? ` (<a href=\"${data.profileUrl}\" style=\"color:#6d28d9;text-decoration:underline;\">view profile</a>)`
-      : "";
-    const html = interpolate(src, {
-      greetingName,
-      templatesUrl: data.templatesUrl || data.claimUrl || "",
-      profileLink,
-      ctaLabel: data.ctaLabel || "Create My Webpage",
-      locationFragment,
-      locationSummary,
-      locationDetail: locationDetail || "",
-      positionDescriptor,
-      positionName,
-    });
-    return { subject: SUBJECTS.verifiedUpdate, html };
-  }
+    const greetingName = formatGreetingName(data.candidateFirstName);
+    const stateName = formatLocationValue(data.state);
+    const municipalityName = formatLocationValue(data.municipality);
+    const positionName = formatLocationValue(data.position);
 
-  if (key === "initial") {
-    const src = readTemplateFile("initial");
-    const senderName = (data.senderName || "").trim() || DEFAULT_SENDER_NAME;
-    const senderTitle = (data.senderTitle || "").trim() || DEFAULT_SENDER_TITLE;
-    const senderLinkedInUrl =
-      (data.senderLinkedInUrl || "").trim() || DEFAULT_SENDER_LINKEDIN_URL;
+    const locationDetail =
+      municipalityName && stateName
+        ? `${municipalityName}, ${stateName}`
+        : municipalityName || stateName;
+
+    const locationFragment = municipalityName
+      ? `in ${municipalityName}`
+      : stateName
+      ? `in ${stateName}`
+      : "near you";
+
+    const locationSummary = stateName ? ` in ${stateName}` : "";
+    const positionDescriptor = positionName ? `${positionName}` : "";
+
+    const claimUrl = normalizeString(data.claimUrl);
+    const templatesUrl =
+      normalizeString(data.templatesUrl) || normalizeString(data.claimUrl);
+    const profileUrl = normalizeString(data.profileUrl);
+    const ctaLabel = normalizeString(data.ctaLabel) || "Create My Webpage";
+
+    const rawSenderName = normalizeString(data.senderName);
+    const rawSenderTitle = normalizeString(data.senderTitle);
+    const rawSenderLinkedInUrl = normalizeString(data.senderLinkedInUrl);
+    const rawSenderLinkedInLabel = normalizeString(data.senderLinkedInLabel);
+
+    const senderName = rawSenderName || DEFAULT_SENDER_NAME;
+    const senderTitle = rawSenderTitle || DEFAULT_SENDER_TITLE;
+    const senderLinkedInUrl = rawSenderLinkedInUrl
+      ? sanitizeUrl(rawSenderLinkedInUrl)
+      : DEFAULT_SENDER_LINKEDIN_URL;
     const senderLinkedInLabel =
-      (data.senderLinkedInLabel || "").trim() || DEFAULT_SENDER_LINKEDIN_LABEL;
-    const html = interpolate(src, {
+      rawSenderLinkedInLabel || DEFAULT_SENDER_LINKEDIN_LABEL;
+
+    const replacements: Record<string, string> = {
       greetingName,
-      claimUrl: data.claimUrl || "",
+      claimUrl,
+      templatesUrl,
+      profileUrl,
+      profileLink: profileUrl
+        ? ` (<a href="${profileUrl}" style="color:#6d28d9;text-decoration:underline;">view profile</a>)`
+        : "",
+      ctaLabel,
+      municipalityName,
+      stateName,
       locationFragment,
       locationSummary,
-      locationDetail: locationDetail || "",
+      locationDetail: locationDetail ?? "",
       positionDescriptor,
       positionName,
+      originalHtml: "",
       senderName,
       senderTitle,
       senderLinkedInUrl,
       senderLinkedInLabel,
-    });
-    return { subject: SUBJECTS.initial + " " + greetingName, html };
-  }
+    };
 
-  throw new Error(`Unknown template key: ${key}`);
+    if (key === "followup" || key === "followup2") {
+      const baseKey =
+        opts?.baseForFollowup && opts.baseForFollowup !== key
+          ? opts.baseForFollowup
+          : "initial";
+      const baseTemplate = await renderEmailTemplate(
+        baseKey,
+        data,
+        opts,
+        ctx
+      );
+      replacements.originalHtml = baseTemplate.html;
+    }
+
+    if (key === "verifiedUpdate" && !replacements.templatesUrl) {
+      replacements.templatesUrl = claimUrl;
+    }
+
+    const subject = normalizeSubject(
+      interpolate(template.subjectTemplate, replacements)
+    );
+    const html = interpolate(template.htmlTemplate, replacements);
+
+    return { subject, html };
+  } finally {
+    ctx.visited.delete(key);
+  }
 }

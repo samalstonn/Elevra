@@ -7,7 +7,11 @@ import {
 } from "@/lib/email/resend";
 import { getAuth } from "@clerk/nextjs/server";
 import { clerkClient } from "@clerk/clerk-sdk-node";
-import { renderEmailTemplate, TemplateKey } from "@/lib/email/templates/render";
+import {
+  createEmailTemplateRenderContext,
+  renderEmailTemplate,
+  TemplateKey,
+} from "@/lib/email/templates/render";
 import { deriveSenderFields } from "@/lib/email/templates/sender";
 
 export const runtime = "nodejs";
@@ -199,12 +203,14 @@ export async function POST(req: NextRequest) {
     ? [{ template: "followup" as const, offsetDays: 0 }]
     : [{ template: selectedType, offsetDays: 0 }];
 
+  const renderContext = createEmailTemplateRenderContext();
+
   for (const step of steps) {
     const batchInputs: SendEmailParams[] = [];
 
     for (let i = 0; i < recipients.length; i++) {
       const r = recipients[i];
-      const { subject, html } = renderEmailTemplate(
+      const { subject, html } = await renderEmailTemplate(
         step.template,
         {
           candidateFirstName: r.firstName || undefined,
@@ -219,7 +225,8 @@ export async function POST(req: NextRequest) {
           senderLinkedInUrl,
           senderLinkedInLabel,
         },
-        { baseForFollowup: body.baseTemplate || "initial" }
+        { baseForFollowup: body.baseTemplate || "initial" },
+        renderContext
       );
       const subjectToUse = (
         body.subject ||
