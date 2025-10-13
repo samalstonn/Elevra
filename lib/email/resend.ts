@@ -5,6 +5,7 @@ export type SendEmailParams = {
   subject: string;
   html: string;
   from?: string;
+  senderName?: string;
   // Accept Date (UTC ISO) or ISO string with timezone offset to honor local time
   scheduledAt?: Date | string;
 };
@@ -46,6 +47,23 @@ async function enforceRateLimit(): Promise<void> {
 const defaultFrom =
   process.env.RESEND_FROM || "Team @Elevra <onboarding@resend.dev>";
 
+// Format sender address with custom name when provided
+function formatSenderAddress(senderName?: string, customFrom?: string): string {
+  if (customFrom) {
+    return customFrom;
+  }
+
+  if (senderName && senderName.trim()) {
+    const cleanName = senderName.trim();
+    // Validate that the name doesn't contain problematic characters
+    if (/^[a-zA-Z\s\-\.]+$/.test(cleanName)) {
+      return `${cleanName} <team@admin.elevracommunity.com>`;
+    }
+  }
+
+  return defaultFrom;
+}
+
 export function isEmailDryRun(): boolean {
   // Default to dry‑run in local dev unless explicitly disabled.
   const explicit = process.env.EMAIL_DRY_RUN;
@@ -59,6 +77,7 @@ export async function sendWithResend({
   subject,
   html,
   from,
+  senderName,
   scheduledAt,
 }: SendEmailParams): Promise<{ id: string } | null> {
   // Global process-level throttle
@@ -75,7 +94,7 @@ export async function sendWithResend({
       // Optionally record for inspection
       if (process.env.EMAIL_DRY_RUN_LOG === "1") {
         const sendParams: CreateEmailOptions = {
-          from: from || defaultFrom,
+          from: formatSenderAddress(senderName, from),
           to,
           subject,
           html,
@@ -99,7 +118,7 @@ export async function sendWithResend({
   }
 
   const resend = new Resend(process.env.RESEND_API_KEY);
-  const fromAddress = from || defaultFrom;
+  const fromAddress = formatSenderAddress(senderName, from);
   const sendParams: CreateEmailOptions = {
     from: fromAddress,
     to,
@@ -179,7 +198,7 @@ export async function sendBatchWithResend(
     await enforceRateLimit();
 
     const emailsPayload = chunk.map((payload) => {
-      const fromAddress = payload.from || defaultFrom;
+      const fromAddress = formatSenderAddress(payload.senderName, payload.from);
       const scheduledAtIso = payload.scheduledAt
         ? typeof payload.scheduledAt === "string"
           ? payload.scheduledAt
@@ -257,7 +276,11 @@ export async function sendBatchWithResend(
         continue;
       }
 
-      successes.push({ index: globalIndex, to: item.to, id: dataEntry?.id ?? null });
+      successes.push({
+        index: globalIndex,
+        to: item.to,
+        id: dataEntry?.id ?? null,
+      });
     }
   };
 

@@ -2,11 +2,12 @@
 import useSWR from "swr";
 import { useAuth } from "@clerk/nextjs";
 import type { CandidateDashboardData } from "@/types/candidate";
-import type { ElectionLink, Election, ContentBlock } from "@prisma/client";
+import type { ElectionLink, Election, ContentBlock, Document } from "@prisma/client";
 
 export type ElectionLinkWithElection = ElectionLink & {
   election: Election;
   ContentBlock?: ContentBlock[];
+  Document?: Document | null;
 };
 
 export function useCandidate() {

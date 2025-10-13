@@ -61,3 +61,4 @@ test-*.csv
 
 # Logs
 /lib/email/logs/.test-emails.log
+/logging/
