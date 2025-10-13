@@ -72,12 +72,22 @@ export async function POST(req: NextRequest) {
     // Authorization: allow E2E header secret or fallback to admin check
     const headerSecret =
       req.headers.get("x-e2e-seed-secret") || req.headers.get("x-seed-secret");
-    const envSecret = process.env.E2E_SEED_SECRET || "";
+    const normalizedHeaderSecret = headerSecret?.trim();
+    const envSecret = (process.env.E2E_SEED_SECRET || "").trim();
+    const authHeader = req.headers.get("authorization");
+    const bearerToken = authHeader?.toLowerCase().startsWith("bearer ")
+      ? authHeader.slice(7).trim()
+      : null;
+    const envToken = (process.env.SEED_API_TOKEN || "").trim();
     const bypassAuth = Boolean(
-      headerSecret && envSecret && headerSecret === envSecret
+      (normalizedHeaderSecret &&
+        envSecret &&
+        normalizedHeaderSecret === envSecret) ||
+        (bearerToken && envToken && bearerToken === envToken)
     );
 
-    const { userId } = await auth();
+    let userId: string | null = null;
+
     async function isAdmin(u: string | null): Promise<boolean> {
       if (!u) return false;
       // Allow env-based admin list (e.g., ADMIN_USER_IDS="user_abc user_def")
@@ -94,8 +104,18 @@ export async function POST(req: NextRequest) {
         return false;
       }
     }
-    if (!bypassAuth && !(await isAdmin(userId))) {
-      return new Response("Unauthorized", { status: 401 });
+    if (!bypassAuth) {
+      try {
+        const authResult = await auth();
+        userId = authResult.userId;
+      } catch (err) {
+        console.error("/api/admin/seed-structured auth error", err);
+        return new Response("Unauthorized", { status: 401 });
+      }
+
+      if (!(await isAdmin(userId))) {
+        return new Response("Unauthorized", { status: 401 });
+      }
     }
     const body = (await req.json()) as {
       structured?: string;
@@ -107,7 +127,15 @@ export async function POST(req: NextRequest) {
     const payload = body?.data ?? body?.structured;
     let input: any;
     if (typeof payload === "string") {
-      input = JSON.parse(payload);
+      try {
+        input = JSON.parse(payload);
+      } catch (parseError) {
+        console.error(
+          "/api/admin/seed-structured invalid JSON",
+          parseError
+        );
+        return new Response("Invalid JSON payload", { status: 400 });
+      }
     } else {
       input = payload;
     }
