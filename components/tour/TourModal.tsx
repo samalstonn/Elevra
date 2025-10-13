@@ -108,7 +108,7 @@ export function TourModal({
     <Dialog open={open} onOpenChange={onOpenChange} modal={false}>
       <DialogPrimitive.Portal>
         {/* Dim overlay that does not block interaction/scroll */}
-        <div className="fixed inset-0 z-40 bg-black/30 pointer-events-auto" />
+        <div className="fixed inset-0 z-40 bg-black/30 pointer-events-none" />
         {/* Content stays scroll-friendly since dialog is non-modal */}
         <DialogPrimitive.Content
           ref={contentRef}

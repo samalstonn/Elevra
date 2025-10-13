@@ -135,6 +135,15 @@ function HomePageContent() {
       </motion.main>
       {/* Live Elections Banner (below site header, above main content) */}
 
+      {/* About Us Section */}
+      <motion.div
+        initial="hidden"
+        whileInView="visible"
+        viewport={{ once: true }}
+      >
+        <AboutUs />
+      </motion.div>
+
       {/* Showcase Section - Added here */}
       <motion.div
         initial="hidden"
@@ -143,15 +152,6 @@ function HomePageContent() {
         className="w-full self-stretch"
       >
         <Showcase />
-      </motion.div>
-
-      {/* About Us Section */}
-      <motion.div
-        initial="hidden"
-        whileInView="visible"
-        viewport={{ once: true }}
-      >
-        <AboutUs />
       </motion.div>
 
       {/* Feature Cards Section */}

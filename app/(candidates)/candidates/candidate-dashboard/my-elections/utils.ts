@@ -1,6 +1,7 @@
 import type { ContentBlock } from "@prisma/client";
+import { ElectionLinkWithElection } from "@/lib/useCandidate";
 
-const SNIPPET_LIMIT = 2 ;
+const SNIPPET_LIMIT = 2;
 
 export type BlockSnippet = { label: string; text: string };
 
@@ -89,4 +90,101 @@ export function summarizeBlocks(
 function truncate(text: string, maxLength: number) {
   if (text.length <= maxLength) return text;
   return `${text.slice(0, maxLength).trim()}…`;
+}
+
+export type TemplateChoice =
+  | "current"
+  | "custom"
+  | "elevraStarterTemplate"
+  | "simpleTemplate";
+
+export type TemplateCardDefinition = {
+  key: TemplateChoice;
+  title: string;
+  description: string;
+  snippets: BlockSnippet[];
+};
+
+export const ELEVRA_STARTER_TEMPLATE_PREVIEW: BlockSnippet[] = [
+  {
+    label: "Heading",
+    text: "Lead with a bold introduction that highlights your campaign and story.",
+  },
+  {
+    label: "Description",
+    text: "Describe yourself and your campaign.",
+  },
+  {
+    label: "Candidate Image",
+    text: "Share a picture of yourself to give voters a face to associate with your campaign.",
+  },
+  {
+    label: "What I Bring",
+    text: "Detail what you would bring to the table if elected.",
+  },
+  {
+    label: "What I Believe",
+    text: "Express your core beliefs related to the position you are running for.",
+  },
+  {
+    label: "Why I'm Running",
+    text: "Spotlight your motivation and priorities for campaigning.",
+  },
+  {
+    label: "Campaign Image",
+    text: "Feature visuals for your campaign signs, portrait, or videos.",
+  },
+];
+export const CUSTOM_TEMPLATE_PREVIEW: BlockSnippet[] = [
+  {
+    label: "Heading",
+    text: "Craft a unique headline that captures the essence of your campaign.",
+  },
+  {
+    label: "Vision Statement",
+    text: "Share your vision for the future and the impact you aim to create.",
+  },
+  {
+    label: "Personal Story",
+    text: "Tell a compelling story about your journey and what drives you.",
+  },
+  {
+    label: "Key Issues",
+    text: "Highlight the top issues you are passionate about addressing.",
+  },
+  {
+    label: "Call to Action",
+    text: "Encourage voters to support your campaign and get involved.",
+  },
+];
+
+export const SIMPLE_TEMPLATE_PREVIEW: BlockSnippet[] = [
+  {
+    label: "Heading",
+    text: "Lead with a bold introduction that highlights your campaign and story.",
+  },
+  {
+    label: "Candidate Image",
+    text: "A picture tells 1000 words.",
+  },
+  {
+    label: "Description",
+    text: "Describe yourself and your campaign.",
+  },
+];
+
+export function buildResultsHref(link: ElectionLinkWithElection) {
+  const { election, electionId } = link;
+
+  if (!election?.city || !election?.state) {
+    return null;
+  }
+
+  const search = new URLSearchParams({
+    city: election.city,
+    state: election.state,
+    electionID: String(electionId),
+  });
+
+  return `/results?${search.toString()}`;
 }

@@ -10,11 +10,17 @@ import {
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
-import { Eye, Edit, Mail, HandCoins, RefreshCcw } from "lucide-react"; // Icons
+import {
+  Eye,
+  Edit,
+  Mail,
+  HandCoins,
+  RefreshCcw,
+  CreditCard,
+} from "lucide-react"; // Icons
 import { FaShare } from "react-icons/fa"; // Importing FaShare
 import { Candidate, Donation } from "@prisma/client";
 import { useCandidate } from "@/lib/useCandidate";
-import AnalyticsChart from "@/components/AnalyticsChart";
 import { useSearchParams, useRouter } from "next/navigation";
 import { useUser } from "@clerk/nextjs";
 import {
@@ -26,7 +32,8 @@ import {
 import { FaCheckCircle } from "react-icons/fa";
 import TourModal from "@/components/tour/TourModal";
 import { usePageTitle } from "@/lib/usePageTitle";
-import { buildEditorPath } from "./my-elections/utils";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { CandidateProfileHeader } from "@/components/CandidateProfileHeader";
 // import ResultsSearchBar from "@/components/ResultsSearchBar";
 
 export type CandidateWithDonations = Candidate & { donations: Donation[] };
@@ -37,9 +44,6 @@ export default function OverviewPage() {
   const router = useRouter();
   const { user, isLoaded } = useUser();
   const _verifiedSlug = searchParams.get("slug");
-  const [profileViews, setProfileViews] = useState<number | string>(
-    "Please create a campaign to have a visible profile"
-  );
   const [donationTotal, _] = useState<number | string>("Loading...");
   const { data: candidate, electionLinks } = useCandidate();
   const [showVerifiedModal, setShowVerifiedModal] = useState(false);
@@ -48,11 +52,8 @@ export default function OverviewPage() {
   const [showOptOut, setShowOptOut] = useState(false);
   const [showStep1, setShowStep1] = useState(false);
   const [pendingWelcome, setPendingWelcome] = useState(false);
-
-  useEffect(() => {
-    if (!candidate) return;
-    // Remove old single count fetch; replaced by timeseries aggregate via chart callback
-  }, [candidate]);
+  const isPremium =
+    user?.publicMetadata.candidateSubscriptionTier === "premium";
 
   // First-visit Welcome via Clerk metadata (always on first dashboard visit)
   useEffect(() => {
@@ -193,11 +194,11 @@ export default function OverviewPage() {
         onSecondary={handleWelcomeOptOut}
       >
         <p>
-          Nice to have you here,{" "}
-          {user?.firstName || user?.username || "Candidate"}. We prepared a
-          quick tour to help you get started. It will help you set up your
-          profile, manage campaigns, and engage with voters. It only takes a few
-          minutes!
+          Great to have you here,{" "}
+          {user?.firstName || user?.username || "Candidate"}. This quick tour
+          shows you how to polish your profile, launch campaign pages, and find
+          the premium features like advanced analytics, endorsements, and custom
+          templates. It only takes a couple of minutes.
         </p>
       </TourModal>
 
@@ -226,7 +227,7 @@ export default function OverviewPage() {
       <TourModal
         open={showStep1}
         onOpenChange={setShowStep1}
-        title="Overview (Step 1 of 4)"
+        title="Overview (Step 1 of 3)"
         backLabel="Back"
         onBack={backToWelcome}
         primaryLabel="Next: Profile"
@@ -234,81 +235,56 @@ export default function OverviewPage() {
         secondaryLabel="Skip tour"
         onSecondary={skipTour}
       >
-        <p>See profile views and quick actions to manage your campaign.</p>
         <p>
-          Tip: Feel free to drag and drop this window anywhere on the screen!
-          Scroll the background to explore your dashboard while keeping this
-          guide handy.
+          Preview your profile header here. Use the quick actions to edit,
+          share, or restart your campaign setup.
         </p>
+        <p>
+          Upgrade anytime from the sidebar to unlock advanced analytics like
+          profile views, voter locations, along with a managed endorsements hub.
+        </p>
+        <p>Tip: Drag this window wherever you like while you explore.</p>
       </TourModal>
       <Dialog open={showVerifiedModal} onOpenChange={setShowVerifiedModal}>
         <DialogContent className="sm:max-w-[640px]">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <FaCheckCircle className="text-green-500" />
-              You’re Verified on Elevra!
+              Welcome to Elevra!
             </DialogTitle>
           </DialogHeader>
-          <div className="text-left text-gray-700 text-sm space-y-4 leading-relaxed">
-            <p>
-              Your candidate profile is live and discoverable to voters. Welcome
-              aboard!
-            </p>
-            <ul className="list-disc pl-5 space-y-2">
-              <li>
-                <strong>You have a verified badge</strong> beside your name —
-                verified candidates show up higher in search.
-              </li>
-            </ul>
-            {electionLinks && electionLinks.length > 0 && (
-              <p>
-                Your campaign is now active for{" "}
-                <strong>
-                  {electionLinks
-                    .map((l) => {
-                      const { position, city, state } = l.election || {};
-                      let result = position || "";
-                      if (city) result += ` in ${city}`;
-                      if (state) result += `, ${state}`;
-                      return result;
-                    })
-                    .filter(Boolean)
-                    .join("; ")}
-                </strong>
-                . Visit the{" "}
-                <Link
-                  href="/candidates/candidate-dashboard/my-elections"
-                  className="text-purple-600 underline"
-                >
-                  Campaign tab
-                </Link>{" "}
-                on the left to update your election details and customize your
-                public page. Prefer to jump straight into editing? Open the{" "}
-                <Link
-                  href={
-                    candidate
-                      ? buildEditorPath(
-                          candidate.slug,
-                          electionLinks[0].electionId
-                        )
-                      : "/candidates/candidate-dashboard/my-elections"
-                  }
-                  className="text-purple-600 underline"
-                >
-                  campaign editor
-                </Link>
-                .
-              </p>
-            )}
-            <p>
-              You’re ready to engage with voters on Elevra! Please let us know
-              at team@elevracommunity.com what features are important to you.
-            </p>
-            <p>
-              We’d love your feedback — reply to your onboarding email or
-              contact us anytime with ideas or questions.
-            </p>
-          </div>
+          <ul className="text-left text-gray-700 text-sm space-y-4 leading-relaxed list-disc pl-5">
+            <li>
+              Your campaign is now active for{" "}
+              <strong>
+                {electionLinks
+                  .map((l) => {
+                    const { position, city, state } = l.election || {};
+                    let result = position || "";
+                    if (city) result += ` in ${city}`;
+                    if (state) result += `, ${state}`;
+                    return result;
+                  })
+                  .filter(Boolean)
+                  .join("; ")}
+              </strong>
+              .
+            </li>
+            <li>
+              Visit your <strong>Campaign tab </strong>
+              to update your election details and customize your public page.
+            </li>
+            <li>
+              Email us at{" "}
+              <a
+                href="mailto:team@elevracommunity.com"
+                className="text-purple-600 underline"
+              >
+                team@elevracommunity.com
+              </a>{" "}
+              to let us know how else we can help with your campaign!
+            </li>
+          </ul>
           <div className="flex justify-end gap-2">
             <Button
               variant="outline"
@@ -336,45 +312,33 @@ export default function OverviewPage() {
           </div>
         </DialogContent>
       </Dialog>
-      {/* Feature interest banner */}
-      <div className="bg-purple-50 border border-purple-200 text-purple-800 text-xs md:text-sm p-3 md:p-4 rounded-lg flex flex-col md:flex-row md:items-center md:justify-between gap-2 shadow-sm">
-        <div className="flex-1 leading-snug">
-          Curious about Mailing List Subscribers or Donation analytics? 📨💸
-          <br className="hidden md:block" />
-          If you’d like early access (or have ideas), let us know; we’re
-          building this with you.
-        </div>
-        <div className="flex items-center gap-2">
-          <Link
-            href="/feedback"
-            className="inline-flex items-center px-3 py-1.5 rounded-md bg-purple-600 text-white text-xs md:text-sm font-medium hover:bg-purple-700 transition"
-          >
-            Share Feedback
-          </Link>
-        </div>
-      </div>
+
+      {/* Public Profile Preview */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Public Profile Preview</CardTitle>
+          <CardDescription>
+            This is how your campaign header appears to voters.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {candidate ? (
+            <div className="rounded-lg border border-dashed border-border bg-white p-4">
+              <CandidateProfileHeader
+                candidate={candidate}
+                showVerifyButton={false}
+              />
+            </div>
+          ) : (
+            <div className="text-sm text-muted-foreground">
+              Loading profile preview...
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       {/* Quick Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Profile Views</CardTitle>
-            <Eye className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            {typeof profileViews === "string" ? (
-              <div className="text-xs text-gray-500 font-normal leading-snug">
-                {profileViews}
-              </div>
-            ) : (
-              <div className="text-2xl font-bold">{profileViews}</div>
-            )}
-            {/* <p className="text-xs text-muted-foreground">
-              +10% from last month
-            </p>{" "} */}
-            {/* Placeholder change */}
-          </CardContent>
-        </Card>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <Card className="opacity-50 bg-gray-50">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">
@@ -411,37 +375,6 @@ export default function OverviewPage() {
           </CardContent>
         </Card>
       </div>
-      {/* Profile Views Time Series */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Profile Views Over Time</CardTitle>
-          <CardDescription>Daily views for the last 30 days.</CardDescription>
-        </CardHeader>
-        <CardContent>
-          {candidate ? (
-            <AnalyticsChart
-              candidateId={candidate.id}
-              days={30}
-              onDataLoaded={({ total }) => setProfileViews(total)}
-            />
-          ) : (
-            <div className="text-xs text-gray-500">Loading candidate...</div>
-          )}
-        </CardContent>
-      </Card>
-      {/* Moved Time-of-Day Activity heatmap to Analytics tab */}
-      {/* Analytics Card */}
-      {/* <Card className="col-span-4">
-        <CardHeader>
-          <CardTitle>Profile Activity</CardTitle>
-          <CardDescription>
-            Profile views and engagement metrics for the past 30 days
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="pl-2">
-          <AnalyticsChart />
-        </CardContent>
-      </Card> */}
 
       {/* Quick Actions Card */}
       <Card>
@@ -500,7 +433,22 @@ export default function OverviewPage() {
           </Button> */}
         </CardContent>
       </Card>
-
+      {!isPremium && (
+        <Alert className="bg-blue-50 border-blue-200 text-blue-800">
+          <CreditCard className="h-4 w-4 !text-blue-800" />{" "}
+          {/* Ensure icon color matches */}
+          <AlertTitle>Unlock Advanced Analytics</AlertTitle>
+          <AlertDescription>
+            Gain deeper insights into profile engagement, reach, and more.
+            <Link
+              href="/candidates/candidate-dashboard/upgrade"
+              className="font-semibold underline ml-2 hover:text-blue-900"
+            >
+              Upgrade Now
+            </Link>
+          </AlertDescription>
+        </Alert>
+      )}
       {/* Placeholder for Recent Activity or Notifications */}
       {/* <Card>
         <CardHeader>

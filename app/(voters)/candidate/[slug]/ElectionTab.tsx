@@ -3,6 +3,7 @@ import {
   ContentBlock,
   BlockType,
   ListStyle,
+  Document,
 } from "@prisma/client";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -28,13 +29,13 @@ function resolveColorClass(block: ContentBlock) {
 }
 
 export type ElectionProfileTabProps = {
-  link: ElectionLink & { ContentBlock: ContentBlock[] };
+  link: ElectionLink & { ContentBlock: ContentBlock[]; Document?: Document | null };
 };
 
 function mdToHtml(markdown: string): string {
   marked.setOptions({ async: false });
   const raw = marked.parse(markdown) as string;
-  return DOMPurify.sanitize(raw);
+  return DOMPurify.sanitize(raw).replace(/\u00A0/g, " ");
 }
 
 export function ElectionProfileTab({ link }: ElectionProfileTabProps) {
@@ -42,9 +43,19 @@ export function ElectionProfileTab({ link }: ElectionProfileTabProps) {
 
   const blocksToRender = sortedBlocks.filter((b) => !unchanged(b));
 
+  const hasCustomDocument = !!link.Document && !!link.Document.contentHtml;
+
   return (
-    <div className="space-y-6 mx-auto max-w-4xl px-4">
-      {blocksToRender.length === 0 && (
+    <div className="space-y-6 mx-auto max-w-4xl px-4 pt-8">
+      {blocksToRender.length === 0 && hasCustomDocument && (
+        <article
+          className="prose prose-slate max-w-none"
+          dangerouslySetInnerHTML={{
+            __html: DOMPurify.sanitize(link.Document!.contentHtml),
+          }}
+        />
+      )}
+      {blocksToRender.length === 0 && !hasCustomDocument && (
         <EmptyState
           primary="Candidate overview is not available yet for this election."
           secondary="Check back soon as the candidate adds details."
@@ -60,8 +71,13 @@ export function ElectionProfileTab({ link }: ElectionProfileTabProps) {
                 ? `text-4xl font-bold ${color}`
                 : `text-2xl font-semibold ${color}`;
             return (
-              <h2 key={block.id} className={headingClass}>
-                {block.text}
+              <h2
+                key={block.id}
+                className={
+                  headingClass + " break-words whitespace-pre-line hyphens-auto"
+                }
+              >
+                {block.text?.replace(/\u00A0/g, " ")}
               </h2>
             );
 
@@ -85,7 +101,7 @@ export function ElectionProfileTab({ link }: ElectionProfileTabProps) {
             return (
               <ListTag key={block.id} className={listClass}>
                 {(block.items ?? []).map((item, idx) => (
-                  <li key={idx}>{item}</li>
+                  <li key={idx}>{item.replace(/\u00A0/g, " ")}</li> //Added to fix weird space issue
                 ))}
               </ListTag>
             );
@@ -104,7 +120,7 @@ export function ElectionProfileTab({ link }: ElectionProfileTabProps) {
                     height={0}
                     sizes="100vw"
                     style={{ width: "50%", height: "auto" }}
-                    className="w-1/2 rounded"
+                    className="w-1/2 mx-auto rounded border border-black"
                     priority={false}
                   />
                 )}
