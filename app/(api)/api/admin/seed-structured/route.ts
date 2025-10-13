@@ -95,7 +95,8 @@ export async function POST(req: NextRequest) {
       const matches: string[] = raw.match(/user_[A-Za-z0-9]+/g) || [];
       if (matches.includes(u)) return true;
       try {
-        const user = await clerkClient.users.getUser(u);
+        const client = await clerkClient();
+        const user = await client.users.getUser(u);
         return Boolean(
           user.privateMetadata?.isAdmin || user.privateMetadata?.isSubAdmin
         );
