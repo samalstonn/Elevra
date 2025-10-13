@@ -9,10 +9,10 @@ const FeatureCards = () => {
       whileInView={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.8, ease: "easeInOut" }}
       viewport={{ once: true }}
-      className="w-full pt-4 pb-16 px-6 bg-gray-100 mx-auto overflow-x-hidden"
+      className="w-full pt-4 pb-16 px-6 mx-auto overflow-x-hidden"
     >
       <div className="flex flex-col items-center w-full overflow-x-hidden mx-auto">
-        <Button variant="purple" size="xxl" className="mt-12">
+        <Button variant="purple" size="xl" className="mt-12 py-4">
           <Link href="/live-elections">
             <span className="">Explore Live Elections</span>
           </Link>

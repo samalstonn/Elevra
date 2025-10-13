@@ -4,11 +4,19 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import LiveElectionsSkeleton from "./LiveElectionsSkeleton";
 import { isElectionActive } from "@/lib/isElectionActive";
+import {
+  buildSuggestedElectionOrder,
+  orderLiveElectionsByPriority,
+  type CandidateElectionSummary,
+  type GroupedElectionWithDate,
+  getElectionLocationKey,
+} from "@/lib/liveElectionOrdering";
 
-type GroupedElection = {
-  city: string | null;
-  state: string;
-  positions: string[];
+type GroupedElection = GroupedElectionWithDate;
+
+type SuggestedCandidateResponse = CandidateElectionSummary & {
+  id: number;
+  slug: string;
 };
 
 export default function LiveElectionsPage() {
@@ -19,9 +27,29 @@ export default function LiveElectionsPage() {
   useEffect(() => {
     const fetchElections = async () => {
       try {
-        const res = await fetch("/api/elections?city=all&state=all");
-        if (!res.ok) throw new Error("Failed to fetch elections");
-        let data = await res.json();
+        const [electionsRes, suggestedCandidatesRes] = await Promise.all([
+          fetch("/api/elections?city=all&state=all"),
+          fetch("/api/suggested-candidates"),
+        ]);
+
+        if (!electionsRes.ok) {
+          throw new Error("Failed to fetch elections");
+        }
+
+        let data = await electionsRes.json();
+        let suggestedCandidateData: SuggestedCandidateResponse[] = [];
+
+        if (suggestedCandidatesRes.ok) {
+          suggestedCandidateData = await suggestedCandidatesRes.json();
+        } else {
+          const fallbackMessage = await suggestedCandidatesRes
+            .text()
+            .catch(() => suggestedCandidatesRes.statusText);
+          console.warn(
+            "Failed to fetch suggested candidates order",
+            fallbackMessage
+          );
+        }
 
         // Filter out non-active elections
         data = data.filter((election: { date: string | number | Date }) =>
@@ -29,7 +57,15 @@ export default function LiveElectionsPage() {
         );
 
         // Group elections by city and state
-        const locationMap = new Map();
+        const locationMap = new Map<
+          string,
+          {
+            city: string | null;
+            state: string;
+            positions: Set<string>;
+            date: string | Date;
+          }
+        >();
         for (const e of data) {
           const key = `${e.city || ""},${e.state}`;
           if (!locationMap.has(key)) {
@@ -40,7 +76,7 @@ export default function LiveElectionsPage() {
               date: e.date,
             });
           }
-          locationMap.get(key).positions.add(e.position);
+          locationMap.get(key)?.positions.add(e.position);
         }
 
         const grouped = Array.from(locationMap.values()).map((entry) => ({
@@ -54,15 +90,18 @@ export default function LiveElectionsPage() {
           return isElectionActive(new Date(election.date));
         });
 
-        const sorted = futureElections.sort((a, b) => {
-          const placeA = `${a.city || ""}, ${a.state}`.toLowerCase();
-          const placeB = `${b.city || ""}, ${b.state}`.toLowerCase();
-          return placeA.localeCompare(placeB);
-        });
+        const prioritizedKeys = buildSuggestedElectionOrder(
+          suggestedCandidateData
+        );
 
-        setElections(sorted as GroupedElection[]); // cast to GroupedElection[] to match state type
+        const ordered = orderLiveElectionsByPriority(
+          futureElections,
+          prioritizedKeys
+        );
+
+        setElections(ordered);
       } catch (err: unknown) {
-        setError(err as string);
+        setError(err instanceof Error ? err.message : String(err));
       } finally {
         setLoading(false);
       }
@@ -88,7 +127,7 @@ export default function LiveElectionsPage() {
 
           return (
             <Link
-              key={`${election.city}-${election.state}`}
+              key={getElectionLocationKey(election.city, election.state)}
               href={`/results?city=${encodeURIComponent(
                 election.city || ""
               )}&state=${encodeURIComponent(election.state)}`}

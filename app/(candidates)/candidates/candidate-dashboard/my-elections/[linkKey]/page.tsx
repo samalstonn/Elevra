@@ -19,6 +19,8 @@ import { X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { usePageTitle } from "@/lib/usePageTitle";
 import { decodeEditorLinkKey } from "../utils";
+import { SimpleEditor } from "@/components/tiptap-templates/simple/simple-editor";
+import { useUser } from "@clerk/nextjs";
 
 interface EditorPageProps {
   params: Promise<{
@@ -41,17 +43,15 @@ export default function MyPageEditor({ params }: EditorPageProps) {
 
   const [showTutorial, setShowTutorial] = useState(false);
   const [dontShowAgain, setDontShowAgain] = useState(false);
+  const [showPremiumNotice, setShowPremiumNotice] = useState(true);
 
   const decodedLinkKey = useMemo(() => decodeEditorLinkKey(linkKey), [linkKey]);
   const activeElectionId = decodedLinkKey?.electionId ?? null;
 
-  // Show tutorial on first load unless the user opted out
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    const hide = localStorage.getItem("mypage_tutorial_hide");
-    const tourStep = localStorage.getItem("elevra_tour_step");
-    if (hide !== "true" && !tourStep) setShowTutorial(true);
-  }, []);
+  const { user } = useUser();
+  const isPremium =
+    user?.publicMetadata.candidateSubscriptionTier === "premium";
+
   const closeTutorial = () => {
     if (dontShowAgain && typeof window !== "undefined") {
       localStorage.setItem("mypage_tutorial_hide", "true");
@@ -62,6 +62,23 @@ export default function MyPageEditor({ params }: EditorPageProps) {
   const activeLink = electionLinks.find(
     (link) => link.electionId === activeElectionId
   );
+
+  // Show tutorial on first load unless the user opted out and we're not in the custom campaign creator
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (!activeLink) return;
+    const isCustomCampaign =
+      !activeLink.ContentBlock || activeLink.ContentBlock.length === 0;
+    if (isCustomCampaign) {
+      setShowTutorial(false);
+      return;
+    }
+    const hide = localStorage.getItem("mypage_tutorial_hide");
+    const tourStep = localStorage.getItem("elevra_tour_step");
+    if (hide !== "true" && !tourStep) {
+      setShowTutorial(true);
+    }
+  }, [activeLink]);
 
   if (isLoading) {
     return (
@@ -146,7 +163,7 @@ export default function MyPageEditor({ params }: EditorPageProps) {
   return (
     <>
       <div className="flex flex-col gap-6 w-full min-w-0">
-        <div className="w-full max-w-4xl mx-auto min-w-0">
+        <div className="w-full max-w-4xl min-w-0">
           {/* <div className="mb-6">
             <div className="bg-blue-50 border border-yellow-200 text-black-800 text-xs md:text-sm p-3 md:p-4 rounded-lg flex flex-col md:flex-row md:items-center md:justify-between gap-2 shadow-sm">
               <div className="flex-1 leading-snug">
@@ -185,46 +202,55 @@ export default function MyPageEditor({ params }: EditorPageProps) {
             {activeLink.election?.state ?? ""}
           </p>
         </div>
-        <ContentBlocksEditor
-          candidateSlug={candidateData.slug}
-          initialBlocks={activeLink.ContentBlock ?? []}
-          onSave={async (blocks, staticIds) => {
-            // Only send blocks that were actually updated
-            blocks = blocks.filter((b) => !staticIds.has(b.id));
-            try {
-              const res = await fetch("/api/v1/contentblocks/save", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                  candidateId: candidateData.id,
-                  electionId,
-                  blocks,
-                }),
-              });
-              const data = await res.json();
-              if (!res.ok || data.error) {
+        {activeLink.ContentBlock && activeLink.ContentBlock.length > 0 ? (
+          <ContentBlocksEditor
+            candidateSlug={candidateData.slug}
+            initialBlocks={activeLink.ContentBlock ?? []}
+            onSave={async (blocks, staticIds) => {
+              // Only send blocks that were actually updated
+              blocks = blocks.filter((b) => !staticIds.has(b.id));
+              try {
+                const res = await fetch("/api/v1/contentblocks/save", {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({
+                    candidateId: candidateData.id,
+                    electionId,
+                    blocks,
+                  }),
+                });
+                const data = await res.json();
+                if (!res.ok || data.error) {
+                  toast({
+                    variant: "destructive",
+                    title: "Error saving blocks",
+                    description:
+                      data.error || "Block limits exceeded or unknown error.",
+                  });
+                  return;
+                }
+                toast({
+                  title: "Content saved",
+                  description:
+                    "Your election profile been updated successfully.",
+                });
+              } catch (err) {
                 toast({
                   variant: "destructive",
-                  title: "Error saving blocks",
-                  description:
-                    data.error || "Block limits exceeded or unknown error.",
+                  title: "Network error",
+                  description: "Unable to save content blocks.",
                 });
-                return;
+                console.error("Error saving content blocks:", err);
               }
-              toast({
-                title: "Content saved",
-                description: "Your election profile been updated successfully.",
-              });
-            } catch (err) {
-              toast({
-                variant: "destructive",
-                title: "Network error",
-                description: "Unable to save content blocks.",
-              });
-              console.error("Error saving content blocks:", err);
-            }
-          }}
-        />
+            }}
+          />
+        ) : (
+          <SimpleEditorWrapper
+            candidateId={candidateData.id}
+            electionId={electionId}
+            candidateSlug={candidateData.slug}
+          />
+        )}
       </div>
       <Dialog open={showTutorial} onOpenChange={setShowTutorial}>
         <DialogContent className="max-w-md">
@@ -272,6 +298,140 @@ export default function MyPageEditor({ params }: EditorPageProps) {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      {isPremium &&
+        activeLink.ContentBlock?.length === 3 &&
+        showPremiumNotice && (
+          <Dialog open={showPremiumNotice} onOpenChange={setShowPremiumNotice}>
+            <DialogContent className="max-w-md">
+              <button
+                className="absolute top-4 right-4 text-gray-500 hover:text-gray-700"
+                onClick={() => setShowPremiumNotice(false)}
+                aria-label="Close"
+              >
+                <X className="h-4 w-4" />
+              </button>
+              <DialogHeader>
+                <DialogTitle>Premium User Notice</DialogTitle>
+              </DialogHeader>
+
+              <div className="space-y-2 text-sm text-gray-700">
+                <p>
+                  We noticed you{" "}
+                  <strong>
+                    are a premium user working with our basic campaign template.
+                  </strong>{" "}
+                  Please delete your campaign and re-add to see our premium
+                  template or start from scratch with our versatile editor!
+                </p>
+                <p>
+                  Reach out to{" "}
+                  <a
+                    href="mailto:team@elevracommunity.com"
+                    className="text-purple-600 underline hover:text-purple-700"
+                  >
+                    team@elevracommunity.com
+                  </a>{" "}
+                  with any questions.
+                </p>
+                <p className="text-sm text-gray-700">
+                  Make sure to copy anything from the basic template you want to
+                  keep before proceeding!
+                </p>
+              </div>
+
+              <DialogFooter className="flex justify-start mt-4">
+                <Button
+                  onClick={() => setShowPremiumNotice(false)}
+                  variant="purple"
+                >
+                  Got it
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+        )}
     </>
+  );
+}
+
+function SimpleEditorWrapper({
+  candidateId,
+  electionId,
+  candidateSlug,
+}: {
+  candidateId: number;
+  electionId: number;
+  candidateSlug: string;
+}) {
+  const { toast } = useToast();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const [initialContent, setInitialContent] = useState<any | undefined>(
+    undefined
+  );
+
+  // eslint-disable-next-line
+  const [loaded, setLoaded] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    const load = async () => {
+      try {
+        const res = await fetch(
+          `/api/v1/document?candidateId=${candidateId}&electionId=${electionId}`
+        );
+        if (!res.ok)
+          throw new Error(`Failed to fetch document (${res.status})`);
+        const data = await res.json();
+        if (!cancelled && data?.exists && data?.json) {
+          setInitialContent(data.json);
+        }
+      } catch (e) {
+        console.error("Error loading document:", e);
+      } finally {
+        if (!cancelled) setLoaded(true);
+      }
+    };
+    load();
+    return () => {
+      cancelled = true;
+    };
+  }, [candidateId, electionId]);
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const handleSave = async ({ json, html }: { json: any; html: string }) => {
+    try {
+      const res = await fetch(`/api/v1/document`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ candidateId, electionId, json, html }),
+      });
+      const data = await res.json();
+      if (!res.ok || data?.error) {
+        toast({
+          variant: "destructive",
+          title: "Error saving",
+          description: data?.error || "Unable to save content.",
+        });
+        return;
+      }
+      toast({ title: "Content saved", description: "Your page was updated." });
+      // set initial content after save to ensure future comparisons (if any)
+      setInitialContent(json);
+    } catch (e) {
+      console.error("Save failed:", e);
+      toast({
+        variant: "destructive",
+        title: "Network error",
+        description: "Unable to save content.",
+      });
+    }
+  };
+
+  return (
+    <SimpleEditor
+      initialContent={initialContent}
+      onSave={handleSave}
+      candidateSlug={candidateSlug}
+    />
   );
 }

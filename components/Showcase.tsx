@@ -56,7 +56,7 @@ const Showcase: React.FC<ShowcaseProps> = ({}) => {
         viewport={{ once: true }}
         className="max-w-5xl mx-auto text-center mb-8 mt-8"
       >
-        <h2 className="text-2xl sm:text-3xl font-extrabold text-gray-900 mb-8">
+        <h2 className="text-2xl sm:text-3xl font-extrabold text-gray-900 mb-8 mx-auto">
           How Elevra Works
         </h2>
         {activeContent === "voters" && (

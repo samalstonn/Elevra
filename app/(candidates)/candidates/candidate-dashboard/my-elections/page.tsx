@@ -4,10 +4,21 @@ import React, { useEffect, useState } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Terminal } from "lucide-react";
+import { useUser } from "@clerk/nextjs";
 
 import SearchBar from "@/components/ResultsSearchBar";
 import { ElectionLinkWithElection, useCandidate } from "@/lib/useCandidate";
-import { buildEditorPath, summarizeBlocks, type BlockSnippet } from "./utils";
+import {
+  buildEditorPath,
+  buildResultsHref,
+  CUSTOM_TEMPLATE_PREVIEW,
+  ELEVRA_STARTER_TEMPLATE_PREVIEW,
+  SIMPLE_TEMPLATE_PREVIEW,
+  summarizeBlocks,
+  TemplateCardDefinition,
+  TemplateChoice,
+  /* type BlockSnippet, */
+} from "./utils";
 
 import {
   Dialog,
@@ -24,8 +35,7 @@ import TourModal from "@/components/tour/TourModal";
 import { usePageTitle } from "@/lib/usePageTitle";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
-// import { elevraStarterTemplate } from "@/app/(templates)/basicwebpage";
-// import type { ContentBlock } from "@prisma/client";
+import { PremiumCampaignCard } from "@/components/PremiumCampaignCard";
 
 export default function ProfileSettingsPage() {
   usePageTitle("Candidate Dashboard – Campaign");
@@ -37,6 +47,11 @@ export default function ProfileSettingsPage() {
     isLoading,
     refresh,
   } = useCandidate();
+  const { isLoaded, isSignedIn, user } = useUser();
+  const candidateTier = (
+    user?.publicMetadata?.candidateSubscriptionTier as string | undefined
+  )?.toLowerCase();
+  const isPremium = candidateTier === "premium";
 
   const [showAddElectionModal, setShowAddElectionModal] = useState(false);
   const [showTemplateModal, setShowTemplateModal] = useState(false);
@@ -53,6 +68,7 @@ export default function ProfileSettingsPage() {
   // Tour state (Step 3)
   const [showStep3, setShowStep3] = useState(false);
   const searchParams = useSearchParams();
+
   useEffect(() => {
     try {
       const optOut = localStorage.getItem("elevra_tour_opt_out");
@@ -72,12 +88,12 @@ export default function ProfileSettingsPage() {
     router.push("/candidates/candidate-dashboard");
   };
 
-  const nextToEndorsements = () => {
+  const finishTour = () => {
     try {
-      localStorage.setItem("elevra_tour_step", "4");
+      localStorage.removeItem("elevra_tour_step");
     } catch {}
     setShowStep3(false);
-    router.push("/candidates/candidate-dashboard/endorsements?tour=1");
+    router.replace("/candidates/candidate-dashboard/my-elections");
   };
   const backToProfile = () => {
     try {
@@ -104,19 +120,45 @@ export default function ProfileSettingsPage() {
   };
 
   const openTemplateModal = (link: ElectionLinkWithElection) => {
-    // const hasCustomBlocks = Boolean(
-    //   link.ContentBlock &&
-    //     link.ContentBlock.length > 0 &&
-    //     !isElevraStarterTemplateUnmodified(link.ContentBlock)
-    // );
-    // setTemplateSelection(hasCustomBlocks ? "current" : "elevraStarterTemplate");
     setTemplateSelection(null);
     setActiveTemplateLink(link);
     setShowTemplateModal(true);
   };
 
-  const goToEditor = (link: ElectionLinkWithElection) => {
+  const goToEditor = async (link: ElectionLinkWithElection) => {
     if (!candidateData?.slug) return;
+
+    const hasBlocks = (link.ContentBlock?.length ?? 0) > 0;
+    const hasCustomDoc = Boolean(link.Document?.contentHtml);
+    if (!isPremium && !hasBlocks && !hasCustomDoc) {
+      try {
+        const res = await fetch("/api/v1/contentblocks/apply-template", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            candidateId: candidateData.id,
+            electionId: link.electionId,
+            templateKey: "SIMPLE_TEMPLATE",
+          }),
+        });
+        if (!res.ok) {
+          const data = await res.json().catch(() => ({}));
+          throw new Error(data.error || "Failed to seed campaign template");
+        }
+        refresh();
+      } catch (err) {
+        console.error("Error seeding simple template", err);
+        toast({
+          variant: "destructive",
+          title: "Could not open editor",
+          description:
+            err instanceof Error
+              ? err.message
+              : "Please try again after refreshing the page.",
+        });
+        return;
+      }
+    }
 
     const editPath = buildEditorPath(candidateData.slug, link.electionId);
     router.push(editPath);
@@ -170,6 +212,8 @@ export default function ProfileSettingsPage() {
       return;
     }
 
+    const key = templateSelection || "custom";
+
     // Ensure an election link exists (create it only now, when the user commits by clicking Customize)
     const hasLinkAlready = !!electionLinks.find(
       (l) => l.electionId === electionId
@@ -182,6 +226,7 @@ export default function ProfileSettingsPage() {
           body: JSON.stringify({
             candidateId: candidateData.id,
             electionId,
+            key,
           }),
         });
 
@@ -300,37 +345,42 @@ export default function ProfileSettingsPage() {
       </Alert>
     );
   }
-  // const activeBlocks = activeTemplateLink?.ContentBlock;
-  // const activeIsElevraStarterTemplateOnly = isElevraStarterTemplateUnmodified(activeBlocks);
-  // const activeHasCustomBlocks = Boolean(
-  //   activeBlocks && activeBlocks.length > 0 && !activeIsElevraStarterTemplateOnly
-  // );
 
-  // const currentTemplateSnippets =
-  //   activeHasCustomBlocks && activeTemplateLink
-  //     ? summarizeBlocks(activeTemplateLink.ContentBlock)
-  //     : [];
-
+  if (!isLoaded || !isSignedIn || !user) {
+    return (
+      <Alert variant="default">
+        <Terminal className="h-4 w-4" />
+        <AlertTitle>Not Signed In</AlertTitle>
+        <AlertDescription>
+          Please sign in to access your candidate dashboard.
+        </AlertDescription>
+      </Alert>
+    );
+  }
   const templateCards: TemplateCardDefinition[] = [];
 
   if (activeTemplateLink) {
-    // if (activeHasCustomBlocks) {
-    //   templateCards.push({
-    //     key: "current",
-    //     title: "My Current Layout",
-    //     description: "Keep editing the content you’ve already customized.",
-    //     snippets:
-    //       currentTemplateSnippets.length > 0
-    //         ? currentTemplateSnippets
-    //         : CURRENT_TEMPLATE_FALLBACK,
-    //   });
-    // }
-    templateCards.push({
-      key: "elevraStarterTemplate",
-      title: "Elevra Starter Template",
-      description: "Introduce voters to your campaign",
-      snippets: ELEVRA_STARTER_TEMPLATE_PREVIEW,
-    });
+    if (!isPremium) {
+      templateCards.push({
+        key: "simpleTemplate",
+        title: "Simple Template",
+        description: "Basic Template to Reach Out to Voters",
+        snippets: SIMPLE_TEMPLATE_PREVIEW,
+      });
+    } else {
+      templateCards.push({
+        key: "elevraStarterTemplate",
+        title: "Elevra Template",
+        description: "Introduce voters to your campaign",
+        snippets: ELEVRA_STARTER_TEMPLATE_PREVIEW,
+      });
+      templateCards.push({
+        key: "custom",
+        title: "Custom Campaign",
+        description: "Customize your campaign page from scratch",
+        snippets: CUSTOM_TEMPLATE_PREVIEW,
+      });
+    }
   }
 
   return (
@@ -339,24 +389,35 @@ export default function ProfileSettingsPage() {
       <TourModal
         open={showStep3}
         onOpenChange={setShowStep3}
-        title="Campaign (Step 3 of 4)"
+        title="Campaign (Step 3 of 3)"
         backLabel="Back"
         onBack={backToProfile}
-        primaryLabel="Next: Endorsements"
-        onPrimary={nextToEndorsements}
+        primaryLabel="Finish Tour"
+        onPrimary={finishTour}
         secondaryLabel="Skip tour"
         onSecondary={skipTour}
       >
         <p>
-          Use the actions here to manage how voters see the most important part
-          of the public part of Elevra, <strong>your campaign</strong>.
+          Use these actions to shape the public campaign page voters explore —
+          add elections, refine talking points, and keep everything current.
         </p>
         <p>
-          Tip: No need to start from scratch! Click{" "}
-          <strong>Edit Campaign Page</strong> on the campaign card to launch our
-          ready-made template.
+          Want more control? Upgrading unlocks the advanced templates and fully
+          custom campaign page so you can tailor every section.
+        </p>
+        <p>
+          Tip: Click <strong>Edit Campaign Page</strong> to launch the editor
+          and get started.
         </p>
       </TourModal>
+
+      {/* Page Heading */}
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold text-gray-900">
+          Your Public Campaign Pages
+        </h1>
+      </div>
+
       <div className="mb-6">
         <div className="w-full">
           <div className="grid gap-6 sm:grid-cols-2 xl:grid-cols-3">
@@ -400,6 +461,14 @@ export default function ProfileSettingsPage() {
               }
 
               const snippets = summarizeBlocks(link.ContentBlock);
+              const hasCustomDoc = !!link.Document?.contentHtml;
+              const docPreview =
+                hasCustomDoc && link.Document
+                  ? link.Document.contentHtml
+                      .replace(/<[^>]+>/g, " ")
+                      .replace(/\s+/g, " ")
+                      .trim()
+                  : "";
               const resultsHref = buildResultsHref(link);
 
               return (
@@ -436,6 +505,17 @@ export default function ProfileSettingsPage() {
                           </div>
                         ))}
                       </div>
+                    ) : hasCustomDoc ? (
+                      <div className="space-y-3">
+                        <div>
+                          <span className="text-[10px] uppercase tracking-wide text-purple-500">
+                            Custom Campaign
+                          </span>
+                          <p className="text-sm text-gray-700 leading-relaxed line-clamp-4">
+                            {docPreview}
+                          </p>
+                        </div>
+                      </div>
                     ) : (
                       <p className="text-sm text-gray-500">
                         You haven’t customized this election yet. Jump into the
@@ -449,7 +529,9 @@ export default function ProfileSettingsPage() {
                       <Button
                         variant="purple"
                         size="sm"
-                        onClick={() => goToEditor(link)}
+                        onClick={() => {
+                          void goToEditor(link);
+                        }}
                       >
                         Edit Campaign Page
                       </Button>
@@ -458,6 +540,11 @@ export default function ProfileSettingsPage() {
                         Missing slug
                       </Button>
                     )}
+                    {resultsHref ? (
+                      <Button asChild variant="secondary" size="sm">
+                        <Link href={resultsHref}>View Election</Link>
+                      </Button>
+                    ) : null}
                     <Button
                       variant="destructive"
                       size="sm"
@@ -474,15 +561,13 @@ export default function ProfileSettingsPage() {
                     >
                       Delete Campaign
                     </Button>
-                    {resultsHref ? (
-                      <Button asChild variant="secondary" size="sm">
-                        <Link href={resultsHref}>View Election</Link>
-                      </Button>
-                    ) : null}
                   </div>
                 </article>
               );
             })}
+            {/* Premium Campaign Card */}
+            {!isPremium && <PremiumCampaignCard />}
+
             <article className="flex h-full flex-col justify-between rounded-xl border-2 border-dashed border-purple-200 bg-purple-50/60 p-6 shadow-sm backdrop-blur transition hover:border-purple-300">
               <div className="space-y-4">
                 <div>
@@ -511,7 +596,7 @@ export default function ProfileSettingsPage() {
         open={showTemplateModal}
         onOpenChange={handleTemplateDialogChange}
       >
-        <DialogContent className="max-w-3xl">
+        <DialogContent className="template-dialog w-[80%] rounded-lg sm:w-full max-w-3xl max-h-[85vh] overflow-y-auto sm:max-h-none sm:overflow-visible">
           <DialogHeader>
             <DialogTitle>Choose a Template</DialogTitle>
             <DialogDescription>
@@ -520,12 +605,6 @@ export default function ProfileSettingsPage() {
                 : "Pick the template for this election page."}
             </DialogDescription>
           </DialogHeader>
-          {/* {!activeHasCustomBlocks ? (
-            <p className="rounded-md border border-dashed border-purple-200 bg-purple-50 px-4 py-3 text-xs text-purple-700">
-              You haven’t customized this campaign yet. We’ll start you with the
-              Elevra Starter Template so you can personalize it in the editor.
-            </p>
-          ) : null} */}
           <div
             className={cn(
               "mt-4 grid gap-4",
@@ -547,33 +626,35 @@ export default function ProfileSettingsPage() {
                   )}
                   aria-pressed={isSelected}
                 >
-                  <div className="flex items-center justify-between gap-2">
-                    <p className="text-sm font-semibold text-gray-900">
-                      {card.title}
+                  <div className="flex flex-col h-full">
+                    <div className="flex items-center justify-between gap-2 mb-1">
+                      <p className="text-sm font-semibold text-gray-900">
+                        {card.title}
+                      </p>
+                      <span
+                        className={cn(
+                          "h-2.5 w-2.5 rounded-full border flex-shrink-0",
+                          isSelected
+                            ? "border-purple-600 bg-purple-600"
+                            : "border-gray-300 bg-white"
+                        )}
+                      />
+                    </div>
+                    <p className="text-xs text-gray-500 mb-3">
+                      {card.description}
                     </p>
-                    <span
-                      className={cn(
-                        "h-2.5 w-2.5 rounded-full border",
-                        isSelected
-                          ? "border-purple-600 bg-purple-600"
-                          : "border-gray-300 bg-white"
-                      )}
-                    />
-                  </div>
-                  <p className="mt-1 text-xs text-gray-500">
-                    {card.description}
-                  </p>
-                  <div className="mt-3 space-y-2">
-                    {card.snippets.map((snippet, index) => (
-                      <div key={`${card.key}-${snippet.label}-${index}`}>
-                        <span className="text-[10px] uppercase tracking-wide text-purple-500">
-                          {snippet.label}
-                        </span>
-                        <p className="text-xs text-gray-600 line-clamp-2">
-                          {snippet.text}
-                        </p>
-                      </div>
-                    ))}
+                    <div className="flex-1 space-y-2">
+                      {card.snippets.map((snippet, index) => (
+                        <div key={`${card.key}-${snippet.label}-${index}`}>
+                          <span className="text-[10px] uppercase tracking-wide text-purple-500">
+                            {snippet.label}
+                          </span>
+                          <p className="text-xs text-gray-600 line-clamp-2">
+                            {snippet.text}
+                          </p>
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 </button>
               );
@@ -625,149 +706,4 @@ export default function ProfileSettingsPage() {
       </Dialog>
     </div>
   );
-}
-
-type TemplateChoice = "current" | "elevraStarterTemplate";
-
-type TemplateCardDefinition = {
-  key: TemplateChoice;
-  title: string;
-  description: string;
-  snippets: BlockSnippet[];
-};
-
-const ELEVRA_STARTER_TEMPLATE_PREVIEW: BlockSnippet[] = [
-  {
-    label: "Heading",
-    text: "Lead with a bold introduction that highlights your campaign and story.",
-  },
-  {
-    label: "Description",
-    text: "Describe yourself and your campaign.",
-  },
-  {
-    label: "Candidate Image",
-    text: "Share a picture of yourself to give voters a face to associate with your campaign.",
-  },
-  {
-    label: "What I Bring",
-    text: "Detail what you would bring to the table if elected.",
-  },
-  {
-    label: "What I Believe",
-    text: "Express your core beliefs related to the position you are running for.",
-  },
-  {
-    label: "Why I'm Running",
-    text: "Spotlight your motivation and priorities for campaigning.",
-  },
-  {
-    label: "Campaign Image",
-    text: "Feature visuals for your campaign signs, portrait, or videos.",
-  },
-];
-
-// const CURRENT_TEMPLATE_FALLBACK: BlockSnippet[] = [
-//   {
-//     label: "Layout",
-//     text: "Continue editing your saved sections and content blocks.",
-//   },
-// ];
-
-// function isElevraStarterTemplateUnmodified(blocks?: ContentBlock[] | null) {
-//   if (!blocks || blocks.length !== elevraStarterTemplate.length) {
-//     return false;
-//   }
-
-//   const templateByOrder = new Map(
-//     elevraStarterTemplate.map((block) => [block.order, block])
-//   );
-
-//   for (const block of blocks) {
-//     const templateBlock = templateByOrder.get(block.order);
-//     if (!templateBlock) {
-//       return false;
-//     }
-
-//     const createdAt = new Date(block.createdAt);
-//     const updatedAt = new Date(block.updatedAt);
-//     if (
-//       Number.isNaN(createdAt.getTime()) ||
-//       Number.isNaN(updatedAt.getTime())
-//     ) {
-//       return false;
-//     }
-//     if (createdAt.getTime() !== updatedAt.getTime()) {
-//       return false;
-//     }
-
-//     if (!areBlocksEquivalent(block, templateBlock)) {
-//       return false;
-//     }
-//   }
-
-//   return true;
-// }
-
-// function areBlocksEquivalent(
-//   block: ContentBlock,
-//   templateBlock: (typeof elevraStarterTemplate)[number]
-// ) {
-//   if (block.type !== templateBlock.type) return false;
-//   if ((block.color ?? null) !== (templateBlock.color ?? null)) return false;
-//   if ((block.level ?? null) !== (templateBlock.level ?? null)) return false;
-//   if ((block.text ?? null) !== (templateBlock.text ?? null)) return false;
-//   if ((block.body ?? null) !== (templateBlock.body ?? null)) return false;
-//   if ((block.listStyle ?? null) !== (templateBlock.listStyle ?? null)) {
-//     return false;
-//   }
-//   if (!areStringArraysEqual(block.items, templateBlock.items)) return false;
-//   if ((block.imageUrl ?? null) !== (templateBlock.imageUrl ?? null)) {
-//     return false;
-//   }
-//   if ((block.videoUrl ?? null) !== (templateBlock.videoUrl ?? null)) {
-//     return false;
-//   }
-//   if ((block.thumbnailUrl ?? null) !== (templateBlock.thumbnailUrl ?? null)) {
-//     return false;
-//   }
-//   if ((block.caption ?? null) !== (templateBlock.caption ?? null)) {
-//     return false;
-//   }
-
-//   return true;
-// }
-
-// function areStringArraysEqual(
-//   a: string[] | null | undefined,
-//   b: string[] | null | undefined
-// ) {
-//   const normalizedA = Array.isArray(a) ? a : null;
-//   const normalizedB = Array.isArray(b) ? b : null;
-
-//   if (!normalizedA && !normalizedB) return true;
-//   if (!normalizedA || !normalizedB) return false;
-//   if (normalizedA.length !== normalizedB.length) return false;
-
-//   for (let i = 0; i < normalizedA.length; i += 1) {
-//     if (normalizedA[i] !== normalizedB[i]) return false;
-//   }
-
-//   return true;
-// }
-
-function buildResultsHref(link: ElectionLinkWithElection) {
-  const { election, electionId } = link;
-
-  if (!election?.city || !election?.state) {
-    return null;
-  }
-
-  const search = new URLSearchParams({
-    city: election.city,
-    state: election.state,
-    electionID: String(electionId),
-  });
-
-  return `/results?${search.toString()}`;
 }

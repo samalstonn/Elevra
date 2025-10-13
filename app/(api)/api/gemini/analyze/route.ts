@@ -43,11 +43,11 @@ export async function POST(req: NextRequest) {
 
     // Determine row limit now that isProd is known
     const maxRows = Number(
-      process.env.GEMINI_MAX_ROWS ?? (isProd ? "30" : "100")
+      process.env.GEMINI_MAX_ROWS ?? (isProd ? "100" : "100")
     );
     const limitedRows = rows.slice(
       0,
-      isNaN(maxRows) ? (isProd ? 30 : 100) : maxRows
+      isNaN(maxRows) ? (isProd ? 100 : 100) : maxRows
     );
 
     if (!geminiEnabled) {

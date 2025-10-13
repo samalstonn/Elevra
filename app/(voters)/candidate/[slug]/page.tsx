@@ -2,6 +2,10 @@ export const dynamic = "force-dynamic";
 import { notFound } from "next/navigation";
 import { headers } from "next/headers";
 import prisma from "@/prisma/prisma";
+import {
+  buildSuggestedCandidateWhere,
+  suggestedCandidateOrderBy,
+} from "@/lib/suggestedCandidates";
 import CandidateClient from "./CandidateClient";
 import { Candidate } from "@prisma/client";
 import { currentUser } from "@clerk/nextjs/server";
@@ -30,6 +34,7 @@ export async function generateMetadata({
   }
 
   let title = `${candidate.name} – Candidate`;
+  let description = `Discover election details, endorsements, and updates from ${candidate.name} on Elevra.`;
   const electionIdParam = resolvedSearchParams?.election
     ? parseInt(resolvedSearchParams.election, 10)
     : undefined;
@@ -47,10 +52,25 @@ export async function generateMetadata({
       title = `${candidate.name} – ${election.position}${
         loc ? ` (${loc})` : ""
       }`;
+      description = `Explore the ${election.position.toLowerCase()} race${
+        loc ? ` in ${loc}` : ""
+      } with insights about ${candidate.name}.`;
     }
   }
 
-  return { title };
+  return {
+    title,
+    description,
+    openGraph: {
+      title,
+      description,
+    },
+    twitter: {
+      card: "summary",
+      title,
+      description,
+    },
+  } satisfies Metadata;
 }
 
 export default async function CandidatePage({
@@ -89,6 +109,7 @@ export default async function CandidatePage({
     },
     include: {
       ContentBlock: true,
+      Document: true,
       election: {
         include: {
           candidates: {
@@ -150,14 +171,10 @@ export default async function CandidatePage({
     },
   });
 
-  // Get suggested candidates (only those with actual images)
+  // Suggested list prioritizes candidates with real image content blocks
   const suggestedCandidates = await prisma.candidate.findMany({
-    where: {
-      id: { not: candidateID },
-      hidden: false,
-      verified: true,
-      elections: { some: { election: { type: "LOCAL" } } },
-    },
+    where: buildSuggestedCandidateWhere(candidateID),
+    orderBy: suggestedCandidateOrderBy,
   });
 
   // Check if current user can edit this candidate profile

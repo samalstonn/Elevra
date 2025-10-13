@@ -21,9 +21,37 @@ export async function generateMetadata({
 
   if (city && state) {
     const loc = city ? `${city}, ${state}` : state;
-    return { title: `Election Results – ${loc}` };
+    const title = `Election Results – ${loc}`;
+    const description = `Review local election results for races in ${loc}, including candidate lineups and outcomes.`;
+    return {
+      title,
+      description,
+      openGraph: {
+        title,
+        description,
+      },
+      twitter: {
+        card: "summary",
+        title,
+        description,
+      },
+    } satisfies Metadata;
   }
-  return { title: "Election Results" };
+  const title = "Election Results";
+  const description = "Explore election results by city and state to see which candidates are on the ballot.";
+  return {
+    title,
+    description,
+    openGraph: {
+      title,
+      description,
+    },
+    twitter: {
+      card: "summary",
+      title,
+      description,
+    },
+  } satisfies Metadata;
 }
 
 async function ElectionResultsPage({ searchParams }: ElectionResultsPageProps) {
