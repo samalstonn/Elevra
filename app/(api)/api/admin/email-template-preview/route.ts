@@ -14,15 +14,6 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
-function isTemplateKey(value: unknown): value is TemplateKey {
-  return (
-    value === "initial" ||
-    value === "followup" ||
-    value === "followup2" ||
-    value === "verifiedUpdate"
-  );
-}
-
 export async function POST(req: NextRequest) {
   try {
     const authState = getAuth(req);
@@ -62,20 +53,22 @@ export async function POST(req: NextRequest) {
     }
 
     const body = parsed;
-    const templateRaw = isTemplateKey(body.template)
-      ? body.template
-      : isTemplateKey(body.templateType)
-      ? body.templateType
-      : undefined;
-    const key: TemplateKey = templateRaw ?? "initial";
+    const templateRaw =
+      typeof body.template === "string"
+        ? body.template.trim()
+        : typeof body.templateType === "string"
+        ? body.templateType.trim()
+        : "";
+    const key: TemplateKey = templateRaw || "initial";
 
     const data = isRecord(body.data) ? body.data : {};
 
-    const baseTemplateRaw = isTemplateKey(body.baseForFollowup)
-      ? body.baseForFollowup
-      : isTemplateKey(body.baseTemplate)
-      ? body.baseTemplate
-      : undefined;
+    const baseTemplateRaw =
+      typeof body.baseForFollowup === "string"
+        ? body.baseForFollowup.trim()
+        : typeof body.baseTemplate === "string"
+        ? body.baseTemplate.trim()
+        : undefined;
 
     const baseForFollowup = baseTemplateRaw;
     const requestSenderName =

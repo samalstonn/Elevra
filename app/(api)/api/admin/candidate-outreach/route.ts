@@ -193,14 +193,26 @@ export async function POST(req: NextRequest) {
   const sent: { index: number; email: string; id: string | null }[] = [];
   const failures: { index: number; email: string; error: string }[] = [];
 
+  const requestedTemplateType =
+    typeof body.templateType === "string"
+      ? (body.templateType as string).trim()
+      : undefined;
   const selectedType: TemplateKey =
-    (body.templateType as TemplateKey) ||
+    (requestedTemplateType as TemplateKey) ||
     (body.followup ? "followup" : "initial");
   const hasSequence = Array.isArray(body.sequence) && body.sequence.length > 0;
   const steps: { template: TemplateKey; offsetDays?: number }[] = hasSequence
-    ? (body.sequence as { template: TemplateKey; offsetDays?: number }[])
+    ? (body.sequence as { template: TemplateKey; offsetDays?: number }[]).map(
+        (step) => ({
+          template:
+            typeof step.template === "string"
+              ? (step.template.trim() as TemplateKey)
+              : selectedType,
+          offsetDays: step.offsetDays,
+        })
+      )
     : body.composeAsFollowup
-    ? [{ template: "followup" as const, offsetDays: 0 }]
+    ? [{ template: "followup", offsetDays: 0 }]
     : [{ template: selectedType, offsetDays: 0 }];
 
   const renderContext = createEmailTemplateRenderContext();
@@ -210,24 +222,33 @@ export async function POST(req: NextRequest) {
 
     for (let i = 0; i < recipients.length; i++) {
       const r = recipients[i];
-      const { subject, html } = await renderEmailTemplate(
-        step.template,
-        {
-          candidateFirstName: r.firstName || undefined,
-          state: r.state || undefined,
-          claimUrl: r.candidateLink,
-          templatesUrl: r.candidateLink,
-          profileUrl: r.candidateLink,
-          municipality: r.municipality || undefined,
-          position: r.position || undefined,
-          senderName,
-          senderTitle,
-          senderLinkedInUrl,
-          senderLinkedInLabel,
-        },
-        { baseForFollowup: body.baseTemplate || "initial" },
-        renderContext
-      );
+      let rendered: { subject: string; html: string };
+      try {
+        rendered = await renderEmailTemplate(
+          step.template,
+          {
+            candidateFirstName: r.firstName || undefined,
+            state: r.state || undefined,
+            claimUrl: r.candidateLink,
+            templatesUrl: r.candidateLink,
+            profileUrl: r.candidateLink,
+            municipality: r.municipality || undefined,
+            position: r.position || undefined,
+            senderName,
+            senderTitle,
+            senderLinkedInUrl,
+            senderLinkedInLabel,
+          },
+          { baseForFollowup: body.baseTemplate || "initial" },
+          renderContext
+        );
+      } catch (err) {
+        const message =
+          err instanceof Error ? err.message : "Failed to render template.";
+        failures.push({ index: i, email: r.email, error: message });
+        continue;
+      }
+      const { subject, html } = rendered;
       const subjectToUse = (
         body.subject ||
         subject ||

@@ -3,12 +3,11 @@ import path from "node:path";
 
 import { prisma } from "@/lib/prisma";
 import { formatGreetingName, formatLocationValue } from "./formatGreetingName";
-
-export type TemplateKey =
-  | "initial"
-  | "followup"
-  | "verifiedUpdate"
-  | "followup2";
+import {
+  DEFAULT_TEMPLATE_KEYS,
+  type DefaultTemplateKey,
+  type TemplateKey,
+} from "./constants";
 
 export type EmailDocumentRecord = {
   key: TemplateKey;
@@ -25,14 +24,14 @@ type RenderContextInternal = {
 
 export type RenderContext = RenderContextInternal;
 
-const DEFAULT_TITLES: Record<TemplateKey, string> = {
+const DEFAULT_TITLES: Record<DefaultTemplateKey, string> = {
   initial: "Candidate Outreach – Initial",
   followup: "Candidate Outreach – Follow-up",
   followup2: "Candidate Outreach – Final Reminder",
   verifiedUpdate: "Candidate Outreach – Templates Update",
 };
 
-const DEFAULT_SUBJECT_TEMPLATES: Record<TemplateKey, string> = {
+const DEFAULT_SUBJECT_TEMPLATES: Record<DefaultTemplateKey, string> = {
   initial: "Welcome to Elevra {{greetingName}}",
   followup: "RE: Your election{{locationSummary}} is live on Elevra",
   followup2: "Final reminder: Elevra voters{{locationSummary}} are active",
@@ -40,7 +39,7 @@ const DEFAULT_SUBJECT_TEMPLATES: Record<TemplateKey, string> = {
     "Update: Templates are back — create your Elevra page{{locationSummary}}",
 };
 
-const DEFAULT_DESCRIPTIONS: Partial<Record<TemplateKey, string>> = {
+const DEFAULT_DESCRIPTIONS: Partial<Record<DefaultTemplateKey, string>> = {
   initial:
     "Introduces Elevra. Placeholders: {{greetingName}}, {{claimUrl}}, {{locationFragment}}, {{positionDescriptor}}, {{senderName}}.",
   followup:
@@ -51,30 +50,14 @@ const DEFAULT_DESCRIPTIONS: Partial<Record<TemplateKey, string>> = {
     "Notify candidates that templates returned. Placeholders: {{greetingName}}, {{templatesUrl}}, {{profileLink}}, {{locationFragment}}.",
 };
 
-export const EMAIL_TEMPLATE_VARIABLES: readonly string[] = [
-  "greetingName",
-  "claimUrl",
-  "templatesUrl",
-  "profileUrl",
-  "profileLink",
-  "ctaLabel",
-  "municipalityName",
-  "stateName",
-  "locationFragment",
-  "locationSummary",
-  "locationDetail",
-  "positionDescriptor",
-  "positionName",
-  "originalHtml",
-  "senderName",
-  "senderTitle",
-  "senderLinkedInUrl",
-  "senderLinkedInLabel",
-];
+const defaultHtmlCache = new Map<DefaultTemplateKey, string>();
+const defaultTemplateKeySet = new Set<DefaultTemplateKey>(DEFAULT_TEMPLATE_KEYS);
 
-const defaultHtmlCache = new Map<TemplateKey, string>();
+function isDefaultTemplateKey(key: TemplateKey): key is DefaultTemplateKey {
+  return defaultTemplateKeySet.has(key as DefaultTemplateKey);
+}
 
-function readTemplateFile(key: TemplateKey): string {
+function readTemplateFile(key: DefaultTemplateKey): string {
   const file =
     key === "initial"
       ? "initial.html"
@@ -87,7 +70,7 @@ function readTemplateFile(key: TemplateKey): string {
   return fs.readFileSync(filePath, "utf8");
 }
 
-function loadDefaultHtml(key: TemplateKey): string {
+function loadDefaultHtml(key: DefaultTemplateKey): string {
   const cached = defaultHtmlCache.get(key);
   if (cached) return cached;
   const html = readTemplateFile(key);
@@ -95,7 +78,7 @@ function loadDefaultHtml(key: TemplateKey): string {
   return html;
 }
 
-function buildDefaultDocument(key: TemplateKey): EmailDocumentRecord {
+function buildDefaultDocument(key: DefaultTemplateKey): EmailDocumentRecord {
   return {
     key,
     title: DEFAULT_TITLES[key],
@@ -153,9 +136,18 @@ async function fetchEmailDocument(
     });
   } catch (error) {
     if (isMissingTableError(error)) {
-      const defaults = buildDefaultDocument(key);
-      context.cache.set(key, { ...defaults });
-      return defaults;
+      if (isDefaultTemplateKey(key)) {
+        const defaults = buildDefaultDocument(key);
+        context.cache.set(key, { ...defaults });
+        return defaults;
+      }
+      return {
+        key,
+        title: key,
+        subjectTemplate: "",
+        htmlTemplate: "",
+        description: undefined,
+      };
     }
     throw error;
   }
@@ -169,7 +161,7 @@ async function fetchEmailDocument(
       htmlTemplate: existing.htmlTemplate,
       description: existing.description ?? undefined,
     };
-  } else {
+  } else if (isDefaultTemplateKey(key)) {
     const defaults = buildDefaultDocument(key);
     record = { ...defaults };
     try {
@@ -192,6 +184,8 @@ async function fetchEmailDocument(
         });
       }
     }
+  } else {
+    throw new Error(`Email template "${key}" was not found.`);
   }
 
   context.cache.set(key, record);
@@ -363,5 +357,15 @@ export async function renderEmailTemplate(
     return { subject, html };
   } finally {
     ctx.visited.delete(key);
+  }
+}
+
+export type { TemplateKey, DefaultTemplateKey } from "./constants";
+export { EMAIL_TEMPLATE_VARIABLES, DEFAULT_TEMPLATE_KEYS } from "./constants";
+
+export async function ensureDefaultEmailDocuments(): Promise<void> {
+  const context = createEmailTemplateRenderContext();
+  for (const key of DEFAULT_TEMPLATE_KEYS) {
+    await fetchEmailDocument(key, context);
   }
 }

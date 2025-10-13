@@ -4,7 +4,6 @@
 import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useUser } from "@clerk/nextjs";
-import Link from "next/link";
 import { motion } from "framer-motion";
 import {
   FaArrowLeft,
