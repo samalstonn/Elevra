@@ -61,6 +61,67 @@ export async function buildAndDownloadResultSheet(
 
     const results = insertObj.results || [];
     const norm = (s?: string | null) => (s || "").trim().toLowerCase();
+    const normalizeKeyPart = (value?: string | null) =>
+      (value ?? "")
+        .toString()
+        .normalize("NFKD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .trim()
+        .toLowerCase()
+        .replace(/\s+/g, " ")
+        .replace(/[^a-z0-9 ]/g, "")
+        .replace(/\s+/g, "");
+    const makeNameMunicipalityKey = (
+      first?: string | null,
+      last?: string | null,
+      municipality?: string | null
+    ) => {
+      const firstPart = normalizeKeyPart(first);
+      const lastPart = normalizeKeyPart(last);
+      const municipalityPart = normalizeKeyPart(municipality);
+      if (!firstPart || !lastPart || !municipalityPart) return "";
+      return `${firstPart}|${lastPart}|${municipalityPart}`;
+    };
+    const splitNameParts = (fullName?: string | null) => {
+      const clean = (fullName ?? "").trim();
+      if (!clean) return { first: "", last: "" };
+      const parts = clean.split(/\s+/);
+      if (parts.length === 1) {
+        return { first: parts[0] ?? "", last: "" };
+      }
+      return {
+        first: parts[0] ?? "",
+        last: parts[parts.length - 1] ?? "",
+      };
+    };
+    type CandidateFallback = {
+      candidateUrl: string;
+      resultsUrl: string;
+    };
+    // Track fallback matches so missing emails can still resolve CandidateLink.
+    const fallbackMatches = new Map<string, CandidateFallback | null>();
+    const addFallbackMatch = (
+      first: string | null | undefined,
+      last: string | null | undefined,
+      municipality: string | null | undefined,
+      candidateUrl: string,
+      resultsUrl: string
+    ) => {
+      const key = makeNameMunicipalityKey(first, last, municipality);
+      if (!key || !candidateUrl) return;
+      const existing = fallbackMatches.get(key);
+      if (existing === undefined) {
+        fallbackMatches.set(key, { candidateUrl, resultsUrl });
+        return;
+      }
+      if (existing === null) {
+        return;
+      }
+      if (existing.candidateUrl === candidateUrl) {
+        return;
+      }
+      fallbackMatches.set(key, null);
+    };
     const municipalities = new Set<string>();
     const base =
       typeof window !== "undefined"
@@ -71,7 +132,7 @@ export async function buildAndDownloadResultSheet(
     const emailToCandidateUrl = new Map<string, string>();
     const emailToResultsUrl = new Map<string, string>();
 
-    for (const r of results) {
+    results.forEach((r, resultIndex) => {
       const candidateSlugs = (r.candidateSlugs || []) as string[];
       const candidateUrls = candidateSlugs.map((slug) =>
         slug ? `${base}/candidate/${slug}` : ""
@@ -94,7 +155,20 @@ export async function buildAndDownloadResultSheet(
           }
         });
       }
-    }
+      const structuredElection = structured?.elections?.[resultIndex];
+      const candidates = structuredElection?.candidates || [];
+      if (candidates.length) {
+        const limit = Math.min(candidateUrls.length, candidates.length);
+        const fallbackMunicipality =
+          structuredElection?.election?.city ?? r.city ?? "";
+        for (let i = 0; i < limit; i += 1) {
+          const candidateUrl = candidateUrls[i];
+          if (!candidateUrl) continue;
+          const { first, last } = splitNameParts(candidates[i]?.name);
+          addFallbackMatch(first, last, fallbackMunicipality, candidateUrl, resultsUrl);
+        }
+      }
+    });
 
     // First pass: set CandidateLink by email, collect group→resultsUrl
     const groupToResultsUrl = new Map<string, string>();
@@ -123,6 +197,41 @@ export async function buildAndDownloadResultSheet(
         candidateLink = emailToCandidateUrl.get(email) || "";
         const ru = emailToResultsUrl.get(email) || "";
         if (ru) groupToResultsUrl.set(groupKey, ru);
+      }
+      if (!candidateLink) {
+        // Fallback to name + municipality matching when no email match exists.
+        const parsedRow = parsedRowsForSheet?.[idx];
+        const fallbackFirst =
+          parsedRow?.firstName ||
+          getRawValue(raw as Record<string, unknown>, [
+            "firstName",
+            "FirstName",
+            "first_name",
+            "First Name",
+          ]);
+        const fallbackLast =
+          parsedRow?.lastName ||
+          getRawValue(raw as Record<string, unknown>, [
+            "lastName",
+            "LastName",
+            "last_name",
+            "Last Name",
+          ]);
+        const fallbackMunicipality =
+          parsedRow?.municipality || String(municipalityRaw);
+        const key = makeNameMunicipalityKey(
+          fallbackFirst,
+          fallbackLast,
+          fallbackMunicipality
+        );
+        if (key) {
+          const match = fallbackMatches.get(key);
+          if (match && match.candidateUrl) {
+            candidateLink = match.candidateUrl;
+            if (match.resultsUrl)
+              groupToResultsUrl.set(groupKey, match.resultsUrl);
+          }
+        }
       }
 
       out["CandidateLink"] = candidateLink;
