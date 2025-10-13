@@ -102,9 +102,13 @@ jobs:
       - name: Vercel deploy (preview)
         id: deploy
         run: |
-          url=$(vercel deploy --prebuilt --token "$VERCEL_TOKEN" --yes)
-          echo "NEXT_PUBLIC_APP_URL=$url" >> $GITHUB_ENV
-          echo "url=$url" >> $GITHUB_OUTPUT
+          app_url=$(vercel deploy --prebuilt --token "$VERCEL_TOKEN" --yes | tail -n1)
+          if [ -z "$app_url" ]; then
+            echo "::error::Failed to capture preview URL from vercel deploy output." >&2
+            exit 1
+          fi
+          echo "NEXT_PUBLIC_APP_URL=$app_url" >> "$GITHUB_ENV"
+          echo "url=$app_url" >> "$GITHUB_OUTPUT"
 
       # Cache Playwright browsers to speed up future runs
       - name: Cache Playwright
