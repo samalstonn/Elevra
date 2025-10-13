@@ -1,6 +1,8 @@
 import fs from "node:fs";
 import path from "node:path";
 
+import { formatGreetingName, formatLocationValue } from "./formatGreetingName";
+
 export type TemplateKey =
   | "initial"
   | "followup"
@@ -8,8 +10,8 @@ export type TemplateKey =
   | "followup2";
 
 const SUBJECTS: Record<TemplateKey, string> = {
-  initial: "Your Candidate Profile is Live on Elevra",
-  followup: "RE: Claim your Elevra profile",
+  initial: "Welcome to Elevra",
+  followup: "RE: Your Election is Live",
   followup2: "RE: Don't miss out on Elevra",
   verifiedUpdate: "Update: Templates are back — create your candidate webpage",
 };
@@ -46,17 +48,27 @@ export type RenderInput = {
   ctaLabel?: string;
   municipality?: string;
   position?: string;
+  senderName?: string;
+  senderTitle?: string;
+  senderLinkedInUrl?: string;
+  senderLinkedInLabel?: string;
 };
+
+const DEFAULT_SENDER_NAME = "Adam Rose";
+const DEFAULT_SENDER_TITLE = "Elevra | Cornell ’25";
+const DEFAULT_SENDER_LINKEDIN_URL =
+  "https://www.linkedin.com/company/elevracommunity/posts/?feedView=all";
+const DEFAULT_SENDER_LINKEDIN_LABEL = "LinkedIn";
 
 export function renderEmailTemplate(
   key: TemplateKey,
   data: RenderInput,
   opts?: { baseForFollowup?: TemplateKey }
 ): { subject: string; html: string } {
-  const greetingName = (data.candidateFirstName || "").trim() || "there";
-  const stateName = (data.state || "").trim();
-  const municipalityName = (data.municipality || "").trim();
-  const positionName = (data.position || "").trim();
+  const greetingName = formatGreetingName(data.candidateFirstName);
+  const stateName = formatLocationValue(data.state);
+  const municipalityName = formatLocationValue(data.municipality);
+  const positionName = formatLocationValue(data.position);
 
   const locationDetail =
     municipalityName && stateName
@@ -70,6 +82,10 @@ export function renderEmailTemplate(
     : "near you";
   const locationSummary = stateName ? ` in ${stateName}` : "";
   const positionDescriptor = positionName ? `${positionName}` : "";
+  const senderNameValue = (data.senderName || "").trim();
+  const senderTitleValue = (data.senderTitle || "").trim();
+  const senderLinkedInUrlValue = (data.senderLinkedInUrl || "").trim();
+  const senderLinkedInLabelValue = (data.senderLinkedInLabel || "").trim();
 
   if (key === "followup") {
     const base = opts?.baseForFollowup || "initial";
@@ -81,6 +97,10 @@ export function renderEmailTemplate(
       profileUrl: data.profileUrl,
       municipality: data.municipality,
       position: data.position,
+      senderName: senderNameValue,
+      senderTitle: senderTitleValue,
+      senderLinkedInUrl: senderLinkedInUrlValue,
+      senderLinkedInLabel: senderLinkedInLabelValue,
     }).html;
     const src = readTemplateFile("followup");
     const html = interpolate(src, {
@@ -106,6 +126,10 @@ export function renderEmailTemplate(
       profileUrl: data.profileUrl,
       municipality: data.municipality,
       position: data.position,
+      senderName: senderNameValue,
+      senderTitle: senderTitleValue,
+      senderLinkedInUrl: senderLinkedInUrlValue,
+      senderLinkedInLabel: senderLinkedInLabelValue,
     }).html;
     const src = readTemplateFile("followup2");
     const html = interpolate(src, {
@@ -142,6 +166,12 @@ export function renderEmailTemplate(
 
   if (key === "initial") {
     const src = readTemplateFile("initial");
+    const senderName = (data.senderName || "").trim() || DEFAULT_SENDER_NAME;
+    const senderTitle = (data.senderTitle || "").trim() || DEFAULT_SENDER_TITLE;
+    const senderLinkedInUrl =
+      (data.senderLinkedInUrl || "").trim() || DEFAULT_SENDER_LINKEDIN_URL;
+    const senderLinkedInLabel =
+      (data.senderLinkedInLabel || "").trim() || DEFAULT_SENDER_LINKEDIN_LABEL;
     const html = interpolate(src, {
       greetingName,
       claimUrl: data.claimUrl || "",
@@ -150,8 +180,12 @@ export function renderEmailTemplate(
       locationDetail: locationDetail || "",
       positionDescriptor,
       positionName,
+      senderName,
+      senderTitle,
+      senderLinkedInUrl,
+      senderLinkedInLabel,
     });
-    return { subject: SUBJECTS.initial, html };
+    return { subject: SUBJECTS.initial + " " + greetingName, html };
   }
 
   throw new Error(`Unknown template key: ${key}`);

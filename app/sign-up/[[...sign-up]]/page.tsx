@@ -1,11 +1,71 @@
-// app/sign-up/[[...sign-up]]/page.js
+"use client";
+
 import { SignUp } from "@clerk/nextjs";
+import { useMemo } from "react";
+import { useSearchParams } from "next/navigation";
+
+const DEFAULT_REDIRECT = "/dashboard";
+
+const resolveRedirect = (value: string | null): string => {
+  if (!value) {
+    return DEFAULT_REDIRECT;
+  }
+  if (value.startsWith("/")) {
+    return value;
+  }
+  try {
+    const url = new URL(value);
+    if (url.origin === window.location.origin) {
+      return `${url.pathname}${url.search}${url.hash}`;
+    }
+  } catch {
+    // ignore malformed URLs and fall back to default
+  }
+  return DEFAULT_REDIRECT;
+};
 
 export default function Page() {
+  const searchParams = useSearchParams();
+
+  const role = useMemo(() => {
+    const roleParam = searchParams.get("role");
+    return roleParam === "candidate" ? "candidate" : "voter";
+  }, [searchParams]);
+
+  const redirect = useMemo(() => {
+    const candidate = searchParams.get("redirect");
+    // We cannot call window in server; guard inside memo
+    if (typeof window !== "undefined") {
+      return resolveRedirect(candidate);
+    }
+    return DEFAULT_REDIRECT;
+  }, [searchParams]);
+
+  const redirectQuery = useMemo(() => {
+    const params = new URLSearchParams({
+      role,
+      redirect,
+    });
+    return params.toString();
+  }, [redirect, role]);
+
+  const signInPath = useMemo(() => {
+    const params = new URLSearchParams({ redirect_url: redirect });
+    return `/sign-in?${params.toString()}`;
+  }, [redirect]);
+
+  const afterSignUpPath = useMemo(
+    () => `/auth/complete-sign-up?${redirectQuery}`,
+    [redirectQuery]
+  );
+
   return (
     <div className="flex items-center justify-center min-h-screen p-4">
       <div className="w-full max-w-md">
         <SignUp
+          signInUrl={signInPath}
+          afterSignInUrl={redirect}
+          afterSignUpUrl={afterSignUpPath}
           appearance={{
             elements: {
               rootBox: "mx-auto w-full",

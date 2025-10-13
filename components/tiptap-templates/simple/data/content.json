@@ -1,0 +1,49 @@
+{
+  "type": "doc",
+  "content": [
+    {
+      "type": "heading",
+      "attrs": {
+        "textAlign": null,
+        "level": 1
+      },
+      "content": [
+        {
+          "type": "text",
+          "text": "Getting started"
+        }
+      ]
+    },
+    {
+      "type": "paragraph",
+      "attrs": {
+        "textAlign": null
+      },
+      "content": [
+        {
+          "type": "text",
+          "text": "Welcome to the "
+        },
+        {
+          "type": "text",
+          "marks": [
+            {
+              "type": "italic"
+            },
+            {
+              "type": "highlight",
+              "attrs": {
+                "color": "var(--tt-color-highlight-yellow)"
+              }
+            }
+          ],
+          "text": "Elevra Custom Editor!"
+        },
+        {
+          "type": "text",
+          "text": " This template allows you to create and edit rich text content with ease, including headings, paragraphs, and styled text such as italicized or highlighted text. You can also add videos and images to enhance your content."
+        }
+      ]
+    }
+  ]
+}

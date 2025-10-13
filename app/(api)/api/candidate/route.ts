@@ -22,6 +22,16 @@ export async function PUT(request: Request) {
         linkedin: linkedin || null,
       },
     });
+    try {
+      await logApiCall({
+        method: "PUT",
+        pathname: "/api/candidate",
+        timestamp: new Date().toISOString(),
+        slug: updated.slug ?? undefined,
+      });
+    } catch (logError) {
+      console.error("Failed to log candidate update", logError);
+    }
     return NextResponse.json(updated);
   } catch (err: unknown) {
     console.error(err);
@@ -37,6 +47,7 @@ import { Prisma, SubmissionStatus } from "@prisma/client";
 import { sendWithResend } from "@/lib/email/resend";
 import { renderAdminNotification } from "@/lib/email/templates/adminNotification";
 import { generateUniqueSlug } from "@/lib/functions";
+import { logApiCall } from "@/lib/logging/api-logger";
 
 export async function GET(request: Request) {
   try {
@@ -101,6 +112,17 @@ export async function GET(request: Request) {
         { error: "Candidate not found" },
         { status: 404 }
       );
+    }
+
+    try {
+      await logApiCall({
+        method: "GET",
+        pathname: "/api/candidate",
+        timestamp: new Date().toISOString(),
+        slug: candidate.slug ?? undefined,
+      });
+    } catch (logError) {
+      console.error("Failed to log candidate request", logError);
     }
 
     // new: grab their latest uploaded photo
@@ -209,6 +231,17 @@ export async function POST(request: Request) {
       const candidate = await prisma.candidate.create({
         data: createData,
       });
+
+      try {
+        await logApiCall({
+          method: "POST",
+          pathname: "/api/candidate",
+          timestamp: new Date().toISOString(),
+          slug: candidate.slug ?? undefined,
+        });
+      } catch (logError) {
+        console.error("Failed to log candidate creation", logError);
+      }
       // Notify admin (Resend)
       try {
         const appUrl =

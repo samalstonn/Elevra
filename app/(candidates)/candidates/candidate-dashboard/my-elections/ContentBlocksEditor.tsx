@@ -154,90 +154,6 @@ export default function ContentBlocksEditor({
     serverUnchangedMapRef.current = buildServerUnchangedMap(sorted);
   }, [initialBlocks]);
 
-  /* ----------------- Helpers ----------------- */
-  // const addBlock = (
-  //   type: BlockType,
-  //   extra: Partial<ContentBlock> = {}
-  // ) => {
-  //   setBlocks((prev) => [
-  //     ...prev,
-  //     {
-  //       type,
-  //       order: prev.length,
-  //       color: selectedColor,
-  //       ...extra,
-  //     } as ContentBlock,
-  //   ]);
-  // };
-
-  /** Convert the currently‑selected block, or create a new one if none selected.
-   *  When converting we attempt to carry the user’s existing content forward in a sensible way.
-   *  – TEXT ➜ LIST: split existing body on new‑lines into list items
-   *  – LIST ➜ TEXT: join items back into a multi‑line body
-   *  – TEXT/LIST ➜ HEADING: collapse text into a single line
-   */
-  // const convertblock = (type: BlockType, extra: Partial<ContentBlock> = {}) => {
-  //   if (selectedOrder === null) {
-  //     // nothing highlighted → just insert a new block
-  //     addBlock(type, extra);
-  //     return;
-  //   }
-
-  //   setBlocks((prev) =>
-  //     prev.map((b) => {
-  //       if (b.order !== selectedOrder) return b;
-
-  //       const incoming: ContentBlock = { ...b, type, ...extra };
-
-  //       /* ---------- TEXT → LIST ---------- */
-  //       if (type === "LIST") {
-  //         let seed = "";
-  //         if (b.type === "TEXT") seed = b.body ?? "";
-  //         else if (b.type === "HEADING") seed = b.text ?? "";
-  //         else if (b.type === "LIST") seed = (b.items ?? []).join("\n");
-
-  //         const items = seed
-  //           .split(/\n+/)
-  //           .map((s) => s.trim())
-  //           .filter(Boolean);
-
-  //         incoming.items = items;
-  //         incoming.listStyle =
-  //           extra.listStyle ??
-  //           (b.type === "LIST" ? b.listStyle : ListStyle.BULLET);
-  //         delete (incoming as any).body;
-  //         delete (incoming as any).text;
-  //       }
-
-  //       /* ---------- LIST → TEXT ---------- */
-  //       if (type === "TEXT") {
-  //         if (b.type === "LIST") {
-  //           incoming.body = (b.items ?? []).join("\n");
-  //           delete (incoming as any).items;
-  //           delete (incoming as any).listStyle;
-  //         } else if (b.type === "HEADING") {
-  //           incoming.body = b.text ?? "";
-  //           delete (incoming as any).text;
-  //         }
-  //       }
-
-  //       /* ---------- → HEADING ---------- */
-  //       if (type === "HEADING") {
-  //         if (b.type === "TEXT") {
-  //           incoming.text = (b.body ?? "").split(/\n/)[0];
-  //           delete (incoming as any).body;
-  //         } else if (b.type === "LIST") {
-  //           incoming.text = (b.items ?? []).join(" ");
-  //           delete (incoming as any).items;
-  //           delete (incoming as any).listStyle;
-  //         }
-  //       }
-
-  //       return incoming;
-  //     })
-  //   );
-  // };
-
   const updateBlock = (block: ContentBlock, patch: Partial<ContentBlock>) => {
     if (typeof block.id === "number") {
       setStaticIds((prev) => {
@@ -252,23 +168,9 @@ export default function ContentBlocksEditor({
     );
   };
 
-  // const deleteBlock = (orderToDelete: number) => {
-  //   setBlocks((prev) => {
-  //     const filtered = prev.filter((b) => b.order !== orderToDelete);
-  //     return filtered.map((b, idx) => ({ ...b, order: idx })); // re-index orders
-  //   });
-  // };
-
   /* ----------------- Render ----------------- */
   return (
     <div className="w-full space-y-4">
-      {/* ---------- Top Toolbar ---------- */}
-      {/* <Toolbar
-        selectedColor={selectedColor}
-        onColorChange={handleColorChange}
-        convertBlock={convertBlock}
-        addBlock={addBlock}
-      /> */}
       <SortableContext
         items={blocks.map((b) => b.order)}
         strategy={verticalListSortingStrategy}
@@ -687,11 +589,7 @@ function SortableBlock({
           onChange({ imageUrl: url });
         } catch (error) {
           console.error("Upload failed:", error);
-          alert(
-            `Upload failed: ${
-              error instanceof Error ? error.message : String(error)
-            }`
-          );
+          alert(`Upload failed: ${error instanceof Error ? error.message : String(error)}`);
         } finally {
           setUploading(block.order, false);
           setProgress(block.order, 0);
@@ -706,7 +604,7 @@ function SortableBlock({
             <Image
               src={block.imageUrl}
               alt={block.caption ?? ""}
-              className="w-full rounded mx-auto cursor-pointer hover:outline hover:outline-2 hover:outline-purple-600"
+              className="w-full rounded mx-auto cursor-pointer hover:outline hover:outline-2 hover:outline-purple-600 border border-black"
               width={0}
               height={0}
               sizes="100vw"

@@ -1,7 +1,10 @@
 import { NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import prisma from "@/prisma/prisma";
-import { elevraStarterTemplate } from "@/app/(templates)/basicwebpage";
+import {
+  elevraStarterTemplate,
+  simpleTemplate,
+} from "@/app/(templates)/basicwebpage";
 
 export async function POST(request: Request) {
   try {
@@ -61,6 +64,9 @@ export async function POST(request: Request) {
     switch (templateKey.toUpperCase()) {
       case "ELEVRA_STARTER_TEMPLATE":
         blocks = elevraStarterTemplate;
+        break;
+      case "SIMPLE_TEMPLATE":
+        blocks = simpleTemplate;
         break;
       default:
         return NextResponse.json(

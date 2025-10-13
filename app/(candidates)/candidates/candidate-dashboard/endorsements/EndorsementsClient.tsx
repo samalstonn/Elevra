@@ -1,10 +1,8 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import { StatsCard } from "@/components/StatsCard";
 import { UserCircle2 } from "lucide-react";
-import TourModal from "@/components/tour/TourModal";
-import { useRouter, useSearchParams } from "next/navigation";
 
 export type Endorsement = {
   id: number;
@@ -28,46 +26,10 @@ type Props = {
 };
 
 export default function CandidateEndorsementsClient({ user, data }: Props) {
-  const router = useRouter();
-  const searchParams = useSearchParams();
   const [endorsements, setEndorsements] = useState<Endorsement[]>(
     data.endorsements
   );
   const [total, setTotal] = useState<number>(data.totalEndorsements);
-  // Tour state (Step 4)
-  const [showStep4, setShowStep4] = useState(false);
-  useEffect(() => {
-    try {
-      const optOut = localStorage.getItem("elevra_tour_opt_out");
-      if (optOut === "1") return;
-      const step = localStorage.getItem("elevra_tour_step");
-      const forceTour = searchParams.get("tour") === "1";
-      if (step === "4" || forceTour) setShowStep4(true);
-    } catch {}
-  }, [searchParams]);
-
-  const skipTour = () => {
-    try {
-      localStorage.setItem("elevra_tour_opt_out", "1");
-      localStorage.removeItem("elevra_tour_step");
-    } catch {}
-    setShowStep4(false);
-    router.push("/candidates/candidate-dashboard");
-  };
-  const finishTour = () => {
-    try {
-      localStorage.removeItem("elevra_tour_step");
-    } catch {}
-    setShowStep4(false);
-    router.push("/candidates/candidate-dashboard/my-elections");
-  };
-  const backToCampaign = () => {
-    try {
-      localStorage.setItem("elevra_tour_step", "3");
-    } catch {}
-    setShowStep4(false);
-    router.push("/candidates/candidate-dashboard/my-elections?tour=1");
-  };
 
   const handleDelete = async (endorsementId: number) => {
     try {
@@ -96,28 +58,6 @@ export default function CandidateEndorsementsClient({ user, data }: Props) {
 
   return (
     <div className="min-h-screen p-6 space-y-12">
-      {/* Tour: Step 4 (Endorsements) */}
-      <TourModal
-        open={showStep4}
-        onOpenChange={setShowStep4}
-        title="Endorsements (Step 4 of 4)"
-        backLabel="Back"
-        onBack={backToCampaign}
-        primaryLabel="Finish Tour"
-        onPrimary={finishTour}
-        secondaryLabel="Skip tour"
-        onSecondary={skipTour}
-      >
-        <p>
-          Collect and display endorsements to boost trust and visibility on your
-          public page.
-        </p>
-        <p>
-          Tip: Get your supporters to help you out!{" "}
-          <strong>Share your public page link</strong> and ask them to submit
-          endorsements.
-        </p>
-      </TourModal>
       <header className="space-y-2">
         <h1 className="text-3xl font-bold text-gray-900">
           Endorsements Overview
