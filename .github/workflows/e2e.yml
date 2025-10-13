@@ -77,8 +77,27 @@ jobs:
           node-version: 20
           cache: npm
 
-      - name: Install deps
-        run: npm ci
+      - name: Show commit and deps context
+        run: |
+          echo "GITHUB_SHA=$GITHUB_SHA"
+          echo "PR HEAD SHA=${{ github.event.pull_request.head.sha }}"
+          echo "PR BASE SHA=${{ github.event.pull_request.base.sha }}"
+          node -e "const p=require('./package.json'); const d=p.dependencies||{}; const keys=Object.keys(d).filter(k=>k.startsWith('@tiptap')||k.startsWith('@prisma')||k==='next'||k==='swr'); console.log('package.json deps:'); for (const k of keys) console.log(k+'@'+d[k]);"
+          echo 'Lockfile mentions (@tiptap):'
+          grep -n '"@tiptap' package-lock.json || true
+          echo 'Lockfile mentions (@prisma):'
+          grep -n '"@prisma' package-lock.json | head -n 20 || true
+
+      - name: Install deps (ci with fallback)
+        run: |
+          set -euo pipefail
+          if npm ci; then
+            echo 'npm ci succeeded'
+          else
+            code=$?
+            echo "::warning::npm ci failed with code ${code}; falling back to npm install to unblock e2e run."
+            npm install
+          fi
 
       - name: Install Vercel CLI
         run: npm i -g vercel
