@@ -20,6 +20,7 @@ import ImageWithFallback from "@/components/ui/ImageWithFallback";
 import { decodeEducation } from "@/lib/education";
 import { EmptyState } from "@/components/ui/empty-state";
 import { CandidateProfileHeader } from "@/components/CandidateProfileHeader";
+import { FollowButton } from "./FollowButton";
 
 export type ElectionWithCandidates = Election & {
   candidates: Candidate[];
@@ -217,6 +218,16 @@ export default function CandidateClient({
           onVerify={handleThisIsMe}
           isVerifyPending={isResetting}
         />
+
+        {!isEditable ? (
+          <div className="mt-4 flex justify-center md:justify-end">
+            <FollowButton
+              candidateId={candidate.id}
+              candidateSlug={candidate.slug}
+              candidateName={candidate.name}
+            />
+          </div>
+        ) : null}
 
         {/* Tabs - Desktop: regular spacing, Mobile: horizontal scroll */}
         <div className="w-full flex justify-center">

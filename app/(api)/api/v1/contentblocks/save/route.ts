@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import prisma from "@/prisma/prisma";
 import { BlockType, ContentBlock } from "@prisma/client";
 import { auth } from "@clerk/nextjs/server";
+import { recordChangeEvent } from "@/lib/voter/changeEvents";
 
 const MAX_PER_TYPE: Record<BlockType, number> = {
   HEADING: 8,
@@ -108,6 +109,12 @@ export async function POST(request: Request) {
         })
       )
     );
+
+    await recordChangeEvent({
+      candidateId: candidateId,
+      type: "CAMPAIGN",
+      summary: "Campaign page content refreshed",
+    });
 
     return NextResponse.json({ success: true });
   } catch (error) {
