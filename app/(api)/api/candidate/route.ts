@@ -10,6 +10,13 @@ export async function PUT(request: Request) {
     if (!name || !currentRole || !city || !state || !bio) {
       return NextResponse.json({ error: "Missing fields" }, { status: 400 });
     }
+    const existing = await prisma.candidate.findUnique({
+      where: { clerkUserId: userId },
+    });
+    if (!existing) {
+      return NextResponse.json({ error: "Candidate not found" }, { status: 404 });
+    }
+
     const updated = await prisma.candidate.update({
       where: { clerkUserId: userId },
       data: {
@@ -22,6 +29,18 @@ export async function PUT(request: Request) {
         linkedin: linkedin || null,
       },
     });
+
+    const changes = detectCandidateProfileChanges(existing, updated);
+    await Promise.all(
+      changes.map((change) =>
+        recordChangeEvent({
+          candidateId: updated.id,
+          type: change.type,
+          summary: change.summary,
+          metadata: change.metadata,
+        })
+      )
+    );
     try {
       await logApiCall({
         method: "PUT",
@@ -48,6 +67,8 @@ import { sendWithResend } from "@/lib/email/resend";
 import { renderAdminNotification } from "@/lib/email/templates/adminNotification";
 import { generateUniqueSlug } from "@/lib/functions";
 import { logApiCall } from "@/lib/logging/api-logger";
+import { recordChangeEvent } from "@/lib/voter/changeEvents";
+import { detectCandidateProfileChanges } from "@/lib/voter/changeDetectors";
 
 export async function GET(request: Request) {
   try {
