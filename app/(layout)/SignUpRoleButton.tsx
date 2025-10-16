@@ -42,9 +42,12 @@ export default function SignUpRoleButton() {
   const handleCandidate = useCallback(() => {
     storeRoleSelection("candidate");
     closeDialog();
-    const targetBase = process.env.NEXT_PUBLIC_APP_URL ?? window.location.origin;
-    window.location.href = `${targetBase}/candidates?tab=home`;
-  }, [closeDialog]);
+    // Use relative navigation so it works on mobile (no hardcoded localhost)
+    // and respects the current host/IP the user is on.
+    // Avoid using NEXT_PUBLIC_APP_URL in client navigations.
+    // Router push keeps SPA navigation and preserves history.
+    router.push("/candidates?tab=home");
+  }, [closeDialog, router]);
 
   const handleVoter = useCallback(() => {
     storeRoleSelection("voter");
