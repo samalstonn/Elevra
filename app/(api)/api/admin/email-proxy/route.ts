@@ -10,11 +10,17 @@ export async function POST(req: NextRequest) {
   const { origin } = new URL(req.url);
 
   if (!secret) {
+    console.warn("[email-proxy] Missing ADMIN_EMAIL_SECRET env var");
     return NextResponse.json(
       { error: "Missing ADMIN_EMAIL_SECRET env var" },
       { status: 500 }
     );
   }
+
+  console.log(
+    "[email-proxy] ADMIN_EMAIL_SECRET length",
+    secret.length.toString()
+  );
 
   let body: unknown;
   try {

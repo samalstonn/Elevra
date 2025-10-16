@@ -7,7 +7,11 @@ import {
 } from "@/lib/email/resend";
 import { getAuth } from "@clerk/nextjs/server";
 import { clerkClient } from "@clerk/clerk-sdk-node";
-import { renderEmailTemplate, TemplateKey } from "@/lib/email/templates/render";
+import {
+  createEmailTemplateRenderContext,
+  renderEmailTemplate,
+  TemplateKey,
+} from "@/lib/email/templates/render";
 import { deriveSenderFields } from "@/lib/email/templates/sender";
 import prisma from "@/prisma/prisma";
 import {
@@ -16,6 +20,7 @@ import {
   renderUnsubscribeFooter,
   UNSUBSCRIBE_SCOPE,
 } from "@/lib/email/unsubscribe";
+import { buildClickTrackingUrl } from "@/lib/email/tracking";
 
 export const runtime = "nodejs";
 
@@ -195,7 +200,10 @@ export async function POST(req: NextRequest) {
   // Send sequentially to keep it simple and observable
   const sent: { index: number; email: string; id: string | null }[] = [];
   const failures: { index: number; email: string; error: string }[] = [];
-
+  const requestedTemplateType =
+    typeof body.templateType === "string"
+      ? (body.templateType as string).trim()
+      : undefined;
   // Filter out previously unsubscribed recipients for candidate-outreach
   const emailList = recipients.map((r) => r.email.toLowerCase());
   const unsubscribed = await prisma.emailUnsubscribe.findMany({
@@ -212,39 +220,65 @@ export async function POST(req: NextRequest) {
     if (unsubSet.has(r.email.toLowerCase())) suppressed.push(r);
     else deliverable.push(r);
   }
-
   const selectedType: TemplateKey =
-    (body.templateType as TemplateKey) ||
+    (requestedTemplateType as TemplateKey) ||
     (body.followup ? "followup" : "initial");
   const hasSequence = Array.isArray(body.sequence) && body.sequence.length > 0;
   const steps: { template: TemplateKey; offsetDays?: number }[] = hasSequence
-    ? (body.sequence as { template: TemplateKey; offsetDays?: number }[])
+    ? (body.sequence as { template: TemplateKey; offsetDays?: number }[]).map(
+        (step) => ({
+          template:
+            typeof step.template === "string"
+              ? (step.template.trim() as TemplateKey)
+              : selectedType,
+          offsetDays: step.offsetDays,
+        })
+      )
     : body.composeAsFollowup
-    ? [{ template: "followup" as const, offsetDays: 0 }]
+    ? [{ template: "followup", offsetDays: 0 }]
     : [{ template: selectedType, offsetDays: 0 }];
+
+  const renderContext = createEmailTemplateRenderContext();
 
   for (const step of steps) {
     const batchInputs: SendEmailParams[] = [];
-
     for (let i = 0; i < deliverable.length; i++) {
       const r = deliverable[i];
-      const { subject, html } = renderEmailTemplate(
-        step.template,
-        {
-          candidateFirstName: r.firstName || undefined,
-          state: r.state || undefined,
-          claimUrl: r.candidateLink,
-          templatesUrl: r.candidateLink,
-          profileUrl: r.candidateLink,
-          municipality: r.municipality || undefined,
-          position: r.position || undefined,
-          senderName,
-          senderTitle,
-          senderLinkedInUrl,
-          senderLinkedInLabel,
-        },
-        { baseForFollowup: body.baseTemplate || "initial" }
-      );
+      const candidateUrl = r.candidateLink;
+      const trackedUrl =
+        buildClickTrackingUrl({
+          email: r.email,
+          scope: UNSUBSCRIBE_SCOPE,
+          template: step.template,
+          url: candidateUrl,
+        }) || candidateUrl;
+      let rendered: { subject: string; html: string };
+      try {
+        rendered = await renderEmailTemplate(
+          step.template,
+          {
+            candidateFirstName: r.firstName || undefined,
+            state: r.state || undefined,
+            claimUrl: trackedUrl,
+            templatesUrl: trackedUrl,
+            profileUrl: trackedUrl,
+            municipality: r.municipality || undefined,
+            position: r.position || undefined,
+            senderName,
+            senderTitle,
+            senderLinkedInUrl,
+            senderLinkedInLabel,
+          },
+          { baseForFollowup: body.baseTemplate || "initial" },
+          renderContext
+        );
+      } catch (err) {
+        const message =
+          err instanceof Error ? err.message : "Failed to render template.";
+        failures.push({ index: i, email: r.email, error: message });
+        continue;
+      }
+      const { subject, html } = rendered;
       const subjectToUse = (
         body.subject ||
         subject ||

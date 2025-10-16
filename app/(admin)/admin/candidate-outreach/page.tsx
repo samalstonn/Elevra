@@ -25,6 +25,18 @@ const REQUIRED_HEADERS = [
   "candidatelink",
 ] as const;
 
+type EmailTemplateOption = {
+  key: TemplateKey;
+  title: string;
+};
+
+const DEFAULT_TEMPLATE_OPTIONS: EmailTemplateOption[] = [
+  { key: "initial", title: "Initial Outreach" },
+  { key: "followup", title: "Follow-up" },
+  { key: "followup2", title: "Follow-up 2" },
+  { key: "verifiedUpdate", title: "Verified: Templates Update" },
+];
+
 export default function CandidateOutreachPage() {
   usePageTitle("Admin – Candidate Outreach");
 
@@ -34,10 +46,10 @@ export default function CandidateOutreachPage() {
   const [sending, setSending] = useState(false);
   const [showAll, setShowAll] = useState(false);
   const [result, setResult] = useState<string>("");
+  const [templateOptions, setTemplateOptions] =
+    useState<EmailTemplateOption[]>(DEFAULT_TEMPLATE_OPTIONS);
   const [templateType, setTemplateType] = useState<TemplateKey>("initial");
-  const [baseForFollowup, setBaseForFollowup] = useState<
-    "initial" | "verifiedUpdate"
-  >("initial");
+  const [baseForFollowup, setBaseForFollowup] = useState<TemplateKey>("initial");
   const [emailValidation, setEmailValidation] = useState<{
     ok: boolean;
     errors: string[];
@@ -54,6 +66,48 @@ export default function CandidateOutreachPage() {
   >(undefined);
   const [previewHtml, setPreviewHtml] = useState<string>("");
   const [previewSubject, setPreviewSubject] = useState<string>("");
+  useEffect(() => {
+    const controller = new AbortController();
+    (async () => {
+      try {
+        const res = await fetch("/api/admin/email-templates", {
+          method: "GET",
+          signal: controller.signal,
+        });
+        if (!res.ok) {
+          return;
+        }
+        const data = await res.json();
+        if (!data?.templates) return;
+        const options: EmailTemplateOption[] = [...data.templates]
+          .map((template: { key: string; title: string }) => ({
+            key: template.key as TemplateKey,
+            title: template.title,
+          }))
+          .sort((a, b) => a.title.localeCompare(b.title));
+        if (options.length) {
+          setTemplateOptions(options);
+          const preferred =
+            options.find((option) => option.key === "initial") ?? options[0];
+          setTemplateType((current) =>
+            options.some((option) => option.key === current)
+              ? current
+              : preferred.key
+          );
+          setBaseForFollowup((current) =>
+            options.some((option) => option.key === current)
+              ? current
+              : preferred.key
+          );
+        }
+      } catch (err) {
+        if ((err as Error).name !== "AbortError") {
+          console.error("Failed to load email templates", err);
+        }
+      }
+    })();
+    return () => controller.abort();
+  }, []);
 
   async function handleFile(file: File) {
     setError("");
@@ -392,10 +446,11 @@ export default function CandidateOutreachPage() {
           onChange={(e) => setTemplateType(e.target.value as TemplateKey)}
           className="w-full rounded border px-3 py-2"
         >
-          <option value="initial">Initial Outreach</option>
-          <option value="followup">Follow-up</option>
-          <option value="followup2">Follow-up 2</option>
-          <option value="verifiedUpdate">Verified: Templates Update</option>
+          {templateOptions.map((option) => (
+            <option key={option.key} value={option.key}>
+              {option.title}
+            </option>
+          ))}
         </select>
       </div>
       {(templateType === "followup" || templateType === "followup2") && (
@@ -406,12 +461,15 @@ export default function CandidateOutreachPage() {
           <select
             value={baseForFollowup}
             onChange={(e) =>
-              setBaseForFollowup(e.target.value as "initial" | "verifiedUpdate")
+              setBaseForFollowup(e.target.value as TemplateKey)
             }
             className="w-full rounded border px-3 py-2"
           >
-            <option value="initial">Initial Outreach</option>
-            <option value="verifiedUpdate">Verified: Templates Update</option>
+            {templateOptions.map((option) => (
+              <option key={option.key} value={option.key}>
+                {option.title}
+              </option>
+            ))}
           </select>
         </div>
       )}
