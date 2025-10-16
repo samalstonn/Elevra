@@ -13,6 +13,14 @@ import {
   TemplateKey,
 } from "@/lib/email/templates/render";
 import { deriveSenderFields } from "@/lib/email/templates/sender";
+import prisma from "@/prisma/prisma";
+import {
+  buildListUnsubscribeHeaders,
+  buildUnsubscribeUrl,
+  renderUnsubscribeFooter,
+  UNSUBSCRIBE_SCOPE,
+} from "@/lib/email/unsubscribe";
+import { buildClickTrackingUrl } from "@/lib/email/tracking";
 
 export const runtime = "nodejs";
 
@@ -192,11 +200,26 @@ export async function POST(req: NextRequest) {
   // Send sequentially to keep it simple and observable
   const sent: { index: number; email: string; id: string | null }[] = [];
   const failures: { index: number; email: string; error: string }[] = [];
-
   const requestedTemplateType =
     typeof body.templateType === "string"
       ? (body.templateType as string).trim()
       : undefined;
+  // Filter out previously unsubscribed recipients for candidate-outreach
+  const emailList = recipients.map((r) => r.email.toLowerCase());
+  const unsubscribed = await prisma.emailUnsubscribe.findMany({
+    where: {
+      scope: UNSUBSCRIBE_SCOPE,
+      email: { in: emailList },
+    },
+    select: { email: true },
+  });
+  const unsubSet = new Set(unsubscribed.map((u) => u.email.toLowerCase()));
+  const suppressed: OutreachRow[] = [];
+  const deliverable: OutreachRow[] = [];
+  for (const r of recipients) {
+    if (unsubSet.has(r.email.toLowerCase())) suppressed.push(r);
+    else deliverable.push(r);
+  }
   const selectedType: TemplateKey =
     (requestedTemplateType as TemplateKey) ||
     (body.followup ? "followup" : "initial");
@@ -219,9 +242,16 @@ export async function POST(req: NextRequest) {
 
   for (const step of steps) {
     const batchInputs: SendEmailParams[] = [];
-
-    for (let i = 0; i < recipients.length; i++) {
-      const r = recipients[i];
+    for (let i = 0; i < deliverable.length; i++) {
+      const r = deliverable[i];
+      const candidateUrl = r.candidateLink;
+      const trackedUrl =
+        buildClickTrackingUrl({
+          email: r.email,
+          scope: UNSUBSCRIBE_SCOPE,
+          template: step.template,
+          url: candidateUrl,
+        }) || candidateUrl;
       let rendered: { subject: string; html: string };
       try {
         rendered = await renderEmailTemplate(
@@ -229,9 +259,9 @@ export async function POST(req: NextRequest) {
           {
             candidateFirstName: r.firstName || undefined,
             state: r.state || undefined,
-            claimUrl: r.candidateLink,
-            templatesUrl: r.candidateLink,
-            profileUrl: r.candidateLink,
+            claimUrl: trackedUrl,
+            templatesUrl: trackedUrl,
+            profileUrl: trackedUrl,
             municipality: r.municipality || undefined,
             position: r.position || undefined,
             senderName,
@@ -271,12 +301,17 @@ export async function POST(req: NextRequest) {
         }
       }
 
+      const unsubscribeUrl = buildUnsubscribeUrl(r.email, UNSUBSCRIBE_SCOPE);
+      const headers = buildListUnsubscribeHeaders(unsubscribeUrl);
+      const htmlWithFooter =
+        html + "\n" + renderUnsubscribeFooter(unsubscribeUrl);
       batchInputs.push({
         to: r.email,
         subject: subjectToUse,
-        html,
+        html: htmlWithFooter,
         from: body.from,
         senderName,
+        headers,
         scheduledAt: stepScheduledAt,
       });
     }
@@ -286,12 +321,12 @@ export async function POST(req: NextRequest) {
     });
 
     for (const s of batchResult.successes) {
-      const recipient = recipients[s.index];
+      const recipient = deliverable[s.index];
       sent.push({ index: s.index, email: recipient.email, id: s.id });
     }
 
     for (const f of batchResult.failures) {
-      const recipient = recipients[f.index];
+      const recipient = deliverable[f.index];
       failures.push({ index: f.index, email: recipient.email, error: f.error });
     }
 
@@ -317,6 +352,7 @@ export async function POST(req: NextRequest) {
       const summaryLines = [
         `Email outreach step "${step.template}" completed.`,
         `Total recipients in step: ${recipients.length}`,
+        `Suppressed (unsubscribed) filtered pre-send: ${suppressed.length}`,
         `Successful deliveries: ${batchResult.successes.length}`,
         `Failures: ${batchResult.failures.length}`,
         `Invalid rows filtered pre-send: ${invalid.length}`,
@@ -350,6 +386,13 @@ export async function POST(req: NextRequest) {
               .join("")}</ul>`
           : "<p>None</p>";
 
+      const suppressedDetailsHtml =
+        suppressed.length > 0
+          ? `<ul>${suppressed
+              .map((s) => `<li><strong>${s.email}</strong></li>`)
+              .join("")}</ul>`
+          : "<p>None</p>";
+
       const summaryHtml = `
         <div style="font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; line-height: 1.5;">
           <h2 style="margin: 0 0 12px;">Candidate Outreach Step Summary</h2>
@@ -369,6 +412,10 @@ export async function POST(req: NextRequest) {
               <tr>
                 <td style="padding: 4px 8px; font-weight: 600;">Total recipients</td>
                 <td style="padding: 4px 8px;">${recipients.length}</td>
+              </tr>
+              <tr>
+                <td style="padding: 4px 8px; font-weight: 600;">Suppressed (unsubscribed)</td>
+                <td style="padding: 4px 8px;">${suppressed.length}</td>
               </tr>
               <tr>
                 <td style="padding: 4px 8px; font-weight: 600;">Successful deliveries</td>
@@ -412,6 +459,10 @@ export async function POST(req: NextRequest) {
             <h3 style="margin: 0 0 8px;">Invalid rows filtered</h3>
             ${invalidDetailsHtml}
           </div>
+          <div>
+            <h3 style="margin: 16px 0 8px;">Suppressed (unsubscribed) addresses</h3>
+            ${suppressedDetailsHtml}
+          </div>
           <pre style="background: #f6f8fa; border-radius: 6px; padding: 12px; margin: 16px 0 0; white-space: pre-wrap;">${summaryLines.join(
             "\n"
           )}</pre>
@@ -437,6 +488,7 @@ export async function POST(req: NextRequest) {
     success: failures.length === 0,
     requested: rows.length,
     valid: recipients.length,
+    suppressed: suppressed.length,
     sent: sent.length,
     failures,
     ids: sent.map((s) => s.id).filter(Boolean),
