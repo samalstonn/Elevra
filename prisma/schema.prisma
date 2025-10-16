@@ -307,6 +307,17 @@ model Document {
   @@unique([candidateId, electionId])
 }
 
+model EmailDocument {
+  id              String   @id @default(cuid())
+  key             String   @unique
+  title           String
+  subjectTemplate String   @db.Text
+  htmlTemplate    String   @db.Text
+  description     String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
 enum ElectionType {
   LOCAL
   STATE
