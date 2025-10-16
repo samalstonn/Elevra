@@ -1,0 +1,222 @@
+##***group***Run set -euo pipefail
+***36;***mset -euo pipefail***0m
+***36;***mif npm ci; then***0m
+***36;***m  echo 'npm ci succeeded'***0m
+***36;***melse***0m
+***36;***m  code=$?***0m
+***36;***m  echo "::warning::npm ci failed with code ${code}; falling back to npm install to unblock e2e run."***0m
+***36;***m  npm install***0m
+***36;***mfi***0m
+shell: /usr/bin/bash -e {0}
+env:
+  VERCEL_TOKEN: ***
+  VERCEL_ORG_ID: ***
+  VERCEL_PROJECT_ID: ***
+  VERCEL_BYPASS_TOKEN: ***
+  NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ***
+  CLERK_SECRET_KEY: ***
+  DATABASE_URL: ***
+  SHADOW_DATABASE_URL: ***
+  NEXT_PUBLIC_APP_URL: ***
+  EMAIL_DRY_RUN: ***
+  EMAIL_DRY_RUN_LOG: ***
+  ADMIN_EMAIL: ***
+  API_LOG_TOKEN: ***
+  API_LOG_DIRECTORY: 
+  API_LOG_FILE: 
+  E2E_CANDIDATE_SLUG: ***
+  E2E_SEED_SECRET: ***
+  E2E_CLERK_USERS: ***
+  E2E_CLERK_USER_USERNAME: ***
+  E2E_CLERK_USER_PASSWORD: ***
+  E2E_CLERK_USER_ID: 
+  E2E_CLERK_USER_USERNAME_LIST: 
+  E2E_CLERK_USER_PASSWORD_LIST: 
+  E2E_CLERK_USER_ID_LIST: 
+  E2E_CLERK_USER_USERNAMES: 
+  E2E_CLERK_USER_PASSWORDS: 
+  E2E_CLERK_USER_IDS: 
+  E2E_NONMATCH_EMAIL: ***
+  E2E_NONMATCH_PASSWORD: ***
+  ADMIN_EMAIL_SECRET: ***
+  E2E_BASE_URL: 
+  E2E_TEST_EMAIL: 
+  E2E_TEST_PASSWORD: 
+  NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN: ***
+  SENTRY_DSN: ***
+  SENTRY_ENVIRONMENT: ***
+  SENTRY_TRACES_SAMPLE_RATE: ***
+##***endgroup***
+npm error code EUSAGE
+npm error
+npm error `npm ci` can only install packages when your package.json and package-lock.json or npm-shrinkwrap.json are in sync. Please update your lock file with `npm install` before continuing.
+npm error
+npm error Missing: @tiptap/extension-subscript@3.6.6 from lock file
+npm error Invalid: lock file's @tiptap/pm@3.6.5 does not satisfy @tiptap/pm@3.6.6
+npm error Invalid: lock file's @tiptap/core@3.6.5 does not satisfy @tiptap/core@3.6.6
+npm error Missing: regenerator-runtime@***4.*** from lock file
+npm error Missing: @opentelemetry/api@***.9.0 from lock file
+npm error Missing: @opentelemetry/instrumentation@0.204.0 from lock file
+npm error Missing: @opentelemetry/api-logs@0.204.0 from lock file
+npm error Missing: @opentelemetry/core@2.***.0 from lock file
+npm error Invalid: lock file's @prisma/engines-version@6.***4.0-25.7***7***84b7b35ea05dfa7***a3236b7af6560***3e***e49 does not satisfy @prisma/engines-version@6.***7.***-***.272a37d34***78c2894***97e***7273bf937f25acdeac
+npm error Invalid: lock file's @prisma/fetch-engine@6.***4.0 does not satisfy @prisma/fetch-engine@6.***7.***
+npm error Invalid: lock file's @prisma/get-platform@6.***4.0 does not satisfy @prisma/get-platform@6.***7.***
+npm error Invalid: lock file's @prisma/debug@6.***4.0 does not satisfy @prisma/debug@6.***7.***
+npm error Missing: @opentelemetry/instrumentation-amqplib@0.5***.0 from lock file
+npm error Missing: @opentelemetry/instrumentation-connect@0.48.0 from lock file
+npm error Missing: webpack@5.***02.*** from lock file
+npm error Missing: mdn-data@2.***2.2 from lock file
+npm error Missing: @esbuild/aix-ppc64@0.25.2 from lock file
+npm error Missing: @esbuild/android-arm@0.25.2 from lock file
+npm error Missing: @esbuild/android-arm64@0.25.2 from lock file
+npm error Missing: @esbuild/android-x64@0.25.2 from lock file
+npm error Missing: @esbuild/darwin-arm64@0.25.2 from lock file
+npm error Missing: @esbuild/darwin-x64@0.25.2 from lock file
+npm error Missing: @esbuild/freebsd-arm64@0.25.2 from lock file
+npm error Missing: @esbuild/freebsd-x64@0.25.2 from lock file
+npm error Missing: @esbuild/linux-arm@0.25.2 from lock file
+npm error Missing: @esbuild/linux-arm64@0.25.2 from lock file
+npm error Missing: @esbuild/linux-ia32@0.25.2 from lock file
+npm error Missing: @esbuild/linux-loong64@0.25.2 from lock file
+npm error Missing: @esbuild/linux-mips64el@0.25.2 from lock file
+npm error Missing: @esbuild/linux-ppc64@0.25.2 from lock file
+npm error Missing: @esbuild/linux-riscv64@0.25.2 from lock file
+npm error Missing: @esbuild/linux-s390x@0.25.2 from lock file
+npm error Missing: @esbuild/linux-x64@0.25.2 from lock file
+npm error Missing: @esbuild/netbsd-arm64@0.25.2 from lock file
+npm error Missing: @esbuild/netbsd-x64@0.25.2 from lock file
+npm error Missing: @esbuild/openbsd-arm64@0.25.2 from lock file
+npm error Missing: @esbuild/openbsd-x64@0.25.2 from lock file
+npm error Missing: @esbuild/sunos-x64@0.25.2 from lock file
+npm error Missing: @esbuild/win32-arm64@0.25.2 from lock file
+npm error Missing: @esbuild/win32-ia32@0.25.2 from lock file
+npm error Missing: @esbuild/win32-x64@0.25.2 from lock file
+npm error Missing: generator-function@2.*** from lock file
+npm error Missing: @asamuzakjp/dom-selector@6.6.2 from lock file
+npm error Missing: @asamuzakjp/nwsapi@2.3.9 from lock file
+npm error Invalid: lock file's @prisma/config@6.***4.0 does not satisfy @prisma/config@6.***7.***
+npm error Invalid: lock file's @prisma/engines@6.***4.0 does not satisfy @prisma/engines@6.***7.***
+npm error Missing: chokidar@3.6.0 from lock file
+npm error Missing: @unrs/resolver-binding-darwin-arm64@***.6.*** from lock file
+npm error Missing: @unrs/resolver-binding-darwin-x64@***.6.*** from lock file
+npm error Missing: @unrs/resolver-binding-freebsd-x64@***.6.*** from lock file
+npm error Missing: @unrs/resolver-binding-linux-arm-gnueabihf@***.6.*** from lock file
+npm error Missing: @unrs/resolver-binding-linux-arm-musleabihf@***.6.*** from lock file
+npm error Missing: @unrs/resolver-binding-linux-arm64-gnu@***.6.*** from lock file
+npm error Missing: @unrs/resolver-binding-linux-arm64-musl@***.6.*** from lock file
+npm error Missing: @unrs/resolver-binding-linux-ppc64-gnu@***.6.*** from lock file
+npm error Missing: @unrs/resolver-binding-linux-riscv64-gnu@***.6.*** from lock file
+npm error Missing: @unrs/resolver-binding-linux-s390x-gnu@***.6.*** from lock file
+npm error Missing: @unrs/resolver-binding-linux-x64-gnu@***.6.*** from lock file
+npm error Missing: @unrs/resolver-binding-linux-x64-musl@***.6.*** from lock file
+npm error Missing: @unrs/resolver-binding-wasm32-wasi@***.6.*** from lock file
+npm error Missing: @unrs/resolver-binding-win32-arm64-msvc@***.6.*** from lock file
+npm error Missing: @unrs/resolver-binding-win32-ia32-msvc@***.6.*** from lock file
+npm error Missing: @unrs/resolver-binding-win32-x64-msvc@***.6.*** from lock file
+npm error Missing: @types/eslint-scope@3.7.7 from lock file
+npm error Missing: @webassemblyjs/ast@***.***4.*** from lock file
+npm error Missing: @webassemblyjs/wasm-edit@***.***4.*** from lock file
+npm error Missing: @webassemblyjs/wasm-parser@***.***4.*** from lock file
+npm error Missing: acorn-import-phases@***.0.4 from lock file
+npm error Missing: chrome-trace-event@***.0.4 from lock file
+npm error Missing: enhanced-resolve@5.***8.3 from lock file
+npm error Missing: es-module-lexer@***.7.0 from lock file
+npm error Missing: eslint-scope@5.***.*** from lock file
+npm error Missing: events@3.3.0 from lock file
+npm error Missing: graceful-fs@4.2.*** from lock file
+npm error Missing: json-parse-even-better-errors@2.3.*** from lock file
+npm error Missing: loader-runner@4.3.*** from lock file
+npm error Missing: mime-types@2.***.35 from lock file
+npm error Missing: neo-async@2.6.2 from lock file
+npm error Missing: schema-utils@4.3.3 from lock file
+npm error Missing: tapable@2.3.0 from lock file
+npm error Missing: terser-webpack-plugin@5.3.***4 from lock file
+npm error Missing: watchpack@2.4.4 from lock file
+npm error Missing: @types/eslint@9.6.*** from lock file
+npm error Missing: @webassemblyjs/helper-numbers@***.***3.2 from lock file
+npm error Missing: @webassemblyjs/helper-wasm-bytecode@***.***3.2 from lock file
+npm error Missing: @webassemblyjs/floating-point-hex-parser@***.***3.2 from lock file
+npm error Missing: @webassemblyjs/helper-api-error@***.***3.2 from lock file
+npm error Missing: @xtuc/long@4.2.2 from lock file
+npm error Missing: @webassemblyjs/helper-buffer@***.***4.*** from lock file
+npm error Missing: @webassemblyjs/helper-wasm-section@***.***4.*** from lock file
+npm error Missing: @webassemblyjs/wasm-gen@***.***4.*** from lock file
+npm error Missing: @webassemblyjs/wasm-opt@***.***4.*** from lock file
+npm error Missing: @webassemblyjs/wast-printer@***.***4.*** from lock file
+npm error Missing: @webassemblyjs/ieee754@***.***3.2 from lock file
+npm error Missing: @webassemblyjs/leb***28@***.***3.2 from lock file
+npm error Missing: @webassemblyjs/utf8@***.***3.2 from lock file
+npm error Missing: @xtuc/ieee754@***.2.0 from lock file
+npm error Missing: mime-db@***.52.0 from lock file
+npm error Missing: ajv@8.***7.*** from lock file
+npm error Missing: ajv-formats@2.***.*** from lock file
+npm error Missing: ajv-keywords@5.***.0 from lock file
+npm error Missing: ajv@8.***7.*** from lock file
+npm error Missing: jest-worker@27.5.*** from lock file
+npm error Missing: serialize-javascript@6.0.2 from lock file
+npm error Missing: terser@5.44.0 from lock file
+npm error Missing: merge-stream@2.0.0 from lock file
+npm error Missing: supports-color@8.***.*** from lock file
+npm error Missing: randombytes@2.***.0 from lock file
+npm error Missing: @jridgewell/source-map@0.3.*** from lock file
+npm error Missing: commander@2.20.3 from lock file
+npm error Missing: source-map-support@0.5.2*** from lock file
+npm error Missing: buffer-from@***.***.2 from lock file
+npm error Missing: source-map@0.6.*** from lock file
+npm error Missing: swr@2.3.4 from lock file
+npm error Missing: fast-uri@3.***.0 from lock file
+npm error Missing: json-schema-traverse@***.0.0 from lock file
+npm error Missing: require-from-string@2.0.2 from lock file
+npm error Missing: json-schema-traverse@***.0.0 from lock file
+npm error Missing: glob-parent@5.***.2 from lock file
+npm error Missing: readdirp@3.6.0 from lock file
+npm error Missing: estraverse@4.3.0 from lock file
+npm error Missing: swr@2.3.4 from lock file
+npm error
+npm error Clean install a project
+npm error
+npm error Usage:
+npm error npm ci
+npm error
+npm error Options:
+npm error ***--install-strategy <hoisted|nested|shallow|linked>*** ***--legacy-bundling***
+npm error ***--global-style*** ***--omit <dev|optional|peer> ***--omit <dev|optional|peer> ...***
+npm error ***--include <prod|dev|optional|peer> ***--include <prod|dev|optional|peer> ...***
+npm error ***--strict-peer-deps*** ***--foreground-scripts*** ***--ignore-scripts*** ***--no-audit***
+npm error ***--no-bin-links*** ***--no-fund*** ***--dry-run***
+npm error ***-w|--workspace <workspace-name> ***-w|--workspace <workspace-name> ...***
+npm error ***-ws|--workspaces*** ***--include-workspace-root*** ***--install-links***
+npm error
+npm error aliases: clean-install, ic, install-clean, isntall-clean
+npm error
+npm error Run "npm help ci" for more info
+npm error A complete log of this run can be found in: /home/runner/.npm/_logs/2025-***0-***3T22_35_59_803Z-debug-0.log
+##***warning***npm ci failed with code ***; falling back to npm install to unblock e2e run.
+npm warn deprecated @clerk/clerk-sdk-node@5.***.6: January ***0 2025 marks the end of support for @clerk/clerk-sdk-node as previously announced in our October 2024 deprecation notice. Express users can migrate to the @clerk/express package. For more information, you can find our changelog here: https://clerk.com/changelog/2025-0***-***0-node-sdk-eol
+npm warn cleanup Failed to remove some directories ***
+npm warn cleanup   ***
+npm warn cleanup     '/home/runner/work/Elevra/Elevra/node_modules',
+npm warn cleanup     ***Error: ENOTEMPTY: directory not empty, rmdir '/home/runner/work/Elevra/Elevra/node_modules'*** {
+npm warn cleanup       errno: -39,
+npm warn cleanup       code: 'ENOTEMPTY',
+npm warn cleanup       syscall: 'rmdir',
+npm warn cleanup       path: '/home/runner/work/Elevra/Elevra/node_modules'
+npm warn cleanup     }
+npm warn cleanup   ***
+npm warn cleanup ***
+npm error code ***
+npm error path /home/runner/work/Elevra/Elevra/node_modules/esbuild
+npm error command failed
+npm error command sh -c node install.js
+npm error /home/runner/work/Elevra/Elevra/node_modules/esbuild/install.js:***36
+npm error     throw new Error(`Expected ${JSON.stringify(versionFromPackageJSON)} but got ${JSON.stringify(stdout)}`);
+npm error           ^
+npm error
+npm error Error: Expected "0.25.***0" but got "0.25.2"
+npm error     at validateBinaryVersion (/home/runner/work/Elevra/Elevra/node_modules/esbuild/install.js:***36:***)
+npm error     at /home/runner/work/Elevra/Elevra/node_modules/esbuild/install.js:287:5
+npm error
+npm error Node.js v2***9.5
+npm error A complete log of this run can be found in: /home/runner/.npm/_logs/2025-***0-***3T22_36_***7_84***Z-debug-0.log
+##***error***Process completed with exit code ***.
