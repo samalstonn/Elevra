@@ -299,6 +299,19 @@ model BlogPost {
   updatedAt   DateTime   @updatedAt
 }
 
+model EmailUnsubscribe {
+  id        Int      @id @default(autoincrement())
+  email     String
+  scope     String   // e.g., "candidate-outreach"
+  reason    String?
+  ip        String?
+  userAgent String?
+  createdAt DateTime @default(now())
+
+  @@unique([email, scope])
+  @@index([email])
+}
+
 model ElectionLink {
   candidateId     Int
   electionId      Int
