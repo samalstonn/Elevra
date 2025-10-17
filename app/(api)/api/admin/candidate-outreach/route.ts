@@ -20,7 +20,6 @@ import {
   renderUnsubscribeFooter,
   UNSUBSCRIBE_SCOPE,
 } from "@/lib/email/unsubscribe";
-import { buildClickTrackingUrl } from "@/lib/email/tracking";
 
 export const runtime = "nodejs";
 
@@ -245,13 +244,6 @@ export async function POST(req: NextRequest) {
     for (let i = 0; i < deliverable.length; i++) {
       const r = deliverable[i];
       const candidateUrl = r.candidateLink;
-      const trackedUrl =
-        buildClickTrackingUrl({
-          email: r.email,
-          scope: UNSUBSCRIBE_SCOPE,
-          template: step.template,
-          url: candidateUrl,
-        }) || candidateUrl;
       let rendered: { subject: string; html: string };
       try {
         rendered = await renderEmailTemplate(
@@ -259,9 +251,9 @@ export async function POST(req: NextRequest) {
           {
             candidateFirstName: r.firstName || undefined,
             state: r.state || undefined,
-            claimUrl: trackedUrl,
-            templatesUrl: trackedUrl,
-            profileUrl: trackedUrl,
+            claimUrl: candidateUrl,
+            templatesUrl: candidateUrl,
+            profileUrl: candidateUrl,
             municipality: r.municipality || undefined,
             position: r.position || undefined,
             senderName,
