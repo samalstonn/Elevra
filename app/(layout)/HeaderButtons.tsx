@@ -1,34 +1,14 @@
-"use client";
-
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
-import { useUser } from "@clerk/nextjs";
+import React from "react";
 
-type PublicMetadata = {
-  isVoter?: boolean;
-  isCandidate?: boolean;
-  isVendor?: boolean;
-  [key: string]: unknown;
-};
-
-export default function HeaderButtons({
-  pathname,
-}: {
-  pathname: string;
-}) {
-  const { user } = useUser();
-  const publicMetadata = (user?.publicMetadata ?? {}) as PublicMetadata;
-
+export default function HeaderButtons({ pathname }: { pathname: string }) {
   let dashboardLink = "/candidates/candidate-dashboard";
-
-  if (publicMetadata.isVoter) {
-    dashboardLink = "/dashboard";
-  } else if (pathname.startsWith("/vendors") || publicMetadata.isVendor) {
-    dashboardLink = "/vendors/vendor-dashboard";
-  } else {
+  if (pathname.startsWith("/candidates")) {
     dashboardLink = "/candidates/candidate-dashboard";
+  } else if (pathname.startsWith("/vendors")) {
+    dashboardLink = "/vendors/vendor-dashboard";
   }
-
   const liveElectionsLink = "/live-elections";
   const blogLink = "/blog";
 

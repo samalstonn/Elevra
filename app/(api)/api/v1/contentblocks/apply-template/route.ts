@@ -5,7 +5,6 @@ import {
   elevraStarterTemplate,
   simpleTemplate,
 } from "@/app/(templates)/basicwebpage";
-import { recordChangeEvent } from "@/lib/voter/changeEvents";
 
 export async function POST(request: Request) {
   try {
@@ -89,12 +88,6 @@ export async function POST(request: Request) {
         })),
       }),
     ]);
-
-    await recordChangeEvent({
-      candidateId,
-      type: "CAMPAIGN",
-      summary: "Campaign page template applied",
-    });
 
     return NextResponse.json({ success: true });
   } catch (error) {

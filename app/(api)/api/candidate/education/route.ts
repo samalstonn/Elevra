@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import prisma from "@/prisma/prisma";
-import { decodeEducation } from "@/lib/education";
-import { recordChangeEvent } from "@/lib/voter/changeEvents";
 
 export async function POST(req: NextRequest) {
   try {
@@ -54,12 +52,6 @@ export async function POST(req: NextRequest) {
     const updated = await prisma.candidate.update({
       where: { id: candidate.id },
       data: { history: [...candidate.history, entry] },
-    });
-
-    await recordChangeEvent({
-      candidateId: candidate.id,
-      type: "EDUCATION",
-      summary: `Added education: ${summarizeEducation(entry)}`,
     });
 
     return NextResponse.json({ success: true, history: updated.history });
@@ -126,12 +118,6 @@ export async function PUT(req: NextRequest) {
       where: { id: candidate.id },
       data: { history },
     });
-
-    await recordChangeEvent({
-      candidateId: candidate.id,
-      type: "EDUCATION",
-      summary: `Updated education: ${summarizeEducation(entry)}`,
-    });
     return NextResponse.json({ success: true, history: updated.history });
   } catch (e) {
     console.error("/api/candidate/education PUT failed", e);
@@ -161,17 +147,10 @@ export async function DELETE(req: NextRequest) {
         { error: "Candidate not found" },
         { status: 404 }
       );
-    const removedEntry = candidate.history[index];
     const history = candidate.history.filter((_, i) => i !== index);
     const updated = await prisma.candidate.update({
       where: { id: candidate.id },
       data: { history },
-    });
-
-    await recordChangeEvent({
-      candidateId: candidate.id,
-      type: "EDUCATION",
-      summary: `Removed education: ${summarizeEducation(removedEntry)}`,
     });
     return NextResponse.json({ success: true, history: updated.history });
   } catch (e) {
@@ -181,16 +160,4 @@ export async function DELETE(req: NextRequest) {
       { status: 500 }
     );
   }
-}
-
-function summarizeEducation(entry: string | undefined) {
-  if (!entry) return "education history changed";
-  const decoded = decodeEducation(entry);
-  if (!decoded) return "education history changed";
-  const pieces = [
-    decoded.name,
-    decoded.city && decoded.state ? `${decoded.city}, ${decoded.state}` : decoded.city || decoded.state,
-    decoded.graduationYear,
-  ].filter(Boolean);
-  return pieces.join(" • ") || "education history changed";
 }
