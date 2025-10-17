@@ -1,0 +1,140 @@
+name: e2e
+
+on:
+  pull_request:
+    branches: [dev, main]
+  workflow_dispatch:
+
+concurrency:
+  group: e2e-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  e2e:
+    runs-on: ubuntu-latest
+
+    env:
+      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+      VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+      VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+      VERCEL_BYPASS_TOKEN: ${{ secrets.VERCEL_BYPASS_TOKEN }}
+
+      # Core application secrets
+      NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY }}
+      CLERK_SECRET_KEY: ${{ secrets.CLERK_SECRET_KEY }}
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      SHADOW_DATABASE_URL: ${{ secrets.SHADOW_DATABASE_URL }}
+      NEXT_PUBLIC_APP_URL: ${{ secrets.NEXT_PUBLIC_APP_URL }}
+
+      # Email configuration
+      EMAIL_DRY_RUN: ${{ secrets.EMAIL_DRY_RUN }}
+      EMAIL_DRY_RUN_LOG: ${{ secrets.EMAIL_DRY_RUN_LOG }}
+      ADMIN_EMAIL: ${{ secrets.ADMIN_EMAIL }}
+
+      # Logging configuration
+      API_LOG_TOKEN: ${{ secrets.API_LOG_TOKEN }}
+      API_LOG_DIRECTORY: ${{ secrets.API_LOG_DIRECTORY }}
+      API_LOG_FILE: ${{ secrets.API_LOG_FILE }}
+
+      # E2E test controls and credentials
+      E2E_CANDIDATE_SLUG: ${{ secrets.E2E_CANDIDATE_SLUG }}
+      E2E_SEED_SECRET: ${{ secrets.E2E_SEED_SECRET }}
+      E2E_CLERK_USERS: ${{ secrets.E2E_CLERK_USERS }}
+      E2E_CLERK_USER_USERNAME: ${{ secrets.E2E_CLERK_USER_USERNAME }}
+      E2E_CLERK_USER_PASSWORD: ${{ secrets.E2E_CLERK_USER_PASSWORD }}
+      E2E_CLERK_USER_ID: ${{ secrets.E2E_CLERK_USER_ID }}
+      E2E_CLERK_USER_USERNAME_LIST: ${{ secrets.E2E_CLERK_USER_USERNAME_LIST }}
+      E2E_CLERK_USER_PASSWORD_LIST: ${{ secrets.E2E_CLERK_USER_PASSWORD_LIST }}
+      E2E_CLERK_USER_ID_LIST: ${{ secrets.E2E_CLERK_USER_ID_LIST }}
+      E2E_CLERK_USER_USERNAMES: ${{ secrets.E2E_CLERK_USER_USERNAMES }}
+      E2E_CLERK_USER_PASSWORDS: ${{ secrets.E2E_CLERK_USER_PASSWORDS }}
+      E2E_CLERK_USER_IDS: ${{ secrets.E2E_CLERK_USER_IDS }}
+      E2E_NONMATCH_EMAIL: ${{ secrets.E2E_NONMATCH_EMAIL }}
+      E2E_NONMATCH_PASSWORD: ${{ secrets.E2E_NONMATCH_PASSWORD }}
+      ADMIN_EMAIL_SECRET: ${{ secrets.ADMIN_EMAIL_SECRET }}
+
+      # Legacy/optional test vars
+      E2E_BASE_URL: ${{ secrets.E2E_BASE_URL }}
+      E2E_TEST_EMAIL: ${{ secrets.E2E_TEST_EMAIL }}
+      E2E_TEST_PASSWORD: ${{ secrets.E2E_TEST_PASSWORD }}
+
+      # Other optional envs
+      NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN: ${{ secrets.NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN }}
+      SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
+      SENTRY_ENVIRONMENT: ${{ secrets.SENTRY_ENVIRONMENT }}
+      SENTRY_TRACES_SAMPLE_RATE: ${{ secrets.SENTRY_TRACES_SAMPLE_RATE }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install deps
+        run: npm ci
+
+      - name: Install Vercel CLI
+        run: npm i -g vercel
+
+      - name: Verify bypass token is configured
+        run: |
+          if [ -z "${VERCEL_BYPASS_TOKEN:-}" ]; then
+            echo "::error::VERCEL_BYPASS_TOKEN is not set. Add the hashed bypass token as a GitHub Actions secret." >&2
+            exit 1
+          fi
+
+      # Pull preview env vars into .vercel/. (no prompts)
+      - name: Vercel env pull (preview)
+        run: vercel pull --yes --environment=preview --token "$VERCEL_TOKEN"
+
+      # (Optional) Build once so we can use --prebuilt for faster deploys
+      - name: Build
+        run: vercel build
+
+      # Deploy and capture the preview URL
+      - name: Vercel deploy (preview)
+        id: deploy
+        run: |
+          url=$(vercel deploy --prebuilt --token "$VERCEL_TOKEN" --yes)
+          echo "NEXT_PUBLIC_APP_URL=$url" >> $GITHUB_ENV
+          echo "url=$url" >> $GITHUB_OUTPUT
+
+      # Cache Playwright browsers to speed up future runs
+      - name: Cache Playwright
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('**/package-lock.json') }}
+
+      - name: Install Playwright browsers + OS deps
+        run: npx playwright install --with-deps
+
+      - name: Run Playwright tests against the deployed preview
+        run: npx playwright test
+        env:
+          NEXT_PUBLIC_APP_URL: ${{ steps.deploy.outputs.url }}
+          VERCEL_BYPASS_TOKEN: ${{ secrets.VERCEL_BYPASS_TOKEN }}
+
+      # Always upload the HTML report & traces for debugging
+      - name: Upload Playwright report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: playwright-report
+          if-no-files-found: ignore
+
+      - name: Upload test-results (traces/screenshots)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: test-results
+          if-no-files-found: ignore

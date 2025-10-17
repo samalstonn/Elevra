@@ -10,6 +10,11 @@ dotenv.config({ path: path.resolve(__dirname, ".env.local"), override: true });
 // Set the port for the server
 const PORT = process.env.PORT || 3000;
 
+const vercelBypassToken = process.env.VERCEL_BYPASS_TOKEN;
+const extraHTTPHeaders = vercelBypassToken
+  ? { "x-vercel-protection-bypass": vercelBypassToken }
+  : undefined;
+
 // App URL used for navigation & assertions in tests
 const baseURL = process.env.NEXT_PUBLIC_APP_URL || `http://localhost:${PORT}`;
 
@@ -40,6 +45,7 @@ export default defineConfig({
   use: {
     // Base URL to use in actions like `await page.goto('/')`.
     baseURL,
+    extraHTTPHeaders,
 
     // Collect trace when retrying the failed test.
     // See https://playwright.dev/docs/trace-viewer
