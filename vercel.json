@@ -4,7 +4,7 @@
       "maxDuration": 60
     }
   },
-  "cron": [
+  "crons": [
     {
       "path": "/api/cron/gemini-dispatch",
       "schedule": "*/1 * * * *",
