@@ -51,7 +51,9 @@ const DEFAULT_DESCRIPTIONS: Partial<Record<DefaultTemplateKey, string>> = {
 };
 
 const defaultHtmlCache = new Map<DefaultTemplateKey, string>();
-const defaultTemplateKeySet = new Set<DefaultTemplateKey>(DEFAULT_TEMPLATE_KEYS);
+const defaultTemplateKeySet = new Set<DefaultTemplateKey>(
+  DEFAULT_TEMPLATE_KEYS
+);
 
 function isDefaultTemplateKey(key: TemplateKey): key is DefaultTemplateKey {
   return defaultTemplateKeySet.has(key as DefaultTemplateKey);
@@ -115,14 +117,12 @@ async function fetchEmailDocument(
     return cached;
   }
 
-  let existing:
-    | {
-        title: string;
-        subjectTemplate: string;
-        htmlTemplate: string;
-        description: string | null;
-      }
-    | null = null;
+  let existing: {
+    title: string;
+    subjectTemplate: string;
+    htmlTemplate: string;
+    description: string | null;
+  } | null = null;
 
   try {
     existing = await prisma.emailDocument.findUnique({
@@ -336,12 +336,7 @@ export async function renderEmailTemplate(
         opts?.baseForFollowup && opts.baseForFollowup !== key
           ? opts.baseForFollowup
           : "initial";
-      const baseTemplate = await renderEmailTemplate(
-        baseKey,
-        data,
-        opts,
-        ctx
-      );
+      const baseTemplate = await renderEmailTemplate(baseKey, data, opts, ctx);
       replacements.originalHtml = baseTemplate.html;
     }
 
