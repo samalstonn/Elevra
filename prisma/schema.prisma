@@ -238,6 +238,19 @@ model BlogPost {
   updatedAt   DateTime   @updatedAt
 }
 
+model EmailUnsubscribe {
+  id        Int      @id @default(autoincrement())
+  email     String
+  scope     String   // e.g., "candidate-outreach"
+  reason    String?
+  ip        String?
+  userAgent String?
+  createdAt DateTime @default(now())
+
+  @@unique([email, scope])
+  @@index([email])
+}
+
 model ElectionLink {
   candidateId     Int
   electionId      Int
@@ -292,6 +305,17 @@ model Document {
   electionLink  ElectionLink @relation(fields: [candidateId, electionId], references: [candidateId, electionId], onDelete: Cascade)
 
   @@unique([candidateId, electionId])
+}
+
+model EmailDocument {
+  id              String   @id @default(cuid())
+  key             String   @unique
+  title           String
+  subjectTemplate String   @db.Text
+  htmlTemplate    String   @db.Text
+  description     String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 }
 
 enum ElectionType {

@@ -2,6 +2,7 @@
 
 import * as React from "react"
 import { EditorContent, EditorContext, useEditor } from "@tiptap/react"
+import type { Extensions } from "@tiptap/core"
 
 // --- Tiptap Core Extensions ---
 import { StarterKit } from "@tiptap/starter-kit"
@@ -85,11 +86,13 @@ const MainToolbarContent = ({
   onHighlighterClick,
   onLinkClick,
   onVideoClick,
+  showMediaOptions = true,
   isMobile,
 }: {
   onHighlighterClick: () => void
   onLinkClick: () => void
-  onVideoClick: () => void
+  onVideoClick?: () => void
+  showMediaOptions?: boolean
   isMobile: boolean
 }) => {
   return (
@@ -143,12 +146,16 @@ const MainToolbarContent = ({
         <TextAlignButton align="justify" />
       </ToolbarGroup>
 
-      <ToolbarSeparator />
+      {showMediaOptions && (
+        <>
+          <ToolbarSeparator />
 
-      <ToolbarGroup>
-        <ImageUploadButton />
-        <Button onClick={onVideoClick}>Add Video</Button>
-      </ToolbarGroup>
+          <ToolbarGroup>
+            <ImageUploadButton />
+            {onVideoClick && <Button onClick={onVideoClick}>Add Video</Button>}
+          </ToolbarGroup>
+        </>
+      )}
 
       <Spacer />
 
@@ -197,9 +204,15 @@ type SimpleEditorProps = {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   onSave?: (payload: { json: any; html: string }) => Promise<void> | void
   candidateSlug?: string
+  allowMediaUploads?: boolean
 }
 
-export function SimpleEditor({ initialContent, onSave, candidateSlug }: SimpleEditorProps) {
+export function SimpleEditor({
+  initialContent,
+  onSave,
+  candidateSlug,
+  allowMediaUploads = true,
+}: SimpleEditorProps) {
   const formatFileSize = (bytes: number) => {
     if (!bytes) return ""
     const k = 1024
@@ -210,6 +223,7 @@ export function SimpleEditor({ initialContent, onSave, candidateSlug }: SimpleEd
   const isMobile = useIsMobile()
   const { height } = useWindowSize()
   const { toast } = useToast()
+  const mediaUploadsEnabled = Boolean(candidateSlug) && allowMediaUploads
   const [mobileView, setMobileView] = React.useState<
     "main" | "highlighter" | "link"
   >("main")
@@ -220,6 +234,93 @@ export function SimpleEditor({ initialContent, onSave, candidateSlug }: SimpleEd
   const [videoProgress, setVideoProgress] = React.useState(0)
   const [videoName, setVideoName] = React.useState<string>("")
   const [videoSize, setVideoSize] = React.useState<number>(0)
+
+  const editorExtensions = React.useMemo(() => {
+    const baseExtensions: Extensions = [
+      StarterKit.configure({
+        horizontalRule: false,
+        link: {
+          openOnClick: false,
+          enableClickSelection: true,
+        },
+      }),
+      HorizontalRule,
+      TextAlign.configure({ types: ["heading", "paragraph"] }),
+      TaskList,
+      TaskItem.configure({ nested: true }),
+      Highlight.configure({ multicolor: true }),
+      Image,
+      ResizableImage.configure({
+        defaultWidth: 200,
+        defaultHeight: 200,
+      }),
+      Typography,
+      Superscript,
+      Subscript,
+      Selection,
+    ]
+
+    if (mediaUploadsEnabled) {
+      const slug = candidateSlug as string
+      baseExtensions.splice(2, 0, VideoNode)
+      baseExtensions.push(
+        ImageUploadNode.configure({
+          accept: "image/*",
+          maxSize: MAX_FILE_SIZE,
+          limit: 3,
+          upload: async (file, onProgress, abortSignal) => {
+            // Client-side size guard for images (10MB)
+            if (file.size > MAX_FILE_SIZE) {
+              toast({
+                variant: "destructive",
+                title: "File too large",
+                description: "Image exceeds the 10MB limit.",
+              })
+              throw new Error("Image exceeds 10MB limit")
+            }
+            const form = new FormData()
+            form.append("file", file)
+            form.append("candidateSlug", slug)
+
+            const xhr = new XMLHttpRequest()
+            const promise = new Promise<string>((resolve, reject) => {
+              xhr.open("PUT", "/api/blob/signed-url")
+              xhr.upload.onprogress = (event) => {
+                if (event.lengthComputable) {
+                  const pct = Math.round((event.loaded / event.total) * 100)
+                  onProgress?.({ progress: pct })
+                }
+              }
+              xhr.onload = () => {
+                if (xhr.status >= 200 && xhr.status < 300) {
+                  try {
+                    const data = JSON.parse(xhr.responseText)
+                    if (data?.url) resolve(data.url)
+                    else reject(new Error("Invalid upload response"))
+                  } catch (e) {
+                    reject(e as Error)
+                  }
+                } else {
+                  reject(new Error(`Upload failed (${xhr.status})`))
+                }
+              }
+              xhr.onerror = () => reject(new Error("Network error"))
+              xhr.send(form)
+            })
+
+            if (abortSignal) {
+              abortSignal.addEventListener("abort", () => xhr.abort())
+            }
+
+            return promise
+          },
+          onError: (error) => console.error("Upload failed:", error),
+        })
+      )
+    }
+
+    return baseExtensions
+  }, [candidateSlug, mediaUploadsEnabled, toast])
 
   const editor = useEditor({
     immediatelyRender: false,
@@ -233,85 +334,7 @@ export function SimpleEditor({ initialContent, onSave, candidateSlug }: SimpleEd
         class: "simple-editor",
       },
     },
-    extensions: [
-      StarterKit.configure({
-        horizontalRule: false,
-        link: {
-          openOnClick: false,
-          enableClickSelection: true,
-        },
-      }),
-      HorizontalRule,
-      VideoNode,
-      TextAlign.configure({ types: ["heading", "paragraph"] }),
-      TaskList,
-      TaskItem.configure({ nested: true }),
-      Highlight.configure({ multicolor: true }),
-      Image,
-      ResizableImage.configure({
-          defaultWidth: 200,
-          defaultHeight: 200,
-      }),
-      Typography,
-      Superscript,
-      Subscript,
-      Selection,
-      ImageUploadNode.configure({
-        accept: "image/*",
-        maxSize: MAX_FILE_SIZE,
-        limit: 3,
-        upload: async (file, onProgress, abortSignal) => {
-          // Client-side size guard for images (10MB)
-          if (file.size > MAX_FILE_SIZE) {
-            toast({
-              variant: "destructive",
-              title: "File too large",
-              description: "Image exceeds the 10MB limit.",
-            })
-            throw new Error("Image exceeds 10MB limit")
-          }
-          if (!candidateSlug) {
-            throw new Error("candidateSlug is required for uploads")
-          }
-          const form = new FormData()
-          form.append("file", file)
-          form.append("candidateSlug", candidateSlug)
-
-          const xhr = new XMLHttpRequest()
-          const promise = new Promise<string>((resolve, reject) => {
-            xhr.open("PUT", "/api/blob/signed-url")
-            xhr.upload.onprogress = (event) => {
-              if (event.lengthComputable) {
-                const pct = Math.round((event.loaded / event.total) * 100)
-                onProgress?.({ progress: pct })
-              }
-            }
-            xhr.onload = () => {
-              if (xhr.status >= 200 && xhr.status < 300) {
-                try {
-                  const data = JSON.parse(xhr.responseText)
-                  if (data?.url) resolve(data.url)
-                  else reject(new Error("Invalid upload response"))
-                } catch (e) {
-                  reject(e as Error)
-                }
-              } else {
-                reject(new Error(`Upload failed (${xhr.status})`))
-              }
-            }
-            xhr.onerror = () => reject(new Error("Network error"))
-            xhr.send(form)
-          })
-
-          if (abortSignal) {
-            abortSignal.addEventListener("abort", () => xhr.abort())
-          }
-
-          return promise
-        },
-        onError: (error) => console.error("Upload failed:", error),
-      }),
-    ],
+    extensions: editorExtensions,
     content: initialContent ?? content,
   })
 
@@ -355,7 +378,10 @@ export function SimpleEditor({ initialContent, onSave, candidateSlug }: SimpleEd
       {(onSave || candidateSlug) && (
           <div className="mb-4 flex flex-row items-center justify-end gap-2">
             {onSave && (
-              <AppButton onClick={handleSave} disabled={isSaving || isVideoUploading}>
+              <AppButton
+                onClick={handleSave}
+                disabled={isSaving || (mediaUploadsEnabled && isVideoUploading)}
+              >
                 {isSaving ? "Saving..." : "Save"}
               </AppButton>
             )}
@@ -381,7 +407,12 @@ export function SimpleEditor({ initialContent, onSave, candidateSlug }: SimpleEd
             <MainToolbarContent
               onHighlighterClick={() => setMobileView("highlighter")}
               onLinkClick={() => setMobileView("link")}
-              onVideoClick={() => videoInputRef.current?.click()}
+              onVideoClick={
+                mediaUploadsEnabled
+                  ? () => videoInputRef.current?.click()
+                  : undefined
+              }
+              showMediaOptions={mediaUploadsEnabled}
               isMobile={isMobile}
             />
           ) : (
@@ -392,7 +423,7 @@ export function SimpleEditor({ initialContent, onSave, candidateSlug }: SimpleEd
           )}
         </Toolbar>
 
-        {isVideoUploading && (
+        {mediaUploadsEnabled && isVideoUploading && (
           <div className="tiptap-image-upload mt-3">
             <div className="tiptap-image-upload-previews">
               <div className="tiptap-image-upload-preview">
@@ -441,100 +472,104 @@ export function SimpleEditor({ initialContent, onSave, candidateSlug }: SimpleEd
         />
 
         {/* Hidden input for video uploads */}
-        <input
-          ref={videoInputRef}
-          type="file"
-          accept="video/*"
-          className="hidden"
-          onChange={async (e) => {
-            const file = e.target.files?.[0]
-            if (!file) return
-            if (!candidateSlug) {
-              console.error("candidateSlug is required for uploads")
-              return
-            }
-            // Client-side size guard for videos (200MB)
-            const MAX_VIDEO = 200 * 1024 * 1024
-            if (file.size > MAX_VIDEO) {
-              toast({
-                variant: "destructive",
-                title: "File too large",
-                description: "Video exceeds the 200MB limit.",
-              })
-              e.currentTarget.value = ""
-              return
-            }
-            try {
-              setIsVideoUploading(true)
-              setVideoProgress(5)
-              setVideoName(file.name)
-              setVideoSize(file.size)
+        {mediaUploadsEnabled && (
+          <input
+            ref={videoInputRef}
+            type="file"
+            accept="video/*"
+            className="hidden"
+            onChange={async (e) => {
+              const file = e.target.files?.[0]
+              if (!file) return
+              if (!candidateSlug) {
+                console.error("candidateSlug is required for uploads")
+                return
+              }
+              // Client-side size guard for videos (200MB)
+              const MAX_VIDEO = 200 * 1024 * 1024
+              if (file.size > MAX_VIDEO) {
+                toast({
+                  variant: "destructive",
+                  title: "File too large",
+                  description: "Video exceeds the 200MB limit.",
+                })
+                e.currentTarget.value = ""
+                return
+              }
+              try {
+                setIsVideoUploading(true)
+                setVideoProgress(5)
+                setVideoName(file.name)
+                setVideoSize(file.size)
 
-              const form = new FormData()
-              form.append("file", file)
-              form.append("candidateSlug", candidateSlug)
+                const form = new FormData()
+                form.append("file", file)
+                form.append("candidateSlug", candidateSlug)
 
-              const xhr = new XMLHttpRequest()
-              videoXhrRef.current = xhr
+                const xhr = new XMLHttpRequest()
+                videoXhrRef.current = xhr
 
-              await new Promise<string>((resolve, reject) => {
-                xhr.open("PUT", "/api/blob/signed-url")
-                xhr.upload.onloadstart = () => setVideoProgress(1)
-                xhr.upload.onprogress = (event) => {
-                  const total = event.total && event.total > 0 ? event.total : file.size
-                  const pct = Math.round((event.loaded / total) * 100)
-                  // Avoid showing 100% until the request fully completes
-                  setVideoProgress(Math.min(95, Math.max(1, pct)))
-                }
-                xhr.onload = () => {
-                  try {
-                    if (xhr.status >= 200 && xhr.status < 300) {
-                      const data = JSON.parse(xhr.responseText)
-                      if (data?.url) resolve(data.url)
-                      else reject(new Error("Invalid upload response"))
-                    } else {
-                      reject(new Error(`Upload failed (${xhr.status})`))
-                    }
-                  } catch (err) {
-                    reject(err as Error)
+                await new Promise<string>((resolve, reject) => {
+                  xhr.open("PUT", "/api/blob/signed-url")
+                  xhr.upload.onloadstart = () => setVideoProgress(1)
+                  xhr.upload.onprogress = (event) => {
+                    const total = event.total && event.total > 0 ? event.total : file.size
+                    const pct = Math.round((event.loaded / total) * 100)
+                    // Avoid showing 100% until the request fully completes
+                    setVideoProgress(Math.min(95, Math.max(1, pct)))
                   }
-                }
-                xhr.onerror = () => reject(new Error("Network error"))
-                xhr.onabort = () => reject(new Error("Upload cancelled"))
-                xhr.send(form)
-              })
-                .then((url) => {
-                  setVideoProgress(100)
-                  editor?.chain().focus().setVideo({ src: url }).run()
+                  xhr.onload = () => {
+                    try {
+                      if (xhr.status >= 200 && xhr.status < 300) {
+                        const data = JSON.parse(xhr.responseText)
+                        if (data?.url) resolve(data.url)
+                        else reject(new Error("Invalid upload response"))
+                      } else {
+                        reject(new Error(`Upload failed (${xhr.status})`))
+                      }
+                    } catch (err) {
+                      reject(err as Error)
+                    }
+                  }
+                  xhr.onerror = () => reject(new Error("Network error"))
+                  xhr.onabort = () => reject(new Error("Upload cancelled"))
+                  xhr.send(form)
                 })
-                .catch((err) => {
-                  console.error("Video upload failed:", err)
-                  toast({
-                    variant: "destructive",
-                    title: "Upload failed",
-                    description:
-                      err instanceof Error ? err.message : "Unable to upload video.",
+                  .then((url) => {
+                    setVideoProgress(100)
+                    editor?.chain().focus().setVideo({ src: url }).run()
                   })
+                  .catch((err) => {
+                    console.error("Video upload failed:", err)
+                    toast({
+                      variant: "destructive",
+                      title: "Upload failed",
+                      description:
+                        err instanceof Error ? err.message : "Unable to upload video.",
+                    })
+                  })
+                  .finally(() => {
+                    setTimeout(() => {
+                      setIsVideoUploading(false)
+                      setVideoProgress(0)
+                      setVideoName("")
+                      setVideoSize(0)
+                    }, 400)
+                    videoXhrRef.current = null
+                  })
+              } catch (err) {
+                console.error("Video upload failed:", err)
+                toast({
+                  variant: "destructive",
+                  title: "Upload failed",
+                  description: err instanceof Error ? err.message : "Unable to upload video.",
                 })
-                .finally(() => {
-                  setTimeout(() => {
-                    setIsVideoUploading(false)
-                    setVideoProgress(0)
-                    setVideoName("")
-                    setVideoSize(0)
-                  }, 400)
-                  videoXhrRef.current = null
-                })
-            } catch (err) {
-              console.error("Video upload failed:", err)
-              toast({
-                variant: "destructive",
-                title: "Upload failed",
-                description: err instanceof Error ? err.message : "Unable to upload video.",
-              })
-            }
-          }}
-        />
+              } finally {
+                e.currentTarget.value = ""
+              }
+            }}
+          />
+        )}
       </EditorContext.Provider>
     </div>
   )
