@@ -1,5 +1,5 @@
 -- CreateTable
-CREATE TABLE "EmailDocument" (
+CREATE TABLE IF NOT EXISTS "public"."EmailDocument" (
     "id" TEXT NOT NULL,
     "key" TEXT NOT NULL,
     "title" TEXT NOT NULL,
@@ -12,4 +12,4 @@ CREATE TABLE "EmailDocument" (
 );
 
 -- CreateIndex
-CREATE UNIQUE INDEX "EmailDocument_key_key" ON "EmailDocument"("key");
+CREATE UNIQUE INDEX IF NOT EXISTS "EmailDocument_key_key" ON "public"."EmailDocument"("key");
