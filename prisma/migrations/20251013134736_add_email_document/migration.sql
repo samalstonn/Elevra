@@ -1,2 +1,2 @@
 -- AlterTable
-ALTER TABLE "public"."EmailDocument" ALTER COLUMN "updatedAt" DROP DEFAULT;
+ALTER TABLE IF EXISTS "public"."EmailDocument" ALTER COLUMN "updatedAt" DROP DEFAULT;
