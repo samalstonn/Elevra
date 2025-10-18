@@ -7,10 +7,7 @@
   "crons": [
     {
       "path": "/api/cron/gemini-dispatch",
-      "schedule": "*/1 * * * *",
-      "headers": {
-        "x-cron-secret": "@GEMINI_CRON_SECRET"
-      }
+      "schedule": "*/1 * * * *"
     }
   ]
 }
