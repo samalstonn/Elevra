@@ -300,6 +300,9 @@ export default function CandidateClient({
         {activeTab === "contact" && (
           <div className="mt-4">
             <ContactTab
+              candidateId={candidate.id}
+              candidateName={candidate.name}
+              candidateSlug={candidate.slug}
               email={candidate.email}
               website={candidate.website}
               phone={candidate.phone}

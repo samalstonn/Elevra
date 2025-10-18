@@ -56,6 +56,7 @@ model Candidate {
   Testimonial   Testimonial[]
   Vendors       Vendor[]               @relation("CandidateToVendor")
   uploadedBy    String                 @default("team@elevracommunity.com") // email of user who uploaded
+  messages      CandidateMessage[]
 }
 
 model Donation {
@@ -377,6 +378,22 @@ model EmailDocument {
   description     String?
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
+}
+
+model CandidateMessage {
+  id                Int      @id @default(autoincrement())
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  candidateId       Int
+  senderClerkUserId String
+  senderName        String
+  senderEmail       String
+  subject           String
+  body              String
+  candidate         Candidate @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+
+  @@index([candidateId, createdAt])
+  @@index([candidateId, senderClerkUserId, createdAt])
 }
 
 enum ElectionType {

@@ -10,6 +10,7 @@ import {
   Users, // Vendor Marketplace
   Menu,
   Zap,
+  Mail,
 } from "lucide-react";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
@@ -44,6 +45,12 @@ export default function CandidateDashboardLayout({
       href: "/candidates/candidate-dashboard/my-elections",
       label: candidateTier === "premium" ? "Premium Campaign" : "Campaign",
       icon: Users,
+      premium: false,
+    },
+    {
+      href: "/candidates/candidate-dashboard/messages",
+      label: "Messages",
+      icon: Mail,
       premium: false,
     },
     {
