@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { currentUser } from "@clerk/nextjs/server";
 import prisma from "@/prisma/prisma";
+import { detectCandidateProfileChanges } from "@/lib/voter/changeDetectors";
+import { recordChangeEvent } from "@/lib/voter/changeEvents";
 
 export async function POST(request: NextRequest) {
   try {
@@ -75,6 +77,18 @@ export async function POST(request: NextRequest) {
         history: candidate.history,
       },
     });
+
+    const changes = detectCandidateProfileChanges(candidate, updatedCandidate);
+    await Promise.all(
+      changes.map((change) =>
+        recordChangeEvent({
+          candidateId: updatedCandidate.id,
+          type: change.type,
+          summary: change.summary,
+          metadata: change.metadata,
+        })
+      )
+    );
 
     return NextResponse.json({
       success: true,
