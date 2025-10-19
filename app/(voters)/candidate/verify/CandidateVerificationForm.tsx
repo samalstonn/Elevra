@@ -4,7 +4,6 @@
 import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useUser } from "@clerk/nextjs";
-import Link from "next/link";
 import { motion } from "framer-motion";
 import {
   FaArrowLeft,
@@ -553,25 +552,8 @@ export default function CandidateVerificationForm() {
                     htmlFor="agreeToTerms"
                     className="font-medium text-gray-700"
                   >
-                    I certify that all information provided is accurate*
+                    I certify that all information provided is accurate
                   </label>
-                  <p className="text-gray-500">
-                    By checking this box, you agree to our{" "}
-                    <Link
-                      href="/terms"
-                      className="text-purple-600 hover:text-purple-800 underline"
-                    >
-                      Terms of Service
-                    </Link>{" "}
-                    and{" "}
-                    <Link
-                      href="/privacy"
-                      className="text-purple-600 hover:text-purple-800 underline"
-                    >
-                      Privacy Policy
-                    </Link>
-                    .
-                  </p>
                 </div>
               </div>
               {errors.agreeToTerms && (

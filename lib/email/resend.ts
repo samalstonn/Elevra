@@ -6,6 +6,7 @@ export type SendEmailParams = {
   html: string;
   from?: string;
   senderName?: string;
+  headers?: Record<string, string>;
   // Accept Date (UTC ISO) or ISO string with timezone offset to honor local time
   scheduledAt?: Date | string;
 };
@@ -78,6 +79,7 @@ export async function sendWithResend({
   html,
   from,
   senderName,
+  headers,
   scheduledAt,
 }: SendEmailParams): Promise<{ id: string } | null> {
   // Global process-level throttle
@@ -93,11 +95,12 @@ export async function sendWithResend({
     try {
       // Optionally record for inspection
       if (process.env.EMAIL_DRY_RUN_LOG === "1") {
-        const sendParams: CreateEmailOptions = {
+        const sendParams: CreateEmailOptions & { headers?: Record<string, string> } = {
           from: formatSenderAddress(senderName, from),
           to,
           subject,
           html,
+          headers,
         };
         sendParams.scheduledAt = scheduledAt
           ? typeof scheduledAt === "string"
@@ -119,12 +122,13 @@ export async function sendWithResend({
 
   const resend = new Resend(process.env.RESEND_API_KEY);
   const fromAddress = formatSenderAddress(senderName, from);
-  const sendParams: CreateEmailOptions = {
+  const sendParams: CreateEmailOptions & { headers?: Record<string, string> } = {
     from: fromAddress,
     to,
     subject,
     html,
     replyTo: process.env.ADMIN_EMAIL,
+    headers,
   };
 
   if (scheduledAt) {
@@ -212,6 +216,9 @@ export async function sendBatchWithResend(
       };
       if (process.env.ADMIN_EMAIL) {
         entry.reply_to = process.env.ADMIN_EMAIL;
+      }
+      if (payload.headers && Object.keys(payload.headers).length > 0) {
+        entry.headers = payload.headers;
       }
       if (scheduledAtIso) {
         entry.scheduled_at = scheduledAtIso;
