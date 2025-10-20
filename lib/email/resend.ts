@@ -87,7 +87,6 @@ export async function sendWithResend({
   html,
   from,
   senderName,
-  headers,
   scheduledAt,
   attachments,
 }: SendEmailParams): Promise<{ id: string } | null> {
@@ -104,7 +103,9 @@ export async function sendWithResend({
     try {
       // Optionally record for inspection
       if (process.env.EMAIL_DRY_RUN_LOG === "1") {
-        const sendParams: CreateEmailOptions & { headers?: Record<string, string> } = {
+        const sendParams: CreateEmailOptions & {
+          headers?: Record<string, string>;
+        } = {
           from: formatSenderAddress(senderName, from),
           to,
           subject,
@@ -139,19 +140,20 @@ export async function sendWithResend({
 
   const resend = new Resend(process.env.RESEND_API_KEY);
   const fromAddress = formatSenderAddress(senderName, from);
-  const sendParams: CreateEmailOptions & { headers?: Record<string, string> } = {
-    from: fromAddress,
-    to,
-    subject,
-    html,
-    replyTo: process.env.ADMIN_EMAIL,
-    attachments: attachments?.map((item) => ({
-      filename: item.filename,
-      path: item.path,
-      content: item.content,
-      mime_type: item.mimeType,
-    })),
-  };
+  const sendParams: CreateEmailOptions & { headers?: Record<string, string> } =
+    {
+      from: fromAddress,
+      to,
+      subject,
+      html,
+      replyTo: process.env.ADMIN_EMAIL,
+      attachments: attachments?.map((item) => ({
+        filename: item.filename,
+        path: item.path,
+        content: item.content,
+        mime_type: item.mimeType,
+      })),
+    };
   if (!sendParams.attachments?.length) {
     delete (sendParams as { attachments?: unknown }).attachments;
   }
