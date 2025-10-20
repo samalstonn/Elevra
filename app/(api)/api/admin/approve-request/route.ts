@@ -5,7 +5,6 @@ import { sendWithResend } from "@/lib/email/resend";
 import { renderAdminNotification } from "@/lib/email/templates/adminNotification";
 import { renderCandidateVerificationEmail } from "@/lib/email/templates/candidateVerified";
 import { clerkClient } from "@clerk/nextjs/server";
-import { elevraStarterTemplate } from "@/app/(templates)/basicwebpage";
 
 export async function POST(req: Request) {
   try {
@@ -48,26 +47,6 @@ export async function POST(req: Request) {
       where: { id: request.id },
       data: { status: SubmissionStatus.APPROVED },
     });
-
-    // Ensure each existing election link for this candidate has seeded content blocks
-    const links = await prisma.electionLink.findMany({
-      where: { candidateId: candidate.id },
-      select: { electionId: true },
-    });
-    for (const link of links) {
-      const count = await prisma.contentBlock.count({
-        where: { candidateId: candidate.id, electionId: link.electionId },
-      });
-      if (count === 0) {
-        await prisma.contentBlock.createMany({
-          data: elevraStarterTemplate.map((block) => ({
-            ...block,
-            candidateId: candidate.id,
-            electionId: link.electionId,
-          })),
-        });
-      }
-    }
     // Notify admin of approval (Resend)
     const emailResult = await sendWithResend({
       to: process.env.ADMIN_EMAIL!,

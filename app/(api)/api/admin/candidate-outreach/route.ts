@@ -7,7 +7,19 @@ import {
 } from "@/lib/email/resend";
 import { getAuth } from "@clerk/nextjs/server";
 import { clerkClient } from "@clerk/clerk-sdk-node";
-import { renderEmailTemplate, TemplateKey } from "@/lib/email/templates/render";
+import {
+  createEmailTemplateRenderContext,
+  renderEmailTemplate,
+  TemplateKey,
+} from "@/lib/email/templates/render";
+import { deriveSenderFields } from "@/lib/email/templates/sender";
+import prisma from "@/prisma/prisma";
+import {
+  buildListUnsubscribeHeaders,
+  buildUnsubscribeUrl,
+  renderUnsubscribeFooter,
+  UNSUBSCRIBE_SCOPE,
+} from "@/lib/email/unsubscribe";
 
 export const runtime = "nodejs";
 
@@ -69,14 +81,22 @@ export async function POST(req: NextRequest) {
   const adminUserId = authState?.userId ?? "unknown";
   let adminName = "";
   let adminEmail = "";
-  let adminDisplay = adminUserId === "unknown"
-    ? "Unauthenticated (header secret only)"
-    : adminUserId;
+  let adminDisplay =
+    adminUserId === "unknown"
+      ? "Unauthenticated (header secret only)"
+      : adminUserId;
+  let senderName: string | undefined;
+  let senderTitle: string | undefined;
+  let senderLinkedInUrl: string | undefined;
+  let senderLinkedInLabel: string | undefined;
 
   if (authState?.userId) {
     try {
       const user = await clerkClient.users.getUser(authState.userId);
-      adminName = [user.firstName, user.lastName].filter(Boolean).join(" ").trim();
+      adminName = [user.firstName, user.lastName]
+        .filter(Boolean)
+        .join(" ")
+        .trim();
       adminEmail =
         user.primaryEmailAddress?.emailAddress ??
         user.emailAddresses?.[0]?.emailAddress ??
@@ -85,10 +105,28 @@ export async function POST(req: NextRequest) {
       if (adminName) parts.push(adminName);
       if (adminEmail) parts.push(`(${adminEmail})`);
       adminDisplay = parts.length > 0 ? parts.join(" ") : authState.userId;
+
+      const senderFields = deriveSenderFields(user);
+      senderName = senderFields.senderName || adminName || senderName;
+      senderTitle = senderFields.senderTitle || senderTitle;
+      senderLinkedInUrl = senderFields.senderLinkedInUrl || senderLinkedInUrl;
+      senderLinkedInLabel =
+        senderFields.senderLinkedInLabel || senderLinkedInLabel;
     } catch (error) {
       console.error("Failed to load admin user", error);
       adminDisplay = authState.userId;
     }
+  }
+
+  if (!senderName && adminName.trim()) {
+    senderName = adminName.trim();
+  }
+  senderName = senderName?.trim() || undefined;
+  senderTitle = senderTitle?.trim() || undefined;
+  senderLinkedInUrl = senderLinkedInUrl?.trim() || undefined;
+  senderLinkedInLabel = senderLinkedInLabel?.trim() || undefined;
+  if (senderLinkedInUrl && !/^https?:\/\//i.test(senderLinkedInUrl)) {
+    senderLinkedInUrl = `https://${senderLinkedInUrl}`;
   }
 
   let body: OutreachPayload;
@@ -146,7 +184,7 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const defaultInitialSubject = `Your Candidate Profile is Live on Elevra`;
+  const defaultInitialSubject = `Your Election is Live on Elevra`;
   // Parse schedule time if provided
   let scheduledAt: Date | undefined = undefined;
   if (typeof body.scheduledAtIso === "string" && body.scheduledAtIso.trim()) {
@@ -161,41 +199,93 @@ export async function POST(req: NextRequest) {
   // Send sequentially to keep it simple and observable
   const sent: { index: number; email: string; id: string | null }[] = [];
   const failures: { index: number; email: string; error: string }[] = [];
-
+  const requestedTemplateType =
+    typeof body.templateType === "string"
+      ? (body.templateType as string).trim()
+      : undefined;
+  // Filter out previously unsubscribed recipients for candidate-outreach
+  const emailList = recipients.map((r) => r.email.toLowerCase());
+  const unsubscribed = await prisma.emailUnsubscribe.findMany({
+    where: {
+      scope: UNSUBSCRIBE_SCOPE,
+      email: { in: emailList },
+    },
+    select: { email: true },
+  });
+  const unsubSet = new Set(unsubscribed.map((u) => u.email.toLowerCase()));
+  const suppressed: OutreachRow[] = [];
+  const deliverable: OutreachRow[] = [];
+  for (const r of recipients) {
+    if (unsubSet.has(r.email.toLowerCase())) suppressed.push(r);
+    else deliverable.push(r);
+  }
   const selectedType: TemplateKey =
-    (body.templateType as TemplateKey) || (body.followup ? "followup" : "initial");
+    (requestedTemplateType as TemplateKey) ||
+    (body.followup ? "followup" : "initial");
   const hasSequence = Array.isArray(body.sequence) && body.sequence.length > 0;
   const steps: { template: TemplateKey; offsetDays?: number }[] = hasSequence
-    ? (body.sequence as { template: TemplateKey; offsetDays?: number }[])
+    ? (body.sequence as { template: TemplateKey; offsetDays?: number }[]).map(
+        (step) => ({
+          template:
+            typeof step.template === "string"
+              ? (step.template.trim() as TemplateKey)
+              : selectedType,
+          offsetDays: step.offsetDays,
+        })
+      )
     : body.composeAsFollowup
-    ? [{ template: "followup" as const, offsetDays: 0 }]
+    ? [{ template: "followup", offsetDays: 0 }]
     : [{ template: selectedType, offsetDays: 0 }];
+
+  const renderContext = createEmailTemplateRenderContext();
 
   for (const step of steps) {
     const batchInputs: SendEmailParams[] = [];
-
-    for (let i = 0; i < recipients.length; i++) {
-      const r = recipients[i];
-      const { subject, html } = renderEmailTemplate(
-        step.template,
-        {
-          candidateFirstName: r.firstName || undefined,
-          state: r.state || undefined,
-          claimUrl: r.candidateLink,
-          templatesUrl: r.candidateLink,
-          profileUrl: r.candidateLink,
-          municipality: r.municipality || undefined,
-          position: r.position || undefined,
-        },
-        { baseForFollowup: body.baseTemplate || "initial" }
-      );
-      const subjectToUse = (body.subject || subject || defaultInitialSubject).trim();
+    for (let i = 0; i < deliverable.length; i++) {
+      const r = deliverable[i];
+      const candidateUrl = r.candidateLink;
+      const trackedUrl = candidateUrl;
+      let rendered: { subject: string; html: string };
+      try {
+        rendered = await renderEmailTemplate(
+          step.template,
+          {
+            candidateFirstName: r.firstName || undefined,
+            state: r.state || undefined,
+            claimUrl: trackedUrl,
+            templatesUrl: trackedUrl,
+            profileUrl: trackedUrl,
+            municipality: r.municipality || undefined,
+            position: r.position || undefined,
+            senderName,
+            senderTitle,
+            senderLinkedInUrl,
+            senderLinkedInLabel,
+          },
+          { baseForFollowup: body.baseTemplate || "initial" },
+          renderContext
+        );
+      } catch (err) {
+        const message =
+          err instanceof Error ? err.message : "Failed to render template.";
+        failures.push({ index: i, email: r.email, error: message });
+        continue;
+      }
+      const { subject, html } = rendered;
+      const subjectToUse = (
+        body.subject ||
+        subject ||
+        defaultInitialSubject
+      ).trim();
 
       // Compute scheduledAt per step (offset from base scheduledAtIso or now)
       let stepScheduledAt = scheduledAt;
       if (step.offsetDays && (scheduledAt || true)) {
         const base = scheduledAt ? scheduledAt : new Date();
-        const offsetMs = Math.max(0, Math.floor(step.offsetDays * 24 * 60 * 60 * 1000));
+        const offsetMs = Math.max(
+          0,
+          Math.floor(step.offsetDays * 24 * 60 * 60 * 1000)
+        );
         const offset = new Date(base.getTime() + offsetMs);
         if (offset.getTime() >= Date.now() + 60_000) {
           stepScheduledAt = offset;
@@ -204,11 +294,17 @@ export async function POST(req: NextRequest) {
         }
       }
 
+      const unsubscribeUrl = buildUnsubscribeUrl(r.email, UNSUBSCRIBE_SCOPE);
+      const headers = buildListUnsubscribeHeaders(unsubscribeUrl);
+      const htmlWithFooter =
+        html + "\n" + renderUnsubscribeFooter(unsubscribeUrl);
       batchInputs.push({
         to: r.email,
         subject: subjectToUse,
-        html,
+        html: htmlWithFooter,
         from: body.from,
+        senderName,
+        headers,
         scheduledAt: stepScheduledAt,
       });
     }
@@ -218,12 +314,12 @@ export async function POST(req: NextRequest) {
     });
 
     for (const s of batchResult.successes) {
-      const recipient = recipients[s.index];
+      const recipient = deliverable[s.index];
       sent.push({ index: s.index, email: recipient.email, id: s.id });
     }
 
     for (const f of batchResult.failures) {
-      const recipient = recipients[f.index];
+      const recipient = deliverable[f.index];
       failures.push({ index: f.index, email: recipient.email, error: f.error });
     }
 
@@ -249,6 +345,7 @@ export async function POST(req: NextRequest) {
       const summaryLines = [
         `Email outreach step "${step.template}" completed.`,
         `Total recipients in step: ${recipients.length}`,
+        `Suppressed (unsubscribed) filtered pre-send: ${suppressed.length}`,
         `Successful deliveries: ${batchResult.successes.length}`,
         `Failures: ${batchResult.failures.length}`,
         `Invalid rows filtered pre-send: ${invalid.length}`,
@@ -274,16 +371,27 @@ export async function POST(req: NextRequest) {
       const invalidDetailsHtml =
         invalid.length > 0
           ? `<ul>${invalid
-              .map((record) => `
+              .map(
+                (record) => `
                 <li>Row ${record.index + 1}: ${record.reason}</li>
-              `)
+              `
+              )
+              .join("")}</ul>`
+          : "<p>None</p>";
+
+      const suppressedDetailsHtml =
+        suppressed.length > 0
+          ? `<ul>${suppressed
+              .map((s) => `<li><strong>${s.email}</strong></li>`)
               .join("")}</ul>`
           : "<p>None</p>";
 
       const summaryHtml = `
         <div style="font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; line-height: 1.5;">
           <h2 style="margin: 0 0 12px;">Candidate Outreach Step Summary</h2>
-          <p style="margin: 0 0 12px;">We completed the <strong>${step.template}</strong> step.</p>
+          <p style="margin: 0 0 12px;">We completed the <strong>${
+            step.template
+          }</strong> step.</p>
           <table style="border-collapse: collapse; margin: 0 0 16px;">
             <tbody>
               <tr>
@@ -299,12 +407,20 @@ export async function POST(req: NextRequest) {
                 <td style="padding: 4px 8px;">${recipients.length}</td>
               </tr>
               <tr>
+                <td style="padding: 4px 8px; font-weight: 600;">Suppressed (unsubscribed)</td>
+                <td style="padding: 4px 8px;">${suppressed.length}</td>
+              </tr>
+              <tr>
                 <td style="padding: 4px 8px; font-weight: 600;">Successful deliveries</td>
-                <td style="padding: 4px 8px;">${batchResult.successes.length}</td>
+                <td style="padding: 4px 8px;">${
+                  batchResult.successes.length
+                }</td>
               </tr>
               <tr>
                 <td style="padding: 4px 8px; font-weight: 600;">Failures</td>
-                <td style="padding: 4px 8px;">${batchResult.failures.length}</td>
+                <td style="padding: 4px 8px;">${
+                  batchResult.failures.length
+                }</td>
               </tr>
               <tr>
                 <td style="padding: 4px 8px; font-weight: 600;">Invalid rows filtered</td>
@@ -336,19 +452,24 @@ export async function POST(req: NextRequest) {
             <h3 style="margin: 0 0 8px;">Invalid rows filtered</h3>
             ${invalidDetailsHtml}
           </div>
+          <div>
+            <h3 style="margin: 16px 0 8px;">Suppressed (unsubscribed) addresses</h3>
+            ${suppressedDetailsHtml}
+          </div>
           <pre style="background: #f6f8fa; border-radius: 6px; padding: 12px; margin: 16px 0 0; white-space: pre-wrap;">${summaryLines.join(
-        "\n"
-      )}</pre>
+            "\n"
+          )}</pre>
         </div>
       `;
 
       const sentAtIso = new Date().toISOString();
-      try{
+      try {
         await sendWithResend({
           to: "team@elevracommunity.com",
           subject: `[Outreach] ${step.template} summary (${batchResult.successes.length}/${recipients.length}) • ${sentAtIso}`,
           html: summaryHtml,
           from: body.from,
+          senderName,
         });
       } catch (err) {
         console.error("Error sending summary email:", err);
@@ -360,6 +481,7 @@ export async function POST(req: NextRequest) {
     success: failures.length === 0,
     requested: rows.length,
     valid: recipients.length,
+    suppressed: suppressed.length,
     sent: sent.length,
     failures,
     ids: sent.map((s) => s.id).filter(Boolean),

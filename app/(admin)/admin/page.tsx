@@ -236,6 +236,12 @@ export default function AdminDashboard() {
         >
           Candidate Outreach
         </Link>
+        <Link
+          href="/admin/email-templates"
+          className="inline-block px-4 py-2 bg-fuchsia-600 text-white rounded hover:bg-fuchsia-700 transition"
+        >
+          Email Templates
+        </Link>
         <button
           onClick={sendTestEmail}
           className="inline-block px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 transition"

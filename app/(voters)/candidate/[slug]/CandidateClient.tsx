@@ -6,11 +6,10 @@ import { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { CandidateImage } from "@/components/CandidateImage";
-import { FaCheckCircle, FaUserPlus, FaShare } from "react-icons/fa";
-import { Edit } from "lucide-react"; // Icons
+import { FaCheckCircle, FaUserPlus } from "react-icons/fa";
 import { Button } from "@/components/ui/button";
 import { Candidate, Election } from "@prisma/client";
-import type { ContentBlock, ElectionLink } from "@prisma/client";
+import type { ContentBlock, ElectionLink, Document } from "@prisma/client";
 import { TabButton } from "@/components/ui/tab-button";
 import { EndorsementTab } from "./EndorsementTab";
 import { ContactTab } from "./ContactTab";
@@ -20,6 +19,7 @@ import { useUser } from "@clerk/nextjs";
 import ImageWithFallback from "@/components/ui/ImageWithFallback";
 import { decodeEducation } from "@/lib/education";
 import { EmptyState } from "@/components/ui/empty-state";
+import { CandidateProfileHeader } from "@/components/CandidateProfileHeader";
 
 export type ElectionWithCandidates = Election & {
   candidates: Candidate[];
@@ -35,6 +35,7 @@ export default function CandidateClient({
   electionLinks: (ElectionLink & {
     election: ElectionWithCandidates;
     ContentBlock: ContentBlock[];
+    Document?: Document | null;
   })[];
   suggestedCandidates: Candidate[];
   isEditable: boolean;
@@ -59,7 +60,6 @@ export default function CandidateClient({
     message: string;
   } | null>(null);
 
-  const [hovered, setHovered] = useState<string | null>(null);
   const [hydrated, setHydrated] = useState(false);
   const [isResetting, setIsResetting] = useState(false);
 
@@ -209,151 +209,14 @@ export default function CandidateClient({
     >
       {/* Main candidate profile card - keep desktop layout on MD+ screens */}
       <motion.div className="w-full flex flex-col p-4 bg-white">
-        {/* Profile Header - Desktop: side by side, Mobile: stacked */}
-        <div className="flex flex-col items-center md:flex-row md:items-start md:text-left text-center gap-4">
-          <CandidateImage
-            clerkUserId={candidate.clerkUserId}
-            publicPhoto={candidate.photo}
-            name={candidate.name}
-            width={150}
-            height={150}
-            className="md:w-[150px] md:h-[150px] w-[80px] h-[80px]"
-          />
-          <div className="pl-2">
-            <h1 className="mt-2 text-xl font-bold text-gray-900 flex items-center md:justify-start justify-center gap-2">
-              {candidate.name}
-              <div
-                className="relative cursor-pointer"
-                onMouseEnter={() => setHovered(candidate.name)}
-                onMouseLeave={() => setHovered(null)}
-                onClick={() =>
-                  setHovered(hovered === candidate.name ? null : candidate.name)
-                }
-              >
-                {verified ? (
-                  <FaCheckCircle className="text-blue-500" />
-                ) : (
-                  <FaCheckCircle className="text-gray-400" />
-                )}
-                {hovered === candidate.name && (
-                  <div className="absolute bottom-full mb-2 left-1/2 transform -translate-x-1/2 bg-gray-900 text-white text-xs font-medium px-2 py-1 rounded shadow-md whitespace-nowrap z-10">
-                    {verified
-                      ? "This candidate has verified their information"
-                      : "This candidate has not verified their information"}
-                  </div>
-                )}
-              </div>
-            </h1>
-            <p className="text-sm font-semibold text-purple-600">
-              {candidate.currentRole}
-            </p>
-            {candidate.currentCity && candidate.currentState ? (
-              <p className="text-sm font-medium text-gray-500">
-                {candidate.currentCity}, {candidate.currentState}
-              </p>
-            ) : null}
-
-            {/* Desktop: normal buttons, Mobile: grid buttons */}
-            <div className="mt-4 hidden md:flex justify-start gap-4">
-              {isEditable ? (
-                <Button variant="outline" asChild>
-                  <Link href="/candidates/candidate-dashboard/my-profile">
-                    <Edit className="mr-2 h-4 w-4" /> Edit Profile
-                  </Link>
-                </Button>
-              ) : null}
-
-              <Button
-                variant="purple"
-                className="flex items-center gap-2"
-                size="md"
-                onClick={async () => {
-                  const url = `${window.location.origin}/candidate/${candidate.slug}`;
-                  if (navigator.share) {
-                    try {
-                      await navigator.share({
-                        title: `Check out ${candidate.name}'s campaign on Elevra!`,
-                        url,
-                      });
-                    } catch (error) {
-                      console.error("Error sharing:", error);
-                    }
-                  } else {
-                    navigator.clipboard.writeText(url);
-                    alert("Profile link copied to clipboard!");
-                  }
-                }}
-              >
-                <FaShare /> Share Profile
-              </Button>
-
-              {!verified && (
-                <Button
-                  variant="purple"
-                  size="md"
-                  onClick={handleThisIsMe}
-                  disabled={isResetting}
-                  className="flex items-center gap-2"
-                >
-                  <FaCheckCircle />
-                  <span>{isResetting ? "Working..." : "This is me"}</span>
-                </Button>
-              )}
-            </div>
-
-            {/* Mobile-only buttons grid */}
-            <div className="mt-4 gap-2 md:hidden flex justify-center">
-              {isEditable ? (
-                <Button
-                  variant="outline"
-                  asChild
-                  className="flex justify-center text-sm px-2"
-                >
-                  <Link href="/candidates/candidate-dashboard/my-profile">
-                    <Edit className="mr-1 h-4 w-4" /> Edit Profile
-                  </Link>
-                </Button>
-              ) : null}
-
-              <Button
-                variant="purple"
-                className="flex justify-center items-center gap-1 text-sm px-2"
-                size="sm"
-                onClick={async () => {
-                  const url = `${window.location.origin}/candidate/${candidate.slug}`;
-                  if (navigator.share) {
-                    try {
-                      await navigator.share({
-                        title: `Check out ${candidate.name}'s campaign on Elevra!`,
-                        url,
-                      });
-                    } catch (error) {
-                      console.error("Error sharing:", error);
-                    }
-                  } else {
-                    navigator.clipboard.writeText(url);
-                    alert("Profile link copied to clipboard!");
-                  }
-                }}
-              >
-                <FaShare className="h-3 w-3" /> Share
-              </Button>
-
-              {!verified && (
-                <Button
-                  variant="purple"
-                  size="sm"
-                  onClick={handleThisIsMe}
-                  disabled={isResetting}
-                  className="flex justify-center items-center gap-1 text-sm px-2"
-                >
-                  <FaCheckCircle className="h-3 w-3" />
-                  <span>{isResetting ? "..." : "This is me"}</span>
-                </Button>
-              )}
-            </div>
-          </div>
-        </div>
+        {/* Profile Header */}
+        <CandidateProfileHeader
+          candidate={candidate}
+          verified={verified}
+          isEditable={isEditable}
+          onVerify={handleThisIsMe}
+          isVerifyPending={isResetting}
+        />
 
         {/* Tabs - Desktop: regular spacing, Mobile: horizontal scroll */}
         <div className="w-full flex justify-center">

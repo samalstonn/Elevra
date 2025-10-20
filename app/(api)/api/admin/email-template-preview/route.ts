@@ -1,5 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
-import { renderEmailTemplate, TemplateKey } from "@/lib/email/templates/render";
+import {
+  createEmailTemplateRenderContext,
+  renderEmailTemplate,
+  TemplateKey,
+} from "@/lib/email/templates/render";
+import { deriveSenderFields, SenderFields } from "@/lib/email/templates/sender";
+import { getAuth } from "@clerk/nextjs/server";
+import { clerkClient } from "@clerk/clerk-sdk-node";
 
 export const runtime = "nodejs";
 
@@ -7,17 +14,19 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
-function isTemplateKey(value: unknown): value is TemplateKey {
-  return (
-    value === "initial" ||
-    value === "followup" ||
-    value === "followup2" ||
-    value === "verifiedUpdate"
-  );
-}
-
 export async function POST(req: NextRequest) {
   try {
+    const authState = getAuth(req);
+    let derivedSender: SenderFields = {};
+    if (authState?.userId) {
+      try {
+        const user = await clerkClient.users.getUser(authState.userId);
+        derivedSender = deriveSenderFields(user);
+      } catch (error) {
+        console.error("Failed to derive sender fields for preview", error);
+      }
+    }
+
     const raw = await req.text();
     if (!raw.trim()) {
       return NextResponse.json(
@@ -44,23 +53,49 @@ export async function POST(req: NextRequest) {
     }
 
     const body = parsed;
-    const templateRaw = isTemplateKey(body.template)
-      ? body.template
-      : isTemplateKey(body.templateType)
-      ? body.templateType
-      : undefined;
-    const key: TemplateKey = templateRaw ?? "initial";
+    const templateRaw =
+      typeof body.template === "string"
+        ? body.template.trim()
+        : typeof body.templateType === "string"
+        ? body.templateType.trim()
+        : "";
+    const key: TemplateKey = templateRaw || "initial";
 
     const data = isRecord(body.data) ? body.data : {};
 
-    const baseTemplateRaw = isTemplateKey(body.baseForFollowup)
-      ? body.baseForFollowup
-      : isTemplateKey(body.baseTemplate)
-      ? body.baseTemplate
-      : undefined;
+    const baseTemplateRaw =
+      typeof body.baseForFollowup === "string"
+        ? body.baseForFollowup.trim()
+        : typeof body.baseTemplate === "string"
+        ? body.baseTemplate.trim()
+        : undefined;
 
     const baseForFollowup = baseTemplateRaw;
-    const { subject, html } = renderEmailTemplate(
+    const requestSenderName =
+      typeof data.senderName === "string" ? data.senderName.trim() : undefined;
+    const requestSenderTitle =
+      typeof data.senderTitle === "string" ? data.senderTitle.trim() : undefined;
+    const requestSenderLinkedInUrl =
+      typeof data.senderLinkedInUrl === "string"
+        ? data.senderLinkedInUrl.trim()
+        : undefined;
+    const requestSenderLinkedInLabel =
+      typeof data.senderLinkedInLabel === "string"
+        ? data.senderLinkedInLabel.trim()
+        : undefined;
+
+    const senderName = requestSenderName || derivedSender.senderName;
+    const senderTitle = requestSenderTitle || derivedSender.senderTitle;
+    let senderLinkedInUrl =
+      requestSenderLinkedInUrl || derivedSender.senderLinkedInUrl;
+    if (senderLinkedInUrl && !/^https?:\/\//i.test(senderLinkedInUrl)) {
+      senderLinkedInUrl = `https://${senderLinkedInUrl}`;
+    }
+    const senderLinkedInLabel =
+      requestSenderLinkedInLabel || derivedSender.senderLinkedInLabel;
+
+    const context = createEmailTemplateRenderContext();
+    const { subject, html } = await renderEmailTemplate(
       key,
       {
         candidateFirstName:
@@ -77,8 +112,13 @@ export async function POST(req: NextRequest) {
         municipality:
           typeof data.municipality === "string" ? data.municipality : undefined,
         position: typeof data.position === "string" ? data.position : undefined,
+        senderName,
+        senderTitle,
+        senderLinkedInUrl,
+        senderLinkedInLabel,
       },
-      { baseForFollowup }
+      { baseForFollowup },
+      context
     );
     return NextResponse.json({ subject, html });
   } catch (e) {

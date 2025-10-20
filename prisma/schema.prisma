@@ -249,6 +249,7 @@ model ElectionLink {
   sources         String[]       @default([])
   votinglink      String?
   ContentBlock    ContentBlock[]
+  Document        Document?
   candidate       Candidate      @relation(fields: [candidateId], references: [id])
   election        Election       @relation(fields: [electionId], references: [id])
 
@@ -407,6 +408,45 @@ model UploadNotificationLog {
 
   @@index([uploadId])
   @@index([type])
+}
+
+model Document {
+  id            String       @id @default(cuid())
+  contentJson   Json
+  contentHtml   String
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+  candidateSlug String
+  clerkUserId   String
+  candidateId   Int
+  electionId    Int
+  electionLink  ElectionLink @relation(fields: [candidateId, electionId], references: [candidateId, electionId], onDelete: Cascade)
+
+  @@unique([candidateId, electionId])
+}
+
+model EmailDocument {
+  id              String   @id @default(cuid())
+  key             String   @unique
+  title           String
+  subjectTemplate String
+  htmlTemplate    String
+  description     String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+model EmailUnsubscribe {
+  id        Int      @id @default(autoincrement())
+  email     String
+  scope     String
+  reason    String?
+  ip        String?
+  userAgent String?
+  createdAt DateTime @default(now())
+
+  @@index([email], map: "EmailUnsubscribe_email_idx")
+  @@unique([email, scope], map: "EmailUnsubscribe_email_scope_key")
 }
 
 enum ElectionType {

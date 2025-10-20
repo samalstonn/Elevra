@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -14,15 +14,12 @@ import {
 import { Check, Star, Zap } from "lucide-react"; // Icons
 import { useToast } from "@/hooks/use-toast";
 import getStripe from "@/lib/get-stripe"; // Your Stripe utility
-// import { useAuth } from "@clerk/nextjs"; // To check current plan later
 import { usePageTitle } from "@/lib/usePageTitle";
+import { useUser } from "@clerk/nextjs";
+import { useRouter, useSearchParams } from "next/navigation";
 
 // Define the features for each plan
-const freeFeatures = [
-  "Discoverable Profile",
-  "See Profile Views",
-  "Verified Checkmark",
-];
+const freeFeatures = ["Discoverable Profile", "Verified Checkmark"];
 
 const premiumFeatures = [
   "Discoverable Profile",
@@ -35,75 +32,122 @@ const premiumFeatures = [
   "Priority Support",
 ];
 
-// Define Plan structure (replace placeholder priceId with your actual Stripe Price ID)
-const plans = [
+const planDefinitions = [
   {
     name: "Free",
     price: "$0",
     interval: "/ Month",
     features: freeFeatures,
-    isCurrent: true, // Placeholder: Determine this based on user's actual plan
-    cta: "Current Plan",
-    stripePriceId: null,
+    tier: "free" as const,
   },
   {
     name: "Premium",
     price: "$30",
     interval: "/ One Time Fee",
     features: premiumFeatures,
-    isCurrent: false, // Placeholder: Determine this based on user's actual plan
-    cta: "Upgrade to Premium",
-    stripePriceId:
-      process.env.NEXT_PUBLIC_STRIPE_PREMIUM_CANDIDATE_PRICE_ID ||
-      "price_placeholder_premium_candidate", // Use environment variable
+    tier: "premium" as const,
     highlight: true, // Optional: Highlight the premium plan
   },
-  // Add more plans here if needed (e.g., Annual)
 ];
+
+export type CandidatePlanTier = "free" | "premium";
 
 export interface Plan {
   name: string;
   price: string;
   interval: string;
   features: string[];
+  tier: CandidatePlanTier;
   isCurrent?: boolean;
   cta?: string;
-  stripePriceId?: string | null; // Optional for free plan
-  highlight?: boolean; // Optional for highlighting
+  highlight?: boolean;
 }
 
 export default function UpgradePage() {
   usePageTitle("Candidate Dashboard – Upgrade");
   const { toast } = useToast();
-  const [isLoading, setIsLoading] = useState(false);
-  // TODO: Fetch user's current subscription status from Clerk/DB
-  // const { user } = useUser();
-  // const currentPlan = user?.publicMetadata?.subscriptionTier || 'Free';
-  const currentPlan = "Free"; // Placeholder
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const { user, isLoaded } = useUser();
+  const [loadingPlan, setLoadingPlan] = useState<CandidatePlanTier | null>(
+    null
+  );
+  const [handledStatus, setHandledStatus] = useState<string | null>(null);
+
+  const currentPlan = useMemo<CandidatePlanTier>(() => {
+    if (!user?.publicMetadata?.candidateSubscriptionTier) {
+      return "free";
+    }
+
+    const tier = String(
+      user.publicMetadata.candidateSubscriptionTier
+    ).toLowerCase();
+
+    return tier === "premium" ? "premium" : "free";
+  }, [user?.publicMetadata?.candidateSubscriptionTier]);
+
+  useEffect(() => {
+    const status = searchParams?.get("status");
+    if (!status || handledStatus === status) return;
+    if (status === "success" && !isLoaded) return;
+
+    const handleStatus = async () => {
+      if (status === "success") {
+        try {
+          await user?.reload?.();
+        } catch (error) {
+          console.error("Failed to reload user after upgrade", error);
+        }
+        toast({
+          title: "Upgrade Successful",
+          description: "You now have access to all premium features.",
+        });
+      }
+
+      if (status === "cancelled") {
+        toast({
+          title: "Checkout Cancelled",
+          description: "No changes were made to your subscription.",
+        });
+      }
+
+      setHandledStatus(status);
+      router.replace("/candidates/candidate-dashboard/upgrade");
+    };
+
+    void handleStatus();
+  }, [handledStatus, isLoaded, router, searchParams, toast, user]);
+
+  const plans = useMemo<Plan[]>(() => {
+    return planDefinitions.map((definition) => {
+      const isCurrent = definition.tier === currentPlan;
+      const plan: Plan = {
+        ...definition,
+        isCurrent,
+        cta: isCurrent
+          ? "Current Plan"
+          : definition.tier === "free"
+          ? "Included"
+          : `Upgrade to ${definition.name}`,
+      };
+
+      return plan;
+    });
+  }, [currentPlan]);
 
   const handleUpgradeClick = async (plan: Plan) => {
-    if (!plan.stripePriceId || plan.isCurrent) return; // Don't proceed if no price ID or already current
+    if (plan.tier === "free" || plan.isCurrent || loadingPlan) {
+      return;
+    }
 
-    setIsLoading(true);
+    setLoadingPlan(plan.tier);
     try {
-      // Prepare item for Stripe Checkout API
-      const cartItems = [
-        {
-          name: `${plan.name} Candidate Plan`,
-          price: parseFloat(plan.price.replace("$", "")), // Extract price number
-          quantity: 1,
-          // Important: Pass the Stripe Price ID to your API
-          priceId: plan.stripePriceId,
-        },
-      ];
-
-      // Call your API endpoint to create a checkout session
-      const response = await fetch("/api/checkout_sessions", {
+      const response = await fetch("/api/candidate/upgrade-session", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ cartItems }), // Send necessary data
+        body: JSON.stringify({ plan: plan.tier }),
       });
 
       const sessionData = await response.json();
@@ -128,12 +172,11 @@ export default function UpgradePage() {
         console.error("Stripe redirect error:", error);
         throw new Error(error.message || "Failed to redirect to Stripe.");
       }
-      // If redirection fails without an error object, it might be blocked by browser
+
       toast({
         title: "Redirecting to payment...",
         description:
           "If you are not redirected automatically, please check your browser settings.",
-        variant: "default",
       });
     } catch (error) {
       console.error("Upgrade error:", error);
@@ -143,9 +186,9 @@ export default function UpgradePage() {
           error instanceof Error ? error.message : "An unknown error occurred.",
         variant: "destructive",
       });
-      setIsLoading(false); // Ensure loading state is reset on error
+    } finally {
+      setLoadingPlan(null);
     }
-    // Note: setIsLoading(false) might not be reached if redirect is successful
   };
 
   return (
@@ -215,13 +258,15 @@ export default function UpgradePage() {
                 }`}
                 onClick={() => handleUpgradeClick(plan)}
                 disabled={
-                  isLoading ||
-                  plan.name.toLowerCase() === currentPlan.toLowerCase()
-                } // Disable button for current plan or while loading
+                  plan.tier === "free" ||
+                  loadingPlan !== null ||
+                  plan.isCurrent ||
+                  (!isLoaded && plan.tier === "premium")
+                }
                 size="lg"
                 variant={plan.highlight ? "default" : "outline"}
               >
-                {isLoading && plan.stripePriceId ? "Processing..." : plan.cta}
+                {loadingPlan === plan.tier ? "Processing..." : plan.cta}
                 {plan.highlight && !plan.isCurrent && (
                   <Zap className="ml-2 h-4 w-4" />
                 )}

@@ -1,0 +1,2 @@
+-- Intentionally left blank.
+-- The EmailDocument and EmailUnsubscribe tables are managed by earlier migrations.

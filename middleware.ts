@@ -15,6 +15,11 @@ const isPrivateRoute = createRouteMatcher([
   "/dashboard(.*)", // All dashboard routes
 ]);
 
+const isPremiumRoute = createRouteMatcher([
+  "/candidates/candidate-dashboard/analytics(.*)", // Candidate analytics
+  "/candidates/candidate-dashboard/endorsements(.*)", // Candidate endorsements
+]);
+
 export default clerkMiddleware(async (auth, req) => {
   const pathname = req.nextUrl.pathname;
 
@@ -73,6 +78,11 @@ export default clerkMiddleware(async (auth, req) => {
 
     const user = await client.users.getUser(userId);
 
+    console.log("middleware privateMetadata", {
+      userId,
+      privateMetadata: user.privateMetadata,
+    });
+
     const isSubAdmin = user.privateMetadata?.isSubAdmin;
     const isAdmin = user.privateMetadata?.isAdmin;
 
@@ -99,6 +109,24 @@ export default clerkMiddleware(async (auth, req) => {
 
       const homeUrl = new URL("/", req.url);
       return NextResponse.redirect(homeUrl);
+    }
+
+    if (isPremiumRoute(req)) {
+      console.log("Checking premium access for user:", userId);
+      const candidateSubscriptionTier =
+        user.publicMetadata?.candidateSubscriptionTier;
+
+      const isPremium = candidateSubscriptionTier === "premium";
+
+      if (isPremium) {
+        return NextResponse.next();
+      }
+
+      const upgradeUrl = new URL(
+        "/candidates/candidate-dashboard/upgrade",
+        req.url
+      );
+      return NextResponse.redirect(upgradeUrl);
     }
 
     return NextResponse.next();
