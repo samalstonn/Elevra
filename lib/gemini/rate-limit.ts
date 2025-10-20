@@ -47,7 +47,10 @@ export async function reserveModelCapacity(
 ): Promise<RateReservationResult> {
   const config = getModelRateConfig(model);
   if (!config) {
-    return { allowed: true, windowStart: startOfMinute(nowInput ?? new Date()) };
+    return {
+      allowed: true,
+      windowStart: startOfMinute(nowInput ?? new Date()),
+    };
   }
 
   const now = nowInput ?? new Date();
@@ -57,99 +60,105 @@ export async function reserveModelCapacity(
 
   for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
     try {
-      return await prisma.$transaction(async (tx) => {
-        const row = await tx.geminiRateWindow.upsert({
-          where: {
-            model_windowStart: {
-              model,
-              windowStart: minuteStart,
-            },
-          },
-          create: {
-            model,
-            windowStart: minuteStart,
-          },
-          update: {},
-        });
-
-        const futureRequests = row.requestCount + requests;
-        if (config.rpm && futureRequests > config.rpm) {
-          return {
-            allowed: false,
-            retryAt: addMinutes(minuteStart, 1),
-            reason: "rpm" as const,
-          };
-        }
-
-        const futureRequestTokens = row.requestTokens + requestTokens;
-        if (config.tpm && futureRequestTokens > config.tpm) {
-          return {
-            allowed: false,
-            retryAt: addMinutes(minuteStart, 1),
-            reason: "tpm" as const,
-          };
-        }
-
-        if (config.batchTokens && row.batchTokens + batchTokens > config.batchTokens) {
-          return {
-            allowed: false,
-            retryAt: addMinutes(minuteStart, 1),
-            reason: "batchTokens" as const,
-          };
-        }
-
-        const dayUsage = await tx.geminiRateWindow.aggregate({
-          where: {
-            model,
-            windowStart: {
-              gte: dayStart,
-              lt: dayEnd,
-            },
-          },
-          _sum: {
-            requestCount: true,
-            requestTokens: true,
-            responseTokens: true,
-          },
-        });
-
-        const totalRequests = (dayUsage._sum.requestCount ?? 0) + requests;
-        if (config.rpd && totalRequests > config.rpd) {
-          return {
-            allowed: false,
-            retryAt: dayEnd,
-            reason: "rpd" as const,
-          };
-        }
-
-        const incrementData: Prisma.GeminiRateWindowUpdateInput = {};
-        if (requests !== 0) {
-          incrementData.requestCount = { increment: requests };
-        }
-        if (requestTokens !== 0) {
-          incrementData.requestTokens = { increment: requestTokens };
-        }
-        if (responseTokens !== 0) {
-          incrementData.responseTokens = { increment: responseTokens };
-        }
-        if (batchTokens !== 0) {
-          incrementData.batchTokens = { increment: batchTokens };
-        }
-
-        if (Object.keys(incrementData).length > 0) {
-          await tx.geminiRateWindow.update({
+      return await prisma.$transaction(
+        async (tx) => {
+          const row = await tx.geminiRateWindow.upsert({
             where: {
               model_windowStart: {
                 model,
                 windowStart: minuteStart,
               },
             },
-            data: incrementData,
+            create: {
+              model,
+              windowStart: minuteStart,
+            },
+            update: {},
           });
-        }
 
-        return { allowed: true, windowStart: minuteStart } as const;
-      }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
+          const futureRequests = row.requestCount + requests;
+          if (config.rpm && futureRequests > config.rpm) {
+            return {
+              allowed: false,
+              retryAt: addMinutes(minuteStart, 1),
+              reason: "rpm" as const,
+            };
+          }
+
+          const futureRequestTokens = row.requestTokens + requestTokens;
+          if (config.tpm && futureRequestTokens > config.tpm) {
+            return {
+              allowed: false,
+              retryAt: addMinutes(minuteStart, 1),
+              reason: "tpm" as const,
+            };
+          }
+
+          if (
+            config.batchTokens &&
+            row.batchTokens + batchTokens > config.batchTokens
+          ) {
+            return {
+              allowed: false,
+              retryAt: addMinutes(minuteStart, 1),
+              reason: "batchTokens" as const,
+            };
+          }
+
+          const dayUsage = await tx.geminiRateWindow.aggregate({
+            where: {
+              model,
+              windowStart: {
+                gte: dayStart,
+                lt: dayEnd,
+              },
+            },
+            _sum: {
+              requestCount: true,
+              requestTokens: true,
+              responseTokens: true,
+            },
+          });
+
+          const totalRequests = (dayUsage._sum.requestCount ?? 0) + requests;
+          if (config.rpd && totalRequests > config.rpd) {
+            return {
+              allowed: false,
+              retryAt: dayEnd,
+              reason: "rpd" as const,
+            };
+          }
+
+          const incrementData: Prisma.GeminiRateWindowUpdateInput = {};
+          if (requests !== 0) {
+            incrementData.requestCount = { increment: requests };
+          }
+          if (requestTokens !== 0) {
+            incrementData.requestTokens = { increment: requestTokens };
+          }
+          if (responseTokens !== 0) {
+            incrementData.responseTokens = { increment: responseTokens };
+          }
+          if (batchTokens !== 0) {
+            incrementData.batchTokens = { increment: batchTokens };
+          }
+
+          if (Object.keys(incrementData).length > 0) {
+            await tx.geminiRateWindow.update({
+              where: {
+                model_windowStart: {
+                  model,
+                  windowStart: minuteStart,
+                },
+              },
+              data: incrementData,
+            });
+          }
+
+          return { allowed: true, windowStart: minuteStart } as const;
+        },
+        { isolationLevel: Prisma.TransactionIsolationLevel.ReadCommitted }
+      );
     } catch (error) {
       if (isConcurrencyConflict(error) && attempt < MAX_RETRIES - 1) {
         continue;
