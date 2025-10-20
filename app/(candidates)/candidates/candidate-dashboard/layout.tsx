@@ -1,5 +1,7 @@
 "use client";
 import React, { useState } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { DashboardNav } from "../../../../components/DashboardNav";
 import { useUser } from "@clerk/nextjs";
 import {
@@ -9,6 +11,7 @@ import {
   Award, // Endorsements (Premium)
   Users, // Vendor Marketplace
   Menu,
+  Megaphone,
   Zap,
 } from "lucide-react";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
@@ -20,11 +23,124 @@ export default function CandidateDashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const { user } = useUser(); // Or useAuth, currentUser etc.
+  const router = useRouter();
+  const { user, isLoaded, isSignedIn } = useUser(); // Or useAuth, currentUser etc.
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isConverting, setIsConverting] = useState(false);
+  const [convertError, setConvertError] = useState<string | null>(null);
+
+  const publicMetadata = (user?.publicMetadata ?? {}) as {
+    isCandidate?: boolean;
+    isVoter?: boolean;
+    candidateSubscriptionTier?: string;
+    [key: string]: unknown;
+  };
+
   const candidateTier = (
-    user?.publicMetadata?.candidateSubscriptionTier as string | undefined
+    publicMetadata.candidateSubscriptionTier as string | undefined
   )?.toLowerCase();
+  const isVoterOnly =
+    publicMetadata.isVoter === true && publicMetadata.isCandidate !== true;
+
+  const handleBecomeCandidate = async () => {
+    if (isConverting) return;
+    setConvertError(null);
+    setIsConverting(true);
+    try {
+      const response = await fetch("/api/user/metadata/role", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ role: "candidate" }),
+      });
+      if (!response.ok) {
+        throw new Error(`Request failed with status ${response.status}`);
+      }
+      if (user) {
+        await user.reload();
+      }
+      router.refresh();
+    } catch (error) {
+      console.error("Failed to switch account to candidate", error);
+      setConvertError("We couldn't switch your role right now. Please try again.");
+    } finally {
+      setIsConverting(false);
+    }
+  };
+
+  if (!isLoaded) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-purple-50 via-white to-purple-100">
+        <span
+          className="h-10 w-10 animate-spin rounded-full border-4 border-purple-200 border-t-purple-500"
+          aria-label="Loading candidate dashboard"
+        />
+      </div>
+    );
+  }
+
+  if (!isSignedIn) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-purple-50 via-white to-purple-100 px-6">
+        <div className="w-full max-w-md space-y-4 rounded-3xl border border-purple-100 bg-white/90 p-10 text-center shadow-lg">
+          <h2 className="text-xl font-semibold text-gray-900">Sign in required</h2>
+          <p className="text-sm text-muted-foreground">
+            Sign in to access the candidate dashboard.
+          </p>
+          <Button variant="purple" asChild className="justify-center">
+            <Link href="/sign-in?redirect_url=/candidates/candidate-dashboard">
+              Sign in
+            </Link>
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  if (isVoterOnly) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-purple-50 via-white to-purple-100 px-6 py-12">
+        <div className="w-full max-w-lg space-y-6 rounded-3xl border border-purple-100 bg-white/95 p-10 text-center shadow-xl backdrop-blur">
+          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-purple-100">
+            <Megaphone className="h-7 w-7 text-purple-600" />
+          </div>
+          <h1 className="text-2xl font-semibold text-gray-900">
+            Switch to the candidate experience
+          </h1>
+          <p className="text-sm text-muted-foreground">
+            You&apos;re currently set up as a voter. Update your role to unlock campaign
+            tools, analytics, and outreach automations.
+          </p>
+          {convertError ? (
+            <p className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-600">
+              {convertError}
+            </p>
+          ) : null}
+          <div className="flex flex-col gap-3 sm:flex-row sm:justify-center">
+            <Button
+              variant="purple"
+              size="lg"
+              className="justify-center gap-2"
+              onClick={handleBecomeCandidate}
+              disabled={isConverting}
+            >
+              {isConverting ? "Switching..." : "Join as a candidate"}
+            </Button>
+            <Button variant="outline" size="lg" className="justify-center" asChild>
+              <Link href="/dashboard">Stay in voter mode</Link>
+            </Button>
+          </div>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="mx-auto text-purple-600 hover:text-purple-700"
+            asChild
+          >
+            <Link href="/candidates?tab=home">Learn about candidate features</Link>
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   const navItems = [
     // --- Free Tabs ---
