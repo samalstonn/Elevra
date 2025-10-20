@@ -21,8 +21,8 @@ model Election {
   state       String
   type        ElectionType
   hidden      Boolean        @default(false)
+  uploadedBy  String         @default("team@elevracommunity.com")
   candidates  ElectionLink[]
-  uploadedBy  String         @default("team@elevracommunity.com") // email of user who uploaded
 }
 
 model Candidate {
@@ -47,13 +47,13 @@ model Candidate {
   currentRole   String?
   currentState  String?
   currentCity   String?
+  uploadedBy    String                 @default("team@elevracommunity.com")
   profileViews  CandidateProfileView[]
   donations     Donation[]
   elections     ElectionLink[]
   endorsements  Endorsement[]
   Testimonial   Testimonial[]
   Vendors       Vendor[]               @relation("CandidateToVendor")
-  uploadedBy    String                 @default("team@elevracommunity.com") // email of user who uploaded
 }
 
 model Donation {
@@ -238,19 +238,6 @@ model BlogPost {
   updatedAt   DateTime   @updatedAt
 }
 
-model EmailUnsubscribe {
-  id        Int      @id @default(autoincrement())
-  email     String
-  scope     String   // e.g., "candidate-outreach"
-  reason    String?
-  ip        String?
-  userAgent String?
-  createdAt DateTime @default(now())
-
-  @@unique([email, scope])
-  @@index([email])
-}
-
 model ElectionLink {
   candidateId     Int
   electionId      Int
@@ -262,9 +249,9 @@ model ElectionLink {
   sources         String[]       @default([])
   votinglink      String?
   ContentBlock    ContentBlock[]
+  Document        Document?
   candidate       Candidate      @relation(fields: [candidateId], references: [id])
   election        Election       @relation(fields: [electionId], references: [id])
-  Document        Document?
 
   @@id([candidateId, electionId])
 }
@@ -294,14 +281,14 @@ model ContentBlock {
 
 model Document {
   id            String       @id @default(cuid())
-  contentJson   Json // from editor.getJSON()
-  contentHtml   String       @db.Text // from editor.getHTML()
+  contentJson   Json
+  contentHtml   String
   createdAt     DateTime     @default(now())
   updatedAt     DateTime     @updatedAt
-  candidateId   Int // id of user who created
-  electionId    Int // id of election
-  candidateSlug String // slug of user who created
-  clerkUserId   String // clerk user id of user who created
+  candidateSlug String
+  clerkUserId   String
+  candidateId   Int
+  electionId    Int
   electionLink  ElectionLink @relation(fields: [candidateId, electionId], references: [candidateId, electionId], onDelete: Cascade)
 
   @@unique([candidateId, electionId])
@@ -311,11 +298,24 @@ model EmailDocument {
   id              String   @id @default(cuid())
   key             String   @unique
   title           String
-  subjectTemplate String   @db.Text
-  htmlTemplate    String   @db.Text
+  subjectTemplate String
+  htmlTemplate    String
   description     String?
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
+}
+
+model EmailUnsubscribe {
+  id        Int      @id @default(autoincrement())
+  email     String
+  scope     String
+  reason    String?
+  ip        String?
+  userAgent String?
+  createdAt DateTime @default(now())
+
+  @@index([email], map: "EmailUnsubscribe_email_idx")
+  @@unique([email, scope], map: "EmailUnsubscribe_email_scope_key")
 }
 
 enum ElectionType {
