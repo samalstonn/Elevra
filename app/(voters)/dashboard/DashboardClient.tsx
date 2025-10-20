@@ -33,16 +33,21 @@ import { Label } from "@/components/ui/label";
 import { CandidateImage } from "@/components/CandidateImage";
 import { cn } from "@/lib/utils";
 import {
-  Bell,
+  ArrowUpRight,
+  Camera,
   Compass,
+  GraduationCap,
   HeartHandshake,
   LifeBuoy,
+  Megaphone,
   Rss,
   Search,
+  Sparkles,
   UserCircle,
 } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 
-type TabKey = "feed" | "search" | "inbox" | "profile";
+type TabKey = "feed" | "search" | "profile";
 
 type FeedEvent = {
   id: number;
@@ -59,22 +64,6 @@ type FeedEvent = {
     photo?: string | null;
     verified?: boolean | null;
   };
-};
-
-type NotificationItem = {
-  id: number;
-  status: "READ" | "UNREAD";
-  type: "CANDIDATE_UPDATE";
-  createdAt: string;
-  readAt: string | null;
-  payload?: { summary?: string } | null;
-  changeEvent?: {
-    id: number;
-    type: FeedEvent["type"];
-    createdAt: string;
-    metadata?: Record<string, unknown> | null;
-    candidate: FeedEvent["candidate"] | null;
-  } | null;
 };
 
 type FollowingItem = {
@@ -172,9 +161,6 @@ export default function DashboardPageClient({
   const [feed, setFeed] = useState<FeedEvent[]>([]);
   const [feedLoading, setFeedLoading] = useState(true);
   const [following, setFollowing] = useState<FollowingItem[]>([]);
-  const [notifications, setNotifications] = useState<NotificationItem[]>([]);
-  const [notificationsLoading, setNotificationsLoading] = useState(true);
-  const [unreadCount, setUnreadCount] = useState(0);
   const [preferences, setPreferences] = useState<PreferencesState>(DEFAULT_PREFS);
   const [preferencesSaving, setPreferencesSaving] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -187,6 +173,18 @@ export default function DashboardPageClient({
 
   const greetingName = user.firstName || user.username || "there";
 
+  const refreshFeed = useCallback(async () => {
+    if (!isVoter) {
+      return;
+    }
+    try {
+      const response = await fetchJSON<{ events: FeedEvent[] }>("/api/voter/feed");
+      setFeed(response.events);
+    } catch (error) {
+      console.error("Failed to refresh voter feed", error);
+    }
+  }, [isVoter]);
+
   useEffect(() => {
     if (!isVoter) {
       return;
@@ -195,20 +193,14 @@ export default function DashboardPageClient({
     const load = async () => {
       try {
         setFeedLoading(true);
-        setNotificationsLoading(true);
-        const [feedRes, followRes, notificationRes, prefsRes] = await Promise.all([
+        const [feedRes, followRes, prefsRes] = await Promise.all([
           fetchJSON<{ events: FeedEvent[] }>("/api/voter/feed"),
           fetchJSON<{ follows: FollowingItem[] }>("/api/voter/following"),
-          fetchJSON<{ notifications: NotificationItem[]; unreadCount: number }>(
-            "/api/voter/notifications"
-          ),
           fetchJSON<{ preferences: PreferencesState }>("/api/voter/preferences"),
         ]);
         if (cancelled) return;
         setFeed(feedRes.events);
         setFollowing(followRes.follows);
-        setNotifications(notificationRes.notifications);
-        setUnreadCount(notificationRes.unreadCount);
         setPreferences((prev) => ({
           ...prev,
           ...prefsRes.preferences,
@@ -218,7 +210,6 @@ export default function DashboardPageClient({
       } finally {
         if (!cancelled) {
           setFeedLoading(false);
-          setNotificationsLoading(false);
         }
       }
     };
@@ -227,6 +218,16 @@ export default function DashboardPageClient({
       cancelled = true;
     };
   }, [isVoter]);
+
+  useEffect(() => {
+    if (!isVoter) {
+      return;
+    }
+    const interval = window.setInterval(() => {
+      void refreshFeed();
+    }, 30000);
+    return () => window.clearInterval(interval);
+  }, [isVoter, refreshFeed]);
 
   useEffect(() => {
     if (!isVoter) return;
@@ -265,34 +266,10 @@ export default function DashboardPageClient({
     () => [
       { key: "feed" as const, label: "Feed", icon: Rss },
       { key: "search" as const, label: "Search", icon: Search },
-      {
-        key: "inbox" as const,
-        label: "Inbox",
-        icon: Bell,
-        badge: unreadCount,
-      },
       { key: "profile" as const, label: "Profile", icon: UserCircle },
     ],
-    [unreadCount]
+    []
   );
-
-  const handleMarkAllRead = useCallback(async () => {
-    try {
-      await fetch("/api/voter/notifications/mark-all-read", {
-        method: "POST",
-      });
-      setNotifications((current) =>
-        current.map((item) => ({
-          ...item,
-          status: "READ",
-          readAt: new Date().toISOString(),
-        }))
-      );
-      setUnreadCount(0);
-    } catch (error) {
-      console.error("Failed to mark notifications as read", error);
-    }
-  }, []);
 
   const handlePreferenceUpdate = useCallback(
     async (next: PreferencesState) => {
@@ -405,7 +382,7 @@ export default function DashboardPageClient({
       </header>
 
       <div className="mt-8 hidden rounded-full border border-purple-100 bg-white/60 p-1 shadow-sm backdrop-blur-md md:flex md:w-fit">
-        {tabs.map(({ key, label, icon: Icon, badge }) => (
+        {tabs.map(({ key, label, icon: Icon }) => (
           <button
             key={key}
             type="button"
@@ -419,9 +396,6 @@ export default function DashboardPageClient({
           >
             <Icon className="h-4 w-4" />
             <span>{label}</span>
-            {badge ? (
-              <Badge className="bg-white/20 text-white">{badge}</Badge>
-            ) : null}
           </button>
         ))}
       </div>
@@ -450,10 +424,16 @@ export default function DashboardPageClient({
                 }}
               />
             ) : (
-              <div className="space-y-4">
-                {feed.map((item) => (
-                  <FeedCard key={item.id} event={item} />
-                ))}
+              <div className="relative">
+                <span
+                  aria-hidden="true"
+                  className="absolute left-5 top-2 hidden h-[calc(100%-0.5rem)] w-px bg-gradient-to-b from-purple-200 via-purple-100 to-transparent sm:block"
+                />
+                <div className="space-y-5 sm:pl-4">
+                  {feed.map((item, index) => (
+                    <FeedCard key={item.id} event={item} index={index} />
+                  ))}
+                </div>
               </div>
             )}
           </section>
@@ -497,45 +477,6 @@ export default function DashboardPageClient({
                 />
               )}
             </div>
-          </section>
-        )}
-
-        {activeTab === "inbox" && (
-          <section aria-labelledby="voter-inbox-heading">
-            <div className="mb-4 flex items-center justify-between gap-4">
-              <div>
-                <h2 id="voter-inbox-heading" className="text-xl font-semibold text-gray-900">
-                  Notifications
-                </h2>
-                <p className="text-sm text-muted-foreground">
-                  Stay informed when your followed candidates make updates.
-                </p>
-              </div>
-              <Button
-                variant="outline"
-                size="sm"
-                className="gap-2"
-                onClick={handleMarkAllRead}
-                data-testid="mark-all-button"
-              >
-                Mark all read
-              </Button>
-            </div>
-            {notificationsLoading ? (
-              <LoadingPlaceholder message="Loading notifications" />
-            ) : notifications.length === 0 ? (
-              <EmptyState
-                icon={<Bell className="h-5 w-5 text-purple-500" />}
-                title="Inbox is clear"
-                description="Follow more candidates to receive alerts here."
-              />
-            ) : (
-              <div className="space-y-4">
-                {notifications.map((notification) => (
-                  <NotificationCard key={notification.id} notification={notification} />
-                ))}
-              </div>
-            )}
           </section>
         )}
 
@@ -776,7 +717,7 @@ export default function DashboardPageClient({
 
       <nav className="fixed inset-x-4 bottom-4 z-50 flex justify-center md:hidden">
         <div className="flex w-full max-w-xl items-center justify-around rounded-3xl border border-purple-100 bg-white/90 px-3 py-2 shadow-lg backdrop-blur">
-          {tabs.map(({ key, label, icon: Icon, badge }) => (
+          {tabs.map(({ key, label, icon: Icon }) => (
             <button
               key={key}
               type="button"
@@ -788,11 +729,6 @@ export default function DashboardPageClient({
             >
               <Icon className="h-5 w-5" />
               <span>{label}</span>
-              {badge ? (
-                <span className="absolute right-3 top-1 rounded-full bg-purple-500 px-1.5 text-[10px] text-white">
-                  {badge}
-                </span>
-              ) : null}
             </button>
           ))}
         </div>
@@ -801,87 +737,100 @@ export default function DashboardPageClient({
   );
 }
 
-function FeedCard({ event }: { event: FeedEvent }) {
+function FeedCard({ event, index }: { event: FeedEvent; index: number }) {
   const summary = extractSummary(event.metadata);
-  const typeLabel = formatType(event.type);
+  const highlights = extractHighlights(event.metadata);
+  const typeMeta = getFeedTypeMeta(event.type);
   const timeAgo = formatDistanceToNow(new Date(event.createdAt), { addSuffix: true });
+  const location = [event.candidate.currentCity, event.candidate.currentState]
+    .filter(Boolean)
+    .join(", ");
+  const TypeIcon = typeMeta.icon;
 
   return (
-    <motion.div
+    <motion.article
       layout
-      initial={{ opacity: 0, y: 10 }}
+      initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.25 }}
-      className="flex flex-col gap-4 rounded-2xl border border-purple-100 bg-white/80 p-5 shadow-sm"
+      transition={{ duration: 0.25, delay: Math.min(index * 0.04, 0.2) }}
+      className="relative overflow-hidden rounded-3xl border border-purple-100/70 bg-white/90 p-6 shadow-sm transition hover:-translate-y-0.5 hover:shadow-lg sm:pl-16"
       data-testid="feed-item"
     >
-      <div className="flex items-center justify-between gap-3">
-        <div className="flex items-center gap-3">
-          <CandidateImage
-            clerkUserId={null}
-            publicPhoto={event.candidate.photo ?? undefined}
-            name={event.candidate.name}
-            width={52}
-            height={52}
-            className="h-12 w-12 rounded-full"
-          />
-          <div>
-            <p className="font-semibold text-gray-900">{event.candidate.name}</p>
-            <p className="text-xs text-muted-foreground">
-              {event.candidate.currentRole || "Campaign"} • {timeAgo}
-            </p>
+      <span
+        aria-hidden="true"
+        className={cn(
+          "absolute left-6 top-8 hidden h-3 w-3 rounded-full border-4 border-white shadow-[0_0_0_2px_rgba(168,85,247,0.15)] sm:block",
+          typeMeta.dotClass
+        )}
+      />
+      <div className="flex flex-col gap-4">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-start gap-3">
+            <CandidateImage
+              clerkUserId={null}
+              publicPhoto={event.candidate.photo ?? undefined}
+              name={event.candidate.name}
+              width={56}
+              height={56}
+              className="h-14 w-14 rounded-2xl border border-purple-100 bg-purple-50/40 object-cover shadow-sm"
+            />
+            <div className="space-y-1">
+              <div className="flex flex-wrap items-center gap-2">
+                <p className="text-base font-semibold text-gray-900">{event.candidate.name}</p>
+                {event.candidate.verified ? (
+                  <Badge className="bg-emerald-100 text-emerald-700">Verified</Badge>
+                ) : null}
+              </div>
+              <p className="text-xs text-muted-foreground">
+                {event.candidate.currentRole || "Campaign"} • {timeAgo}
+              </p>
+              {location ? (
+                <p className="text-xs text-muted-foreground">{location}</p>
+              ) : null}
+            </div>
           </div>
+          <Badge
+            variant="outline"
+            className={cn(
+              "flex items-center gap-1.5 border-transparent px-3 py-1.5 text-xs font-semibold uppercase tracking-wide",
+              typeMeta.badgeClass
+            )}
+          >
+            <TypeIcon className="h-3.5 w-3.5" />
+            {typeMeta.label}
+          </Badge>
         </div>
-        <Badge variant="outline" className="border-purple-200 text-purple-700">
-          {typeLabel}
-        </Badge>
-      </div>
-      <p className="text-sm text-gray-700">{summary}</p>
-      <div className="flex justify-end">
-        <Button variant="outline" size="sm" asChild>
-          <Link href={`/candidate/${event.candidate.slug}`}>View candidate</Link>
-        </Button>
-      </div>
-    </motion.div>
-  );
-}
-
-function NotificationCard({ notification }: { notification: NotificationItem }) {
-  const summary =
-    notification.payload?.summary || extractSummary(notification.changeEvent?.metadata);
-  const candidate = notification.changeEvent?.candidate;
-  const occurredAt = notification.changeEvent?.createdAt ?? notification.createdAt;
-  return (
-    <div
-      className={cn(
-        "rounded-2xl border border-purple-100 bg-white/90 p-4 shadow-sm transition", 
-        notification.status === "UNREAD" ? "border-purple-300" : "opacity-85"
-      )}
-      data-testid="notification-item"
-      data-read={notification.status === "READ" ? "true" : "false"}
-    >
-      <div className="flex items-start justify-between gap-3">
-        <div>
-          <p className="text-sm font-semibold text-gray-900">
-            {candidate?.name || "Campaign update"}
-          </p>
-          <p className="text-xs text-muted-foreground">
-            {formatDistanceToNow(new Date(occurredAt), { addSuffix: true })}
-          </p>
-        </div>
-        <Badge variant="outline" className="border-purple-200 text-purple-600">
-          {formatType(notification.changeEvent?.type || "CAMPAIGN")}
-        </Badge>
-      </div>
-      <p className="mt-3 text-sm text-gray-700">{summary || "Campaign update posted."}</p>
-      {candidate ? (
-        <div className="mt-3 flex justify-end">
-          <Button variant="ghost" size="sm" asChild>
-            <Link href={`/candidate/${candidate.slug}`}>Open profile</Link>
+        <p className="text-sm leading-6 text-gray-700">{summary}</p>
+        {highlights.length ? (
+          <div className="flex flex-wrap gap-2">
+            {highlights.map((highlight) => (
+              <span
+                key={highlight}
+                className="rounded-full bg-purple-50 px-3 py-1 text-xs font-medium text-purple-700"
+              >
+                {highlight}
+              </span>
+            ))}
+          </div>
+        ) : null}
+        <div className="flex flex-col gap-2 pt-1 sm:flex-row sm:items-center sm:justify-between">
+          <span className="text-xs text-muted-foreground">
+            Captured {new Date(event.createdAt).toLocaleString()}
+          </span>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="self-start gap-1 text-purple-600 hover:text-purple-700"
+            asChild
+          >
+            <Link href={`/candidate/${event.candidate.slug}`}>
+              View profile
+              <ArrowUpRight className="h-4 w-4" />
+            </Link>
           </Button>
         </div>
-      ) : null}
-    </div>
+      </div>
+    </motion.article>
   );
 }
 
@@ -1062,18 +1011,83 @@ function extractSummary(metadata?: Record<string, unknown> | null) {
   return "Campaign update posted.";
 }
 
-function formatType(type: FeedEvent["type"]) {
-  switch (type) {
-    case "BIO":
-      return "Bio";
-    case "EDUCATION":
-      return "Education";
-    case "PHOTO":
-      return "Photo";
-    case "CAMPAIGN":
-    default:
-      return "Campaign";
+function extractHighlights(metadata?: Record<string, unknown> | null) {
+  if (!metadata || typeof metadata !== "object") {
+    return [];
   }
+
+  const highlights: string[] = [];
+  const {
+    role,
+    city,
+    state,
+    previousLength,
+    nextLength,
+  } = metadata as Partial<{
+    role: unknown;
+    city: unknown;
+    state: unknown;
+    previousLength: unknown;
+    nextLength: unknown;
+  }>;
+
+  if (typeof role === "string" && role.trim()) {
+    highlights.push(`New role: ${role.trim()}`);
+  }
+
+  const locationParts = [
+    typeof city === "string" ? city.trim() : "",
+    typeof state === "string" ? state.trim() : "",
+  ].filter(Boolean);
+  if (locationParts.length) {
+    highlights.push(`Now representing ${locationParts.join(", ")}`);
+  }
+
+  if (typeof previousLength === "number" && typeof nextLength === "number" && previousLength !== nextLength) {
+    const delta = nextLength - previousLength;
+    const direction = delta > 0 ? "grew" : "shrunk";
+    highlights.push(`Bio ${direction} by ${Math.abs(delta)} characters`);
+  }
+
+  return highlights;
+}
+
+type FeedTypeMeta = {
+  label: string;
+  badgeClass: string;
+  dotClass: string;
+  icon: LucideIcon;
+};
+
+const FEED_TYPE_META: Record<FeedEvent["type"], FeedTypeMeta> = {
+  BIO: {
+    label: "Bio Update",
+    badgeClass: "bg-rose-50 text-rose-600 shadow-[0_1px_0_rgba(244,114,182,0.2)]",
+    dotClass: "bg-rose-500",
+    icon: Sparkles,
+  },
+  EDUCATION: {
+    label: "Education Update",
+    badgeClass: "bg-amber-50 text-amber-600 shadow-[0_1px_0_rgba(251,191,36,0.25)]",
+    dotClass: "bg-amber-500",
+    icon: GraduationCap,
+  },
+  PHOTO: {
+    label: "New Photo",
+    badgeClass: "bg-sky-50 text-sky-600 shadow-[0_1px_0_rgba(14,165,233,0.2)]",
+    dotClass: "bg-sky-500",
+    icon: Camera,
+  },
+  CAMPAIGN: {
+    label: "Campaign Update",
+    badgeClass: "bg-purple-50 text-purple-700 shadow-[0_1px_0_rgba(168,85,247,0.2)]",
+    dotClass: "bg-purple-500",
+    icon: Megaphone,
+  },
+};
+
+function getFeedTypeMeta(type: FeedEvent["type"]): FeedTypeMeta {
+  return FEED_TYPE_META[type] ?? FEED_TYPE_META.CAMPAIGN;
 }
 
 function mapEmailMode(mode: PreferencesState["emailMode"]) {
