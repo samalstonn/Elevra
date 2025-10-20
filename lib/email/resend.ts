@@ -1,5 +1,12 @@
 import { CreateEmailOptions, Resend } from "resend";
 
+export type EmailAttachment = {
+  filename: string;
+  path?: string;
+  content?: string;
+  mimeType?: string;
+};
+
 export type SendEmailParams = {
   to: string | string[];
   subject: string;
@@ -9,6 +16,7 @@ export type SendEmailParams = {
   headers?: Record<string, string>;
   // Accept Date (UTC ISO) or ISO string with timezone offset to honor local time
   scheduledAt?: Date | string;
+  attachments?: EmailAttachment[];
 };
 
 export type SendEmailBatchResult = {
@@ -79,8 +87,8 @@ export async function sendWithResend({
   html,
   from,
   senderName,
-  headers,
   scheduledAt,
+  attachments,
 }: SendEmailParams): Promise<{ id: string } | null> {
   // Global process-level throttle
   await enforceRateLimit();
@@ -95,13 +103,23 @@ export async function sendWithResend({
     try {
       // Optionally record for inspection
       if (process.env.EMAIL_DRY_RUN_LOG === "1") {
-        const sendParams: CreateEmailOptions & { headers?: Record<string, string> } = {
+        const sendParams: CreateEmailOptions & {
+          headers?: Record<string, string>;
+        } = {
           from: formatSenderAddress(senderName, from),
           to,
           subject,
           html,
-          headers,
+          attachments: attachments?.map((item) => ({
+            filename: item.filename,
+            path: item.path,
+            content: item.content,
+            mime_type: item.mimeType,
+          })),
         };
+        if (!sendParams.attachments?.length) {
+          delete (sendParams as { attachments?: unknown }).attachments;
+        }
         sendParams.scheduledAt = scheduledAt
           ? typeof scheduledAt === "string"
             ? scheduledAt
@@ -122,14 +140,23 @@ export async function sendWithResend({
 
   const resend = new Resend(process.env.RESEND_API_KEY);
   const fromAddress = formatSenderAddress(senderName, from);
-  const sendParams: CreateEmailOptions & { headers?: Record<string, string> } = {
-    from: fromAddress,
-    to,
-    subject,
-    html,
-    replyTo: process.env.ADMIN_EMAIL,
-    headers,
-  };
+  const sendParams: CreateEmailOptions & { headers?: Record<string, string> } =
+    {
+      from: fromAddress,
+      to,
+      subject,
+      html,
+      replyTo: process.env.ADMIN_EMAIL,
+      attachments: attachments?.map((item) => ({
+        filename: item.filename,
+        path: item.path,
+        content: item.content,
+        mime_type: item.mimeType,
+      })),
+    };
+  if (!sendParams.attachments?.length) {
+    delete (sendParams as { attachments?: unknown }).attachments;
+  }
 
   if (scheduledAt) {
     sendParams.scheduledAt =

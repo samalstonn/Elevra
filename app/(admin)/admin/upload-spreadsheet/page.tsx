@@ -2,11 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { usePageTitle } from "@/lib/usePageTitle";
-import {
-  type Row,
-  type InsertResultItem,
-  buildAndDownloadResultSheet,
-} from "@/election-source/build-spreadsheet";
+import type { Row } from "@/election-source/build-spreadsheet";
 import { normalizeHeader, validateEmails } from "@/election-source/helpers";
 import { useUser } from "@clerk/nextjs";
 
@@ -20,28 +16,81 @@ const REQUIRED_HEADERS = [
   "email",
 ] as const;
 
+const TERMINAL_UPLOAD_STATUSES = new Set([
+  "COMPLETED",
+  "FAILED",
+  "NEEDS_REUPLOAD",
+  "CANCELLED",
+]);
+
+type UploadAttemptView = {
+  id: string;
+  status: string;
+  modelUsed: string;
+  errorMessage?: string | null;
+  startedAt?: string | null;
+  completedAt?: string | null;
+  isFallback?: boolean | null;
+};
+
+type UploadJobView = {
+  id: string;
+  type: string;
+  status: string;
+  retryCount: number;
+  lastError?: string | null;
+  startedAt?: string | null;
+  completedAt?: string | null;
+  attempts: UploadAttemptView[];
+};
+
+type UploadBatchView = {
+  id: string;
+  status: string;
+  municipality?: string | null;
+  state?: string | null;
+  position?: string | null;
+  errorReason?: string | null;
+  jobs: UploadJobView[];
+};
+
+type UploadJobSummary = {
+  id: string;
+  type: string;
+  status: string;
+  retryCount: number;
+  lastError?: string | null;
+  startedAt?: string | null;
+  completedAt?: string | null;
+};
+
+type UploadStatusView = {
+  uploadId: string;
+  status: string;
+  summary: Record<string, unknown> | null;
+  batches: UploadBatchView[];
+  jobs: UploadJobSummary[];
+};
+
 export default function UploadSpreadsheetPage() {
   usePageTitle("Admin – Upload Spreadsheet");
-  const [status, setStatus] = useState<string>("");
-  const [error, setError] = useState<string>("");
+  const [statusMessage, setStatusMessage] = useState("");
+  const [errorMessage, setErrorMessage] = useState("");
+  const [batchAction, setBatchAction] = useState<string | null>(null);
   const [parsedRows, setParsedRows] = useState<Row[]>([]);
-  const [emailValidation, setEmailValidation] = useState<{
-    ok: boolean;
-    errors: string[];
-  }>({ ok: true, errors: [] });
-  const [geminiOutput, setGeminiOutput] = useState<string>("");
-  const [structuredOutput, setStructuredOutput] = useState<string>("");
-  const [forceHidden, setForceHidden] = useState<boolean>(true);
-  // Badge state sourced from server status so only one env is needed
+  const [emailValidation, setEmailValidation] = useState<{ ok: boolean; errors: string[] }>({
+    ok: true,
+    errors: [],
+  });
+  const [forceHidden, setForceHidden] = useState(true);
   const [mockMode, setMockMode] = useState(false);
-  const [modelName, setModelName] = useState<string>("");
-  // Collapsible sections (start collapsed)
-  const [showGeminiOutput, setShowGeminiOutput] = useState(false);
-  const [showStructuredOutput, setShowStructuredOutput] = useState(false);
-  const [showInsertResult, setShowInsertResult] = useState(false);
-  const [rawRows, setRawRows] = useState<Array<Record<string, unknown>>>([]);
-  const [, setOriginalExt] = useState<string>(""); // reserved for future format-specific export
-  // Load Gemini status on mount
+  const [modelName, setModelName] = useState("");
+  const [originalFilename, setOriginalFilename] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const [activeUpload, setActiveUpload] = useState<UploadStatusView | null>(null);
+  const [pollingError, setPollingError] = useState("");
+  const pollTimerRef = useRef<NodeJS.Timeout | null>(null);
+
   useEffect(() => {
     let alive = true;
     (async () => {
@@ -62,408 +111,325 @@ export default function UploadSpreadsheetPage() {
       alive = false;
     };
   }, []);
-  const [insertResult, setInsertResult] = useState<string>("");
-  const [goingLive, setGoingLive] = useState(false);
-  type StepStatus = "pending" | "in_progress" | "completed" | "error";
-  type Step = {
-    key: string;
-    label: string;
-    status: StepStatus;
-    detail?: string;
-  };
-  const [goLiveSteps, setGoLiveSteps] = useState<Step[]>([]);
-  const [goLiveLog, setGoLiveLog] = useState<
-    { ts: number; level: "info" | "success" | "error"; message: string }[]
-  >([]);
 
-  // Simple confirmation toast state for fallback model warnings
-  const [confirmPrompt, setConfirmPrompt] = useState<{
-    visible: boolean;
-    message: string;
-  }>({ visible: false, message: "" });
-  const confirmResolveRef = useRef<((v: boolean) => void) | null>(null);
-  function askConfirmation(message: string): Promise<boolean> {
-    return new Promise((resolve) => {
-      confirmResolveRef.current = resolve;
-      setConfirmPrompt({ visible: true, message });
-    });
-  }
-  function confirmYes() {
-    confirmResolveRef.current?.(true);
-    confirmResolveRef.current = null;
-    setConfirmPrompt({ visible: false, message: "" });
-  }
-  function confirmNo() {
-    confirmResolveRef.current?.(false);
-    confirmResolveRef.current = null;
-    setConfirmPrompt({ visible: false, message: "" });
-  }
+  useEffect(() => {
+    return () => {
+      if (pollTimerRef.current) {
+        clearInterval(pollTimerRef.current);
+        pollTimerRef.current = null;
+      }
+    };
+  }, []);
 
-  const { isSignedIn, isLoaded, user } = useUser();
+  const { isLoaded, isSignedIn, user } = useUser();
   const userEmail = user?.primaryEmailAddress?.emailAddress ?? "";
 
-  async function goLive() {
+  const pollUpload = useCallback(
+    async (uploadId: string) => {
+      try {
+        const res = await fetch(`/api/gemini/uploads/${uploadId}`, {
+          cache: "no-store",
+        });
+        if (!res.ok) {
+          const txt = await res.text().catch(() => "");
+          throw new Error(txt || `Failed to load upload status (${res.status})`);
+        }
+        const payload = (await res.json()) as {
+          upload: {
+            id: string;
+            status: string;
+            summaryJson: Record<string, unknown> | null;
+            batches: Array<{
+              id: string;
+              status: string;
+              municipality?: string | null;
+              state?: string | null;
+              position?: string | null;
+              errorReason?: string | null;
+              jobs: Array<{
+                id: string;
+                type: string;
+                status: string;
+                retryCount: number;
+                lastError?: string | null;
+                startedAt?: string | null;
+                completedAt?: string | null;
+                attempts: UploadAttemptView[];
+              }>;
+            }>;
+            jobs: UploadJobSummary[];
+          };
+        };
+
+        const mapped: UploadStatusView = {
+          uploadId: payload.upload.id,
+          status: payload.upload.status,
+          summary: payload.upload.summaryJson ?? null,
+          batches: payload.upload.batches.map((batch) => ({
+            id: batch.id,
+            status: batch.status,
+            municipality: batch.municipality,
+            state: batch.state,
+            position: batch.position,
+            errorReason: batch.errorReason,
+            jobs: batch.jobs.map((job) => ({
+              id: job.id,
+              type: job.type,
+              status: job.status,
+              retryCount: job.retryCount,
+              lastError: job.lastError,
+              startedAt: job.startedAt,
+              completedAt: job.completedAt,
+              attempts: job.attempts || [],
+            })),
+          })),
+          jobs: payload.upload.jobs || [],
+        };
+        setActiveUpload(mapped);
+        setPollingError("");
+
+        if (TERMINAL_UPLOAD_STATUSES.has(mapped.status)) {
+          if (pollTimerRef.current) {
+            clearInterval(pollTimerRef.current);
+            pollTimerRef.current = null;
+          }
+        }
+      } catch (error) {
+        setPollingError(
+          error instanceof Error ? error.message : "Failed to poll upload status"
+        );
+      }
+    },
+    []
+  );
+
+  const startPolling = useCallback(
+    (uploadId: string) => {
+      pollUpload(uploadId);
+      if (pollTimerRef.current) {
+        clearInterval(pollTimerRef.current);
+      }
+      pollTimerRef.current = setInterval(() => pollUpload(uploadId), 5_000);
+    },
+    [pollUpload]
+  );
+
+  const handleStartUpload = useCallback(async () => {
     if (!parsedRows.length) {
-      setError("Please upload a spreadsheet first.");
+      setErrorMessage("Please upload a spreadsheet first.");
       return;
     }
     if (!userEmail) {
-      setError("Unable to determine uploader email. Please check your account profile.");
+      setErrorMessage("Unable to determine uploader email. Please check your account profile.");
       return;
     }
-    const groups = groupRowsByMunicipalityAndPosition(parsedRows);
-    if (!groups.length) {
-      setError("No valid municipality groups found.");
-      return;
-    }
-    setGoingLive(true);
-    setError("");
-    setInsertResult("");
-    resetGoLiveProgress();
-    const aggregatedElections: unknown[] = [];
-    const aggregatedResults: InsertResultItem[] = [];
+
+    setSubmitting(true);
+    setErrorMessage("");
+    setStatusMessage("Submitting upload to Gemini queue…");
 
     try {
-      updateStep(
-        "process",
-        "in_progress",
-        `Found ${groups.length} group${
-          groups.length === 1 ? "" : "s"
-        }. Starting…`
-      );
-      logProgress(`Processing ${groups.length} group(s) sequentially…`);
+      const res = await fetch("/api/gemini/uploads", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          rows: parsedRows,
+          originalFilename: originalFilename || "admin-upload.csv",
+          uploaderEmail: userEmail,
+          forceHidden,
+          summary: {
+            rowCount: parsedRows.length,
+            sourceFilename: originalFilename,
+          },
+        }),
+      });
 
-      for (let i = 0; i < groups.length; i++) {
-        const g = groups[i];
-        const positionLabel = g.position ? ` – ${g.position}` : "";
-        const label = `${g.municipality || "(unknown)"}${
-          g.state ? ", " + g.state : ""
-        }${positionLabel} (${g.rows.length} rows) [${i + 1}/${groups.length}]`;
-        updateStep("process", "in_progress", `Current: ${label}`);
-        logProgress(`Analyze → Structure → Insert: ${label}`);
-
-        // 1) Analyze with Gemini for this group
-        const analyzeRes = await fetch("/api/gemini/analyze", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ rows: g.rows }),
-        });
-        if (!analyzeRes.ok || !analyzeRes.body) {
-          const txt = await analyzeRes.text().catch(() => "");
-          updateStep(
-            "process",
-            "error",
-            `Analyze failed (${analyzeRes.status}) ${txt || ""}`
-          );
-          logProgress(
-            `Analyze failed (${analyzeRes.status}) ${txt || ""}`,
-            "error"
-          );
-          throw new Error(
-            txt || `Gemini analyze failed (${analyzeRes.status})`
-          );
-        }
-        const isMock = analyzeRes.headers.get("x-gemini-mock") === "1";
-        const model = analyzeRes.headers.get("x-gemini-model") || "";
-        setMockMode(isMock);
-        setModelName(model);
-
-        // Detect fallback usage and ask for confirmation
-        const fallbackHeader = analyzeRes.headers.get("x-gemini-fallback");
-        if (fallbackHeader) {
-          const warnMsg = `WARNING: Using ${
-            model || "fallback model"
-          } as fallback model. Continue?`;
-          logProgress(warnMsg, "error");
-          const proceed = await askConfirmation(warnMsg);
-          if (!proceed) {
-            updateStep(
-              "process",
-              "error",
-              "User canceled due to fallback model"
-            );
-            logProgress("Aborted by user on fallback warning", "error");
-            throw new Error("Aborted due to fallback model");
-          }
-          logProgress("User confirmed fallback model continuation");
-        }
-        const aReader = analyzeRes.body.getReader();
-        const aDecoder = new TextDecoder();
-        let analysisText = "";
-        while (true) {
-          const { done, value } = await aReader.read();
-          if (done) break;
-          analysisText += aDecoder.decode(value, { stream: true });
-        }
-        setGeminiOutput(analysisText);
-
-        // 2) Structure for this group
-        const structRes = await fetch("/api/gemini/structure", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            previousOutput: analysisText,
-            originalRows: g.rows,
-          }),
-        });
-        if (!structRes.ok || !structRes.body) {
-          const txt = await structRes.text().catch(() => "");
-          updateStep(
-            "process",
-            "error",
-            `Structure failed (${structRes.status}) ${txt || ""}`
-          );
-          logProgress(
-            `Structure failed (${structRes.status}) ${txt || ""}`,
-            "error"
-          );
-          throw new Error(
-            txt || `Gemini structure failed (${structRes.status})`
-          );
-        }
-        const sReader = structRes.body.getReader();
-        const sDecoder = new TextDecoder();
-        let sBuf = "";
-        while (true) {
-          const { done, value } = await sReader.read();
-          if (done) break;
-          sBuf += sDecoder.decode(value, { stream: true });
-        }
-        const elections = extractElectionsFromJson(sBuf);
-        const structuredForGroup: { elections: unknown[] } = { elections };
-        setStructuredOutput(JSON.stringify(structuredForGroup, null, 2));
-
-        // 3) Insert only this group's elections into DB
-        const insertRes = await fetch("/api/admin/seed-structured", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            structured: JSON.stringify(structuredForGroup),
-            hidden: forceHidden,
-            uploadedBy: userEmail,
-          }),
-        });
-        const insertText = await insertRes.text();
-        if (!insertRes.ok) {
-          updateStep(
-            "process",
-            "error",
-            `Insert failed (${insertRes.status}) ${insertText || ""}`
-          );
-          logProgress(
-            `Insert failed (${insertRes.status}) ${insertText || ""}`,
-            "error"
-          );
-          throw new Error(insertText || `Insert failed (${insertRes.status})`);
-        }
-        let insertObj: { results?: InsertResultItem[] } | null = null;
+      if (!res.ok) {
+        let message = `Upload failed (${res.status})`;
         try {
-          insertObj = JSON.parse(insertText) as {
-            results?: InsertResultItem[];
-          };
+          const payload = (await res.json()) as { error?: string; details?: string };
+          if (payload?.error) {
+            message = payload.error;
+            if (payload.details) message += ` – ${payload.details}`;
+          }
         } catch {
-          insertObj = null;
+          const txt = await res.text().catch(() => "");
+          if (txt) message = txt;
         }
-        if (Array.isArray(structuredForGroup.elections)) {
-          aggregatedElections.push(...structuredForGroup.elections);
+        throw new Error(message);
+      }
+
+      const data = (await res.json()) as {
+        uploadId: string;
+        status: string;
+        summary: Record<string, unknown> | null;
+        batchCount: number;
+      };
+
+      setActiveUpload({
+        uploadId: data.uploadId,
+        status: data.status,
+        summary: data.summary,
+        batches: [],
+        jobs: [],
+      });
+      setStatusMessage(
+        `Queued ${data.batchCount} batch${data.batchCount === 1 ? "" : "es"} for Gemini processing.`
+      );
+      setPollingError("");
+      startPolling(data.uploadId);
+    } catch (error) {
+      setErrorMessage(
+        error instanceof Error ? error.message : "Failed to queue upload"
+      );
+    } finally {
+      setSubmitting(false);
+    }
+  }, [
+    parsedRows,
+    userEmail,
+    originalFilename,
+    forceHidden,
+    startPolling,
+  ]);
+
+  const handleBatchAction = useCallback(
+    async (batchId: string, action: "retry" | "skip") => {
+      if (!activeUpload) return;
+      const uploadId = activeUpload.uploadId;
+      if (!uploadId) return;
+
+      let reason: string | undefined;
+      if (action === "skip") {
+        const input = window.prompt(
+          "Optional reason for marking this batch for re-upload:",
+          "Manual review required"
+        );
+        if (input === null) return;
+        reason = input.trim();
+      }
+
+      const actionKey = `${batchId}:${action}`;
+      setBatchAction(actionKey);
+      setErrorMessage("");
+      setStatusMessage(
+        action === "retry"
+          ? "Requeuing batch for Gemini processing…"
+          : "Marking batch for manual review…"
+      );
+      try {
+        const res = await fetch(
+          `/api/gemini/uploads/${uploadId}/batches/${batchId}`,
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(
+              reason ? { action, reason } : { action }
+            ),
+          }
+        );
+        if (!res.ok) {
+          const text = await res.text().catch(() => "");
+          throw new Error(text || `Batch action failed (${res.status})`);
         }
-        if (insertObj?.results) {
-          aggregatedResults.push(...insertObj.results);
+        const data = (await res.json()) as { upload: UploadStatusView | null };
+        if (data.upload) {
+          setActiveUpload(data.upload);
+          setStatusMessage(
+            action === "retry"
+              ? "Batch requeued successfully."
+              : "Batch flagged for manual review."
+          );
         }
-        const addedCandidates = (insertObj?.results || [])
-          .map((r: InsertResultItem) => (r.candidateSlugs || []).length)
-          .reduce((a: number, b: number) => a + b, 0);
-        logProgress(
-          `Group inserted: ${
-            (insertObj?.results || []).length
-          } elections, ${addedCandidates} candidates`,
-          "success"
+      } catch (error) {
+        const message =
+          error instanceof Error ? error.message : "Failed to update batch.";
+        setErrorMessage(message);
+      } finally {
+        setBatchAction(null);
+      }
+    },
+    [activeUpload]
+  );
+
+  const processRows = useCallback(
+    async (rows: Array<Record<string, unknown>>, fileName: string) => {
+      const mapped = rows.map(mapHeaders).filter((r) => Object.keys(r).length);
+      if (!mapped.length) {
+        setErrorMessage("No rows found in the file.");
+        setStatusMessage("");
+        return;
+      }
+      if (!hasRequiredHeaders(mapped[0])) {
+        setErrorMessage(
+          "Missing required headers. Expected: municipality, state, firstName, lastName, position (or race/office), year, email"
         );
       }
 
-      // All groups complete, aggregate and finalize
-      const aggregatedStructured = { elections: aggregatedElections };
-      const aggregatedInsert: { results: InsertResultItem[] } = {
-        results: aggregatedResults,
-      };
-      setStructuredOutput(JSON.stringify(aggregatedStructured, null, 2));
-      setInsertResult(JSON.stringify(aggregatedInsert, null, 2));
-      updateStep(
-        "process",
-        "completed",
-        `Processed ${groups.length} group${groups.length === 1 ? "" : "s"}`
-      );
-
-      updateStep("post", "in_progress");
-      logProgress("Building and downloading result sheet…");
-      await buildAndDownloadResultSheet(
-        aggregatedInsert,
-        JSON.stringify(aggregatedStructured),
-        rawRows,
-        parsedRows
-      );
-      updateStep("post", "completed");
-      logProgress("Go Live completed successfully", "success");
-    } catch (e) {
-      console.error(e);
-      setError(e instanceof Error ? e.message : "Go Live failed");
-      logProgress(e instanceof Error ? e.message : "Go Live failed", "error");
-    } finally {
-      setGoingLive(false);
-    }
-  }
-
-  function resetGoLiveProgress() {
-    setGoLiveSteps([
-      {
-        key: "process",
-        label: "Process groups (analyze → structure → insert)",
-        status: "pending",
-      },
-      { key: "post", label: "Build result sheet", status: "pending" },
-    ]);
-    setGoLiveLog([]);
-  }
-
-  function updateStep(key: string, status: StepStatus, detail?: string) {
-    setGoLiveSteps((prev) =>
-      prev.map((s) => (s.key === key ? { ...s, status, detail } : s))
-    );
-  }
-
-  function logProgress(
-    message: string,
-    level: "info" | "success" | "error" = "info"
-  ) {
-    setGoLiveLog((prev) => [...prev, { ts: Date.now(), level, message }]);
-  }
-
-  function mapHeaders<T extends Record<string, unknown>>(obj: T): Row {
-    const mapped: Row = {
-      municipality: "",
-      state: "",
-      firstName: "",
-      lastName: "",
-      position: "",
-      year: "",
-      email: "",
-      name: "",
-      districtType: "",
-      district: "",
-      raceLabel: "",
-      termType: "",
-      termLength: "",
-      mailingAddress: "",
-      phone: "",
-      filingDate: "",
-      partyPreference: "",
-      status: "",
-    };
-    for (const key of Object.keys(obj)) {
-      const norm = normalizeHeader(key);
-      const val = (obj as Record<string, unknown>)[key];
-      const asStr = (v: unknown): string =>
-        typeof v === "string" ? v : typeof v === "number" ? String(v) : "";
-      // Try to map common variations to our required names
-      switch (norm) {
-        case "municipality":
-          mapped.municipality = asStr(val);
-          break;
-        case "state":
-          mapped.state = asStr(val);
-          break;
-        case "firstName":
-        case "firstname":
-        case "first":
-          mapped.firstName = asStr(val);
-          break;
-        case "lastName":
-        case "lastname":
-        case "last":
-          mapped.lastName = asStr(val);
-          break;
-        case "position":
-          mapped.position = asStr(val);
-          break;
-        case "positiontitle":
-        case "office":
-        case "seat":
-        case "contest":
-        case "role":
-          if (!mapped.position) {
-            mapped.position = asStr(val);
-          }
-          break;
-        case "race":
-        case "racename":
-        case "racetitle":
-          if (!mapped.position) {
-            mapped.position = asStr(val);
-          }
-          mapped.raceLabel = asStr(val);
-          break;
-        case "districttype":
-          mapped.districtType = asStr(val);
-          break;
-        case "district":
-          mapped.district = asStr(val);
-          break;
-        case "termtype":
-          mapped.termType = asStr(val);
-          break;
-        case "termlength":
-          mapped.termLength = asStr(val);
-          break;
-        case "mailingaddress":
-          mapped.mailingAddress = asStr(val);
-          break;
-        case "phone":
-          mapped.phone = asStr(val);
-          break;
-        case "filingdate":
-          mapped.filingDate = asStr(val);
-          break;
-        case "partypreference":
-          mapped.partyPreference = asStr(val);
-          break;
-        case "status":
-          mapped.status = asStr(val);
-          break;
-        case "name": {
-          const full = asStr(val);
-          mapped.name = full;
-          if (full && (!mapped.firstName || !mapped.lastName)) {
-            const parts = full.trim().split(/\s+/);
-            if (parts.length === 1) {
-              if (!mapped.firstName) mapped.firstName = parts[0];
-            } else if (parts.length > 1) {
-              if (!mapped.firstName) mapped.firstName = parts[0];
-              if (!mapped.lastName)
-                mapped.lastName = parts.slice(1).join(" ");
-            }
-          }
-          break;
-        }
-        case "year":
-          if (typeof val === "number" || typeof val === "string")
-            mapped.year = val;
-          break;
-        case "email":
-        case "Email":
-          mapped.email = asStr(val);
-          break;
-        default:
-          break;
+      const emailCheck = validateEmails(mapped);
+      setEmailValidation(emailCheck);
+      if (!emailCheck.ok) {
+        setErrorMessage(
+          `Email validation failed: ${emailCheck.errors.length} issue(s) found.`
+        );
       }
-    }
-    return mapped;
-  }
 
-  function hasRequiredHeaders(sample: Row): boolean {
-    return REQUIRED_HEADERS.every((h) => sample[h as keyof Row] !== undefined);
-  }
+      console.log(`[Upload Preview] ${fileName}: ${mapped.length} rows`);
+      setStatusMessage(`Parsed ${mapped.length} rows. Check console for preview.`);
+      setParsedRows(mapped);
+    },
+    []
+  );
 
-  // --- Grouping utilities ---
+  const handleFile = useCallback(
+    async (file: File) => {
+      setErrorMessage("");
+      setStatusMessage("Parsing file…");
+      setActiveUpload(null);
+      if (pollTimerRef.current) {
+        clearInterval(pollTimerRef.current);
+        pollTimerRef.current = null;
+      }
+      try {
+        const ext = file.name.split(".").pop()?.toLowerCase();
+        setOriginalFilename(file.name);
+        if (ext === "csv") {
+          const text = await file.text();
+          const Papa = (await import("papaparse")).default;
+          const parsed = Papa.parse(text, {
+            header: true,
+            skipEmptyLines: true,
+            transformHeader: (h: string) => h.trim(),
+          });
+          if (parsed.errors?.length) {
+            console.warn("CSV parse warnings:", parsed.errors);
+          }
+          const rows = (parsed.data as Record<string, unknown>[]) || [];
+          await processRows(rows, file.name);
+        } else if (ext === "xlsx" || ext === "xls") {
+          const XLSX = await import("xlsx");
+          const buf = await file.arrayBuffer();
+          const wb = XLSX.read(buf, { type: "array" });
+          const sheetName = wb.SheetNames[0];
+          const sheet = wb.Sheets[sheetName];
+          const rows = XLSX.utils.sheet_to_json<Record<string, unknown>>(sheet, {
+            defval: "",
+          });
+          await processRows(rows, file.name);
+        } else {
+          setErrorMessage("Unsupported file type. Please upload a CSV or Excel file.");
+          setStatusMessage("");
+        }
+      } catch (error) {
+        console.error(error);
+        setErrorMessage("Failed to parse file. See console for details.");
+        setStatusMessage("");
+      }
+    },
+    [processRows]
+  );
+
+
   const normalizeGroupKey = useCallback((r: Row): string => {
     const city = (r.municipality || "").trim().toLowerCase();
     const state = (r.state || "").trim().toLowerCase();
@@ -473,25 +439,6 @@ export default function UploadSpreadsheetPage() {
       .toLowerCase();
     return `${city}|${state}|${position || "unknown-position"}`;
   }, []);
-
-  // --- Helpers for parsing structured JSON safely ---
-  type ElectionsEnvelope = { elections: unknown[] };
-  function hasElectionsArray(v: unknown): v is ElectionsEnvelope {
-    if (typeof v !== "object" || v === null) return false;
-    if (!("elections" in v)) return false;
-    const e = (v as { elections: unknown }).elections;
-    return Array.isArray(e);
-  }
-  function extractElectionsFromJson(text: string): unknown[] {
-    try {
-      const parsed: unknown = JSON.parse(text);
-      if (hasElectionsArray(parsed)) return parsed.elections;
-      if (Array.isArray(parsed)) return parsed as unknown[];
-      return [];
-    } catch {
-      return [];
-    }
-  }
 
   const groupRowsByMunicipalityAndPosition = useCallback(
     (
@@ -537,370 +484,305 @@ export default function UploadSpreadsheetPage() {
     [normalizeGroupKey]
   );
 
-  async function handleFile(file: File) {
-    setError("");
-    setStatus("Parsing file…");
-    try {
-      const ext = file.name.split(".").pop()?.toLowerCase();
-      if (ext === "csv") {
-        const text = await file.text();
-        const Papa = (await import("papaparse")).default;
-        const parsed = Papa.parse(text, {
-          header: true,
-          skipEmptyLines: true,
-          transformHeader: (h: string) => h.trim(),
-        });
-        if (parsed.errors?.length) {
-          console.warn("CSV parse warnings:", parsed.errors);
-        }
-        const rows = (parsed.data as Record<string, unknown>[]) || [];
-        setRawRows(rows);
-        setOriginalExt("csv");
-        await processRows(rows, file.name);
-      } else if (ext === "xlsx" || ext === "xls") {
-        const XLSX = await import("xlsx");
-        const buf = await file.arrayBuffer();
-        const wb = XLSX.read(buf, { type: "array" });
-        const sheetName = wb.SheetNames[0];
-        const sheet = wb.Sheets[sheetName];
-        const rows = XLSX.utils.sheet_to_json<Record<string, unknown>>(sheet, {
-          defval: "",
-        });
-        setRawRows(rows);
-        setOriginalExt(ext);
-        await processRows(rows, file.name);
-      } else {
-        setError("Unsupported file type. Please upload a CSV or Excel file.");
-        setStatus("");
-      }
-    } catch (e: unknown) {
-      console.error(e);
-      setError("Failed to parse file. See console for details.");
-      setStatus("");
-    }
-  }
-
-  async function processRows(
-    rows: Array<Record<string, unknown>>,
-    fileName: string
-  ) {
-    const mapped = rows.map(mapHeaders).filter((r) => Object.keys(r).length);
-    if (!mapped.length) {
-      setError("No rows found in the file.");
-      setStatus("");
-      return;
-    }
-    if (!hasRequiredHeaders(mapped[0])) {
-      setError(
-        "Missing required headers. Expected: municipality, state, firstName, lastName, position (or race/office), year, email"
-      );
-      setStatus("");
-      // Still log what we have for debugging
-    }
-
-    // Validate candidate emails immediately on upload
-    const emailCheck = validateEmails(mapped);
-    setEmailValidation(emailCheck);
-    if (!emailCheck.ok) {
-      setError(
-        `Email validation failed: ${emailCheck.errors.length} issue(s) found.`
-      );
-    }
-
-    const preview = mapped;
-    console.log(`[Upload Preview] ${fileName}: ${preview.length} rows`);
-    console.table(preview);
-    setStatus(`Parsed ${mapped.length} rows. Check console for preview.`);
-    setParsedRows(mapped);
-  }
-
-  // Derived groups preview based on current parsed rows
-  const rowGroups = useMemo(
-    () => groupRowsByMunicipalityAndPosition(parsedRows),
-    [parsedRows, groupRowsByMunicipalityAndPosition]
-  );
-
-  if (!isLoaded) {
-    return (
-      <main className="max-w-3xl mx-auto mt-10 p-4">
-        <p className="text-sm text-gray-600">Loading your account…</p>
-      </main>
-    );
-  }
-
-  if (!isSignedIn || !userEmail) {
-    return (
-      <main className="max-w-3xl mx-auto mt-10 p-4">
-        <p className="text-sm text-red-700">
-          You must be signed in with a valid email to upload spreadsheets.
-        </p>
-      </main>
-    );
-  }
+  const rowGroups = useMemo(() => {
+    if (!parsedRows.length) return [] as ReturnType<typeof groupRowsByMunicipalityAndPosition>;
+    return groupRowsByMunicipalityAndPosition(parsedRows);
+  }, [parsedRows, groupRowsByMunicipalityAndPosition]);
 
   return (
-    <main className="max-w-3xl mx-auto mt-10 p-4">
-      <h1 className="text-2xl font-bold mb-2">Upload Spreadsheet</h1>
-      <p className="text-sm text-gray-600 mb-6">
-        Upload a CSV or Excel file with headers: municipality, state, firstName,
-        lastName, position (or race/office), year, email. Optional columns such as
-        District Type, District, Term Type, Term Length, Mailing Address, Phone,
-        Filing Date, Party Preference, or Status are detected automatically and
-        forwarded to Gemini. We will log the first few rows to the console for
-        verification.
-      </p>
+    <div className="space-y-6">
+      <header className="space-y-1">
+        <h1 className="text-2xl font-semibold">Upload Candidate Spreadsheet</h1>
+        <p className="text-sm text-muted-foreground">
+          Parse CSV/Excel rows, enqueue Gemini processing, and monitor batch progress.
+        </p>
+      </header>
 
-      <div className="space-y-3 bg-white/70 p-4 rounded border">
-        {confirmPrompt.visible && (
-          <div className="rounded border border-red-300 bg-red-50 text-red-800 p-3 text-sm flex items-center justify-between">
-            <span className="font-semibold mr-3">{confirmPrompt.message}</span>
-            <div className="flex gap-2">
-              <button
-                type="button"
-                onClick={confirmNo}
-                className="px-3 py-1 rounded border border-red-300 text-red-800 bg-white hover:bg-red-100"
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                onClick={confirmYes}
-                className="px-3 py-1 rounded bg-red-600 text-white hover:bg-red-700"
-              >
-                Continue
-              </button>
-            </div>
-          </div>
-        )}
-        <div className="flex gap-2 flex-wrap">
-          {mockMode && (
-            <span className="inline-flex items-center gap-2 text-xs font-medium bg-yellow-100 text-yellow-800 px-2 py-1 rounded">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                className="h-3 w-3"
-                viewBox="0 0 20 20"
-                fill="currentColor"
-              >
-                <path
-                  fillRule="evenodd"
-                  d="M8.257 3.099c.765-1.36 2.72-1.36 3.485 0l6.518 11.591c.75 1.335-.213 2.985-1.742 2.985H3.48c-1.53 0-2.492-1.65-1.743-2.985L8.257 3.1zM11 13a1 1 0 10-2 0 1 1 0 002 0zm-1-2a1 1 0 01-1-1V7a1 1 0 112 0v3a1 1 0 01-1 1z"
-                  clipRule="evenodd"
-                />
-              </svg>
-              Gemini mock mode active (no external calls)
-            </span>
-          )}
-          {modelName && (
-            <span className="inline-flex items-center gap-2 text-xs font-medium bg-blue-100 text-blue-800 px-2 py-1 rounded">
-              Model: {modelName}
-            </span>
-          )}
-        </div>
-        <input
-          type="file"
-          accept=".csv,.xlsx,.xls,text/csv,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-          onChange={(e) => {
-            const f = e.target.files?.[0];
-            if (f) handleFile(f);
-          }}
-          className="block w-full text-sm"
-        />
-        {status && <p className="text-green-700 text-sm">{status}</p>}
-        {error && <p className="text-red-700 text-sm">{error}</p>}
-        <div className="flex items-center gap-2 text-xs text-gray-700">
-          <input
-            id="forceHiddenToggle"
-            type="checkbox"
-            className="h-4 w-4"
-            checked={forceHidden}
-            onChange={(e) => setForceHidden(e.target.checked)}
-          />
-          <label htmlFor="forceHiddenToggle" className="select-none">
-            Mark inserted elections and candidates as hidden
+      <section className="space-y-3 rounded border p-4">
+        <div className="flex flex-wrap items-center gap-3">
+          <label className="flex flex-col text-sm font-medium">
+            Upload spreadsheet
+            <input
+              type="file"
+              accept=".csv,.xlsx,.xls"
+              onChange={(event) => {
+                const file = event.target.files?.[0];
+                if (file) handleFile(file);
+              }}
+              className="mt-1"
+            />
           </label>
-        </div>
-        {rowGroups.length > 0 && (
-          <div className="text-xs text-gray-700 bg-gray-50 border rounded p-2">
-            <div className="font-medium mb-1">
-              Found {rowGroups.length} group{rowGroups.length === 1 ? "" : "s"}
-            </div>
-            <ul className="list-disc ml-5 space-y-0.5">
-              {rowGroups.map((g) => (
-                <li key={g.key}>
-                  {(g.municipality || "(unknown)") +
-                    (g.state ? ", " + g.state : "")}
-                  {g.position ? ` – ${g.position}` : ""} — {g.rows.length} rows
-                </li>
-              ))}
-            </ul>
+          <div className="flex items-center gap-2 text-sm">
+            <input
+              id="forceHidden"
+              type="checkbox"
+              checked={forceHidden}
+              onChange={(event) => setForceHidden(event.target.checked)}
+            />
+            <label htmlFor="forceHidden">Force hidden on import</label>
           </div>
-        )}
-        <div className="pt-2 flex flex-col gap-3">
-          <>
-            <div className="flex gap-3 flex-wrap">
-              <button
-                type="button"
-                onClick={goLive}
-                disabled={
-                  !parsedRows.length || goingLive || !emailValidation.ok
-                }
-                className="px-4 py-2 bg-purple-600 text-white rounded hover:bg-purple-700 disabled:opacity-50"
-                title={
-                  !parsedRows.length
-                    ? "Upload a file first"
-                    : !emailValidation.ok
-                    ? "Fix email validation errors before proceeding"
-                    : "Analyze, structure, insert, and export in one flow"
-                }
-              >
-                {goingLive ? "Going Live…" : "Go Live"}
-              </button>
-              {!!parsedRows.length && (
-                <span className="text-xs text-gray-600 self-center">
-                  Rows ready: {parsedRows.length}
-                </span>
-              )}
-              {!emailValidation.ok && (
-                <span className="text-xs text-red-600 self-center">
-                  Email validation failed ({emailValidation.errors.length}){" "}
-                  {emailValidation.errors.join(", ")}
-                </span>
-              )}
-            </div>
-            {(goingLive || goLiveLog.length > 0) && (
-              <div className="mt-3 border rounded p-3 bg-white/60">
-                <div className="flex items-center justify-between mb-2">
-                  <h3 className="text-sm font-semibold text-gray-800">
-                    Go Live Progress
-                  </h3>
-                  <div className="flex gap-2">
-                    <button
-                      type="button"
-                      onClick={() => resetGoLiveProgress()}
-                      className="text-xs text-gray-600 underline"
-                    >
-                      Clear
-                    </button>
-                  </div>
+          <button
+            type="button"
+            disabled={!parsedRows.length || submitting || !isLoaded || !isSignedIn}
+            onClick={handleStartUpload}
+            className="rounded bg-purple-600 px-3 py-2 text-sm font-medium text-white disabled:opacity-50"
+          >
+            {submitting ? "Queuing…" : "Queue Gemini Jobs"}
+          </button>
+        </div>
+        {statusMessage && <p className="text-sm text-muted-foreground">{statusMessage}</p>}
+        {errorMessage && <p className="text-sm text-red-600">{errorMessage}</p>}
+        {pollingError && <p className="text-sm text-amber-600">{pollingError}</p>}
+        <div className="text-xs text-muted-foreground">
+          <p>
+            Gemini mode: {mockMode ? "Mock" : "Live"}
+            {modelName ? ` · Model: ${modelName}` : ""}
+          </p>
+          <p>Rows parsed: {parsedRows.length}</p>
+          <p>Uploader email: {userEmail || "(unknown)"}</p>
+        </div>
+      </section>
+
+      {emailValidation.errors.length > 0 && (
+        <section className="rounded border border-amber-300 bg-amber-50 p-4 text-sm text-amber-900">
+          <h2 className="font-medium">Email validation issues</h2>
+          <ul className="mt-2 list-disc space-y-1 pl-4">
+            {emailValidation.errors.map((item) => (
+              <li key={item}>{item}</li>
+            ))}
+          </ul>
+        </section>
+      )}
+
+      {rowGroups.length > 0 && (
+        <section className="space-y-3 rounded border p-4">
+          <h2 className="font-medium">Detected Groups</h2>
+          <p className="text-sm text-muted-foreground">
+            Rows are grouped by municipality, state, and position before Gemini processing.
+          </p>
+          <div className="space-y-2">
+            {rowGroups.map((group) => (
+              <div key={group.key} className="rounded border p-3">
+                <div className="flex flex-wrap items-center justify-between gap-2 text-sm font-medium">
+                  <span>
+                    {group.municipality || "(unknown city)"}, {group.state || "(state)"}
+                    {group.position ? ` · ${group.position}` : ""}
+                  </span>
+                  <span className="text-muted-foreground">{group.rows.length} row(s)</span>
                 </div>
-                {goLiveSteps.length > 0 && (
-                  <ul className="mb-2">
-                    {goLiveSteps.map((s) => (
-                      <li key={s.key} className="flex items-start gap-2 py-1">
-                        <span
-                          className={
-                            s.status === "completed"
-                              ? "text-green-600"
-                              : s.status === "error"
-                              ? "text-red-600"
-                              : s.status === "in_progress"
-                              ? "text-blue-600"
-                              : "text-gray-500"
-                          }
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {activeUpload && (
+        <section className="space-y-4 rounded border p-4">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div>
+              <h2 className="text-lg font-semibold">Upload Progress</h2>
+              <p className="text-sm text-muted-foreground">Upload ID: {activeUpload.uploadId}</p>
+            </div>
+            <span className="rounded bg-slate-100 px-3 py-1 text-sm font-medium text-slate-700">
+              Status: {activeUpload.status}
+            </span>
+          </div>
+
+          {activeUpload.batches.length > 0 ? (
+            <div className="space-y-3">
+              {activeUpload.batches.map((batch) => (
+                <div key={batch.id} className="space-y-2 rounded border p-3">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <div>
+                      <p className="text-sm font-medium">
+                        {batch.municipality || "(city)"}, {batch.state || "(state)"}
+                        {batch.position ? ` · ${batch.position}` : ""}
+                      </p>
+                      <p className="text-xs text-muted-foreground">Batch ID: {batch.id}</p>
+                    </div>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="rounded bg-purple-50 px-2 py-1 text-xs font-medium text-purple-700">
+                        {batch.status}
+                      </span>
+                      {(["FAILED", "NEEDS_REUPLOAD"].includes(batch.status)) && (
+                        <button
+                          type="button"
+                          className="rounded border border-purple-600 px-2 py-1 text-xs font-medium text-purple-600 hover:bg-purple-600 hover:text-white disabled:opacity-50"
+                          disabled={batchAction === `${batch.id}:retry`}
+                          onClick={() => handleBatchAction(batch.id, "retry")}
                         >
-                          {s.status === "completed"
-                            ? "✓"
-                            : s.status === "error"
-                            ? "✕"
-                            : s.status === "in_progress"
-                            ? "…"
-                            : "•"}
-                        </span>
-                        <div>
-                          <div className="text-sm text-gray-900">{s.label}</div>
-                          {s.detail && (
-                            <div className="text-xs text-gray-600 break-all">
-                              {s.detail}
-                            </div>
-                          )}
+                          {batchAction === `${batch.id}:retry` ? "Requeuing…" : "Retry"}
+                        </button>
+                      )}
+                      {batch.status !== "COMPLETED" && batch.status !== "NEEDS_REUPLOAD" && (
+                        <button
+                          type="button"
+                          className="rounded border border-amber-600 px-2 py-1 text-xs font-medium text-amber-600 hover:bg-amber-600 hover:text-white disabled:opacity-50"
+                          disabled={batchAction === `${batch.id}:skip`}
+                          onClick={() => handleBatchAction(batch.id, "skip")}
+                        >
+                          {batchAction === `${batch.id}:skip` ? "Marking…" : "Mark for Re-upload"}
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                  {batch.errorReason && (
+                    <p className="text-xs text-red-600">{batch.errorReason}</p>
+                  )}
+                  <div className="space-y-2">
+                    {batch.jobs.map((job) => (
+                      <div key={job.id} className="rounded border border-slate-200 bg-slate-50 p-2">
+                        <div className="flex flex-wrap items-center justify-between gap-2 text-xs">
+                          <span className="font-medium">{job.type}</span>
+                          <span>{job.status}</span>
                         </div>
-                      </li>
-                    ))}
-                  </ul>
-                )}
-                {goLiveLog.length > 0 && (
-                  <div className="max-h-40 overflow-auto border-t pt-2">
-                    {goLiveLog.map((l, i) => (
-                      <div key={i} className="text-xs mb-1">
-                        <span className="text-gray-500 mr-2">
-                          {new Date(l.ts).toLocaleTimeString()}
-                        </span>
-                        <span
-                          className={
-                            l.level === "error"
-                              ? "text-red-700"
-                              : l.level === "success"
-                              ? "text-green-700"
-                              : "text-gray-800"
-                          }
-                        >
-                          {l.message}
-                        </span>
+                        {job.lastError && (
+                          <p className="mt-1 text-xs text-red-600">{job.lastError}</p>
+                        )}
+                        {job.attempts[0] && (
+                          <p className="mt-1 text-xs text-muted-foreground">
+                            Model: {job.attempts[0].modelUsed}
+                            {job.attempts[0].isFallback ? " (fallback)" : ""}
+                          </p>
+                        )}
                       </div>
                     ))}
                   </div>
-                )}
-              </div>
-            )}
-          </>
-        </div>
-        {geminiOutput && (
-          <div className="mt-4">
-            <button
-              type="button"
-              onClick={() => setShowGeminiOutput((v) => !v)}
-              className="text-sm font-medium mb-1 underline text-purple-700"
-            >
-              {showGeminiOutput ? "Hide Gemini Output" : "Show Gemini Output"}
-            </button>
-            {showGeminiOutput && (
-              <textarea
-                readOnly
-                className="w-full h-64 rounded border px-3 py-2 font-mono text-xs"
-                value={geminiOutput}
-              />
-            )}
-          </div>
-        )}
-        {structuredOutput && (
-          <div className="mt-4">
-            <button
-              type="button"
-              onClick={() => setShowStructuredOutput((v) => !v)}
-              className="text-sm font-medium mb-1 underline text-purple-700"
-            >
-              {showStructuredOutput
-                ? "Hide Structured Output"
-                : "Show Structured Output"}
-            </button>
-            {showStructuredOutput && (
-              <textarea
-                readOnly
-                className="w-full h-80 rounded border px-3 py-2 font-mono text-xs"
-                value={structuredOutput}
-              />
-            )}
-          </div>
-        )}
-        {insertResult && (
-          <div className="mt-4">
-            <button
-              type="button"
-              onClick={() => setShowInsertResult((v) => !v)}
-              className="text-sm font-medium mb-1 underline text-purple-700"
-            >
-              {showInsertResult ? "Hide Insert Result" : "Show Insert Result"}
-            </button>
-            {showInsertResult && (
-              <textarea
-                readOnly
-                className="w-full h-80 rounded border px-3 py-2 font-mono text-xs"
-                value={insertResult}
-              />
-            )}
-          </div>
-        )}
-      </div>
-    </main>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-sm text-muted-foreground">Batches pending load…</p>
+          )}
+
+          {activeUpload.summary && (
+            <div className="rounded border bg-slate-50 p-3 text-xs">
+              <p className="font-medium">Summary</p>
+              <pre className="mt-2 whitespace-pre-wrap">
+                {JSON.stringify(activeUpload.summary, null, 2)}
+              </pre>
+            </div>
+          )}
+        </section>
+      )}
+    </div>
   );
+}
+
+function mapHeaders<T extends Record<string, unknown>>(obj: T): Row {
+  const mapped: Row = {
+    municipality: "",
+    state: "",
+    firstName: "",
+    lastName: "",
+    position: "",
+    year: "",
+    email: "",
+    name: "",
+    districtType: "",
+    district: "",
+    raceLabel: "",
+    termType: "",
+    termLength: "",
+    mailingAddress: "",
+    phone: "",
+    filingDate: "",
+    partyPreference: "",
+    status: "",
+  };
+  const asStr = (v: unknown): string =>
+    typeof v === "string" ? v : typeof v === "number" ? String(v) : "";
+  for (const key of Object.keys(obj)) {
+    const norm = normalizeHeader(key);
+    const val = (obj as Record<string, unknown>)[key];
+    switch (norm) {
+      case "municipality":
+        mapped.municipality = asStr(val);
+        break;
+      case "state":
+        mapped.state = asStr(val);
+        break;
+      case "firstName":
+      case "firstname":
+      case "first":
+        mapped.firstName = asStr(val);
+        break;
+      case "lastName":
+      case "lastname":
+      case "last":
+        mapped.lastName = asStr(val);
+        break;
+      case "position":
+        mapped.position = asStr(val);
+        break;
+      case "positiontitle":
+      case "office":
+      case "seat":
+      case "contest":
+      case "role":
+        if (!mapped.position) {
+          mapped.position = asStr(val);
+        }
+        break;
+      case "race":
+      case "racename":
+      case "racetitle":
+        if (!mapped.position) {
+          mapped.position = asStr(val);
+        }
+        mapped.raceLabel = asStr(val);
+        break;
+      case "year":
+        if (typeof val === "number" || typeof val === "string")
+          mapped.year = String(val);
+        break;
+      case "email":
+      case "Email":
+        mapped.email = asStr(val);
+        break;
+      case "name":
+        mapped.name = asStr(val);
+        const parts = mapped.name.split(" ");
+        if (!mapped.firstName) mapped.firstName = parts[0] || "";
+        if (!mapped.lastName)
+          mapped.lastName = parts.slice(1).join(" ");
+        break;
+      case "district":
+        mapped.district = asStr(val);
+        break;
+      case "districttype":
+        mapped.districtType = asStr(val);
+        break;
+      case "term":
+      case "termtype":
+        mapped.termType = asStr(val);
+        break;
+      case "termlength":
+        mapped.termLength = asStr(val);
+        break;
+      case "mailingaddress":
+        mapped.mailingAddress = asStr(val);
+        break;
+      case "phone":
+        mapped.phone = asStr(val);
+        break;
+      case "filingdate":
+        mapped.filingDate = asStr(val);
+        break;
+      case "party":
+      case "partypreference":
+        mapped.partyPreference = asStr(val);
+        break;
+      case "status":
+        mapped.status = asStr(val);
+        break;
+      default:
+        break;
+    }
+  }
+  return mapped;
+}
+
+function hasRequiredHeaders(sample: Row): boolean {
+  return REQUIRED_HEADERS.every((h) => sample[h as keyof Row] !== undefined);
 }

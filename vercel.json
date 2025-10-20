@@ -3,5 +3,11 @@
     "app/(api)/api/**/route.{js,ts}": {
       "maxDuration": 60
     }
-  }
+  },
+  "crons": [
+    {
+      "path": "/api/cron/gemini-dispatch",
+      "schedule": "*/1 * * * *"
+    }
+  ]
 }
