@@ -606,10 +606,16 @@ export default function UploadSpreadsheetClient() {
     const last = lastLookupParamsRef.current;
     const needsLookup =
       filenameParam !== last.filename || uploaderParam !== last.uploader;
-    if (filenameParam !== lookupFilename) {
+    if (
+      filenameParam !== lookupFilename &&
+      filenameParam !== lastLookupParamsRef.current.filename
+    ) {
       setLookupFilename(filenameParam);
     }
-    if (uploaderParam !== lookupUploader) {
+    if (
+      uploaderParam !== lookupUploader &&
+      uploaderParam !== lastLookupParamsRef.current.uploader
+    ) {
       setLookupUploader(uploaderParam);
     }
     if (needsLookup) {
