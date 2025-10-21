@@ -8,6 +8,11 @@ import {
   executeGeminiBatch,
   type GeminiBatchRequest,
 } from "@/lib/gemini-batch";
+import {
+  getAnalyzePrompt,
+  getStructurePrompt,
+  getStructureResponseSchema,
+} from "@/lib/gemini/prompts";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -100,22 +105,25 @@ export async function POST(req: NextRequest) {
       rows: limitRows(group.rows, rowLimit, isProd ? 30 : 100),
     }));
 
-    const analyzePromptPath = promptPathAnalyze
-      ? path.resolve(process.cwd(), promptPathAnalyze)
-      : path.resolve(process.cwd(), "election-source/gemini-prompt1.txt");
-    const structurePromptPath = promptPathStructure
-      ? path.resolve(process.cwd(), promptPathStructure)
-      : path.resolve(process.cwd(), "election-source/gemini-prompt2.txt");
-    const schemaFilePath = schemaPath
-      ? path.resolve(process.cwd(), schemaPath)
-      : path.resolve(process.cwd(), "election-source/structured-output.json");
-
-    const [analyzePrompt, structurePrompt, schemaRaw] = await Promise.all([
-      fs.readFile(analyzePromptPath, "utf8"),
-      fs.readFile(structurePromptPath, "utf8"),
-      fs.readFile(schemaFilePath, "utf8"),
-    ]);
-    const responseSchema = convertSchema(JSON.parse(schemaRaw));
+    const [analyzePrompt, structurePrompt, responseSchema] =
+      await Promise.all([
+        promptPathAnalyze
+          ? fs.readFile(path.resolve(process.cwd(), promptPathAnalyze), "utf8")
+          : getAnalyzePrompt(),
+        promptPathStructure
+          ? fs.readFile(path.resolve(process.cwd(), promptPathStructure), "utf8")
+          : getStructurePrompt(),
+        (async () => {
+          if (schemaPath) {
+            const raw = await fs.readFile(
+              path.resolve(process.cwd(), schemaPath),
+              "utf8"
+            );
+            return convertSchema(JSON.parse(raw));
+          }
+          return await getStructureResponseSchema();
+        })(),
+      ]);
 
     if (!geminiEnabled) {
       const mockGroups = limitedGroups.map((group, index) =>

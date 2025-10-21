@@ -2,16 +2,16 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   outputFileTracingIncludes: {
-    "/app/(api)/api/cron/gemini-dispatch/route": ["./election-source/**/*"],
-    "/app/(api)/api/gemini/analyze/route": ["./election-source/**/*"],
-    "/app/(api)/api/gemini/batch/route": ["./election-source/**/*"],
-    "/app/(api)/api/gemini/structure/route": ["./election-source/**/*"],
-    "/app/(api)/api/gemini/uploads/route": ["./election-source/**/*"],
-    "app/(api)/api/cron/gemini-dispatch/route": ["./election-source/**/*"],
-    "app/(api)/api/gemini/analyze/route": ["./election-source/**/*"],
-    "app/(api)/api/gemini/batch/route": ["./election-source/**/*"],
-    "app/(api)/api/gemini/structure/route": ["./election-source/**/*"],
-    "app/(api)/api/gemini/uploads/route": ["./election-source/**/*"],
+    "/app/(api)/api/cron/gemini-dispatch/route": ["./lib/gemini/defaults/**/*"],
+    "/app/(api)/api/gemini/analyze/route": ["./lib/gemini/defaults/**/*"],
+    "/app/(api)/api/gemini/batch/route": ["./lib/gemini/defaults/**/*"],
+    "/app/(api)/api/gemini/structure/route": ["./lib/gemini/defaults/**/*"],
+    "/app/(api)/api/gemini/uploads/route": ["./lib/gemini/defaults/**/*"],
+    "app/(api)/api/cron/gemini-dispatch/route": ["./lib/gemini/defaults/**/*"],
+    "app/(api)/api/gemini/analyze/route": ["./lib/gemini/defaults/**/*"],
+    "app/(api)/api/gemini/batch/route": ["./lib/gemini/defaults/**/*"],
+    "app/(api)/api/gemini/structure/route": ["./lib/gemini/defaults/**/*"],
+    "app/(api)/api/gemini/uploads/route": ["./lib/gemini/defaults/**/*"],
   },
   images: {
     remotePatterns: [
