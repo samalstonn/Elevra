@@ -6,8 +6,11 @@ let analyzePromptCache: string | null = null;
 let structurePromptCache: string | null = null;
 let structureSchemaCache: unknown | null = null;
 
-function resolveFromRoot(relativePath: string) {
-  return path.resolve(process.cwd(), relativePath);
+function resolveResource(relativePath: string): string | URL {
+  if (path.isAbsolute(relativePath)) {
+    return relativePath;
+  }
+  return new URL(`../../${relativePath}`, import.meta.url);
 }
 
 function getAnalyzePromptPath() {
@@ -33,21 +36,21 @@ function getStructureSchemaPath() {
 
 export async function getAnalyzePrompt(): Promise<string> {
   if (analyzePromptCache) return analyzePromptCache;
-  const filePath = resolveFromRoot(getAnalyzePromptPath());
+  const filePath = resolveResource(getAnalyzePromptPath());
   analyzePromptCache = await fs.readFile(filePath, "utf8");
   return analyzePromptCache;
 }
 
 export async function getStructurePrompt(): Promise<string> {
   if (structurePromptCache) return structurePromptCache;
-  const filePath = resolveFromRoot(getStructurePromptPath());
+  const filePath = resolveResource(getStructurePromptPath());
   structurePromptCache = await fs.readFile(filePath, "utf8");
   return structurePromptCache;
 }
 
 export async function getStructureResponseSchema(): Promise<unknown> {
   if (structureSchemaCache) return structureSchemaCache;
-  const filePath = resolveFromRoot(getStructureSchemaPath());
+  const filePath = resolveResource(getStructureSchemaPath());
   const raw = await fs.readFile(filePath, "utf8");
   const parsed = JSON.parse(raw);
   structureSchemaCache = convertSchema(parsed);
