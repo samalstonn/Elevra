@@ -4,7 +4,7 @@ import { runGeminiDispatcher } from "@/lib/gemini/dispatcher";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-export async function POST(req: NextRequest) {
+export async function GET(req: NextRequest) {
   const secret = process.env.GEMINI_CRON_SECRET;
   if (secret) {
     const header = req.headers.get("x-cron-secret");
