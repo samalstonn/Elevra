@@ -259,7 +259,7 @@ function addMinutes(date: Date, minutes: number): Date {
 
 function isConcurrencyConflict(error: unknown): boolean {
   if (error instanceof Prisma.PrismaClientKnownRequestError) {
-    return error.code === "P2034" || error.code === "P2037";
+    return error.code === "P2002" || error.code === "P2034" || error.code === "P2037";
   }
   return false;
 }
