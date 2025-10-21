@@ -4,13 +4,22 @@ import { runGeminiDispatcher } from "@/lib/gemini/dispatcher";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-export async function GET(req: NextRequest) {
+function authorize(req: NextRequest): boolean {
   const secret = process.env.GEMINI_CRON_SECRET;
-  if (secret) {
-    const header = req.headers.get("x-cron-secret");
-    if (!header || header !== secret) {
-      return new Response("Unauthorized", { status: 401 });
-    }
+  if (!secret) return true;
+
+  const candidate =
+    req.headers.get("x-cron-secret") ?? req.headers.get("authorization");
+  if (!candidate) return false;
+  if (candidate.startsWith("Bearer ")) {
+    return candidate.slice(7) === secret;
+  }
+  return candidate === secret;
+}
+
+export async function GET(req: NextRequest) {
+  if (!authorize(req)) {
+    return new Response("Unauthorized", { status: 401 });
   }
 
   const body = await req.json().catch(() => ({}));
