@@ -43,6 +43,7 @@ export type DispatcherRunStats = {
   skipped: number;
   rateLimited: number;
   staleResets: number;
+  errors?: Array<{ jobId: string; message: string }>;
 };
 
 export async function runGeminiDispatcher(
@@ -58,6 +59,7 @@ export async function runGeminiDispatcher(
     skipped: 0,
     rateLimited: 0,
     staleResets: 0,
+    errors: [],
   };
 
   stats.staleResets = await resetStaleJobs();
@@ -117,6 +119,9 @@ export async function runGeminiDispatcher(
           retryable,
           message,
         });
+        if (stats.errors && stats.errors.length < 10) {
+          stats.errors.push({ jobId: job.id, message });
+        }
         if (attemptId) {
           await recordJobFailure({
             jobId: job.id,

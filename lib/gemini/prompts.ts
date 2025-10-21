@@ -1,5 +1,6 @@
 import { promises as fs } from "node:fs";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 import { convertSchema } from "@/lib/gemini-batch";
 
 let analyzePromptCache: string | null = null;
@@ -8,14 +9,14 @@ let structureSchemaCache: unknown | null = null;
 
 type ResourceTarget = string | URL;
 
-function resolveResource(target: ResourceTarget): string | URL {
+function resolveResource(target: ResourceTarget): string {
   if (typeof target === "string") {
     if (path.isAbsolute(target)) {
       return target;
     }
     return path.resolve(process.cwd(), target);
   }
-  return target;
+  return fileURLToPath(target);
 }
 
 function getAnalyzePromptTarget(): ResourceTarget {
