@@ -7,7 +7,7 @@
   "crons": [
     {
       "path": "/api/cron/gemini-dispatch",
-      "schedule": "*/1 * * * *"
+      "schedule": "*/5 * * * *"
     }
   ]
 }

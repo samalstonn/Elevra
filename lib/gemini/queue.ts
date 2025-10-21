@@ -269,6 +269,19 @@ export async function listDispatchableJobs(limit: number, now = new Date()) {
   });
 }
 
+export async function hasDispatchableJobs(now = new Date()): Promise<boolean> {
+  const job = await prisma.geminiJob.findFirst({
+    where: {
+      status: GeminiJobStatus.READY,
+      nextRunAt: {
+        lte: now,
+      },
+    },
+    select: { id: true },
+  });
+  return Boolean(job);
+}
+
 export async function markJobAsInProgress(
   jobId: string,
   { modelUsed, isFallback = false, rateWindowStart }: JobStartOptions

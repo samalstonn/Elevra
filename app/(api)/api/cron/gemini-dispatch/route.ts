@@ -1,5 +1,6 @@
 import { NextRequest } from "next/server";
 import { runGeminiDispatcher } from "@/lib/gemini/dispatcher";
+import { hasDispatchableJobs } from "@/lib/gemini/queue";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -20,6 +21,28 @@ function authorize(req: NextRequest): boolean {
 async function handle(req: NextRequest) {
   if (!authorize(req)) {
     return new Response("Unauthorized", { status: 401 });
+  }
+
+  const url = new URL(req.url);
+  const force = url.searchParams.get("force") === "1";
+
+  if (!force && !(await hasDispatchableJobs())) {
+    console.info("[cron] gemini-dispatch skip (queue empty)", {
+      method: req.method,
+    });
+    return Response.json({
+      ok: true,
+      skipped: true,
+      reason: "queue-empty",
+      stats: {
+        attempted: 0,
+        succeeded: 0,
+        failed: 0,
+        skipped: 0,
+        rateLimited: 0,
+        staleResets: 0,
+      },
+    });
   }
 
   const body = await req.json().catch(() => ({}));
