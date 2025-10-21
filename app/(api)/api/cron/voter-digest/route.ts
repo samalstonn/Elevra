@@ -3,9 +3,28 @@ import prisma from "@/prisma/prisma";
 import { enqueueDailyDigestEmail } from "@/lib/email/voterQueue";
 
 function authorize(request: Request) {
-  const token = process.env.CRON_SECRET;
-  if (!token) return true;
-  return request.headers.get("x-cron-secret") === token;
+  const secrets = [
+    process.env.CRON_SECRET,
+    process.env.VERCEL_CRON_SECRET,
+  ].filter(Boolean) as string[];
+  if (secrets.length === 0) return true;
+
+  const candidates: string[] = [];
+  const cronHeader = request.headers.get("x-cron-secret");
+  if (cronHeader) {
+    candidates.push(cronHeader.trim());
+  }
+  const authHeader = request.headers.get("authorization");
+  if (authHeader) {
+    const trimmed = authHeader.trim();
+    candidates.push(trimmed);
+    if (/^bearer\s+/i.test(trimmed)) {
+      candidates.push(trimmed.replace(/^bearer\s+/i, "").trim());
+    }
+  }
+  if (candidates.length === 0) return false;
+
+  return secrets.some((secret) => candidates.includes(secret));
 }
 
 export async function POST(request: Request) {

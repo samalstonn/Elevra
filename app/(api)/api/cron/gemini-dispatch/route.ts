@@ -6,16 +6,29 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 function authorize(req: NextRequest): boolean {
-  const secret = process.env.GEMINI_CRON_SECRET;
-  if (!secret) return true;
+  const secrets = [
+    process.env.GEMINI_CRON_SECRET,
+    process.env.CRON_SECRET,
+    process.env.VERCEL_CRON_SECRET,
+  ].filter(Boolean) as string[];
+  if (secrets.length === 0) return true;
 
-  const candidate =
-    req.headers.get("x-cron-secret") ?? req.headers.get("authorization");
-  if (!candidate) return false;
-  if (candidate.startsWith("Bearer ")) {
-    return candidate.slice(7) === secret;
+  const candidates: string[] = [];
+  const cronHeader = req.headers.get("x-cron-secret");
+  if (cronHeader) {
+    candidates.push(cronHeader.trim());
   }
-  return candidate === secret;
+  const authHeader = req.headers.get("authorization");
+  if (authHeader) {
+    const trimmed = authHeader.trim();
+    candidates.push(trimmed);
+    if (/^bearer\s+/i.test(trimmed)) {
+      candidates.push(trimmed.replace(/^bearer\s+/i, "").trim());
+    }
+  }
+  if (candidates.length === 0) return false;
+
+  return secrets.some((secret) => candidates.includes(secret));
 }
 
 async function handle(req: NextRequest) {
