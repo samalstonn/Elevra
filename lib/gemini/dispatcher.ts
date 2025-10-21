@@ -110,6 +110,13 @@ export async function runGeminiDispatcher(
         const retryable = isRetryableError(err);
         const message = normalizeErrorMessage(err);
         stats.failed += 1;
+        console.error("[gemini-dispatch] job failure", {
+          jobId: job.id,
+          type: job.type,
+          model: candidate.name,
+          retryable,
+          message,
+        });
         if (attemptId) {
           await recordJobFailure({
             jobId: job.id,

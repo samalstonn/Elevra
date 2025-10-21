@@ -2,11 +2,16 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   outputFileTracingIncludes: {
-    "/api/cron/gemini-dispatch": ["./election-source/**/*"],
-    "/api/gemini/analyze": ["./election-source/**/*"],
-    "/api/gemini/batch": ["./election-source/**/*"],
-    "/api/gemini/structure": ["./election-source/**/*"],
-    "/api/gemini/uploads": ["./election-source/**/*"],
+    "/app/(api)/api/cron/gemini-dispatch/route": ["./election-source/**/*"],
+    "/app/(api)/api/gemini/analyze/route": ["./election-source/**/*"],
+    "/app/(api)/api/gemini/batch/route": ["./election-source/**/*"],
+    "/app/(api)/api/gemini/structure/route": ["./election-source/**/*"],
+    "/app/(api)/api/gemini/uploads/route": ["./election-source/**/*"],
+    "app/(api)/api/cron/gemini-dispatch/route": ["./election-source/**/*"],
+    "app/(api)/api/gemini/analyze/route": ["./election-source/**/*"],
+    "app/(api)/api/gemini/batch/route": ["./election-source/**/*"],
+    "app/(api)/api/gemini/structure/route": ["./election-source/**/*"],
+    "app/(api)/api/gemini/uploads/route": ["./election-source/**/*"],
   },
   images: {
     remotePatterns: [
