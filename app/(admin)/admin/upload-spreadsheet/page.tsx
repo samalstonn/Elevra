@@ -5,6 +5,15 @@ import { usePageTitle } from "@/lib/usePageTitle";
 import type { Row } from "@/election-source/build-spreadsheet";
 import { normalizeHeader, validateEmails } from "@/election-source/helpers";
 import { useUser } from "@clerk/nextjs";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 const REQUIRED_HEADERS = [
   "municipality",
@@ -89,6 +98,14 @@ export default function UploadSpreadsheetPage() {
   const [submitting, setSubmitting] = useState(false);
   const [activeUpload, setActiveUpload] = useState<UploadStatusView | null>(null);
   const [pollingError, setPollingError] = useState("");
+  const [duplicateDialogOpen, setDuplicateDialogOpen] = useState(false);
+  const [duplicateSummary, setDuplicateSummary] = useState<
+    Array<{ email: string; count: number }>
+  >([]);
+  const [pendingDuplicateRows, setPendingDuplicateRows] = useState<{
+    rows: Row[];
+    fileName: string;
+  } | null>(null);
   const pollTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
@@ -352,6 +369,96 @@ export default function UploadSpreadsheetPage() {
     [activeUpload]
   );
 
+  const finalizeRows = useCallback(
+    (rows: Row[], fileName: string, removedDuplicates = 0) => {
+      const emailCheck = validateEmails(rows);
+      setEmailValidation(emailCheck);
+      if (!emailCheck.ok) {
+        setErrorMessage(
+          `Email validation failed: ${emailCheck.errors.length} issue(s) found.`
+        );
+      }
+
+      const removalFragment =
+        removedDuplicates > 0
+          ? ` (removed ${removedDuplicates} duplicate email occurrence${
+              removedDuplicates === 1 ? "" : "s"
+            })`
+          : "";
+      console.log(`[Upload Preview] ${fileName}: ${rows.length} row(s)${removalFragment}`);
+      setStatusMessage(
+        `Parsed ${rows.length} rows${
+          removedDuplicates > 0
+            ? ` after removing ${removedDuplicates} duplicate email occurrence${
+                removedDuplicates === 1 ? "" : "s"
+              }`
+            : ""
+        }. Check console for preview.`
+      );
+      setParsedRows(rows);
+    },
+    []
+  );
+
+  const detectDuplicateEmails = useCallback((rows: Row[]) => {
+    const counts = new Map<string, { count: number; display: string }>();
+    rows.forEach((row) => {
+      const raw = (row.email || "").trim();
+      if (!raw) return;
+      const key = raw.toLowerCase();
+      const entry = counts.get(key);
+      if (entry) {
+        entry.count += 1;
+      } else {
+        counts.set(key, { count: 1, display: raw });
+      }
+    });
+    return Array.from(counts.values())
+      .filter((item) => item.count > 1)
+      .map((item) => ({
+        email: item.display,
+        count: item.count,
+      }))
+      .sort((a, b) => b.count - a.count || a.email.localeCompare(b.email));
+  }, []);
+
+  const dedupeRows = useCallback((rows: Row[]) => {
+    const seen = new Set<string>();
+    return rows.filter((row) => {
+      const email = (row.email || "").trim().toLowerCase();
+      if (!email) return true;
+      if (seen.has(email)) {
+        return false;
+      }
+      seen.add(email);
+      return true;
+    });
+  }, []);
+
+  const handleConfirmDuplicateRemoval = useCallback(() => {
+    if (!pendingDuplicateRows) return;
+    const { rows, fileName } = pendingDuplicateRows;
+    const deduped = dedupeRows(rows);
+    const removed = rows.length - deduped.length;
+    setPendingDuplicateRows(null);
+    setDuplicateSummary([]);
+    setDuplicateDialogOpen(false);
+    setErrorMessage("");
+    finalizeRows(deduped, fileName, removed);
+  }, [dedupeRows, finalizeRows, pendingDuplicateRows]);
+
+  const handleCancelDuplicateRemoval = useCallback(() => {
+    setDuplicateDialogOpen(false);
+    setPendingDuplicateRows(null);
+    setDuplicateSummary([]);
+    setParsedRows([]);
+    setEmailValidation({ ok: true, errors: [] });
+    setStatusMessage("");
+    setErrorMessage(
+      "Duplicate emails detected. Upload cancelled. Please review the spreadsheet before retrying."
+    );
+  }, []);
+
   const processRows = useCallback(
     async (rows: Array<Record<string, unknown>>, fileName: string) => {
       const mapped = rows.map(mapHeaders).filter((r) => Object.keys(r).length);
@@ -360,25 +467,32 @@ export default function UploadSpreadsheetPage() {
         setStatusMessage("");
         return;
       }
+      setDuplicateDialogOpen(false);
+      setDuplicateSummary([]);
+      setPendingDuplicateRows(null);
       if (!hasRequiredHeaders(mapped[0])) {
         setErrorMessage(
           "Missing required headers. Expected: municipality, state, firstName, lastName, position (or race/office), year, email"
         );
       }
 
-      const emailCheck = validateEmails(mapped);
-      setEmailValidation(emailCheck);
-      if (!emailCheck.ok) {
+      const duplicates = detectDuplicateEmails(mapped);
+      if (duplicates.length > 0) {
+        setDuplicateSummary(duplicates);
+        setPendingDuplicateRows({ rows: mapped, fileName });
+        setDuplicateDialogOpen(true);
+        setStatusMessage("");
+        setParsedRows([]);
+        setEmailValidation({ ok: true, errors: [] });
         setErrorMessage(
-          `Email validation failed: ${emailCheck.errors.length} issue(s) found.`
+          "Duplicate email addresses found. Review the list below and confirm removal to continue."
         );
+        return;
       }
 
-      console.log(`[Upload Preview] ${fileName}: ${mapped.length} rows`);
-      setStatusMessage(`Parsed ${mapped.length} rows. Check console for preview.`);
-      setParsedRows(mapped);
+      finalizeRows(mapped, fileName);
     },
-    []
+    [detectDuplicateEmails, finalizeRows]
   );
 
   const handleFile = useCallback(
@@ -386,6 +500,9 @@ export default function UploadSpreadsheetPage() {
       setErrorMessage("");
       setStatusMessage("Parsing file…");
       setActiveUpload(null);
+      setDuplicateDialogOpen(false);
+      setDuplicateSummary([]);
+      setPendingDuplicateRows(null);
       if (pollTimerRef.current) {
         clearInterval(pollTimerRef.current);
         pollTimerRef.current = null;
@@ -665,6 +782,42 @@ export default function UploadSpreadsheetPage() {
           )}
         </section>
       )}
+
+      <Dialog open={duplicateDialogOpen} onOpenChange={setDuplicateDialogOpen}>
+        <DialogContent
+          className="sm:max-w-lg"
+          onInteractOutside={(event) => event.preventDefault()}
+          onEscapeKeyDown={(event) => event.preventDefault()}
+        >
+          <DialogHeader>
+            <DialogTitle>Duplicate emails detected</DialogTitle>
+            <DialogDescription>
+              We found candidate email addresses that appear multiple times. We will keep the
+              first occurrence of each address and remove the rest before continuing.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="max-h-64 overflow-y-auto rounded border bg-muted/40 p-3 text-sm">
+            <ul className="space-y-2">
+              {duplicateSummary.map((item) => (
+                <li key={item.email} className="flex items-center justify-between">
+                  <span className="font-medium">{item.email}</span>
+                  <span className="text-muted-foreground">
+                    {item.count} occurrence{item.count === 1 ? "" : "s"}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </div>
+          <DialogFooter className="flex flex-col gap-2 sm:flex-row sm:justify-end">
+            <Button variant="outline" onClick={handleCancelDuplicateRemoval}>
+              Cancel upload
+            </Button>
+            <Button onClick={handleConfirmDuplicateRemoval}>
+              Remove duplicates &amp; continue
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
