@@ -17,16 +17,39 @@ function authorize(req: NextRequest): boolean {
   return candidate === secret;
 }
 
-export async function GET(req: NextRequest) {
+async function handle(req: NextRequest) {
   if (!authorize(req)) {
     return new Response("Unauthorized", { status: 401 });
   }
 
   const body = await req.json().catch(() => ({}));
   const stats = await runGeminiDispatcher({
-    maxJobs: Number(body?.maxJobs) || undefined,
-    timeBudgetMs: Number(body?.timeBudgetMs) || undefined,
+    maxJobs:
+      typeof body?.maxJobs === "number"
+        ? body.maxJobs
+        : typeof body?.maxJobs === "string"
+        ? Number.parseInt(body.maxJobs, 10)
+        : undefined,
+    timeBudgetMs:
+      typeof body?.timeBudgetMs === "number"
+        ? body.timeBudgetMs
+        : typeof body?.timeBudgetMs === "string"
+        ? Number.parseInt(body.timeBudgetMs, 10)
+        : undefined,
+  });
+
+  console.info("[cron] gemini-dispatch run", {
+    method: req.method,
+    stats,
   });
 
   return Response.json({ ok: true, stats });
+}
+
+export async function GET(req: NextRequest) {
+  return handle(req);
+}
+
+export async function POST(req: NextRequest) {
+  return handle(req);
 }
