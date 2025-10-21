@@ -7,37 +7,41 @@ let analyzePromptCache: string | null = null;
 let structurePromptCache: string | null = null;
 let structureSchemaCache: unknown | null = null;
 
-type ResourceTarget = string | URL;
+type ResourceTarget = string;
+
+function defaultsPath(file: string): string {
+  return path.join(process.cwd(), "lib/gemini/defaults", file);
+}
 
 function resolveResource(target: ResourceTarget): string {
-  if (typeof target === "string") {
-    if (path.isAbsolute(target)) {
-      return target;
-    }
-    return path.resolve(process.cwd(), target);
+  if (target.startsWith("file://")) {
+    return fileURLToPath(target);
   }
-  return fileURLToPath(target.toString());
+  if (path.isAbsolute(target)) {
+    return target;
+  }
+  return path.resolve(process.cwd(), target);
 }
 
 function getAnalyzePromptTarget(): ResourceTarget {
   if (process.env.GEMINI_PROMPT_ANALYZE_PATH) {
     return process.env.GEMINI_PROMPT_ANALYZE_PATH;
   }
-  return new URL("./defaults/gemini-prompt1.txt", import.meta.url);
+  return defaultsPath("gemini-prompt1.txt");
 }
 
 function getStructurePromptTarget(): ResourceTarget {
   if (process.env.GEMINI_PROMPT_STRUCTURE_PATH) {
     return process.env.GEMINI_PROMPT_STRUCTURE_PATH;
   }
-  return new URL("./defaults/gemini-prompt2.txt", import.meta.url);
+  return defaultsPath("gemini-prompt2.txt");
 }
 
 function getStructureSchemaTarget(): ResourceTarget {
   if (process.env.GEMINI_STRUCTURE_SCHEMA_PATH) {
     return process.env.GEMINI_STRUCTURE_SCHEMA_PATH;
   }
-  return new URL("./defaults/structured-output.json", import.meta.url);
+  return defaultsPath("structured-output.json");
 }
 
 export async function getAnalyzePrompt(): Promise<string> {
