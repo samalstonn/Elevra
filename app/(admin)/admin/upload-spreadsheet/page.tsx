@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { FormEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { usePageTitle } from "@/lib/usePageTitle";
 import type { Row } from "@/election-source/build-spreadsheet";
 import { normalizeHeader, validateEmails } from "@/election-source/helpers";
@@ -81,6 +82,16 @@ type UploadStatusView = {
   jobs: UploadJobSummary[];
 };
 
+type UploadLookupItem = {
+  id: string;
+  originalFilename: string;
+  uploaderEmail: string;
+  status: string;
+  queuedAt: string;
+  createdAt: string;
+  completedAt?: string | null;
+};
+
 export default function UploadSpreadsheetPage() {
   usePageTitle("Admin – Upload Spreadsheet");
   const [statusMessage, setStatusMessage] = useState("");
@@ -106,6 +117,44 @@ export default function UploadSpreadsheetPage() {
     rows: Row[];
     fileName: string;
   } | null>(null);
+  const [lookupFilename, setLookupFilename] = useState("");
+  const [lookupUploader, setLookupUploader] = useState("");
+  const [lookupResults, setLookupResults] = useState<UploadLookupItem[]>([]);
+  const [lookupLoading, setLookupLoading] = useState(false);
+  const [lookupError, setLookupError] = useState("");
+  const [lookupFetched, setLookupFetched] = useState(false);
+
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const searchParamsString = searchParams?.toString() ?? "";
+  const lastLoadedUploadIdRef = useRef<string | null>(null);
+  const lastLookupParamsRef = useRef<{ filename: string; uploader: string }>({
+    filename: "",
+    uploader: "",
+  });
+
+  const updateQueryParams = useCallback(
+    (updates: Record<string, string | null | undefined>) => {
+      const params = new URLSearchParams(searchParamsString);
+      let changed = false;
+      Object.entries(updates).forEach(([key, value]) => {
+        const trimmed = typeof value === "string" ? value.trim() : value ?? undefined;
+        if (trimmed && trimmed.length > 0) {
+          if (params.get(key) !== trimmed) {
+            params.set(key, trimmed);
+            changed = true;
+          }
+        } else if (params.has(key)) {
+          params.delete(key);
+          changed = true;
+        }
+      });
+      if (!changed) return;
+      const query = params.toString();
+      router.replace(query ? `?${query}` : "?", { scroll: false });
+    },
+    [router, searchParamsString]
+  );
   const pollTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
@@ -138,8 +187,109 @@ export default function UploadSpreadsheetPage() {
     };
   }, []);
 
+  useEffect(() => {
+    const params = searchParams;
+    if (!params) return;
+    const uploadIdParam = params.get("uploadId")?.trim();
+    if (!uploadIdParam) {
+      lastLoadedUploadIdRef.current = null;
+      return;
+    }
+    if (
+      uploadIdParam === activeUpload?.uploadId ||
+      uploadIdParam === lastLoadedUploadIdRef.current
+    ) {
+      return;
+    }
+    lastLoadedUploadIdRef.current = uploadIdParam;
+    loadUploadById(uploadIdParam, { startPolling: true });
+  }, [searchParamsString, loadUploadById, activeUpload?.uploadId]);
+
+  useEffect(() => {
+    const params = searchParams;
+    if (!params) return;
+    const filenameParam = params.get("filename")?.trim() ?? "";
+    const uploaderParam = params.get("uploader")?.trim() ?? "";
+    const last = lastLookupParamsRef.current;
+    const needsLookup =
+      filenameParam !== last.filename || uploaderParam !== last.uploader;
+    if (filenameParam !== lookupFilename) {
+      setLookupFilename(filenameParam);
+    }
+    if (uploaderParam !== lookupUploader) {
+      setLookupUploader(uploaderParam);
+    }
+    if (needsLookup) {
+      if (filenameParam || uploaderParam) {
+        lastLookupParamsRef.current = {
+          filename: filenameParam,
+          uploader: uploaderParam,
+        };
+        void performLookup({ filename: filenameParam, uploader: uploaderParam });
+      } else {
+        lastLookupParamsRef.current = { filename: "", uploader: "" };
+        setLookupResults([]);
+        setLookupFetched(false);
+        setLookupError("");
+      }
+    }
+  }, [searchParamsString, performLookup, lookupFilename, lookupUploader]);
+
   const { isLoaded, isSignedIn, user } = useUser();
   const userEmail = user?.primaryEmailAddress?.emailAddress ?? "";
+
+  const mapUploadResponse = useCallback(
+    (upload: {
+      id: string;
+      status: string;
+      summaryJson: Record<string, unknown> | null;
+      batches: Array<{
+        id: string;
+        status: string;
+        municipality?: string | null;
+        state?: string | null;
+        position?: string | null;
+        errorReason?: string | null;
+        jobs: Array<{
+          id: string;
+          type: string;
+          status: string;
+          retryCount: number;
+          lastError?: string | null;
+          startedAt?: string | null;
+          completedAt?: string | null;
+          attempts: UploadAttemptView[];
+        }>;
+      }>;
+      jobs: UploadJobSummary[];
+    }): UploadStatusView => ({
+      uploadId: upload.id,
+      status: upload.status,
+      summary: upload.summaryJson ?? null,
+      batches: upload.batches.map((batch) => ({
+        id: batch.id,
+        status: batch.status,
+        municipality: batch.municipality,
+        state: batch.state,
+        position: batch.position,
+        errorReason: batch.errorReason,
+        jobs: batch.jobs.map((job) => ({
+          id: job.id,
+          type: job.type,
+          status: job.status,
+          retryCount: job.retryCount,
+          lastError: job.lastError,
+          startedAt: job.startedAt,
+          completedAt: job.completedAt,
+          attempts: job.attempts || [],
+        })),
+      })),
+      jobs: upload.jobs || [],
+    }),
+    []
+  );
+
+  type UploadResponsePayload = Parameters<typeof mapUploadResponse>[0];
 
   const pollUpload = useCallback(
     async (uploadId: string) => {
@@ -152,56 +302,10 @@ export default function UploadSpreadsheetPage() {
           throw new Error(txt || `Failed to load upload status (${res.status})`);
         }
         const payload = (await res.json()) as {
-          upload: {
-            id: string;
-            status: string;
-            summaryJson: Record<string, unknown> | null;
-            batches: Array<{
-              id: string;
-              status: string;
-              municipality?: string | null;
-              state?: string | null;
-              position?: string | null;
-              errorReason?: string | null;
-              jobs: Array<{
-                id: string;
-                type: string;
-                status: string;
-                retryCount: number;
-                lastError?: string | null;
-                startedAt?: string | null;
-                completedAt?: string | null;
-                attempts: UploadAttemptView[];
-              }>;
-            }>;
-            jobs: UploadJobSummary[];
-          };
+          upload: UploadResponsePayload;
         };
 
-        const mapped: UploadStatusView = {
-          uploadId: payload.upload.id,
-          status: payload.upload.status,
-          summary: payload.upload.summaryJson ?? null,
-          batches: payload.upload.batches.map((batch) => ({
-            id: batch.id,
-            status: batch.status,
-            municipality: batch.municipality,
-            state: batch.state,
-            position: batch.position,
-            errorReason: batch.errorReason,
-            jobs: batch.jobs.map((job) => ({
-              id: job.id,
-              type: job.type,
-              status: job.status,
-              retryCount: job.retryCount,
-              lastError: job.lastError,
-              startedAt: job.startedAt,
-              completedAt: job.completedAt,
-              attempts: job.attempts || [],
-            })),
-          })),
-          jobs: payload.upload.jobs || [],
-        };
+        const mapped = mapUploadResponse(payload.upload);
         setActiveUpload(mapped);
         setPollingError("");
 
@@ -217,18 +321,20 @@ export default function UploadSpreadsheetPage() {
         );
       }
     },
-    []
+    [mapUploadResponse]
   );
 
   const startPolling = useCallback(
     (uploadId: string) => {
+      lastLoadedUploadIdRef.current = uploadId;
       pollUpload(uploadId);
       if (pollTimerRef.current) {
         clearInterval(pollTimerRef.current);
       }
       pollTimerRef.current = setInterval(() => pollUpload(uploadId), 5_000);
+      updateQueryParams({ uploadId });
     },
-    [pollUpload]
+    [pollUpload, updateQueryParams]
   );
 
   const handleStartUpload = useCallback(async () => {
@@ -371,6 +477,7 @@ export default function UploadSpreadsheetPage() {
 
   const finalizeRows = useCallback(
     (rows: Row[], fileName: string, removedDuplicates = 0) => {
+      setErrorMessage("");
       const emailCheck = validateEmails(rows);
       setEmailValidation(emailCheck);
       if (!emailCheck.ok) {
@@ -435,6 +542,92 @@ export default function UploadSpreadsheetPage() {
     });
   }, []);
 
+  const performLookup = useCallback(
+    async (input: { filename?: string; uploader?: string; limit?: number } = {}) => {
+      const filename = input.filename?.trim() ?? "";
+      const uploader = input.uploader?.trim() ?? "";
+      const limit = Math.min(Math.max(input.limit ?? 20, 1), 100);
+      setLookupLoading(true);
+      setLookupError("");
+      try {
+        const params = new URLSearchParams();
+        if (filename) params.set("filename", filename);
+        if (uploader) params.set("uploader", uploader);
+        if (limit) params.set("limit", String(limit));
+        const qs = params.toString();
+        const res = await fetch(`/api/gemini/uploads${qs ? `?${qs}` : ""}`, {
+          cache: "no-store",
+        });
+        if (!res.ok) {
+          const text = await res.text().catch(() => "");
+          throw new Error(text || `Lookup failed (${res.status})`);
+        }
+        const data = (await res.json()) as {
+          uploads: Array<
+            UploadLookupItem & {
+              summary?: unknown;
+            }
+          >;
+        };
+        setLookupResults(
+          data.uploads.map((upload) => ({
+            id: upload.id,
+            originalFilename: upload.originalFilename,
+            uploaderEmail: upload.uploaderEmail,
+            status: upload.status,
+            queuedAt: upload.queuedAt,
+            createdAt: upload.createdAt,
+            completedAt: upload.completedAt ?? null,
+          }))
+        );
+        setLookupError("");
+      } catch (error) {
+        setLookupResults([]);
+        setLookupError(error instanceof Error ? error.message : "Lookup failed");
+      } finally {
+        setLookupFetched(true);
+        setLookupLoading(false);
+      }
+    },
+    []
+  );
+
+  const loadUploadById = useCallback(
+    async (uploadId: string, options: { startPolling?: boolean } = {}) => {
+      try {
+        setStatusMessage(`Loading upload ${uploadId}…`);
+        const res = await fetch(`/api/gemini/uploads/${uploadId}`, {
+          cache: "no-store",
+        });
+        if (!res.ok) {
+          const text = await res.text().catch(() => "");
+          throw new Error(text || `Upload ${uploadId} not found (${res.status})`);
+        }
+        const payload = (await res.json()) as {
+          upload: UploadResponsePayload;
+        };
+        const mapped = mapUploadResponse(payload.upload);
+        setActiveUpload(mapped);
+        setPollingError("");
+        setStatusMessage(`Loaded upload ${uploadId}.`);
+        lastLoadedUploadIdRef.current = uploadId;
+        if (options.startPolling !== false) {
+          startPolling(uploadId);
+        } else {
+          updateQueryParams({ uploadId });
+        }
+      } catch (error) {
+        const message = error instanceof Error ? error.message : "Failed to load upload";
+        setErrorMessage(message);
+        setStatusMessage("");
+        setActiveUpload(null);
+        lastLoadedUploadIdRef.current = null;
+        updateQueryParams({ uploadId: null });
+      }
+    },
+    [mapUploadResponse, setActiveUpload, setPollingError, setStatusMessage, startPolling, updateQueryParams]
+  );
+
   const handleConfirmDuplicateRemoval = useCallback(() => {
     if (!pendingDuplicateRows) return;
     const { rows, fileName } = pendingDuplicateRows;
@@ -457,6 +650,48 @@ export default function UploadSpreadsheetPage() {
     setErrorMessage(
       "Duplicate emails detected. Upload cancelled. Please review the spreadsheet before retrying."
     );
+  }, []);
+
+  const handleLookupSubmit = useCallback(
+    (event: FormEvent<HTMLFormElement>) => {
+      event.preventDefault();
+      const filename = lookupFilename.trim();
+      const uploader = lookupUploader.trim();
+      updateQueryParams({
+        filename: filename || null,
+        uploader: uploader || null,
+      });
+      if (!filename && !uploader) {
+        setLookupResults([]);
+        setLookupFetched(false);
+        setLookupError("");
+      }
+    },
+    [lookupFilename, lookupUploader, updateQueryParams]
+  );
+
+  const handleLookupReset = useCallback(() => {
+    setLookupFilename("");
+    setLookupUploader("");
+    setLookupResults([]);
+    setLookupFetched(false);
+    setLookupError("");
+    lastLookupParamsRef.current = { filename: "", uploader: "" };
+    updateQueryParams({ filename: null, uploader: null });
+  }, [updateQueryParams]);
+
+  const handleSelectLookupUpload = useCallback(
+    (uploadId: string) => {
+      loadUploadById(uploadId, { startPolling: true });
+    },
+    [loadUploadById]
+  );
+
+  const formatDateTime = useCallback((value?: string | null) => {
+    if (!value) return "—";
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return value;
+    return date.toLocaleString();
   }, []);
 
   const processRows = useCallback(
@@ -658,6 +893,98 @@ export default function UploadSpreadsheetPage() {
           <p>Rows parsed: {parsedRows.length}</p>
           <p>Uploader email: {userEmail || "(unknown)"}</p>
         </div>
+      </section>
+
+      <section className="space-y-3 rounded border p-4">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <h2 className="text-lg font-semibold">Find previous uploads</h2>
+          <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+            <span>Share this page with query parameters to pre-fill filters.</span>
+          </div>
+        </div>
+        <form
+          className="flex flex-wrap items-end gap-2"
+          onSubmit={handleLookupSubmit}
+        >
+          <label className="flex flex-col text-sm">
+            Filename contains
+            <input
+              value={lookupFilename}
+              onChange={(event) => setLookupFilename(event.target.value)}
+              placeholder="e.g. candidate-upload"
+              className="mt-1 w-56 rounded border px-2 py-1 text-sm"
+            />
+          </label>
+          <label className="flex flex-col text-sm">
+            Uploader email contains
+            <input
+              value={lookupUploader}
+              onChange={(event) => setLookupUploader(event.target.value)}
+              placeholder="admin@elevra.com"
+              className="mt-1 w-64 rounded border px-2 py-1 text-sm"
+            />
+          </label>
+          <div className="flex items-center gap-2">
+            <Button type="submit" disabled={lookupLoading}>
+              {lookupLoading ? "Searching…" : "Search"}
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={handleLookupReset}
+              disabled={lookupLoading}
+            >
+              Clear
+            </Button>
+          </div>
+        </form>
+        {lookupError && <p className="text-sm text-red-600">{lookupError}</p>}
+        {!lookupError && !lookupLoading && lookupFetched && lookupResults.length === 0 && (
+          <p className="text-sm text-muted-foreground">No uploads matched those filters.</p>
+        )}
+        {lookupResults.length > 0 && (
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[480px] table-auto text-sm">
+              <thead>
+                <tr className="bg-muted/50 text-left text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                  <th className="px-3 py-2">Filename</th>
+                  <th className="px-3 py-2">Uploader</th>
+                  <th className="px-3 py-2">Status</th>
+                  <th className="px-3 py-2">Queued</th>
+                  <th className="px-3 py-2">Completed</th>
+                  <th className="px-3 py-2">View</th>
+                </tr>
+              </thead>
+              <tbody>
+                {lookupResults.map((item) => (
+                  <tr key={item.id} className="border-t bg-white/40">
+                    <td className="px-3 py-2 font-medium">{item.originalFilename}</td>
+                    <td className="px-3 py-2 text-xs text-muted-foreground">{item.uploaderEmail}</td>
+                    <td className="px-3 py-2 text-xs uppercase tracking-wide text-slate-600">
+                      {item.status}
+                    </td>
+                    <td className="px-3 py-2 text-xs text-muted-foreground">
+                      {formatDateTime(item.queuedAt || item.createdAt)}
+                    </td>
+                    <td className="px-3 py-2 text-xs text-muted-foreground">
+                      {formatDateTime(item.completedAt)}
+                    </td>
+                    <td className="px-3 py-2">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleSelectLookupUpload(item.id)}
+                      >
+                        View
+                      </Button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </section>
 
       {emailValidation.errors.length > 0 && (
