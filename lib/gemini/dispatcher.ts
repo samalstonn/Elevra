@@ -118,6 +118,7 @@ export async function runGeminiDispatcher(
           model: candidate.name,
           retryable,
           message,
+          stack: err instanceof Error ? err.stack : undefined,
         });
         if (stats.errors && stats.errors.length < 10) {
           stats.errors.push({ jobId: job.id, message });
@@ -316,7 +317,10 @@ function isRetryableError(err: unknown): boolean {
 }
 
 function normalizeErrorMessage(err: unknown): string {
-  if (err instanceof Error) return err.message;
+  if (err instanceof Error) {
+    const stackLine = err.stack?.split("\n")[1]?.trim();
+    return stackLine ? `${err.message} (${stackLine})` : err.message;
+  }
   if (typeof err === "string") return err;
   try {
     return JSON.stringify(err);

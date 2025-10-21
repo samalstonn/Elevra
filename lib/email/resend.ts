@@ -2,7 +2,7 @@ import { CreateEmailOptions, Resend } from "resend";
 
 export type EmailAttachment = {
   filename: string;
-  path?: string;
+  path?: string | URL;
   content?: string;
   mimeType?: string;
 };
@@ -73,6 +73,28 @@ function formatSenderAddress(senderName?: string, customFrom?: string): string {
   return defaultFrom;
 }
 
+function normalizeAttachment(item: EmailAttachment) {
+  const normalized: {
+    filename: string;
+    path?: string;
+    content?: string;
+    mime_type?: string;
+  } = {
+    filename: item.filename,
+  };
+  if (item.path) {
+    normalized.path =
+      typeof item.path === "string" ? item.path : item.path.toString();
+  }
+  if (item.content) {
+    normalized.content = item.content;
+  }
+  if (item.mimeType) {
+    normalized.mime_type = item.mimeType;
+  }
+  return normalized;
+}
+
 export function isEmailDryRun(): boolean {
   // Default to dry‑run in local dev unless explicitly disabled.
   const explicit = process.env.EMAIL_DRY_RUN;
@@ -110,12 +132,7 @@ export async function sendWithResend({
           to,
           subject,
           html,
-          attachments: attachments?.map((item) => ({
-            filename: item.filename,
-            path: item.path,
-            content: item.content,
-            mime_type: item.mimeType,
-          })),
+          attachments: attachments?.map(normalizeAttachment),
         };
         if (!sendParams.attachments?.length) {
           delete (sendParams as { attachments?: unknown }).attachments;
@@ -147,12 +164,7 @@ export async function sendWithResend({
       subject,
       html,
       replyTo: process.env.ADMIN_EMAIL,
-      attachments: attachments?.map((item) => ({
-        filename: item.filename,
-        path: item.path,
-        content: item.content,
-        mime_type: item.mimeType,
-      })),
+      attachments: attachments?.map(normalizeAttachment),
     };
   if (!sendParams.attachments?.length) {
     delete (sendParams as { attachments?: unknown }).attachments;
