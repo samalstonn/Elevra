@@ -66,21 +66,30 @@ export async function runGeminiDispatcher(
   await cleanupOldRateWindows(prisma);
 
   const jobs = await listDispatchableJobs(maxJobs);
-  for (const job of jobs) {
-    if (Date.now() - startedAt > timeBudget) {
-      stats.skipped += 1;
-      continue;
-    }
+  if (jobs.length === 0) {
+    return stats;
+  }
 
+  const concurrencyEnv = Number(process.env.GEMINI_DISPATCH_CONCURRENCY ?? "4");
+  const maxConcurrency = Math.max(
+    1,
+    Math.min(
+      jobs.length,
+      Number.isFinite(concurrencyEnv) && concurrencyEnv > 0 ? concurrencyEnv : 4
+    )
+  );
+
+  let timeExpired = false;
+  let cursor = 0;
+
+  const processJob = async (job: GeminiJobWithRelations) => {
     const models = buildModelList(job);
     if (!models.length) {
       stats.skipped += 1;
-      continue;
+      return;
     }
 
-    let processed = false;
-    for (let index = 0; index < models.length; index++) {
-      const candidate = models[index];
+    for (const candidate of models) {
       const reservation = await reserveModelCapacity(prisma, {
         model: candidate.name,
         requestTokens: job.estimatedRequestTokens ?? 0,
@@ -106,8 +115,7 @@ export async function runGeminiDispatcher(
         await handleJobSuccess(job, claim.attempt.id, result);
         await adjustUsageDelta(job, candidate.name, reservation.windowStart, result);
         stats.succeeded += 1;
-        processed = true;
-        break;
+        return;
       } catch (err: any) {
         const retryable = isRetryableError(err);
         const message = normalizeErrorMessage(err);
@@ -133,8 +141,7 @@ export async function runGeminiDispatcher(
           });
         }
         if (!retryable) {
-          processed = true;
-          break;
+          return;
         }
         const retryDelay = err?.retryAfter ? Number(err.retryAfter) * 1000 : undefined;
         if (retryDelay) {
@@ -143,10 +150,23 @@ export async function runGeminiDispatcher(
       }
     }
 
-    if (!processed) {
-      stats.skipped += 1;
+    stats.skipped += 1;
+  };
+
+  const worker = async () => {
+    while (true) {
+      const index = cursor++;
+      if (index >= jobs.length) return;
+      if (timeExpired || Date.now() - startedAt > timeBudget) {
+        timeExpired = true;
+        stats.skipped += 1;
+        continue;
+      }
+      await processJob(jobs[index]);
     }
-  }
+  };
+
+  await Promise.all(Array.from({ length: maxConcurrency }, () => worker()));
 
   return stats;
 }
