@@ -1,14 +1,12 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  experimental: {
-    outputFileTracingIncludes: {
-      "/api/cron/gemini-dispatch": ["./election-source/**/*"],
-      "/api/gemini/analyze": ["./election-source/**/*"],
-      "/api/gemini/batch": ["./election-source/**/*"],
-      "/api/gemini/structure": ["./election-source/**/*"],
-      "/api/gemini/uploads": ["./election-source/**/*"],
-    },
+  outputFileTracingIncludes: {
+    "/api/cron/gemini-dispatch": ["./election-source/**/*"],
+    "/api/gemini/analyze": ["./election-source/**/*"],
+    "/api/gemini/batch": ["./election-source/**/*"],
+    "/api/gemini/structure": ["./election-source/**/*"],
+    "/api/gemini/uploads": ["./election-source/**/*"],
   },
   images: {
     remotePatterns: [
