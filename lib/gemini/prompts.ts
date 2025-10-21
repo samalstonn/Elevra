@@ -16,7 +16,7 @@ function resolveResource(target: ResourceTarget): string {
     }
     return path.resolve(process.cwd(), target);
   }
-  return fileURLToPath(target);
+  return fileURLToPath(target.toString());
 }
 
 function getAnalyzePromptTarget(): ResourceTarget {
