@@ -1607,7 +1607,8 @@ function formatIso(value?: string | null): string {
   if (!value) return "N/A";
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return value;
-  return date.toLocaleString("en-US", { timeZone: "UTC" });
+  const adjusted = new Date(date.getTime() - 4 * 60 * 60 * 1000);
+  return adjusted.toLocaleString("en-US", { timeZone: "UTC" });
 }
 
 function escapeHtml(value: string): string {
