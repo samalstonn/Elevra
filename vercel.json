@@ -1,7 +1,7 @@
 {
   "functions": {
     "app/(api)/api/**/route.{js,ts}": {
-      "maxDuration": 180
+      "maxDuration": 300
     }
   },
   "crons": [

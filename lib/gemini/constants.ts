@@ -44,9 +44,9 @@ export const INSERT_FALLBACK_MODELS = ["gemini-1.5-pro"] as const;
 export const DEFAULT_JOB_MAX_RETRIES = 5;
 export const DEFAULT_JOB_TIMEOUT_MS = 1000 * 60 * 8; // 8 minutes safety window per job
 
-export const GEMINI_DISPATCH_MAX_PER_TICK = 20;
+export const GEMINI_DISPATCH_MAX_PER_TICK = 100;
 
-export const GEMINI_DISPATCH_DEFAULT_TIME_BUDGET_MS = 1000 * 50; // ~50 seconds to stay under Vercel cron limits
+export const GEMINI_DISPATCH_DEFAULT_TIME_BUDGET_MS = 1000 * 60 * 2; // 2 minutes to handle more jobs
 
 export const MIN_RETRY_DELAY_MS = 1000 * 30; // 30s base delay before retrying
 

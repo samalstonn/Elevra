@@ -56,6 +56,11 @@ export async function seedStructuredData({
   forceHidden,
 }: SeedStructuredOptions): Promise<SeedStructuredResult> {
   if (!data || !Array.isArray(data.elections)) {
+    console.error("[seedStructuredData] Invalid data structure:", { 
+      hasData: !!data, 
+      electionsType: typeof data?.elections,
+      electionsIsArray: Array.isArray(data?.elections)
+    });
     throw new Error("Invalid structured data: missing elections array");
   }
   const hiddenInProd = process.env.NODE_ENV === "production";
@@ -63,7 +68,19 @@ export async function seedStructuredData({
   const results: InsertResultItem[] = [];
 
   for (const item of data.elections) {
+    if (!item || typeof item !== 'object') {
+      console.error("[seedStructuredData] Invalid election item:", item);
+      throw new Error("Invalid structured data: election item is not an object");
+    }
     const e = item.election;
+    if (!e) {
+      console.error("[seedStructuredData] Missing election object in item:", item);
+      throw new Error("Invalid structured data: missing election object");
+    }
+    if (!e.date) {
+      console.error("[seedStructuredData] Missing date in election:", e);
+      throw new Error(`Invalid election data: missing date for election '${e.title || 'unknown'}'`);
+    }
     const date = parseDateMMDDYYYY(e.date);
     if (!date) {
       throw new Error(`Invalid date for election '${e.title}': '${e.date}'`);
