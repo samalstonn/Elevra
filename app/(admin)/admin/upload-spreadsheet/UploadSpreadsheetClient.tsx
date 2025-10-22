@@ -78,6 +78,11 @@ type UploadStatusView = {
   uploadId: string;
   status: string;
   summary: Record<string, unknown> | null;
+  queuedAt?: string | null;
+  createdAt?: string | null;
+  startedAt?: string | null;
+  completedAt?: string | null;
+  updatedAt?: string | null;
   batches: UploadBatchView[];
   jobs: UploadJobSummary[];
 };
@@ -195,6 +200,11 @@ export default function UploadSpreadsheetClient() {
       id: string;
       status: string;
       summaryJson: Record<string, unknown> | null;
+      queuedAt?: string | null;
+      createdAt?: string | null;
+      startedAt?: string | null;
+      completedAt?: string | null;
+      updatedAt?: string | null;
       batches: Array<{
         id: string;
         status: string;
@@ -218,6 +228,11 @@ export default function UploadSpreadsheetClient() {
       uploadId: upload.id,
       status: upload.status,
       summary: upload.summaryJson ?? null,
+      queuedAt: upload.queuedAt ?? null,
+      createdAt: upload.createdAt ?? null,
+      startedAt: upload.startedAt ?? null,
+      completedAt: upload.completedAt ?? null,
+      updatedAt: upload.updatedAt ?? null,
       batches: upload.batches.map((batch) => ({
         id: batch.id,
         status: batch.status,
@@ -341,10 +356,16 @@ export default function UploadSpreadsheetClient() {
         batchCount: number;
       };
 
+      const nowIso = new Date().toISOString();
       setActiveUpload({
         uploadId: data.uploadId,
         status: data.status,
         summary: data.summary,
+        queuedAt: nowIso,
+        createdAt: nowIso,
+        startedAt: null,
+        completedAt: null,
+        updatedAt: nowIso,
         batches: [],
         jobs: [],
       });
@@ -847,6 +868,14 @@ export default function UploadSpreadsheetClient() {
     return groupRowsByMunicipalityAndPosition(parsedRows);
   }, [parsedRows, groupRowsByMunicipalityAndPosition]);
 
+  const lastUpdatedAt = activeUpload
+    ? activeUpload.updatedAt ??
+      activeUpload.completedAt ??
+      activeUpload.startedAt ??
+      activeUpload.queuedAt ??
+      null
+    : null;
+
   return (
     <div className="space-y-6">
       <header className="space-y-1">
@@ -1032,6 +1061,9 @@ export default function UploadSpreadsheetClient() {
             <div>
               <h2 className="text-lg font-semibold">Upload Progress</h2>
               <p className="text-sm text-muted-foreground">Upload ID: {activeUpload.uploadId}</p>
+              <p className="text-xs text-muted-foreground">
+                Last updated: {formatDateTime(lastUpdatedAt)}
+              </p>
             </div>
             <span className="rounded bg-slate-100 px-3 py-1 text-sm font-medium text-slate-700">
               Status: {activeUpload.status}
