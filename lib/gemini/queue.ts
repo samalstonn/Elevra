@@ -25,6 +25,7 @@ import {
 } from "./constants";
 import { computeBackoffDelay } from "./rate-limit";
 import { groupRowsForUpload } from "./grouping";
+import { reportGeminiError } from "@/lib/gemini/logger";
 
 type DbClient = PrismaClient | Prisma.TransactionClient;
 
@@ -1482,6 +1483,16 @@ async function deliverNotification({
       uploadId,
       type,
       error,
+    });
+    reportGeminiError(error, {
+      message: "Failed to send upload notification",
+      tags: { component: "queue", notificationType: type },
+      extra: {
+        uploadId,
+        metadata: normalizeMetadata(metadata),
+        recipients,
+      },
+      fingerprint: ["gemini", "upload-notification", type],
     });
     await prisma.uploadNotificationLog.update({
       where: { id: log.id },

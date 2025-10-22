@@ -4,6 +4,7 @@ import { GoogleGenAI } from "@google/genai";
 import path from "node:path";
 import { promises as fs } from "node:fs";
 import { getAnalyzePrompt } from "@/lib/gemini/prompts";
+import { reportGeminiError } from "@/lib/gemini/logger";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs"; // ensure Node runtime (Edge has very short timeouts)
@@ -179,6 +180,20 @@ export async function POST(req: NextRequest) {
             "Gemini non-stream fallback failed",
             err3?.message || err3
           );
+          reportGeminiError(err3, {
+            message: "Gemini non-stream fallback failed",
+            tags: {
+              component: "api-route",
+              route: "analyze",
+              stage: "fallback",
+            },
+            extra: {
+              model,
+              fallbackModel,
+              minimalConfig,
+            },
+            fingerprint: ["gemini", "api", "analyze", "fallback"],
+          });
           throw err3;
         }
       }
@@ -210,6 +225,14 @@ export async function POST(req: NextRequest) {
     });
   } catch (err: any) {
     console.error("/api/gemini/analyze error", err);
+    reportGeminiError(err, {
+      message: "/api/gemini/analyze error",
+      tags: { component: "api-route", route: "analyze" },
+      extra: {
+        requestId: req.headers.get("x-request-id") ?? undefined,
+      },
+      fingerprint: ["gemini", "api", "analyze"],
+    });
     return new Response("Internal Server Error", { status: 500 });
   }
 }

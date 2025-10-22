@@ -31,6 +31,7 @@ import {
   GEMINI_DISPATCH_MAX_PER_TICK,
 } from "./constants";
 import { GeminiJobType } from "@prisma/client";
+import { reportGeminiError } from "@/lib/gemini/logger";
 
 export type DispatcherOptions = {
   maxJobs?: number;
@@ -132,6 +133,20 @@ export async function runGeminiDispatcher(
           retryable,
           message,
           stack: err instanceof Error ? err.stack : undefined,
+        });
+        reportGeminiError(err, {
+          message: "[gemini-dispatch] job failure",
+          tags: {
+            component: "dispatcher",
+            jobType: job.type,
+            model: candidate.name,
+          },
+          extra: {
+            jobId: job.id,
+            retryable,
+            errorMessage: message,
+          },
+          fingerprint: ["gemini", "dispatcher", job.type],
         });
         if (stats.errors && stats.errors.length < 10) {
           stats.errors.push({ jobId: job.id, message });

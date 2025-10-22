@@ -7,6 +7,7 @@ import {
   getStructurePrompt,
   getStructureResponseSchema,
 } from "@/lib/gemini/prompts";
+import { reportGeminiError } from "@/lib/gemini/logger";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs"; // ensure Node runtime (Edge has short limits)
@@ -240,6 +241,20 @@ export async function POST(req: NextRequest) {
             "Gemini structured non-stream fallback failed:",
             e2?.message || e2
           );
+          reportGeminiError(e2, {
+            message: "Gemini structured non-stream fallback failed",
+            tags: {
+              component: "api-route",
+              route: "structure",
+              stage: "fallback",
+            },
+            extra: {
+              model,
+              promptPath,
+              schemaPath,
+            },
+            fingerprint: ["gemini", "api", "structure", "fallback"],
+          });
           throw e;
         }
       }
@@ -271,6 +286,15 @@ export async function POST(req: NextRequest) {
     });
   } catch (err: any) {
     console.error("/api/gemini/structure error", err);
+    reportGeminiError(err, {
+      message: "/api/gemini/structure error",
+      tags: { component: "api-route", route: "structure" },
+      extra: {
+        requestId: req.headers.get("x-request-id") ?? undefined,
+        promptPath: req.headers.get("x-prompt-path") ?? undefined,
+      },
+      fingerprint: ["gemini", "api", "structure"],
+    });
     return new Response("Internal Server Error", { status: 500 });
   }
 }

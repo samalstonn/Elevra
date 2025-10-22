@@ -6,6 +6,7 @@ import {
   skipUploadBatch,
   getUploadProgress,
 } from "@/lib/gemini/queue";
+import { reportGeminiError } from "@/lib/gemini/logger";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -52,6 +53,16 @@ export async function POST(
       uploadId: params.uploadId,
       batchId: params.batchId,
       error,
+    });
+    reportGeminiError(error, {
+      message: "[gemini/uploads/batch] action failed",
+      tags: { component: "api-route", route: "uploads-batch" },
+      extra: {
+        uploadId: params.uploadId,
+        batchId: params.batchId,
+        action: req.headers.get("x-gemini-action") ?? undefined,
+      },
+      fingerprint: ["gemini", "api", "uploads-batch"],
     });
     const message =
       error instanceof Error ? error.message : "Failed to update batch";

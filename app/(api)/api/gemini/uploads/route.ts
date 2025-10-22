@@ -2,6 +2,7 @@ import { NextRequest } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { requireAdminOrSubAdmin } from "@/lib/admin-auth";
 import { createSpreadsheetUpload } from "@/lib/gemini/queue";
+import { reportGeminiError } from "@/lib/gemini/logger";
 import prisma from "@/prisma/prisma";
 import { Prisma } from "@prisma/client";
 import type { Row } from "@/election-source/build-spreadsheet";
@@ -123,6 +124,15 @@ export async function POST(req: NextRequest) {
         rowCount: body?.rows?.length ?? 0,
       }
     );
+    reportGeminiError(error, {
+      message: "[gemini/uploads] failed to queue upload",
+      tags: { component: "api-route", route: "uploads" },
+      extra: {
+        originalFilename: body?.originalFilename,
+        rowCount: body?.rows?.length ?? 0,
+      },
+      fingerprint: ["gemini", "api", "uploads"],
+    });
     const message =
       error instanceof Error ? error.message : "Unknown error queuing upload";
     return Response.json(

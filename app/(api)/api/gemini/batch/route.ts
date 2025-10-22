@@ -13,6 +13,7 @@ import {
   getStructurePrompt,
   getStructureResponseSchema,
 } from "@/lib/gemini/prompts";
+import { reportGeminiError } from "@/lib/gemini/logger";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -244,6 +245,14 @@ export async function POST(req: NextRequest) {
     });
   } catch (error: any) {
     console.error("/api/gemini/batch error", error);
+    reportGeminiError(error, {
+      message: "/api/gemini/batch error",
+      tags: { component: "api-route", route: "batch" },
+      extra: {
+        requestId: req.headers.get("x-request-id") ?? undefined,
+      },
+      fingerprint: ["gemini", "api", "batch"],
+    });
     const message =
       typeof error === "string"
         ? error
