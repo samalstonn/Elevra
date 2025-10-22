@@ -11,6 +11,7 @@ import {
   recordJobFailure,
   resetStaleJobs,
   unlockDependentJobs,
+  JobNotReadyError,
 } from "./queue";
 import {
   reserveModelCapacity,
@@ -117,6 +118,10 @@ export async function runGeminiDispatcher(
         stats.succeeded += 1;
         return;
       } catch (err: any) {
+        if (err instanceof JobNotReadyError) {
+          stats.skipped += 1;
+          return;
+        }
         const retryable = isRetryableError(err);
         const message = normalizeErrorMessage(err);
         stats.failed += 1;

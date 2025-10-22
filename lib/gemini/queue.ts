@@ -28,6 +28,18 @@ import { groupRowsForUpload } from "./grouping";
 
 type DbClient = PrismaClient | Prisma.TransactionClient;
 
+export class JobNotReadyError extends Error {
+  jobId: string;
+  status: GeminiJobStatus;
+
+  constructor(jobId: string, status: GeminiJobStatus) {
+    super(`Job ${jobId} is not ready (status: ${status})`);
+    this.name = "JobNotReadyError";
+    this.jobId = jobId;
+    this.status = status;
+  }
+}
+
 type JsonValue = Prisma.InputJsonValue;
 
 type CreateSpreadsheetUploadInput = {
@@ -292,7 +304,7 @@ export async function markJobAsInProgress(
     });
     if (!job) throw new Error(`Gemini job ${jobId} not found`);
     if (job.status !== GeminiJobStatus.READY) {
-      throw new Error(`Job ${jobId} is not ready (status: ${job.status})`);
+      throw new JobNotReadyError(jobId, job.status);
     }
     const now = new Date();
     const updatedJob = await tx.geminiJob.update({
