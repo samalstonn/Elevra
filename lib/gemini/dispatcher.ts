@@ -186,6 +186,12 @@ function buildModelList(job: GeminiJobWithRelations) {
   fallback.forEach((name) =>
     models.push({ name, isFallback: true, reason: "fallback" })
   );
+  if (
+    models.length === 0 &&
+    (job.type === GeminiJobType.WORKBOOK || job.type === GeminiJobType.NOTIFICATION)
+  ) {
+    models.push({ name: "internal", isFallback: false, reason: "internal" });
+  }
   return models;
 }
 
@@ -265,6 +271,7 @@ async function handleJobSuccess(
       filename: workbook.filename,
       summary: workbook.summary,
     });
+    await unlockDependentJobs(prisma, job.id);
     return;
   }
   if (job.type === GeminiJobType.NOTIFICATION) {
