@@ -393,9 +393,6 @@ export async function recordAnalyzeSuccess({
   if (uploadIdRef && summaryUpdate) {
     const summaryData = summaryUpdate as SummaryUpdate;
     await processSummaryUpdate(uploadIdRef, summaryData);
-    if (summaryData.uploadStatus === SpreadsheetUploadStatus.COMPLETED) {
-      await cleanupUploadData(uploadIdRef);
-    }
   }
 }
 
@@ -456,9 +453,6 @@ export async function recordStructureSuccess({
   if (uploadIdRef && summaryUpdate) {
     const summaryData = summaryUpdate as SummaryUpdate;
     await processSummaryUpdate(uploadIdRef, summaryData);
-    if (summaryData.uploadStatus === SpreadsheetUploadStatus.COMPLETED) {
-      await cleanupUploadData(uploadIdRef);
-    }
   }
 }
 
@@ -523,9 +517,6 @@ export async function recordInsertSuccess({
   if (uploadIdRef && summaryUpdate) {
     const summaryData = summaryUpdate as SummaryUpdate;
     await processSummaryUpdate(uploadIdRef, summaryData);
-    if (summaryData.uploadStatus === SpreadsheetUploadStatus.COMPLETED) {
-      await cleanupUploadData(uploadIdRef);
-    }
   }
 }
 
@@ -573,9 +564,6 @@ export async function recordWorkbookSuccess({
   if (uploadIdRef && summaryUpdate) {
     const summaryData = summaryUpdate as SummaryUpdate;
     await processSummaryUpdate(uploadIdRef, summaryData);
-    if (summaryData.uploadStatus === SpreadsheetUploadStatus.COMPLETED) {
-      await cleanupUploadData(uploadIdRef);
-    }
   }
 }
 
@@ -701,6 +689,9 @@ export async function recordJobFailure({
 
     if (job.uploadId) {
       summaryUpdate = await refreshUploadSummary(tx, job.uploadId);
+      if (status === GeminiJobStatus.FAILED) {
+        await maybeEnqueueFinalizationJobs(tx, job.uploadId);
+      }
     }
 
     if (job.uploadId && job.batchId && status === GeminiJobStatus.FAILED) {
@@ -940,11 +931,17 @@ async function appendInsertResults(
 }
 
 async function maybeEnqueueFinalizationJobs(tx: DbClient, uploadId: string) {
+  const blockingStatuses = [
+    UploadBatchStatus.QUEUED,
+    UploadBatchStatus.ANALYZING,
+    UploadBatchStatus.STRUCTURING,
+    UploadBatchStatus.INSERTING,
+  ];
   const pending = await tx.uploadElectionBatch.count({
     where: {
       uploadId,
       status: {
-        not: UploadBatchStatus.COMPLETED,
+        in: blockingStatuses,
       },
     },
   });

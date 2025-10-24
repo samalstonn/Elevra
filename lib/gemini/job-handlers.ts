@@ -4,7 +4,11 @@ import type {
   UploadElectionBatch,
   SpreadsheetUpload,
 } from "@prisma/client";
-import { GeminiJobType, GeminiJobAttemptStatus } from "@prisma/client";
+import {
+  GeminiJobType,
+  GeminiJobAttemptStatus,
+  UploadBatchStatus,
+} from "@prisma/client";
 import type { Row } from "@/election-source/build-spreadsheet";
 import type { GenerateContentResponse } from "@google/genai";
 import { getGeminiClient, getGeminiRuntimeConfig } from "./client";
@@ -295,6 +299,10 @@ export async function executeNotificationJob(
   const totals = (summary?.totals as { total?: number; byStatus?: Record<string, number> }) || {};
   const totalBatches = totals.total ?? upload.batches.length;
   const completedBatches = totals.byStatus?.COMPLETED ?? totalBatches;
+  const attentionBatches = upload.batches.filter((batch) =>
+    batch.status === UploadBatchStatus.NEEDS_REUPLOAD ||
+    batch.status === UploadBatchStatus.FAILED
+  );
 
   const recipients = Array.from(
     new Set(
@@ -308,6 +316,7 @@ export async function executeNotificationJob(
     summary,
     totalBatches,
     completedBatches,
+    attentionBatches,
   });
 
   const sendResult = await sendWithResend({
@@ -372,17 +381,35 @@ function buildFinalEmailHtml({
   summary,
   totalBatches,
   completedBatches,
+  attentionBatches,
 }: {
   upload: SpreadsheetUpload;
   summary: Record<string, unknown> | null;
   totalBatches: number;
   completedBatches: number;
+  attentionBatches: UploadElectionBatch[];
 }) {
   const insertResults = Array.isArray(summary?.insertResults)
     ? (summary?.insertResults as Array<{ candidateSlugs?: string[] }>)
     : [];
   const insertedCount = insertResults.length;
   const hidden = summary?.hidden ?? upload.forceHidden;
+  const attentionLines = attentionBatches.map((batch) => {
+    const parts = [batch.position, batch.municipality, batch.state].filter(Boolean);
+    const label = parts.length ? parts.join(" – ") : batch.id;
+    const statusLabel =
+      batch.status === UploadBatchStatus.NEEDS_REUPLOAD
+        ? "Needs reupload"
+        : batch.status === UploadBatchStatus.FAILED
+        ? "Failed"
+        : batch.status;
+    return `${label} (${statusLabel})`;
+  });
+  const attentionSection = attentionLines.length
+    ? `<p><strong>Batches needing reupload or manual attention:</strong></p>${renderHtmlList(
+        attentionLines
+      )}<p>These batches were not inserted and need to be retried once the source data is fixed.</p>`
+    : "";
 
   return `<!doctype html>
 <html>
@@ -394,9 +421,11 @@ function buildFinalEmailHtml({
     <ul>
       <li>Total batches: ${totalBatches}</li>
       <li>Completed batches: ${completedBatches}</li>
+      <li>Batches needing reupload: ${attentionBatches.length}</li>
       <li>Candidates inserted: ${insertedCount}</li>
       <li>Hidden by default: ${hidden ? "Yes" : "No"}</li>
     </ul>
+    ${attentionSection}
     <p>The generated workbook is attached for your records.</p>
   </body>
 </html>`;
@@ -480,4 +509,22 @@ function buildMockOutputs(rows: Row[]) {
   );
 
   return { analyzeText, structuredText };
+}
+
+function renderHtmlList(items: string[]): string {
+  const filtered = items.filter(Boolean);
+  if (!filtered.length) return "";
+  const inner = filtered
+    .map((item) => `<li>${escapeHtml(item)}</li>`)
+    .join("");
+  return `<ul>${inner}</ul>`;
+}
+
+function escapeHtml(value: string): string {
+  return value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
 }
