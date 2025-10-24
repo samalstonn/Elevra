@@ -393,9 +393,6 @@ export async function recordAnalyzeSuccess({
   if (uploadIdRef && summaryUpdate) {
     const summaryData = summaryUpdate as SummaryUpdate;
     await processSummaryUpdate(uploadIdRef, summaryData);
-    if (summaryData.uploadStatus === SpreadsheetUploadStatus.COMPLETED) {
-      await cleanupUploadData(uploadIdRef);
-    }
   }
 }
 
@@ -456,9 +453,6 @@ export async function recordStructureSuccess({
   if (uploadIdRef && summaryUpdate) {
     const summaryData = summaryUpdate as SummaryUpdate;
     await processSummaryUpdate(uploadIdRef, summaryData);
-    if (summaryData.uploadStatus === SpreadsheetUploadStatus.COMPLETED) {
-      await cleanupUploadData(uploadIdRef);
-    }
   }
 }
 
@@ -523,9 +517,6 @@ export async function recordInsertSuccess({
   if (uploadIdRef && summaryUpdate) {
     const summaryData = summaryUpdate as SummaryUpdate;
     await processSummaryUpdate(uploadIdRef, summaryData);
-    if (summaryData.uploadStatus === SpreadsheetUploadStatus.COMPLETED) {
-      await cleanupUploadData(uploadIdRef);
-    }
   }
 }
 
@@ -573,9 +564,6 @@ export async function recordWorkbookSuccess({
   if (uploadIdRef && summaryUpdate) {
     const summaryData = summaryUpdate as SummaryUpdate;
     await processSummaryUpdate(uploadIdRef, summaryData);
-    if (summaryData.uploadStatus === SpreadsheetUploadStatus.COMPLETED) {
-      await cleanupUploadData(uploadIdRef);
-    }
   }
 }
 
