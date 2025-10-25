@@ -3,6 +3,7 @@ import { NextRequest } from "next/server";
 import { GoogleGenAI } from "@google/genai";
 import path from "node:path";
 import { promises as fs } from "node:fs";
+import { getAnalyzePrompt } from "@/lib/gemini/prompts";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs"; // ensure Node runtime (Edge has very short timeouts)
@@ -19,11 +20,9 @@ export async function POST(req: NextRequest) {
       return new Response("No rows provided", { status: 400 });
     }
 
-    // Resolve and read the prompt from the repo
-    const resolvedPromptPath = promptPath
-      ? path.resolve(process.cwd(), promptPath)
-      : path.resolve(process.cwd(), "election-source/gemini-prompt1.txt");
-    const promptText = await fs.readFile(resolvedPromptPath, "utf8");
+    const promptText = promptPath
+      ? await fs.readFile(path.resolve(process.cwd(), promptPath), "utf8")
+      : await getAnalyzePrompt();
 
     // (row limit and input block built after runtime/env checks)
 

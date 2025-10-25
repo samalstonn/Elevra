@@ -30,7 +30,7 @@
 | `hooks` | Client hooks; currently `use-toast` for global toast state. |
 | `lib` | Utilities (admin auth, debounce, geocoding, Stripe, email templates, Prisma singleton, etc.). |
 | `prisma` | Prisma schema, generated client setup, and multiple seed scripts. |
-| `election-source` | Spreadsheet ingestion helpers, AI prompt templates, and structured output references for bulk candidate loading. |
+| `election-source` | Spreadsheet ingestion helpers and structured output references for bulk candidate loading (Gemini prompt defaults now live in `lib/gemini/defaults`). |
 | `tests` | Playwright end-to-end specs plus supporting fixtures. |
 | `public` | Static assets, marketing images, favicons. |
 | `types` | Shared TypeScript interfaces for geocoding, candidates, vendors, search responses. |
@@ -123,6 +123,7 @@ _All routes live under `app/(api)/api` and use Next.js route handlers._
 - `election-source/build-spreadsheet.ts` builds result spreadsheets linking candidates and elections, generating attachments via the XLSX library.
 - `election-source/helpers.ts` normalizes headers, extracts raw values, validates email formats/duplications.
 - Gemini endpoints (`/api/gemini/analyze`, `/api/gemini/structure`) provide structured content from CSV rows; the upload page orchestrates confirmation prompts when fallback models are used.
+- Gemini prompt templates and the structured schema now live in `lib/gemini/defaults`; load them via `lib/gemini/prompts` to keep a single source of truth.
 - Structured templates (`app/(templates)/basicwebpage.ts`) seed `ContentBlock` arrays for candidate microsites.
 
 ## External Services

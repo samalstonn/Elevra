@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { auth, clerkClient } from "@clerk/nextjs/server";
 import prisma from "@/prisma/prisma";
 import { elevraStarterTemplate } from "@/app/(templates)/basicwebpage";
+import { recordChangeEvent } from "@/lib/voter/changeEvents";
 
 export async function POST(request: Request) {
   try {
@@ -76,6 +77,12 @@ export async function POST(request: Request) {
       prisma.contentBlock.deleteMany({ where: { candidateId } }),
       prisma.contentBlock.createMany({ data: allBlocksData }),
     ]);
+
+    await recordChangeEvent({
+      candidateId,
+      type: "CAMPAIGN",
+      summary: "Campaign page reset to Elevra starter template",
+    });
 
     return NextResponse.json({
       status: "ok",

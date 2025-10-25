@@ -1,5 +1,12 @@
 import { CreateEmailOptions, Resend } from "resend";
 
+export type EmailAttachment = {
+  filename: string;
+  path?: string | URL;
+  content?: string;
+  mimeType?: string;
+};
+
 export type SendEmailParams = {
   to: string | string[];
   subject: string;
@@ -9,6 +16,7 @@ export type SendEmailParams = {
   headers?: Record<string, string>;
   // Accept Date (UTC ISO) or ISO string with timezone offset to honor local time
   scheduledAt?: Date | string;
+  attachments?: EmailAttachment[];
 };
 
 export type SendEmailBatchResult = {
@@ -65,6 +73,28 @@ function formatSenderAddress(senderName?: string, customFrom?: string): string {
   return defaultFrom;
 }
 
+function normalizeAttachment(item: EmailAttachment) {
+  const normalized: {
+    filename: string;
+    path?: string;
+    content?: string;
+    mime_type?: string;
+  } = {
+    filename: item.filename,
+  };
+  if (item.path) {
+    normalized.path =
+      typeof item.path === "string" ? item.path : item.path.toString();
+  }
+  if (item.content) {
+    normalized.content = item.content;
+  }
+  if (item.mimeType) {
+    normalized.mime_type = item.mimeType;
+  }
+  return normalized;
+}
+
 export function isEmailDryRun(): boolean {
   // Default to dry‑run in local dev unless explicitly disabled.
   const explicit = process.env.EMAIL_DRY_RUN;
@@ -79,8 +109,8 @@ export async function sendWithResend({
   html,
   from,
   senderName,
-  headers,
   scheduledAt,
+  attachments,
 }: SendEmailParams): Promise<{ id: string } | null> {
   // Global process-level throttle
   await enforceRateLimit();
@@ -95,13 +125,18 @@ export async function sendWithResend({
     try {
       // Optionally record for inspection
       if (process.env.EMAIL_DRY_RUN_LOG === "1") {
-        const sendParams: CreateEmailOptions & { headers?: Record<string, string> } = {
+        const sendParams: CreateEmailOptions & {
+          headers?: Record<string, string>;
+        } = {
           from: formatSenderAddress(senderName, from),
           to,
           subject,
           html,
-          headers,
+          attachments: attachments?.map(normalizeAttachment),
         };
+        if (!sendParams.attachments?.length) {
+          delete (sendParams as { attachments?: unknown }).attachments;
+        }
         sendParams.scheduledAt = scheduledAt
           ? typeof scheduledAt === "string"
             ? scheduledAt
@@ -122,14 +157,18 @@ export async function sendWithResend({
 
   const resend = new Resend(process.env.RESEND_API_KEY);
   const fromAddress = formatSenderAddress(senderName, from);
-  const sendParams: CreateEmailOptions & { headers?: Record<string, string> } = {
-    from: fromAddress,
-    to,
-    subject,
-    html,
-    replyTo: process.env.ADMIN_EMAIL,
-    headers,
-  };
+  const sendParams: CreateEmailOptions & { headers?: Record<string, string> } =
+    {
+      from: fromAddress,
+      to,
+      subject,
+      html,
+      replyTo: process.env.ADMIN_EMAIL,
+      attachments: attachments?.map(normalizeAttachment),
+    };
+  if (!sendParams.attachments?.length) {
+    delete (sendParams as { attachments?: unknown }).attachments;
+  }
 
   if (scheduledAt) {
     sendParams.scheduledAt =

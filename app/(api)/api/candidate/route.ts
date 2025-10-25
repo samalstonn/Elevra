@@ -10,6 +10,13 @@ export async function PUT(request: Request) {
     if (!name || !currentRole || !city || !state || !bio) {
       return NextResponse.json({ error: "Missing fields" }, { status: 400 });
     }
+    const existing = await prisma.candidate.findUnique({
+      where: { clerkUserId: userId },
+    });
+    if (!existing) {
+      return NextResponse.json({ error: "Candidate not found" }, { status: 404 });
+    }
+
     const updated = await prisma.candidate.update({
       where: { clerkUserId: userId },
       data: {
@@ -21,6 +28,20 @@ export async function PUT(request: Request) {
         website: website || null,
         linkedin: linkedin || null,
       },
+    });
+
+    after(async () => {
+      const changes = detectCandidateProfileChanges(existing, updated);
+      await Promise.all(
+        changes.map((change) =>
+          recordChangeEvent({
+            candidateId: updated.id,
+            type: change.type,
+            summary: change.summary,
+            metadata: change.metadata,
+          })
+        )
+      );
     });
     try {
       await logApiCall({
@@ -38,9 +59,11 @@ export async function PUT(request: Request) {
     return NextResponse.json({ error: "Update failed" }, { status: 500 });
   }
 }
+
 // app/(api)/api/candidate/route.ts
 //
 import { NextResponse } from "next/server";
+import { after } from "next/server";
 import prisma from "@/prisma/prisma";
 import { auth, clerkClient } from "@clerk/nextjs/server";
 import { Prisma, SubmissionStatus } from "@prisma/client";
@@ -48,6 +71,12 @@ import { sendWithResend } from "@/lib/email/resend";
 import { renderAdminNotification } from "@/lib/email/templates/adminNotification";
 import { generateUniqueSlug } from "@/lib/functions";
 import { logApiCall } from "@/lib/logging/api-logger";
+import { recordChangeEvent } from "@/lib/voter/changeEvents";
+import { detectCandidateProfileChanges } from "@/lib/voter/changeDetectors";
+import { enqueueCandidateFollowerEmail } from "@/lib/email/voterQueue";
+
+const COMPANY_FOLLOWER_EMAIL =
+  process.env.ELEVRA_TEAM_FOLLOW_EMAIL || "team@elevracommunity.com";
 
 export async function GET(request: Request) {
   try {
@@ -232,6 +261,14 @@ export async function POST(request: Request) {
         data: createData,
       });
 
+      after(async () => {
+        try {
+          await ensureCompanyFollowsCandidate(candidate);
+        } catch (autoFollowError) {
+          console.error("Failed to auto-follow candidate with team account", autoFollowError);
+        }
+      });
+
       try {
         await logApiCall({
           method: "POST",
@@ -287,5 +324,63 @@ export async function POST(request: Request) {
       { error: "Internal server error" },
       { status: 500 }
     );
+  }
+}
+
+async function ensureCompanyFollowsCandidate(candidate: {
+  id: number;
+  name: string;
+  email: string | null;
+}) {
+  if (!COMPANY_FOLLOWER_EMAIL) {
+    return;
+  }
+
+  const follower = await prisma.voter.findFirst({
+    where: {
+      email: {
+        equals: COMPANY_FOLLOWER_EMAIL,
+        mode: "insensitive",
+      },
+    },
+    select: {
+      id: true,
+      email: true,
+    },
+  });
+
+  if (!follower) {
+    console.warn(
+      `[CANDIDATE_AUTO_FOLLOW] No voter found for ${COMPANY_FOLLOWER_EMAIL}. Skipping auto-follow.`
+    );
+    return;
+  }
+
+  const alreadyFollowing = await prisma.follow.findUnique({
+    where: {
+      voterId_candidateId: {
+        voterId: follower.id,
+        candidateId: candidate.id,
+      },
+    },
+  });
+
+  if (alreadyFollowing) {
+    return;
+  }
+
+  await prisma.follow.create({
+    data: {
+      voterId: follower.id,
+      candidateId: candidate.id,
+    },
+  });
+
+  if (candidate.email) {
+    enqueueCandidateFollowerEmail({
+      candidateEmail: candidate.email,
+      candidateName: candidate.name,
+      followerName: follower.email,
+    });
   }
 }

@@ -34,6 +34,7 @@ export default defineConfig({
         // Ensure emails are not actually sent during tests
         env: {
           EMAIL_DRY_RUN: "1",
+          EMAIL_DRY_RUN_LOG: "1",
         },
       },
   use: {
@@ -97,6 +98,6 @@ export default defineConfig({
       testMatch: "premium-candidate-subscription.spec.ts",
       use: { ...devices["Desktop Chrome"] },
       dependencies: ["global setup"],
-    }
+    },
   ],
 });

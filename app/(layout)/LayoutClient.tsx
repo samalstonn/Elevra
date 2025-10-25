@@ -8,7 +8,7 @@ import {
   useUser,
 } from "@clerk/nextjs";
 import "../globals.css";
-import { useState, useEffect, Suspense } from "react";
+import { useState, useEffect, useRef, Suspense } from "react";
 import Link from "next/link";
 import { Analytics } from "@vercel/analytics/react";
 import { SpeedInsights } from "@vercel/speed-insights/next";
@@ -88,6 +88,7 @@ function LayoutShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const { isSignedIn, user } = useUser();
   const [_isMobile, setIsMobile] = useState<boolean>(false);
+  const hasAutoCandidateRef = useRef(false);
   useEffect(() => {
     const mediaQuery = window.matchMedia("(max-width: 768px)");
     setIsMobile(mediaQuery.matches);
@@ -107,6 +108,14 @@ function LayoutShell({ children }: { children: React.ReactNode }) {
       console.error("Failed to persist returning sign-in flag", error);
     }
 
+    type PublicMetadataShape = {
+      isCandidate?: boolean;
+      isVoter?: boolean;
+      [key: string]: unknown;
+    };
+
+    const publicMetadata = (user?.publicMetadata ?? {}) as PublicMetadataShape;
+
     let storedRole: "candidate" | "voter" | null = null;
     try {
       const stored = localStorage.getItem(SIGNUP_ROLE_STORAGE_KEY);
@@ -117,17 +126,55 @@ function LayoutShell({ children }: { children: React.ReactNode }) {
       console.error("Unable to read stored sign-up role", error);
     }
 
+    const persistRole = async (
+      role: "candidate" | "voter",
+      signal?: AbortSignal
+    ) => {
+      try {
+        const response = await fetch("/api/user/metadata/role", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ role }),
+          signal,
+        });
+
+        if (!response.ok) {
+          throw new Error(`Request failed with status ${response.status}`);
+        }
+
+        if (user && typeof user.reload === "function") {
+          try {
+            await user.reload();
+          } catch (reloadError) {
+            console.error("Unable to refresh Clerk user after role update", reloadError);
+          }
+        }
+      } catch (error) {
+        if ((error as Error).name !== "AbortError") {
+          console.error("Failed to persist Clerk role metadata", error);
+        }
+        throw error;
+      }
+    };
+
+    if (
+      !hasAutoCandidateRef.current &&
+      storedRole === null &&
+      publicMetadata.isVoter !== true &&
+      publicMetadata.isCandidate !== true
+    ) {
+      hasAutoCandidateRef.current = true;
+      void persistRole("candidate").catch(() => {
+        hasAutoCandidateRef.current = false;
+      });
+    }
+
     if (!storedRole) {
       return;
     }
 
-    type PublicMetadataShape = {
-      isCandidate?: boolean;
-      isVoter?: boolean;
-      [key: string]: unknown;
-    };
-
-    const publicMetadata = (user?.publicMetadata ?? {}) as PublicMetadataShape;
     const roleAlreadySet =
       (storedRole === "candidate" && publicMetadata?.isCandidate === true) ||
       (storedRole === "voter" && publicMetadata?.isVoter === true);
@@ -143,32 +190,20 @@ function LayoutShell({ children }: { children: React.ReactNode }) {
 
     const controller = new AbortController();
 
-    (async () => {
-      try {
-        const response = await fetch("/api/user/metadata/role", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ role: storedRole }),
-          signal: controller.signal,
-        });
-
-        if (!response.ok) {
-          throw new Error(`Request failed with status ${response.status}`);
-        }
-
+    persistRole(storedRole, controller.signal)
+      .then(() => {
         try {
           localStorage.removeItem(SIGNUP_ROLE_STORAGE_KEY);
         } catch (error) {
           console.error("Unable to clear stored sign-up role", error);
         }
-      } catch (error) {
-        if ((error as Error).name !== "AbortError") {
-          console.error("Failed to persist Clerk role metadata", error);
+      })
+      .catch((error) => {
+        if ((error as Error).name === "AbortError") {
+          return;
         }
-      }
-    })();
+        // persistRole already logged the failure
+      });
 
     return () => controller.abort();
   }, [isSignedIn, user]);

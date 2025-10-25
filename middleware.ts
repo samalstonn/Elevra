@@ -78,11 +78,6 @@ export default clerkMiddleware(async (auth, req) => {
 
     const user = await client.users.getUser(userId);
 
-    console.log("middleware privateMetadata", {
-      userId,
-      privateMetadata: user.privateMetadata,
-    });
-
     const isSubAdmin = user.privateMetadata?.isSubAdmin;
     const isAdmin = user.privateMetadata?.isAdmin;
 

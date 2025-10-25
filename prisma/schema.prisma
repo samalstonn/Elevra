@@ -51,6 +51,8 @@ model Candidate {
   profileViews  CandidateProfileView[]
   donations     Donation[]
   elections     ElectionLink[]
+  followers     Follow[]
+  changeEvents  ChangeEvent[]
   endorsements  Endorsement[]
   Testimonial   Testimonial[]
   Vendors       Vendor[]               @relation("CandidateToVendor")
@@ -202,6 +204,65 @@ model CandidateProfileView {
   Candidate   Candidate @relation(fields: [candidateId], references: [id], onDelete: Cascade)
 }
 
+model Voter {
+  id            Int              @id @default(autoincrement())
+  clerkUserId   String           @unique
+  email         String
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
+  follows       Follow[]
+  notifications Notification[]
+  preferences   VoterPreference?
+}
+
+model Follow {
+  voterId     Int
+  candidateId Int
+  createdAt   DateTime  @default(now())
+  voter       Voter     @relation(fields: [voterId], references: [id], onDelete: Cascade)
+  candidate   Candidate @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+
+  @@id([voterId, candidateId])
+}
+
+model ChangeEvent {
+  id            Int             @id @default(autoincrement())
+  candidateId   Int
+  type          ChangeEventType
+  metadata      Json?
+  createdAt     DateTime        @default(now())
+  candidate     Candidate       @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+  notifications Notification[]
+}
+
+model Notification {
+  id            Int                @id @default(autoincrement())
+  voterId       Int
+  changeEventId Int
+  type          NotificationType
+  status        NotificationStatus @default(UNREAD)
+  payload       Json?
+  createdAt     DateTime           @default(now())
+  readAt        DateTime?
+  voter         Voter              @relation(fields: [voterId], references: [id], onDelete: Cascade)
+  changeEvent   ChangeEvent        @relation(fields: [changeEventId], references: [id], onDelete: Cascade)
+}
+
+model VoterPreference {
+  id               Int       @id @default(autoincrement())
+  voterId          Int       @unique
+  emailMode        EmailMode @default(IMMEDIATE)
+  notifyBio        Boolean   @default(true)
+  notifyEducation  Boolean   @default(true)
+  notifyPhoto      Boolean   @default(true)
+  notifyCampaign   Boolean   @default(true)
+  dailyDigestHour  Int?
+  lastDigestSentAt DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+  voter            Voter     @relation(fields: [voterId], references: [id], onDelete: Cascade)
+}
+
 model Endorsement {
   id                      Int       @id @default(autoincrement())
   candidateId             Int
@@ -279,6 +340,137 @@ model ContentBlock {
   @@unique([candidateId, electionId, order])
 }
 
+model SpreadsheetUpload {
+  id                String                  @id @default(cuid())
+  status            SpreadsheetUploadStatus @default(QUEUED)
+  failureReason     String?
+  originalFilename  String
+  uploaderEmail     String
+  summaryJson       Json?
+  resultWorkbookUrl String?
+  forceHidden       Boolean                 @default(true)
+  queuedAt          DateTime                @default(now())
+  startedAt         DateTime?
+  completedAt       DateTime?
+  createdAt         DateTime                @default(now())
+  updatedAt         DateTime                @updatedAt
+  jobs              GeminiJob[]             @relation("SpreadsheetUploadJobs")
+  batches           UploadElectionBatch[]
+  notifications     UploadNotificationLog[]
+
+  @@index([status, queuedAt])
+  @@index([createdAt])
+}
+
+model UploadElectionBatch {
+  id             String            @id @default(cuid())
+  uploadId       String
+  groupKey       String?
+  municipality   String?
+  state          String?
+  position       String?
+  rawRows        Json
+  analysisJson   Json?
+  structuredJson Json?
+  status         UploadBatchStatus @default(QUEUED)
+  errorReason    String?
+  analyzeJobId   String?
+  structureJobId String?
+  insertJobId    String?
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
+  jobs           GeminiJob[]       @relation("BatchJobs")
+  upload         SpreadsheetUpload @relation(fields: [uploadId], references: [id], onDelete: Cascade)
+
+  @@index([uploadId])
+  @@index([status])
+}
+
+model GeminiJob {
+  id                      String               @id @default(cuid())
+  uploadId                String?
+  batchId                 String?
+  type                    GeminiJobType
+  status                  GeminiJobStatus      @default(PENDING)
+  priority                Int                  @default(0)
+  dependencyJobId         String?
+  preferredModels         Json
+  fallbackModels          Json?
+  nextRunAt               DateTime             @default(now())
+  retryCount              Int                  @default(0)
+  maxRetries              Int                  @default(5)
+  lastError               String?
+  startedAt               DateTime?
+  completedAt             DateTime?
+  createdAt               DateTime             @default(now())
+  updatedAt               DateTime             @updatedAt
+  estimatedRequestTokens  Int?
+  estimatedResponseTokens Int?
+  metadata                Json?
+  batch                   UploadElectionBatch? @relation("BatchJobs", fields: [batchId], references: [id], onDelete: Cascade)
+  upload                  SpreadsheetUpload?   @relation("SpreadsheetUploadJobs", fields: [uploadId], references: [id], onDelete: Cascade)
+  attempts                GeminiJobAttempt[]
+
+  @@index([status, nextRunAt])
+  @@index([type, status])
+  @@index([uploadId])
+  @@index([batchId])
+}
+
+model GeminiJobAttempt {
+  id              String                 @id @default(cuid())
+  jobId           String
+  modelUsed       String
+  startedAt       DateTime               @default(now())
+  completedAt     DateTime?
+  requestTokens   Int?
+  responseTokens  Int?
+  batchTokens     Int?
+  statusCode      Int?
+  responseBody    Json?
+  errorType       String?
+  errorMessage    String?
+  status          GeminiJobAttemptStatus @default(PENDING)
+  createdAt       DateTime               @default(now())
+  rateWindowStart DateTime?
+  isFallback      Boolean?               @default(false)
+  job             GeminiJob              @relation(fields: [jobId], references: [id], onDelete: Cascade)
+
+  @@index([jobId])
+}
+
+model GeminiRateWindow {
+  id             String   @id @default(cuid())
+  model          String
+  windowStart    DateTime
+  requestCount   Int      @default(0)
+  requestTokens  Int      @default(0)
+  responseTokens Int      @default(0)
+  batchTokens    Int      @default(0)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@unique([model, windowStart])
+}
+
+model UploadNotificationLog {
+  id         String                   @id @default(cuid())
+  uploadId   String
+  email      String
+  type       UploadNotificationType
+  status     UploadNotificationStatus @default(QUEUED)
+  responseId String?
+  error      String?
+  metadata   Json?
+  sentAt     DateTime?
+  createdAt  DateTime                 @default(now())
+  updatedAt  DateTime                 @updatedAt
+  upload     SpreadsheetUpload        @relation(fields: [uploadId], references: [id], onDelete: Cascade)
+
+  @@index([uploadId])
+  @@index([type])
+}
+
 model Document {
   id            String       @id @default(cuid())
   contentJson   Json
@@ -314,8 +506,8 @@ model EmailUnsubscribe {
   userAgent String?
   createdAt DateTime @default(now())
 
-  @@index([email], map: "EmailUnsubscribe_email_idx")
   @@unique([email, scope], map: "EmailUnsubscribe_email_scope_key")
+  @@index([email], map: "EmailUnsubscribe_email_idx")
 }
 
 enum ElectionType {
@@ -369,4 +561,88 @@ enum TextColor {
   BLACK
   GRAY
   PURPLE
+}
+
+enum SpreadsheetUploadStatus {
+  QUEUED
+  PROCESSING
+  COMPLETED
+  FAILED
+  NEEDS_REUPLOAD
+  CANCELLED
+}
+
+enum UploadBatchStatus {
+  QUEUED
+  ANALYZING
+  STRUCTURING
+  INSERTING
+  COMPLETED
+  FAILED
+  NEEDS_REUPLOAD
+  SKIPPED
+}
+
+enum GeminiJobType {
+  ANALYZE
+  STRUCTURE
+  INSERT
+  WORKBOOK
+  NOTIFICATION
+}
+
+enum GeminiJobStatus {
+  PENDING
+  READY
+  IN_PROGRESS
+  SUCCEEDED
+  FAILED
+  CANCELLED
+  SKIPPED
+}
+
+enum GeminiJobAttemptStatus {
+  PENDING
+  IN_PROGRESS
+  SUCCEEDED
+  FAILED
+  CANCELLED
+}
+
+enum UploadNotificationType {
+  QUEUED
+  ANALYZE_COMPLETE
+  STRUCTURE_COMPLETE
+  INSERT_COMPLETE
+  FINAL
+  BATCH_FAILURE
+}
+
+enum UploadNotificationStatus {
+  QUEUED
+  SENT
+  FAILED
+  SKIPPED
+}
+
+enum ChangeEventType {
+  BIO
+  EDUCATION
+  PHOTO
+  CAMPAIGN
+}
+
+enum NotificationType {
+  CANDIDATE_UPDATE
+}
+
+enum NotificationStatus {
+  UNREAD
+  READ
+}
+
+enum EmailMode {
+  IMMEDIATE
+  DAILY_DIGEST
+  OFF
 }

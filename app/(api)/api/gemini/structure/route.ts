@@ -3,6 +3,10 @@ import { NextRequest } from "next/server";
 import { GoogleGenAI, Type } from "@google/genai";
 import path from "node:path";
 import { promises as fs } from "node:fs";
+import {
+  getStructurePrompt,
+  getStructureResponseSchema,
+} from "@/lib/gemini/prompts";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs"; // ensure Node runtime (Edge has short limits)
@@ -22,16 +26,15 @@ export async function POST(req: NextRequest) {
       return new Response("Missing previousOutput", { status: 400 });
     }
 
-    const resolvedPromptPath = promptPath
-      ? path.resolve(process.cwd(), promptPath)
-      : path.resolve(process.cwd(), "election-source/gemini-prompt2.txt");
-    const promptText = await fs.readFile(resolvedPromptPath, "utf8");
+    const promptText = promptPath
+      ? await fs.readFile(path.resolve(process.cwd(), promptPath), "utf8")
+      : await getStructurePrompt();
 
-    const resolvedSchemaPath = schemaPath
-      ? path.resolve(process.cwd(), schemaPath)
-      : path.resolve(process.cwd(), "election-source/structured-output.json");
-    const schemaRaw = await fs.readFile(resolvedSchemaPath, "utf8");
-    const jsonSchema = JSON.parse(schemaRaw);
+    const customSchema = schemaPath
+      ? JSON.parse(
+          await fs.readFile(path.resolve(process.cwd(), schemaPath), "utf8")
+        )
+      : null;
 
     // Convert JSON schema (subset) to SDK Schema using Type enum
     function mapType(t?: string): Type | undefined {
@@ -77,7 +80,9 @@ export async function POST(req: NextRequest) {
       // exceeding allowed nesting/complexity on server side.
       return out;
     }
-    const responseSchema = convertSchema(jsonSchema);
+    const responseSchema = customSchema
+      ? convertSchema(customSchema)
+      : await getStructureResponseSchema();
 
     // Live-call toggle and model selection
     const isProd = process.env.NODE_ENV === "production";

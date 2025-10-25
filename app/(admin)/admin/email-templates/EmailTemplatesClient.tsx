@@ -6,10 +6,14 @@ import {
   useState,
   type ChangeEvent,
   type FormEvent,
+  type MouseEvent,
 } from "react";
 
 import { SimpleEditor } from "@/components/tiptap-templates/simple/simple-editor";
-import { EMAIL_TEMPLATE_VARIABLES } from "@/lib/email/templates/constants";
+import {
+  DEFAULT_TEMPLATE_KEYS,
+  EMAIL_TEMPLATE_VARIABLES,
+} from "@/lib/email/templates/constants";
 import { usePageTitle } from "@/lib/usePageTitle";
 import { useToast } from "@/hooks/use-toast";
 import {
@@ -39,6 +43,17 @@ import {
 } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
@@ -59,6 +74,8 @@ type EmailTemplateClientModel = {
 type EmailTemplatesClientProps = {
   initialTemplates: EmailTemplateClientModel[];
 };
+
+const DEFAULT_TEMPLATE_KEY_SET = new Set<string>(DEFAULT_TEMPLATE_KEYS);
 
 const DEFAULT_NEW_TEMPLATE_HTML = `<div style="font-family:ui-sans-serif,system-ui,-apple-system,'Segoe UI',Roboto,Ubuntu,Cantarell,'Helvetica Neue',Arial;">
   <p style="margin:0 0 16px;">Hi {{greetingName}},</p>
@@ -196,6 +213,8 @@ export default function EmailTemplatesClient({
   const [lastSavedAt, setLastSavedAt] = useState<string>(
     selectedTemplate?.updatedAt ?? new Date().toISOString()
   );
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
     if (selectedTemplate) {
@@ -233,6 +252,12 @@ export default function EmailTemplatesClient({
         title: template.title,
       })),
     [templates]
+  );
+
+  const isDefaultTemplateSelected = useMemo(
+    () =>
+      selectedTemplate ? DEFAULT_TEMPLATE_KEY_SET.has(selectedTemplate.key) : false,
+    [selectedTemplate]
   );
 
   const handleSave = async ({
@@ -344,6 +369,75 @@ export default function EmailTemplatesClient({
     setSubject(lastSavedSubject);
   };
 
+  const handleDeleteTemplate = async (
+    event: MouseEvent<HTMLButtonElement>
+  ) => {
+    event.preventDefault();
+    if (!selectedTemplate) return;
+
+    const templateToDelete = selectedTemplate;
+    setIsDeleting(true);
+
+    try {
+      const response = await fetch(
+        `/api/admin/email-templates/${encodeURIComponent(
+          templateToDelete.key
+        )}`,
+        {
+          method: "DELETE",
+        }
+      );
+
+      let data: { error?: string } | null = null;
+      try {
+        data = await response.json();
+      } catch {
+        data = null;
+      }
+
+      if (!response.ok) {
+        const message =
+          data?.error ||
+          `Failed to delete template "${templateToDelete.title}". Please try again.`;
+        toast({
+          variant: "destructive",
+          title: "Delete failed",
+          description: message,
+        });
+        return;
+      }
+
+      setTemplates((prev) => {
+        const filtered = prev
+          .filter((template) => template.id !== templateToDelete.id)
+          .sort((a, b) => a.title.localeCompare(b.title));
+        if (selectedKey === templateToDelete.key) {
+          const nextKey = filtered[0]?.key ?? "";
+          setSelectedKey(nextKey);
+        }
+        return filtered;
+      });
+
+      setDeleteDialogOpen(false);
+      toast({
+        title: "Template deleted",
+        description: `Removed “${templateToDelete.title}”.`,
+      });
+    } catch (error) {
+      console.error(error);
+      toast({
+        variant: "destructive",
+        title: "Delete failed",
+        description:
+          error instanceof Error
+            ? error.message
+            : `Failed to delete template "${templateToDelete.title}".`,
+      });
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
   const handleTemplateCreated = (template: EmailTemplateClientModel) => {
     setTemplates((prev) =>
       [...prev, template].sort((a, b) => a.title.localeCompare(b.title))
@@ -427,22 +521,65 @@ export default function EmailTemplatesClient({
                   </p>
                 ) : null}
               </div>
-              <div className="w-full max-w-xs">
-                <Select
-                  value={selectedKey}
-                  onValueChange={(value) => setSelectedKey(value)}
-                >
-                  <SelectTrigger aria-label="Select email template">
-                    <SelectValue placeholder="Select template" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {templateOptions.map((option) => (
-                      <SelectItem key={option.key} value={option.key}>
-                        {option.title}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+              <div className="flex w-full flex-col gap-2 md:w-auto md:flex-row md:items-center md:justify-end">
+                <div className="w-full md:w-64">
+                  <Select
+                    value={selectedKey}
+                    onValueChange={(value) => setSelectedKey(value)}
+                  >
+                    <SelectTrigger aria-label="Select email template">
+                      <SelectValue placeholder="Select template" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {templateOptions.map((option) => (
+                        <SelectItem key={option.key} value={option.key}>
+                          {option.title}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                {selectedTemplate && !isDefaultTemplateSelected ? (
+                  <AlertDialog
+                    open={deleteDialogOpen}
+                    onOpenChange={(open) => {
+                      if (isDeleting) return;
+                      setDeleteDialogOpen(open);
+                    }}
+                  >
+                    <AlertDialogTrigger asChild>
+                      <Button
+                        type="button"
+                        variant="destructive"
+                        className="w-full md:w-auto"
+                      >
+                        Delete template
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>
+                          Delete “{selectedTemplate.title}”?
+                        </AlertDialogTitle>
+                        <AlertDialogDescription>
+                          This template will be permanently removed. This action cannot
+                          be undone.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel disabled={isDeleting}>
+                          Cancel
+                        </AlertDialogCancel>
+                        <AlertDialogAction
+                          onClick={handleDeleteTemplate}
+                          disabled={isDeleting}
+                        >
+                          {isDeleting ? "Deleting…" : "Delete"}
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                ) : null}
               </div>
             </div>
           </CardHeader>
