@@ -392,7 +392,7 @@ function buildFinalEmailHtml({
   const insertResults = Array.isArray(summary?.insertResults)
     ? (summary?.insertResults as Array<{ candidateSlugs?: string[] }>)
     : [];
-  const insertedCount = insertResults.length;
+  const insertedCount = insertResults.reduce((sum, item) => sum + (item.candidateSlugs?.length ?? 0), 0);
   const hidden = summary?.hidden ?? upload.forceHidden;
   const attentionLines = attentionBatches.map((batch) => {
     const parts = [batch.position, batch.municipality, batch.state].filter(Boolean);
