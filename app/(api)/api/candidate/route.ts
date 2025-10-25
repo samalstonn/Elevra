@@ -57,6 +57,7 @@ export async function PUT(request: Request) {
     return NextResponse.json({ error: "Update failed" }, { status: 500 });
   }
 }
+
 // app/(api)/api/candidate/route.ts
 //
 import { NextResponse } from "next/server";
@@ -69,6 +70,10 @@ import { generateUniqueSlug } from "@/lib/functions";
 import { logApiCall } from "@/lib/logging/api-logger";
 import { recordChangeEvent } from "@/lib/voter/changeEvents";
 import { detectCandidateProfileChanges } from "@/lib/voter/changeDetectors";
+import { enqueueCandidateFollowerEmail } from "@/lib/email/voterQueue";
+
+const COMPANY_FOLLOWER_EMAIL =
+  process.env.ELEVRA_TEAM_FOLLOW_EMAIL || "team@elevracommunity.com";
 
 export async function GET(request: Request) {
   try {
@@ -254,6 +259,12 @@ export async function POST(request: Request) {
       });
 
       try {
+        await ensureCompanyFollowsCandidate(candidate);
+      } catch (autoFollowError) {
+        console.error("Failed to auto-follow candidate with team account", autoFollowError);
+      }
+
+      try {
         await logApiCall({
           method: "POST",
           pathname: "/api/candidate",
@@ -308,5 +319,63 @@ export async function POST(request: Request) {
       { error: "Internal server error" },
       { status: 500 }
     );
+  }
+}
+
+async function ensureCompanyFollowsCandidate(candidate: {
+  id: number;
+  name: string;
+  email: string | null;
+}) {
+  if (!COMPANY_FOLLOWER_EMAIL) {
+    return;
+  }
+
+  const follower = await prisma.voter.findFirst({
+    where: {
+      email: {
+        equals: COMPANY_FOLLOWER_EMAIL,
+        mode: "insensitive",
+      },
+    },
+    select: {
+      id: true,
+      email: true,
+    },
+  });
+
+  if (!follower) {
+    console.warn(
+      `[CANDIDATE_AUTO_FOLLOW] No voter found for ${COMPANY_FOLLOWER_EMAIL}. Skipping auto-follow.`
+    );
+    return;
+  }
+
+  const alreadyFollowing = await prisma.follow.findUnique({
+    where: {
+      voterId_candidateId: {
+        voterId: follower.id,
+        candidateId: candidate.id,
+      },
+    },
+  });
+
+  if (alreadyFollowing) {
+    return;
+  }
+
+  await prisma.follow.create({
+    data: {
+      voterId: follower.id,
+      candidateId: candidate.id,
+    },
+  });
+
+  if (candidate.email) {
+    enqueueCandidateFollowerEmail({
+      candidateEmail: candidate.email,
+      candidateName: candidate.name,
+      followerName: follower.email,
+    });
   }
 }
