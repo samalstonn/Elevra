@@ -1,3 +1,4 @@
+import { after } from "next/server";
 import { sendWithResend } from "@/lib/email/resend";
 import type { ChangeEventType } from "@prisma/client";
 import {
@@ -59,7 +60,9 @@ export function enqueueEmail(job: Job) {
   }
   dedupeMap.set(key, now);
   queue.push(job);
-  void drain();
+  after(async () => {
+    await drain();
+  });
 }
 
 export function enqueueCandidateFollowerEmail(payload: Omit<CandidateFollowerJob, "type" | "manageUrl"> & { manageUrl?: string }) {

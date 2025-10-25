@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { usePageTitle } from "@/lib/usePageTitle";
 import type { Row } from "@/election-source/build-spreadsheet";
 import { normalizeHeader, validateEmails } from "@/election-source/helpers";
+import { groupRowsForUpload } from "@/lib/gemini/grouping";
 import { useUser } from "@clerk/nextjs";
 import { Button } from "@/components/ui/button";
 import {
@@ -809,64 +810,18 @@ export default function UploadSpreadsheetClient() {
   );
 
 
-  const normalizeGroupKey = useCallback((r: Row): string => {
-    const city = (r.municipality || "").trim().toLowerCase();
-    const state = (r.state || "").trim().toLowerCase();
-    const position = String(r.position ?? "")
-      .replace(/\s+/g, " ")
-      .trim()
-      .toLowerCase();
-    return `${city}|${state}|${position || "unknown-position"}`;
-  }, []);
-
-  const groupRowsByMunicipalityAndPosition = useCallback(
-    (
-      rows: Row[]
-    ): Array<{
-      key: string;
-      municipality: string;
-      state: string;
-      position: string;
-      rows: Row[];
-    }> => {
-      const map = new Map<
-        string,
-        {
-          key: string;
-          municipality: string;
-          state: string;
-          position: string;
-          rows: Row[];
-        }
-      >();
-      for (const r of rows) {
-        const key = normalizeGroupKey(r);
-        if (!map.has(key)) {
-          map.set(key, {
-            key,
-            municipality: (r.municipality || "").trim(),
-            state: (r.state || "").trim(),
-            position: String(r.position ?? "").trim(),
-            rows: [],
-          });
-        }
-        map.get(key)!.rows.push(r);
-      }
-      return Array.from(map.values()).sort((a, b) => {
-        const s = (a.state || "").localeCompare(b.state || "");
-        if (s !== 0) return s;
-        const m = (a.municipality || "").localeCompare(b.municipality || "");
-        if (m !== 0) return m;
-        return (a.position || "").localeCompare(b.position || "");
-      });
-    },
-    [normalizeGroupKey]
-  );
 
   const rowGroups = useMemo(() => {
-    if (!parsedRows.length) return [] as ReturnType<typeof groupRowsByMunicipalityAndPosition>;
-    return groupRowsByMunicipalityAndPosition(parsedRows);
-  }, [parsedRows, groupRowsByMunicipalityAndPosition]);
+    if (!parsedRows.length) return [];
+    const groups = groupRowsForUpload(parsedRows);
+    return groups.map(g => ({
+      key: g.key,
+      municipality: g.municipality,
+      state: g.state,
+      position: g.position,
+      rows: g.rows,
+    }));
+  }, [parsedRows]);
 
   const lastUpdatedAt = activeUpload
     ? activeUpload.updatedAt ??

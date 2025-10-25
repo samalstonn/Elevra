@@ -30,17 +30,19 @@ export async function PUT(request: Request) {
       },
     });
 
-    const changes = detectCandidateProfileChanges(existing, updated);
-    await Promise.all(
-      changes.map((change) =>
-        recordChangeEvent({
-          candidateId: updated.id,
-          type: change.type,
-          summary: change.summary,
-          metadata: change.metadata,
-        })
-      )
-    );
+    after(async () => {
+      const changes = detectCandidateProfileChanges(existing, updated);
+      await Promise.all(
+        changes.map((change) =>
+          recordChangeEvent({
+            candidateId: updated.id,
+            type: change.type,
+            summary: change.summary,
+            metadata: change.metadata,
+          })
+        )
+      );
+    });
     try {
       await logApiCall({
         method: "PUT",
@@ -61,6 +63,7 @@ export async function PUT(request: Request) {
 // app/(api)/api/candidate/route.ts
 //
 import { NextResponse } from "next/server";
+import { after } from "next/server";
 import prisma from "@/prisma/prisma";
 import { auth, clerkClient } from "@clerk/nextjs/server";
 import { Prisma, SubmissionStatus } from "@prisma/client";
@@ -258,11 +261,13 @@ export async function POST(request: Request) {
         data: createData,
       });
 
-      try {
-        await ensureCompanyFollowsCandidate(candidate);
-      } catch (autoFollowError) {
-        console.error("Failed to auto-follow candidate with team account", autoFollowError);
-      }
+      after(async () => {
+        try {
+          await ensureCompanyFollowsCandidate(candidate);
+        } catch (autoFollowError) {
+          console.error("Failed to auto-follow candidate with team account", autoFollowError);
+        }
+      });
 
       try {
         await logApiCall({
