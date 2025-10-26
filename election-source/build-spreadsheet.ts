@@ -1,17 +1,17 @@
-// Build and download a spreadsheet with election_link and CandidateLink columns
-// Accepts optional rows to use for sheet building (raw) and parsed rows for fallback matching
-
 import { getRawValue } from "@/election-source/helpers";
+import { buildWorkbookMatrixFromRows } from "@/lib/gemini/workbook-builder";
 
 export type InsertResultItem = {
   city: string;
   state: string;
+  position: string;
   electionId: number;
   electionResultsUrl: string;
   candidateSlugs: string[];
   candidateEmails: (string | null)[];
   hidden: boolean;
 };
+
 export type Row = {
   municipality: string;
   state: string;
@@ -37,106 +37,30 @@ export async function buildAndDownloadResultSheet(
   insertObj: {
     results?: InsertResultItem[];
   },
-  structuredJsonText: string,
+  _structuredJsonText: string,
   rowsForSheet: Array<Record<string, unknown>>,
-  parsedRowsForSheet: Row[]
+  _parsedRowsForSheet: Row[]
 ) {
   try {
-    const sourceRows = rowsForSheet;
-    if (!sourceRows.length) return;
-    type StructuredJson = {
-      elections: Array<{
-        election: { city: string; state: string };
-        candidates: Array<{ name: string; email?: string | null }>;
-      }>;
-    };
-    let structured: StructuredJson | null = null;
-    try {
-      const t = structuredJsonText || null;
-      structured = t ? (JSON.parse(t) as StructuredJson) : null;
-    } catch {
-      structured = null;
-    }
+    if (!rowsForSheet.length) return;
 
-    const results = insertObj.results || [];
-    const norm = (s?: string | null) => (s || "").trim().toLowerCase();
     const municipalities = new Set<string>();
-    const base =
-      typeof window !== "undefined"
-        ? window.location.origin
-        : "http://localhost:3000";
-
-    // Build email-first maps
-    const emailToCandidateUrl = new Map<string, string>();
-    const emailToResultsUrl = new Map<string, string>();
-
-    for (const r of results) {
-      const candidateSlugs = (r.candidateSlugs || []) as string[];
-      const candidateUrls = candidateSlugs.map((slug) =>
-        slug ? `${base}/candidate/${slug}` : ""
-      );
-      const resultsUrl =
-        r.electionResultsUrl && r.electionResultsUrl.length
-          ? r.electionResultsUrl
-          : r.city && r.state && r.electionId
-          ? `${base}/results?city=${encodeURIComponent(
-              r.city
-            )}&state=${encodeURIComponent(r.state)}&electionID=${r.electionId}`
-          : "";
-      if (Array.isArray(r.candidateEmails)) {
-        r.candidateEmails.forEach((eml: string | null, i: number) => {
-          const emailNorm = norm(eml);
-          if (emailNorm) {
-            const url = candidateUrls[i] || "";
-            if (url) emailToCandidateUrl.set(emailNorm, url);
-            if (resultsUrl) emailToResultsUrl.set(emailNorm, resultsUrl);
-          }
-        });
+    rowsForSheet.forEach((row) => {
+      const municipality = getRawValue(row, ["municipality", "Municipality"]);
+      if (municipality) {
+        municipalities.add(String(municipality));
       }
-    }
-
-    // First pass: set CandidateLink by email, collect group→resultsUrl
-    const groupToResultsUrl = new Map<string, string>();
-    const interimRows: Array<{
-      out: Record<string, unknown>;
-      groupKey: string;
-    }> = [];
-
-    sourceRows.forEach((raw, idx) => {
-      const out: Record<string, unknown> = { ...raw };
-      const municipalityRaw = getRawValue(raw as Record<string, unknown>, [
-        "municipality",
-      ]);
-      if (String(municipalityRaw)) municipalities.add(String(municipalityRaw));
-      const groupKey = norm(String(municipalityRaw));
-
-      let email = norm(
-        getRawValue(raw as Record<string, unknown>, ["email", "Email"])
-      );
-      if (!email && parsedRowsForSheet?.[idx]?.email) {
-        email = norm(parsedRowsForSheet[idx].email);
-      }
-
-      let candidateLink = "";
-      if (email && emailToCandidateUrl.has(email)) {
-        candidateLink = emailToCandidateUrl.get(email) || "";
-        const ru = emailToResultsUrl.get(email) || "";
-        if (ru) groupToResultsUrl.set(groupKey, ru);
-      }
-
-      out["CandidateLink"] = candidateLink;
-      // election_link is set in second pass
-      interimRows.push({ out, groupKey });
     });
 
-    // Second pass: set election_link for all rows in a group
-    const newRows = interimRows.map(({ out, groupKey }) => {
-      out["election_link"] = groupToResultsUrl.get(groupKey) || "";
-      return out;
+    const matrix = await buildWorkbookMatrixFromRows({
+      rows: rowsForSheet,
+      insertResults: insertObj.results || [],
+      baseUrl:
+        typeof window !== "undefined" ? window.location.origin : undefined,
     });
 
     const XLSX = await import("xlsx");
-    const ws = XLSX.utils.json_to_sheet(newRows);
+    const ws = XLSX.utils.aoa_to_sheet(matrix);
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Results");
     const ab = XLSX.write(wb, { type: "array", bookType: "xlsx" });

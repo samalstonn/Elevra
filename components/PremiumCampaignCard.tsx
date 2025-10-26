@@ -17,6 +17,7 @@ const premiumFeatures = [
   "Advanced Analytics",
   "Verified Endorsements",
   "Priority Support",
+  "Keep Profile While Elected"
 ];
 
 export function PremiumCampaignCard({

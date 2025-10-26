@@ -22,7 +22,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 const freeFeatures = ["Discoverable Profile", "Verified Checkmark"];
 
 const premiumFeatures = [
-  "Discoverable Profile",
+  "Keep Your Profile Year Round",
   "See Profile Views",
   "Verified Checkmark",
   "Premium Campaign Page",
@@ -42,8 +42,8 @@ const planDefinitions = [
   },
   {
     name: "Premium",
-    price: "$30",
-    interval: "/ One Time Fee",
+    price: "$1",
+    interval: "Until November 4th\nThen $10 / Month",
     features: premiumFeatures,
     tier: "premium" as const,
     highlight: true, // Optional: Highlight the premium plan
@@ -227,13 +227,18 @@ export default function UpgradePage() {
               <CardTitle className="text-2xl font-semibold text-gray-900">
                 {plan.name}
               </CardTitle>
-              <CardDescription className="flex items-baseline pt-1">
-                <span className="text-4xl font-bold tracking-tight text-gray-900">
-                  {plan.price}
-                </span>
-                <span className="text-sm font-semibold leading-6 tracking-wide text-gray-600 ml-1">
-                  {plan.interval}
-                </span>
+              <CardDescription className="pt-1">
+                <div className="flex items-baseline">
+                  <span className="text-4xl font-bold tracking-tight text-gray-900">
+                    {plan.price}
+                  </span>
+                  <span className="text-sm font-semibold leading-6 tracking-wide text-gray-600 ml-1">
+                    {plan.interval.split('\n')[0]}
+                  </span>
+                </div>
+                <div className="text-sm italic font-normal text-gray-600 ml-1 mt-2">
+                  {plan.interval.split('\n')[1]}
+                </div>
               </CardDescription>
             </CardHeader>
             <CardContent className="flex-grow">

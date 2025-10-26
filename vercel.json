@@ -1,7 +1,13 @@
 {
   "functions": {
     "app/(api)/api/**/route.{js,ts}": {
-      "maxDuration": 60
+      "maxDuration": 300
     }
-  }
+  },
+  "crons": [
+    {
+      "path": "/api/cron/gemini-dispatch",
+      "schedule": "*/5 * * * *"
+    }
+  ]
 }
