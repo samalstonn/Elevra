@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import Stripe from "stripe";
 import { auth, clerkClient } from "@clerk/nextjs/server";
 import prisma from "@/prisma/prisma";
+import { sendWithResend } from "@/lib/email/resend";
+import { renderAdminNotification } from "@/lib/email/templates/adminNotification";
 
 const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
 
@@ -119,6 +121,37 @@ export async function POST(request: NextRequest) {
         userClerkId: userId,
       },
     });
+
+    // Send notification email to team
+    const candidateEmail =
+      clerkUser.emailAddresses.find(
+        (email) => email.id === clerkUser.primaryEmailAddressId
+      )?.emailAddress || "No email available";
+
+    try {
+      const emailHtml = renderAdminNotification({
+        title: "🚀 Premium Upgrade Initiated",
+        intro: `A candidate has clicked the upgrade to premium button and is proceeding to checkout.`,
+        rows: [
+          { label: "Candidate Name", value: candidate.name },
+          { label: "Candidate Email", value: candidateEmail },
+          { label: "Candidate Slug", value: candidate.slug },
+          { label: "Plan", value: requestedPlan.toUpperCase() },
+          { label: "Stripe Session ID", value: session.id },
+        ],
+        ctaLabel: "View Candidate Profile",
+        ctaUrl: `${baseUrl}/candidate/${candidate.slug}`,
+      });
+
+      await sendWithResend({
+        to: "team@elevracommunity.com",
+        subject: `Premium Upgrade Started: ${candidate.name}`,
+        html: emailHtml,
+      });
+    } catch (emailError) {
+      // Log error but don't block the upgrade process
+      console.error("Failed to send upgrade notification email:", emailError);
+    }
 
     return NextResponse.json({ sessionId: session.id });
   } catch (error: unknown) {

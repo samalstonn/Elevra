@@ -217,17 +217,15 @@ export default function CandidateClient({
           isEditable={isEditable}
           onVerify={handleThisIsMe}
           isVerifyPending={isResetting}
-        />
-
-        {!isEditable ? (
-          <div className="mt-4 flex justify-center md:justify-end">
+          showFollowButton={!isEditable}
+          followButtonSlot={
             <FollowButton
               candidateId={candidate.id}
               candidateSlug={candidate.slug}
               candidateName={candidate.name}
             />
-          </div>
-        ) : null}
+          }
+        />
 
         {/* Tabs - Desktop: regular spacing, Mobile: horizontal scroll */}
         <div className="w-full flex justify-center">

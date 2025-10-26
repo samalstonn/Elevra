@@ -454,7 +454,7 @@ export default function DashboardPageClient({
               <Input
                 type="search"
                 placeholder="Find candidates or elections"
-                className="pl-9"
+                className="w-full pl-9"
                 value={searchQuery}
                 onChange={(event: ChangeEvent<HTMLInputElement>) =>
                   setSearchQuery(event.target.value)

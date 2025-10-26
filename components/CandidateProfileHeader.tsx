@@ -25,8 +25,10 @@ interface CandidateProfileHeaderProps {
   isEditable?: boolean;
   showShareButton?: boolean;
   showVerifyButton?: boolean;
+  showFollowButton?: boolean;
   onVerify?: () => void | Promise<void>;
   isVerifyPending?: boolean;
+  followButtonSlot?: React.ReactNode;
 }
 
 export function CandidateProfileHeader({
@@ -35,8 +37,10 @@ export function CandidateProfileHeader({
   isEditable = false,
   showShareButton = true,
   showVerifyButton = true,
+  showFollowButton = false,
   onVerify,
   isVerifyPending = false,
+  followButtonSlot,
 }: CandidateProfileHeaderProps) {
   const [showVerificationTooltip, setShowVerificationTooltip] = useState(false);
   const publicPhoto = candidate.photo ?? candidate.photoUrl ?? null;
@@ -158,6 +162,7 @@ export function CandidateProfileHeader({
 
         {/* Desktop actions */}
         <div className="mt-4 hidden md:flex justify-start gap-4">
+          {showFollowButton && followButtonSlot}
           {isEditable ? (
             <Button variant="outline" asChild>
               <Link href="/candidates/candidate-dashboard/my-profile">
@@ -171,6 +176,7 @@ export function CandidateProfileHeader({
 
         {/* Mobile actions */}
         <div className="mt-4 gap-2 md:hidden flex justify-center">
+          {showFollowButton && followButtonSlot}
           {isEditable ? (
             <Button
               variant="outline"
