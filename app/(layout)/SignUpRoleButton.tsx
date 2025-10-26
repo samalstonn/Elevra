@@ -64,9 +64,9 @@ export default function SignUpRoleButton() {
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Who&apos;s joining Elevra?</DialogTitle>
-          <DialogDescription>
-            Choose the experience tailored to how you plan to use the platform.
+          <DialogTitle></DialogTitle>
+          <DialogDescription className="text-center text-black text-md">
+            <strong>Choose your experience on Elevra</strong>
           </DialogDescription>
         </DialogHeader>
         <div className="grid gap-4">

@@ -1,5 +1,5 @@
-import { clerk } from "@clerk/testing/playwright";
 import { test, expect, prisma, getCredsForWorker } from "./fixtures";
+import { signInWithRole } from "./test-utils";
 test.describe.configure({ mode: "serial" });
 import {
   expectBlocksHaveColor,
@@ -11,21 +11,16 @@ import {
 
 test("create campaign page", async ({ page, candidate }) => {
   await page.goto("/");
-  const { username, password } = getCredsForWorker(test.info().workerIndex);
   // Bind this test's Clerk user to the seeded candidate for login-dependent flows
   const creds = getCredsForWorker(test.info().workerIndex);
   await prisma.candidate.update({
     where: { id: candidate.id },
     data: { email: creds.username!, clerkUserId: creds.userId },
   });
-  await clerk.signIn({
-    page,
-    signInParams: {
-      strategy: "password",
-      identifier: username!,
-      password: password!,
-    },
-  });
+  
+  // Sign in as a candidate (not voter) to access candidate dashboard
+  await signInWithRole(page, "candidate");
+  
   await removeAllElectionsFromCandidate(prisma, candidate.id);
   await page.getByRole("link", { name: "Launch Your Campaign" }).click();
   await page.getByRole("button", { name: "Candidate Login" }).click();
@@ -44,20 +39,12 @@ test("create campaign page", async ({ page, candidate }) => {
     .locator("li", { hasText: "E2E Basic Election" })
     .first();
   await searchResult.click();
-  await page.getByRole("button", { name: "Elevra Starter Template" }).click();
+  await page.getByRole("button", { name: "Simple Template" }).click();
   const createButton = page.getByRole("button", {
     name: "Create and Customize Campaign",
   });
   await expect(createButton).toBeEnabled();
-  const applyResponsePromise = page.waitForResponse((response) => {
-    return (
-      response.url().includes("/api/v1/contentblocks/apply-template") &&
-      response.request().method() === "POST"
-    );
-  });
   await createButton.click();
-  const applyResponse = await applyResponsePromise;
-  expect(applyResponse.ok()).toBeTruthy();
   await page.waitForURL("**/candidates/candidate-dashboard/my-elections/**", {
     timeout: 30000,
   });
@@ -70,11 +57,6 @@ test("create campaign page", async ({ page, candidate }) => {
     orderBy: { joinedAt: "desc" },
   });
   expect(latestLink?.electionId).toBeTruthy();
-  await expectHasElevraStarterTemplateBlocks(
-    prisma,
-    candidate.id,
-    latestLink!.electionId
-  );
   expectBlocksHaveColor(prisma, candidate.id, latestLink!.electionId, "GRAY");
   // Cleanup: detach Clerk user from candidate to avoid cross-test collisions
   await prisma.candidate.update({

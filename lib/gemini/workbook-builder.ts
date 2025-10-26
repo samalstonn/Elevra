@@ -104,8 +104,12 @@ function buildRow(
 
   const emailOriginal = getString(emailRaw);
   const emailUpper = emailOriginal.toUpperCase();
-  const candidateLink = emailOriginal
-    ? emailToLink.get(norm(emailOriginal)) ?? ""
+  
+  // Normalize email for lookup - handle both lowercase (from new uploads) 
+  // and mixed case (from legacy data or database storage)
+  const emailNormalized = norm(emailOriginal);
+  const candidateLink = emailNormalized
+    ? emailToLink.get(emailNormalized) ?? ""
     : "";
 
   return [

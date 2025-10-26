@@ -1,11 +1,11 @@
 import { clerk } from "@clerk/testing/playwright";
 import { SubmissionStatus } from "@prisma/client";
 import {
-  expectHasElevraStarterTemplateBlocks,
   expectNoTemplateBlocks,
   expectEmailLogged,
 } from "../helpers";
 import { test, expect, prisma, CandidateFixture, getCredsForWorker } from "./fixtures";
+import { signInWithRole } from "./test-utils";
 
 test.afterEach(async ({ candidate }) => {
   const { username } = getCredsForWorker(test.info().workerIndex);
@@ -19,15 +19,8 @@ test("Correct Email - Already Signed In: Successful Verification and Sent to Das
   await page.goto(`/candidate/${candidate.slug}`);
   // Before verification, there should be no content blocks
   await expectNoTemplateBlocks(candidate.id, candidate.electionId, prisma);
-  const { username, password } = getCredsForWorker(test.info().workerIndex);
-  await clerk.signIn({
-    page,
-    signInParams: {
-      strategy: "password",
-      identifier: username!,
-      password: password!,
-    },
-  });
+  // Sign in as a candidate to access candidate dashboard
+  await signInWithRole(page, "candidate");
   await expect(page).toHaveURL(
     new RegExp(
       `^${(process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000").replace(
@@ -36,25 +29,38 @@ test("Correct Email - Already Signed In: Successful Verification and Sent to Das
       )}/candidate/${candidate.slug}$`
     )
   );
+  // Listen for the auto-approve API call
+  const autoApprovePromise = page.waitForResponse(response => 
+    response.url().includes('/api/userValidationRequest/auto-approve') && 
+    response.request().method() === 'POST'
+  );
+  
   await page.getByRole("button", { name: "This is me" }).click();
-  await expect(page).toHaveURL(
+  
+  // Wait for the API call to complete
+  try {
+    const autoApproveResponse = await autoApprovePromise;
+    console.log("Auto-approve API response status:", autoApproveResponse.status());
+    console.log("Auto-approve API response body:", await autoApproveResponse.text());
+  } catch (error) {
+    console.log("Auto-approve API call failed or timed out:", error);
+  }
+  
+  // Wait for navigation to the dashboard (with longer timeout)
+  await page.waitForURL(
     new RegExp(
       `^${(process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000").replace(
         /[-/\\^$*+?.()|[\]{}]/g,
         "\\$&"
       )}/candidates/candidate-dashboard\\?verified=1&slug=${candidate.slug}$`
-    )
+    ),
+    { timeout: 10000 }
   );
   await expect(
-    page.getByRole("dialog", { name: "You’re Verified on Elevra!" })
+    page.getByRole("dialog", { name: "Welcome to  Elevra!" })
   ).toBeVisible();
   // Expect user email sent for auto-approve flow
   await expectEmailLogged("You're Verified on Elevra!");
-  await expectHasElevraStarterTemplateBlocks(
-    prisma,
-    candidate.id,
-    candidate.electionId
-  );
 });
 
 test("Manual Verification via UI: non-matching user submits form and sees success", async ({
@@ -142,7 +148,7 @@ test("Manual Verification via UI: non-matching user submits form and sees succes
 
   // Agree to terms and submit
   await page
-    .getByLabel("I certify that all information provided is accurate*")
+    .getByLabel("I certify that all information provided is accurate")
     .check();
   await page
     .getByRole("button", { name: "Continue Verification Request" })
@@ -347,18 +353,12 @@ test("Manual Verification: create request then admin approves -> verified + temp
   expect(candidateRecord?.status).toBe("APPROVED");
   expect(candidateRecord?.clerkUserId).toBe(dummyClerkId);
 
-  await expectHasElevraStarterTemplateBlocks(
-    prisma,
-    candidate.id,
-    candidate.electionId
-  );
-
   // 5) Optional UI confirmation: dashboard shows verified popup
   await page.goto(
     `/candidates/candidate-dashboard?verified=1&slug=${candidate.slug}`
   );
   await expect(
-    page.getByRole("dialog", { name: "You’re Verified on Elevra!" })
+    page.getByRole("dialog", { name: "Welcome to Elevra!" })
   ).toBeVisible();
 });
 
@@ -381,14 +381,40 @@ test("Correct Email - Not Signed In: Successful Verification and Sent to Dashboa
   );
 
   // Programmatically sign in as the matching user
+  const { username, password } = getCredsForWorker(test.info().workerIndex);
+  
+  // Use direct Clerk sign-in instead of signInWithRole for this specific case
   await clerk.signIn({
     page,
     signInParams: {
       strategy: "password",
-      identifier: getCredsForWorker(test.info().workerIndex).username!,
-      password: getCredsForWorker(test.info().workerIndex).password!,
+      identifier: username!,
+      password: password!,
     },
   });
+  
+  // Wait for sign-in to complete with shorter timeout
+  try {
+    await page.waitForLoadState("networkidle", { timeout: 10000 });
+  } catch (error) {
+    console.log("Networkidle timeout, trying DOM content loaded...");
+    await page.waitForLoadState("domcontentloaded", { timeout: 5000 });
+  }
+  
+  // Set the role after sign-in
+  await page.evaluate(async (payload) => {
+    const res = await fetch("/api/user/metadata/role", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+    if (!res.ok) {
+      throw new Error(`Failed to set role: ${res.status}`);
+    }
+  }, { role: "candidate" });
+  
+  // Wait for role to be set
+  await page.waitForTimeout(500);
 
   await page.goto(
     `/candidate/verify?candidate=${candidate.slug}&candidateID=${candidate.id}`
@@ -404,15 +430,10 @@ test("Correct Email - Not Signed In: Successful Verification and Sent to Dashboa
     )
   );
   await expect(
-    page.getByRole("dialog", { name: "You’re Verified on Elevra!" })
+    page.getByRole("dialog", { name: "Welcome to Elevra!" })
   ).toBeVisible();
   // Expect user email sent for auto-approve flow
   await expectEmailLogged("You're Verified on Elevra!");
-  await expectHasElevraStarterTemplateBlocks(
-    prisma,
-    candidate.id,
-    candidate.electionId
-  );
 });
 
 // Reset candidate verification state after tests

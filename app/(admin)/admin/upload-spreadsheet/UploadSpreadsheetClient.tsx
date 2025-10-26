@@ -1170,7 +1170,7 @@ function mapHeaders<T extends Record<string, unknown>>(obj: T): Row {
     const val = (obj as Record<string, unknown>)[key];
     switch (norm) {
       case "municipality":
-        mapped.municipality = asStr(val);
+        mapped.municipality = cleanMunicipalityName(asStr(val));
         break;
       case "state":
         mapped.state = asStr(val);
@@ -1211,7 +1211,7 @@ function mapHeaders<T extends Record<string, unknown>>(obj: T): Row {
         break;
       case "email":
       case "Email":
-        mapped.email = asStr(val);
+        mapped.email = asStr(val).toLowerCase().trim();
         break;
       case "name":
         mapped.name = asStr(val);
@@ -1254,6 +1254,26 @@ function mapHeaders<T extends Record<string, unknown>>(obj: T): Row {
     }
   }
   return mapped;
+}
+
+// Helper function to clean municipality names
+function cleanMunicipalityName(name: string): string {
+  if (!name) return "";
+  
+  // Remove trailing commas and extra whitespace
+  let cleaned = name.trim().replace(/,$/, "");
+  
+  // Fix common typos
+  const corrections: Record<string, string> = {
+    "Ltynchburg": "Lynchburg",
+    "West Poont": "West Point", 
+    "Willimsburg": "Williamsburg",
+    "LTYNCHBURG": "LYNCHBURG",
+    "WEST POONT": "WEST POINT",
+    "WILLIMSBURG": "WILLIAMSBURG"
+  };
+  
+  return corrections[cleaned] || cleaned;
 }
 
 function hasRequiredHeaders(sample: Row): boolean {
