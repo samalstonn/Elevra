@@ -1,6 +1,7 @@
 import type { InsertResultItem } from "@/election-source/build-spreadsheet";
 import type { UploadElectionBatch } from "@prisma/client";
 import { getRawValue } from "@/election-source/helpers";
+import { prisma } from "@/lib/prisma";
 
 const BASE_ORIGIN =
   process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, "") ||
@@ -50,11 +51,14 @@ const getYear = (value: unknown) => {
   return str;
 };
 
-function buildEmailToLinkMap(
+async function buildEmailToLinkMap(
   insertResults: InsertResultItem[],
+  allEmails: string[],
   origin: string
 ) {
   const map = new Map<string, string>();
+  
+  // First, add newly inserted candidates from insertResults
   insertResults.forEach((result) => {
     const slugs = Array.isArray(result.candidateSlugs)
       ? result.candidateSlugs
@@ -70,6 +74,34 @@ function buildEmailToLinkMap(
       map.set(normalized, `${origin}/candidate/${slug}`);
     });
   });
+  
+  // Then, look up any remaining emails in the database for pre-existing candidates
+  const normalizedEmails = allEmails
+    .map(e => norm(e))
+    .filter(e => e && !map.has(e)); // Only query emails not already in map
+  
+  if (normalizedEmails.length > 0) {
+    const existingCandidates = await prisma.candidate.findMany({
+      where: {
+        email: {
+          in: normalizedEmails,
+          mode: 'insensitive'
+        }
+      },
+      select: {
+        email: true,
+        slug: true
+      }
+    });
+    
+    existingCandidates.forEach((candidate) => {
+      const normalized = norm(candidate.email || undefined);
+      if (normalized && candidate.slug) {
+        map.set(normalized, `${origin}/candidate/${candidate.slug}`);
+      }
+    });
+  }
+  
   return map;
 }
 
@@ -128,7 +160,7 @@ function buildRow(
   ];
 }
 
-function buildWorkbookMatrix({
+async function buildWorkbookMatrix({
   rawRows,
   insertResults,
   baseUrl,
@@ -136,14 +168,21 @@ function buildWorkbookMatrix({
   rawRows: RawRow[];
   insertResults: InsertResultItem[];
   baseUrl?: string;
-}): Array<(string | number)[]> {
+}): Promise<Array<(string | number)[]>> {
   const origin = baseUrl?.replace(/\/$/, "") || BASE_ORIGIN;
-  const emailToLink = buildEmailToLinkMap(insertResults, origin);
+  
+  // Extract all emails from raw rows
+  const allEmails = rawRows.map((row) => {
+    const emailRaw = extractField(row, ["email", "Email"]);
+    return getString(emailRaw);
+  }).filter(e => e);
+  
+  const emailToLink = await buildEmailToLinkMap(insertResults, allEmails, origin);
   const rows = rawRows.map((row) => buildRow(row, emailToLink));
   return [HEADERS, ...rows];
 }
 
-export function buildWorkbookMatrixFromBatches({
+export async function buildWorkbookMatrixFromBatches({
   batches,
   insertResults,
   baseUrl,
@@ -151,7 +190,7 @@ export function buildWorkbookMatrixFromBatches({
   batches: UploadElectionBatch[];
   insertResults: InsertResultItem[];
   baseUrl?: string;
-}): Array<(string | number)[]> {
+}): Promise<Array<(string | number)[]>> {
   const sortedBatches = [...batches].sort((a, b) => {
     const aTime = new Date(a.createdAt).getTime();
     const bTime = new Date(b.createdAt).getTime();
@@ -164,10 +203,10 @@ export function buildWorkbookMatrixFromBatches({
       : [];
     rows.forEach((row) => rawRows.push(row));
   });
-  return buildWorkbookMatrix({ rawRows, insertResults, baseUrl });
+  return await buildWorkbookMatrix({ rawRows, insertResults, baseUrl });
 }
 
-export function buildWorkbookMatrixFromRows({
+export async function buildWorkbookMatrixFromRows({
   rows,
   insertResults,
   baseUrl,
@@ -175,6 +214,6 @@ export function buildWorkbookMatrixFromRows({
   rows: RawRow[];
   insertResults: InsertResultItem[];
   baseUrl?: string;
-}): Array<(string | number)[]> {
-  return buildWorkbookMatrix({ rawRows: rows, insertResults, baseUrl });
+}): Promise<Array<(string | number)[]>> {
+  return await buildWorkbookMatrix({ rawRows: rows, insertResults, baseUrl });
 }

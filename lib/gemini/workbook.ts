@@ -25,7 +25,7 @@ export async function buildWorkbookForUpload(uploadId: string): Promise<Workbook
     ? (summary.insertResults as InsertResultItem[])
     : [];
 
-  const matrix = buildWorkbookMatrixFromBatches({
+  const matrix = await buildWorkbookMatrixFromBatches({
     batches: upload.batches,
     insertResults,
   });

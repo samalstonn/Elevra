@@ -52,7 +52,7 @@ export async function buildAndDownloadResultSheet(
       }
     });
 
-    const matrix = buildWorkbookMatrixFromRows({
+    const matrix = await buildWorkbookMatrixFromRows({
       rows: rowsForSheet,
       insertResults: insertObj.results || [],
       baseUrl:
