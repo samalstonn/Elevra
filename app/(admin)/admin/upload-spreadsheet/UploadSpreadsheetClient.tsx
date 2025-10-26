@@ -1025,6 +1025,15 @@ export default function UploadSpreadsheetClient() {
             </span>
           </div>
 
+          {activeUpload.summary && (
+            <div className="rounded border bg-slate-50 p-3 text-xs">
+              <p className="font-medium">Summary</p>
+              <pre className="mt-2 whitespace-pre-wrap">
+                {JSON.stringify(activeUpload.summary, null, 2)}
+              </pre>
+            </div>
+          )}
+
           {activeUpload.batches.length > 0 ? (
             <div className="space-y-3">
               {activeUpload.batches.map((batch) => (
@@ -1090,15 +1099,6 @@ export default function UploadSpreadsheetClient() {
             </div>
           ) : (
             <p className="text-sm text-muted-foreground">Batches pending load…</p>
-          )}
-
-          {activeUpload.summary && (
-            <div className="rounded border bg-slate-50 p-3 text-xs">
-              <p className="font-medium">Summary</p>
-              <pre className="mt-2 whitespace-pre-wrap">
-                {JSON.stringify(activeUpload.summary, null, 2)}
-              </pre>
-            </div>
           )}
         </section>
       )}
