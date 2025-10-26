@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { useAuth, useUser } from "@clerk/nextjs";
 import { useRouter } from "next/navigation";
+import { RiUserFollowFill, RiUserUnfollowFill } from "react-icons/ri";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -114,18 +115,25 @@ export function FollowButton({
     router.push("/sign-up?role=voter&redirect=/dashboard");
   }, [router]);
 
+  const focusClasses =
+    "focus-visible:outline focus-visible:outline-2 focus-visible:outline-purple-500 focus-visible:outline-offset-2";
+  const ButtonIcon = isFollowing ? RiUserUnfollowFill : RiUserFollowFill;
+  const buttonLabel = isFollowing ? "Unfollow" : "Follow";
+
   return (
     <>
       <Button
         type="button"
         variant={isFollowing ? "outline" : "purple"}
-        className="focus-visible:outline focus-visible:outline-2 focus-visible:outline-purple-500 focus-visible:outline-offset-2"
+        className={`${focusClasses} px-2 md:px-6 gap-1 md:gap-2 justify-center md:justify-start text-sm`}
+        size="md"
         data-testid="follow-button"
         aria-pressed={isFollowing}
         disabled={loading}
         onClick={handleToggle}
       >
-        {isFollowing ? "Following" : "Follow"}
+        <ButtonIcon className="h-3 w-3 md:h-4 md:w-4" />
+        {buttonLabel}
       </Button>
 
       <Dialog open={signinModalOpen} onOpenChange={setSigninModalOpen}>
