@@ -1261,7 +1261,7 @@ function cleanMunicipalityName(name: string): string {
   if (!name) return "";
   
   // Remove trailing commas and extra whitespace
-  let cleaned = name.trim().replace(/,$/, "");
+  const cleaned = name.trim().replace(/,$/, "");
   
   // Fix common typos
   const corrections: Record<string, string> = {
