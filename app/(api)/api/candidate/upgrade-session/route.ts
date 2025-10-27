@@ -28,7 +28,7 @@ type PlanDefinition = {
 const planConfigurations: Record<CandidatePlanTier, PlanDefinition> = {
   premium: {
     priceId: process.env.STRIPE_PREMIUM_CANDIDATE_PRICE_ID,
-    mode: "payment",
+    mode: "subscription",
     description: "Premium Candidate Upgrade",
   },
 };
