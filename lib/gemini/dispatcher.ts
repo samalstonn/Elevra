@@ -119,6 +119,13 @@ export async function runGeminiDispatcher(
         return;
       } catch (err: any) {
         if (err instanceof JobNotReadyError) {
+          // Another worker claimed the job after we reserved capacity.
+          // Roll back the reservation so usage counters don't leak.
+          await adjustModelUsage(prisma, candidate.name, reservation.windowStart, {
+            requestCountDelta: -1,
+            requestTokensDelta: -(job.estimatedRequestTokens ?? 0),
+            responseTokensDelta: -(job.estimatedResponseTokens ?? 0),
+          });
           stats.skipped += 1;
           return;
         }
