@@ -95,7 +95,8 @@ export const calculateFee = (baseAmount: number): number => {
 
 
 /**
- * Checks if an election date is active (today or in the future).
+ * Checks if an election date is active (today or in the future) with a
+ * two-day grace period after the election date.
  * Compares dates in UTC to avoid timezone issues.
  * @param electionDate - The date of the election to check
  * @returns boolean indicating if the election is active
@@ -112,5 +113,8 @@ export function isElectionActive(electionDate: Date): boolean {
     electionDate.getUTCMonth(),
     electionDate.getUTCDate()
   );
-  return electionUTC >= todayUTC;
+  const twoDaysInMs = 2 * 24 * 60 * 60 * 1000;
+  const electionWithGraceUTC = electionUTC + twoDaysInMs;
+
+  return electionWithGraceUTC >= todayUTC;
 }
