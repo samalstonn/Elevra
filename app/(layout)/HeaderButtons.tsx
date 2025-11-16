@@ -11,7 +11,11 @@ type PublicMetadata = {
   [key: string]: unknown;
 };
 
-export default function HeaderButtons({ pathname }: { pathname: string }) {
+export default function HeaderButtons({
+  pathname,
+}: {
+  pathname: string;
+}) {
   const { user } = useUser();
   const publicMetadata = (user?.publicMetadata ?? {}) as PublicMetadata;
 
@@ -27,21 +31,9 @@ export default function HeaderButtons({ pathname }: { pathname: string }) {
 
   const liveElectionsLink = "/live-elections";
   const blogLink = "/blog";
-  const aboutLink = "/about";
 
   return (
     <div className="flex items-center gap-4">
-      <Button
-        asChild
-        size="sm"
-        variant="purple"
-        className="md:text-base md:p-4"
-      >
-        <Link href={aboutLink}>
-          <span className="hidden md:inline">About Us</span>
-          <span className="md:hidden">ℹ️</span>
-        </Link>
-      </Button>
       <Button
         asChild
         size="sm"
@@ -71,7 +63,7 @@ export default function HeaderButtons({ pathname }: { pathname: string }) {
         className="md:text-base md:p-4"
       >
         <Link href={dashboardLink}>
-          <span className="hidden md:inline">Dashboard</span>
+          <span className="hidden md:inline">My Dashboard</span>
           <span className="md:hidden">📊</span>
         </Link>
       </Button>
