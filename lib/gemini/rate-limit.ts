@@ -179,16 +179,19 @@ export async function adjustModelUsage(
   model: string,
   windowStart: Date,
   {
+    requestCountDelta = 0,
     requestTokensDelta = 0,
     responseTokensDelta = 0,
     batchTokensDelta = 0,
   }: {
+    requestCountDelta?: number;
     requestTokensDelta?: number;
     responseTokensDelta?: number;
     batchTokensDelta?: number;
   }
 ): Promise<void> {
   if (
+    requestCountDelta === 0 &&
     requestTokensDelta === 0 &&
     responseTokensDelta === 0 &&
     batchTokensDelta === 0
@@ -202,6 +205,10 @@ export async function adjustModelUsage(
       windowStart,
     },
     data: {
+      requestCount:
+        requestCountDelta !== 0
+          ? { increment: requestCountDelta }
+          : undefined,
       requestTokens:
         requestTokensDelta !== 0
           ? { increment: requestTokensDelta }
