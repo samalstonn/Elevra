@@ -33,7 +33,7 @@ export default function AboutPage() {
             wrote his senior thesis on healthcare policy under Professor
             Rosemary Batt. He previously worked in his local government and
             served as a Campaign Fellow on Senator Elissa Slotkin&apos;s 2022
-            congressional re-election campaign.
+            Congressional re-election campaign.
           </p>
           <p className="text-gray-700 leading-relaxed mb-4">
             Sam Alston studied Computer Science at Cornell and was a lightweight
