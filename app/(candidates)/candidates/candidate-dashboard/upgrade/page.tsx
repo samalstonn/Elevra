@@ -42,8 +42,8 @@ const planDefinitions = [
   },
   {
     name: "Premium",
-    price: "$1",
-    interval: "Until November 4th\nThen $10 / Month",
+    price: "$10",
+    interval: "/ Month through November 2026",
     features: premiumFeatures,
     tier: "premium" as const,
     highlight: true, // Optional: Highlight the premium plan
@@ -233,11 +233,11 @@ export default function UpgradePage() {
                     {plan.price}
                   </span>
                   <span className="text-sm font-semibold leading-6 tracking-wide text-gray-600 ml-1">
-                    {plan.interval.split('\n')[0]}
+                    {plan.interval.split("\n")[0]}
                   </span>
                 </div>
                 <div className="text-sm italic font-normal text-gray-600 ml-1 mt-2">
-                  {plan.interval.split('\n')[1]}
+                  {plan.interval.split("\n")[1]}
                 </div>
               </CardDescription>
             </CardHeader>
