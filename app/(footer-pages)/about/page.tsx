@@ -31,8 +31,8 @@ export default function AboutPage() {
             Adam Rose graduated with a Bachelor of Science with Honors from
             Cornell&apos;s School of Industrial and Labor Relations, where he
             wrote his senior thesis on healthcare policy under Professor
-            Rosemary Batt. He has worked in local town government and served as
-            a Campaign Fellow on Senator Elissa Slotkin&apos;s 2022
+            Rosemary Batt. He previously worked in his local government and
+            served as a Campaign Fellow on Senator Elissa Slotkin&apos;s 2022
             congressional re-election campaign.
           </p>
           <p className="text-gray-700 leading-relaxed mb-4">
