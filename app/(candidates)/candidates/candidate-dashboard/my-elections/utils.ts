@@ -163,10 +163,10 @@ export const SIMPLE_TEMPLATE_PREVIEW: BlockSnippet[] = [
     label: "Heading",
     text: "Lead with a bold introduction that highlights your campaign and story.",
   },
-  {
-    label: "Candidate Image",
-    text: "A picture tells 1000 words.",
-  },
+  // {
+  //   label: "Candidate Image",
+  //   text: "A picture tells 1000 words.",
+  // },
   {
     label: "Description",
     text: "Describe yourself and your campaign.",
