@@ -23,7 +23,8 @@ const freeFeatures = ["Discoverable Profile", "Verified Checkmark"];
 
 const premiumFeatures = [
   "Premium Campaign Website",
-  "Gain Exposure Even as Uncontested Candidate",
+  "Gain Exposure as Uncontested Candidate",
+  "Donation Management and Compliance",
   "Advanced Analytics (Views, Demographics, etc.)",
   "Top of Google Search Results",
   "Verified Endorsements",

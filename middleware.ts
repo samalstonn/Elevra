@@ -18,6 +18,7 @@ const isPrivateRoute = createRouteMatcher([
 const isPremiumRoute = createRouteMatcher([
   "/candidates/candidate-dashboard/analytics(.*)", // Candidate analytics
   "/candidates/candidate-dashboard/endorsements(.*)", // Candidate endorsements
+  "/candidates/candidate-dashboard/donations(.*)", // Candidate donations
 ]);
 
 export default clerkMiddleware(async (auth, req) => {

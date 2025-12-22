@@ -13,6 +13,7 @@ import {
   Menu,
   Megaphone,
   Zap,
+  HandCoins,
 } from "lucide-react";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
@@ -61,7 +62,9 @@ export default function CandidateDashboardLayout({
       router.refresh();
     } catch (error) {
       console.error("Failed to switch account to candidate", error);
-      setConvertError("We couldn't switch your role right now. Please try again.");
+      setConvertError(
+        "We couldn't switch your role right now. Please try again."
+      );
     } finally {
       setIsConverting(false);
     }
@@ -82,7 +85,9 @@ export default function CandidateDashboardLayout({
     return (
       <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-purple-50 via-white to-purple-100 px-6">
         <div className="w-full max-w-md space-y-4 rounded-3xl border border-purple-100 bg-white/90 p-10 text-center shadow-lg">
-          <h2 className="text-xl font-semibold text-gray-900">Sign in required</h2>
+          <h2 className="text-xl font-semibold text-gray-900">
+            Sign in required
+          </h2>
           <p className="text-sm text-muted-foreground">
             Sign in to access the candidate dashboard.
           </p>
@@ -107,8 +112,8 @@ export default function CandidateDashboardLayout({
             Switch to the candidate experience
           </h1>
           <p className="text-sm text-muted-foreground">
-            You&apos;re currently set up as a voter. Update your role to unlock campaign
-            tools, analytics, and outreach automations.
+            You&apos;re currently set up as a voter. Update your role to unlock
+            campaign tools, analytics, and outreach automations.
           </p>
           {convertError ? (
             <p className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-600">
@@ -125,7 +130,12 @@ export default function CandidateDashboardLayout({
             >
               {isConverting ? "Switching..." : "Join as a candidate"}
             </Button>
-            <Button variant="outline" size="lg" className="justify-center" asChild>
+            <Button
+              variant="outline"
+              size="lg"
+              className="justify-center"
+              asChild
+            >
               <Link href="/dashboard">Stay in voter mode</Link>
             </Button>
           </div>
@@ -135,7 +145,9 @@ export default function CandidateDashboardLayout({
             className="mx-auto text-purple-600 hover:text-purple-700"
             asChild
           >
-            <Link href="/candidates?tab=home">Learn about candidate features</Link>
+            <Link href="/candidates?tab=home">
+              Learn about candidate features
+            </Link>
           </Button>
         </div>
       </div>
@@ -166,6 +178,13 @@ export default function CandidateDashboardLayout({
       href: "/candidates/candidate-dashboard/endorsements",
       label: "Endorsements",
       icon: Award,
+      premium: true,
+      requiresPremiumUnlock: true,
+    },
+    {
+      href: "/candidates/candidate-dashboard/donations",
+      label: "Donations",
+      icon: HandCoins,
       premium: true,
       requiresPremiumUnlock: true,
     },
