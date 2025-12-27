@@ -118,11 +118,11 @@ export const simpleTemplate: Array<TemplateBlock> = [
   },
 
   /* ────────────────  IMAGE  ─────────────── */
-  {
-    order: 1,
-    type: "IMAGE",
-    imageUrl: "/example-johnny.jpg",
-  },
+  // {
+  //   order: 1,
+  //   type: "IMAGE",
+  //   imageUrl: "/example-johnny.jpg",
+  // },
 
   /* ────────────────  INTRO TEXT  ─────────────── */
   {

@@ -22,14 +22,21 @@ import { useRouter, useSearchParams } from "next/navigation";
 const freeFeatures = ["Discoverable Profile", "Verified Checkmark"];
 
 const premiumFeatures = [
-  "Keep Your Profile Year Round",
-  "See Profile Views",
-  "Verified Checkmark",
-  "Premium Campaign Page",
+  "Premium Campaign Website",
+  "Gain Exposure as Uncontested Candidate",
+  "Donation Management and Compliance",
+  "Advanced Analytics (Views, Demographics, etc.)",
   "Top of Google Search Results",
-  "Advanced Analytics",
   "Verified Endorsements",
-  "Priority Support",
+  "Keep Profile After Election",
+];
+
+const conciergeFeatures = [
+  "All Premium Features",
+  "Generated Campaign Media",
+  "Find the Best Advertising Options",
+  "Assurance with Compliance and Filing",
+  "Connect with Campaign Vendors",
 ];
 
 const planDefinitions = [
@@ -43,14 +50,22 @@ const planDefinitions = [
   {
     name: "Premium",
     price: "$10",
-    interval: "/ Month through November 2026",
+    interval:
+      "/ Month through November 2026 \nTop Profiles Received 100x More Views",
     features: premiumFeatures,
     tier: "premium" as const,
     highlight: true, // Optional: Highlight the premium plan
   },
+  {
+    name: "Concierge",
+    price: "",
+    interval: "Inquire at team@elevracommunity.com",
+    features: conciergeFeatures,
+    tier: "concierge" as const,
+  },
 ];
 
-export type CandidatePlanTier = "free" | "premium";
+export type CandidatePlanTier = "free" | "premium" | "concierge";
 
 export interface Plan {
   name: string;
@@ -140,6 +155,11 @@ export default function UpgradePage() {
       return;
     }
 
+    if (plan.tier === "concierge") {
+      window.location.href = "/feedback";
+      return;
+    }
+
     setLoadingPlan(plan.tier);
     try {
       const response = await fetch("/api/candidate/upgrade-session", {
@@ -203,7 +223,7 @@ export default function UpgradePage() {
         </p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-stretch">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-stretch">
         {plans.map((plan) => (
           <Card
             key={plan.name}
