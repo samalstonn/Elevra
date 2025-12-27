@@ -10,6 +10,7 @@ import { Card, CardContent } from "@/components/Card";
 import CandidateSection from "./CandidateResultsSection";
 import MobileCandidateResultsSection from "./MobileCandidateResultsSection";
 import LiveElectionBanner from "@/components/LiveElectionBanner";
+import { isElectionActive } from "@/lib/isElectionActive";
 
 export type ElectionWithCandidates = Election & { candidates: Candidate[] };
 
@@ -25,11 +26,17 @@ export default function ElectionResultsClient({
   const sortedElections = useMemo(() => {
     const list = [...(elections || [])];
     list.sort((a, b) => {
-      const aHas = a.candidates.some((c) => c.verified);
-      const bHas = b.candidates.some((c) => c.verified);
-      if (aHas && !bHas) return -1;
-      if (!aHas && bHas) return 1;
-      return b.candidates.length - a.candidates.length;
+      const aDate = new Date(a.date);
+      const bDate = new Date(b.date);
+      const aActive = isElectionActive(aDate);
+      const bActive = isElectionActive(bDate);
+
+      if (aActive && !bActive) return -1;
+      if (!aActive && bActive) return 1;
+
+      if (aActive && bActive) return aDate.getTime() - bDate.getTime();
+
+      return bDate.getTime() - aDate.getTime();
     });
     return list;
   }, [elections]);
@@ -49,9 +56,18 @@ export default function ElectionResultsClient({
     }
   }, [sortedElections, initialElectionID]);
 
-  const filteredElections = selectedElection
-    ? sortedElections.filter((e) => e.id === selectedElection)
-    : sortedElections;
+  const selectedElectionId =
+    sortedElections.length === 0
+      ? null
+      : selectedElection &&
+        sortedElections.some((e) => e.id === selectedElection)
+      ? selectedElection
+      : sortedElections[0].id;
+
+  const filteredElections =
+    selectedElectionId != null
+      ? sortedElections.filter((e) => e.id === selectedElectionId)
+      : sortedElections;
 
   const fadeInVariants = {
     hidden: { opacity: 0 },
@@ -160,7 +176,7 @@ export default function ElectionResultsClient({
                   key={elec.id}
                   onClick={() => setSelectedElection(elec.id)}
                   variant={
-                    selectedElection === elec.id ? "purple" : "secondary"
+                    selectedElectionId === elec.id ? "purple" : "secondary"
                   }
                   size="sm"
                 >
