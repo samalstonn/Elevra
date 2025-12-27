@@ -2,7 +2,7 @@
 import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { FaChevronLeft, FaChevronRight } from "react-icons/fa";
-import { motion } from "framer-motion";
+import { motion, type Variants } from "framer-motion";
 import { ServiceCategoryFilterItem } from "@/types/vendor";
 
 export interface VendorCategoryFilterProps {
@@ -21,9 +21,9 @@ export function VendorCategoryFilter({
   const [canScrollRight, setCanScrollRight] = useState(false);
 
   // Animation Variants
-  const fadeInVariants = {
+  const fadeInVariants: Variants = {
     hidden: { opacity: 0 },
-    visible: { opacity: 1, transition: { duration: 0.3, ease: "easeOut" } },
+    visible: { opacity: 1, transition: { duration: 0.3, ease: [0.16, 1, 0.3, 1] } },
   };
 
   const updateScrollButtons = () => {

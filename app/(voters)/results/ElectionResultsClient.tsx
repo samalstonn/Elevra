@@ -1,7 +1,7 @@
 "use client";
 
 import { Election, Candidate } from "@prisma/client";
-import { motion } from "framer-motion";
+import { motion, type Variants } from "framer-motion";
 import { useState, useMemo, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { FaVoteYea, FaChevronLeft, FaChevronRight } from "react-icons/fa";
@@ -69,9 +69,9 @@ export default function ElectionResultsClient({
       ? sortedElections.filter((e) => e.id === selectedElectionId)
       : sortedElections;
 
-  const fadeInVariants = {
+  const fadeInVariants: Variants = {
     hidden: { opacity: 0 },
-    visible: { opacity: 1, transition: { duration: 0.5, ease: "easeOut" } },
+    visible: { opacity: 1, transition: { duration: 0.5, ease: [0.16, 1, 0.3, 1] } },
   };
 
   const scrollRef = useRef<HTMLDivElement>(null);
