@@ -1,7 +1,7 @@
 import prisma from "@/prisma/prisma";
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import DOMPurify from "isomorphic-dompurify";
+import sanitizeHtml from "sanitize-html";
 import { marked } from "marked";
 marked.setOptions({ gfm: true, breaks: true });
 
@@ -31,11 +31,25 @@ export default async function BlogPostPage({
   let html: string;
   try {
     const raw = await marked.parse(post.contentMd);
-    html = DOMPurify.sanitize(typeof raw === "string" ? raw : "");
+    html = sanitizeHtml(typeof raw === "string" ? raw : "", {
+      allowedTags: [...sanitizeHtml.defaults.allowedTags, "img"],
+      allowedAttributes: {
+        a: ["href", "name", "target", "rel"],
+        img: ["src", "alt", "title"],
+      },
+      allowedSchemes: ["http", "https", "mailto"],
+    });
   } catch (err) {
     console.error("Markdown parse failed", err);
     // Fallback: basic newline to <br/> conversion
-    html = DOMPurify.sanitize(post.contentMd.replace(/\n/g, "<br/>"));
+    html = sanitizeHtml(post.contentMd.replace(/\n/g, "<br/>"), {
+      allowedTags: [...sanitizeHtml.defaults.allowedTags, "img"],
+      allowedAttributes: {
+        a: ["href", "name", "target", "rel"],
+        img: ["src", "alt", "title"],
+      },
+      allowedSchemes: ["http", "https", "mailto"],
+    });
   }
 
   return (

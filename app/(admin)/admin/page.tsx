@@ -649,7 +649,7 @@ function MarkdownPreview({ source }: { source: string }) {
     (async () => {
       const { marked } = await import("marked");
       marked.setOptions({ gfm: true, breaks: true });
-      const DOMPurify = (await import("isomorphic-dompurify")).default;
+      const DOMPurify = (await import("dompurify")).default;
       const parsed = marked.parse(source);
       if (parsed instanceof Promise) {
         parsed.then((resolved) => setHtml(DOMPurify.sanitize(resolved)));

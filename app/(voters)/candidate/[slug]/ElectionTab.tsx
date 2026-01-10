@@ -9,7 +9,7 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { MdHowToVote } from "react-icons/md";
 import { marked } from "marked";
-import DOMPurify from "isomorphic-dompurify";
+import sanitizeHtml from "sanitize-html";
 import Image from "next/image";
 import { EmptyState } from "@/components/ui/empty-state";
 import { unchanged } from "@/lib/content-blocks";
@@ -35,7 +35,14 @@ export type ElectionProfileTabProps = {
 function mdToHtml(markdown: string): string {
   marked.setOptions({ async: false });
   const raw = marked.parse(markdown) as string;
-  return DOMPurify.sanitize(raw).replace(/\u00A0/g, " ");
+  return sanitizeHtml(raw, {
+    allowedTags: [...sanitizeHtml.defaults.allowedTags, "img"],
+    allowedAttributes: {
+      a: ["href", "name", "target", "rel"],
+      img: ["src", "alt", "title"],
+    },
+    allowedSchemes: ["http", "https", "mailto"],
+  }).replace(/\u00A0/g, " ");
 }
 
 export function ElectionProfileTab({ link }: ElectionProfileTabProps) {
@@ -51,7 +58,14 @@ export function ElectionProfileTab({ link }: ElectionProfileTabProps) {
         <article
           className="prose prose-slate max-w-none"
           dangerouslySetInnerHTML={{
-            __html: DOMPurify.sanitize(link.Document!.contentHtml),
+            __html: sanitizeHtml(link.Document!.contentHtml, {
+              allowedTags: [...sanitizeHtml.defaults.allowedTags, "img"],
+              allowedAttributes: {
+                a: ["href", "name", "target", "rel"],
+                img: ["src", "alt", "title"],
+              },
+              allowedSchemes: ["http", "https", "mailto"],
+            }),
           }}
         />
       )}
