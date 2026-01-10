@@ -58,18 +58,41 @@ export function CandidateProfileHeader({
           title: `Check out ${candidate.name}'s campaign on Elevra!`,
           url,
         });
+        return;
       } catch (error) {
         console.error("Error sharing:", error);
       }
-      return;
     }
 
     try {
-      await navigator.clipboard.writeText(url);
-      alert("Profile link copied to clipboard!");
+      if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(url);
+        alert("Profile link copied to clipboard!");
+        return;
+      }
     } catch (error) {
       console.error("Error copying link:", error);
     }
+
+    try {
+      const textarea = document.createElement("textarea");
+      textarea.value = url;
+      textarea.setAttribute("readonly", "");
+      textarea.style.position = "fixed";
+      textarea.style.top = "-9999px";
+      document.body.appendChild(textarea);
+      textarea.select();
+      const didCopy = document.execCommand("copy");
+      document.body.removeChild(textarea);
+      if (didCopy) {
+        alert("Profile link copied to clipboard!");
+        return;
+      }
+    } catch (error) {
+      console.error("Error copying link:", error);
+    }
+
+    window.prompt("Copy this link:", url);
   }, [candidate.name, candidate.slug]);
 
   const desktopShareButton = showShareButton ? (
@@ -77,6 +100,7 @@ export function CandidateProfileHeader({
       variant="purple"
       className="flex items-center gap-2"
       size="md"
+      type="button"
       onClick={handleShare}
     >
       <FaShare /> Share Profile
@@ -88,6 +112,7 @@ export function CandidateProfileHeader({
       variant="purple"
       className="flex justify-center items-center gap-1 text-sm px-2"
       size="sm"
+      type="button"
       onClick={handleShare}
     >
       <FaShare className="h-3 w-3" /> Share
